@@ -91,18 +91,21 @@ oc_asset() { case "$OS-$ARCH" in
   darwin-x64) echo "opencode-darwin-x64.zip 2be9b7671f94a9636b85ff31fcfce613f197c5204ec90291982d692010d072fd";;
   darwin-arm64) echo "opencode-darwin-arm64.zip 4e093cae2931773c354896d98e7da0cfa3607c110aeaf255ba07f9c2d2238219";; esac; }
 say "1/7 OpenCode v$OC_VERSION"
-if "$BIN/opencode" --version 2>/dev/null | grep -q "v$OC_VERSION"; then ok "sudah terpasang ($BIN/opencode)"
+# engine dijalankan dengan XDG terisolasi → tidak menulis log/state ke ~/.local/share/opencode milik user
+oc_engine() { XDG_DATA_HOME="$SW_HOME/xdg/data" XDG_CONFIG_HOME="$SW_HOME/xdg/config" XDG_STATE_HOME="$SW_HOME/xdg/state" XDG_CACHE_HOME="$SW_HOME/xdg/cache" \
+  OPENCODE_DISABLE_AUTOUPDATE=1 OPENCODE_DISABLE_MODELS_FETCH=1 "$BIN/opencode" "$@"; }
+if [ -x "$BIN/opencode" ] && oc_engine --version 2>/dev/null | grep -q "v$OC_VERSION"; then ok "sudah terpasang ($BIN/opencode)"
 else
   set -- $(oc_asset); base="https://github.com/anomalyco/opencode/releases/download/v$OC_VERSION"
   fetch "$base/$1" "$2" "$base/SHA256SUMS"
   if [ "$DRY" = 0 ]; then
     case "$1" in *.zip) unzip -qo "$TMP/$1" -d "$TMP/oc";; *) mkdir -p "$TMP/oc" && tar -xzf "$TMP/$1" -C "$TMP/oc";; esac
     install -m 0755 "$(find "$TMP/oc" -type f -name opencode | head -1)" "$BIN/opencode"
-    "$BIN/opencode" --version | grep -q "v$OC_VERSION" || die "versi opencode tidak sesuai"
-    ok "$("$BIN/opencode" --version)"
+    oc_engine --version | grep -q "v$OC_VERSION" || die "versi opencode tidak sesuai"
+    ok "$(oc_engine --version)"
   fi
 fi
-command -v opencode >/dev/null 2>&1 && ok "opencode global user dibiarkan apa adanya ($(command -v opencode): $(opencode --version 2>/dev/null || echo '?')); engine lumitome terpisah di $BIN"
+command -v opencode >/dev/null 2>&1 && ok "opencode global user dibiarkan apa adanya ($(command -v opencode); tidak dijalankan); engine lumitome terpisah di $BIN"
 
 # ---------- Node >= 22.6 (node:sqlite + FTS5, --experimental-strip-types) ----------
 say "2/7 Node.js (>= 22.6)"
