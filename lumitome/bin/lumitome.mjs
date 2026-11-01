@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
 const REPO = path.resolve(ROOT, "..");                 // repo Swanwright
-const VERSION = "0.3.1";
+const VERSION = "0.3.2";
 const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
 const env = { ...process.env };
 const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process.exit(code); };
@@ -30,6 +30,11 @@ const sub = argv[0] && !argv[0].startsWith("-") ? argv[0] : "";
 if (argv[0] === "--version" || argv[0] === "-v") {
   let oc = "?"; try { oc = execFileSync(ocBin(), ["--version"], { encoding: "utf8", env: isoEnv() }).trim(); } catch {}
   console.log(`lumitome ${VERSION} (${oc})`); process.exit(0);
+}
+// ---------- update kode Lumitome (manual; engine tidak disentuh) ----------
+if (sub === "update") {
+  const { update } = await import(path.join(ROOT, "lib", "update.mjs"));
+  process.exit(await update({ argv: argv.slice(1), version: VERSION, repo: REPO, home: ISO_HOME }));
 }
 // ---------- engine terpin: hanya diganti lewat perintah eksplisit ----------
 if (sub === "engine" || sub === "upgrade-engine") {
@@ -144,12 +149,14 @@ if (sub === "run" && (env.LUMI_SKILLS ?? "auto") === "auto" && fs.existsSync(pat
 // password server) ke OPENCODE_CONFIG_DIR — jangan sampai masuk ke direktori repo.
 const CFG_DIR = path.join(HOME, "config");
 fs.mkdirSync(CFG_DIR, { recursive: true, mode: 0o700 });
-for (const n of ["opencode.jsonc", "plugins", "skills"]) {
+for (const n of ["opencode.jsonc", "plugins", "skills", "rules", "agents", "commands"]) {
   const dst = path.join(CFG_DIR, n), src = path.join(ROOT, "config", n);
   let cur = null; try { cur = fs.readlinkSync(dst); } catch {}
   if (cur !== src) { try { fs.rmSync(dst, { force: true }); } catch {} fs.symlinkSync(src, dst); }
 }
 try { fs.chmodSync(path.join(CFG_DIR, "service.json"), 0o600); } catch {}
+// rules inti Lumitome dari config dir milik Lumitome (bukan proyek) → aktif di proyek mana pun walau trust off
+finalCfg.instructions = fs.readdirSync(path.join(ROOT, "rules")).filter((f) => f.endsWith(".md")).sort().map((f) => path.join(CFG_DIR, "rules", f));
 // hanya dir binary yang di-bind read-only ke sandbox — BUKAN seluruh LUMI_HOME (berisi jurnal, serve.password, data engine)
 const toolDirs = [env.SW_HOME && path.join(env.SW_HOME, "bin"), path.resolve(path.dirname(process.execPath), "..")].filter((d) => d && path.relative(d, HOME).startsWith(".."));
 Object.assign(env, {

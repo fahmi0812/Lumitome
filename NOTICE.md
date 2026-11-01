@@ -1,6 +1,9 @@
 # NOTICE — atribusi pihak ketiga
 Kode Lumitome (wrapper `lumitome/`, harness `harness/`) dan basis Swanwright (fahmi0812/Swanwright @ da868bd): MIT (lihat LICENSE).
 
+## Rules inti (`lumitome/rules/`)
+Sintesis/parafrase (bukan salinan) dari: multica-ai/andrej-karpathy-skills @2c60614 (MIT), obra/superpowers @2ce8aa1 (MIT), poteto/noodle @82d2921 (MIT), unicodef1wn/grokbot-field-notes @02780c0 (MIT), qkal/Canny @f2c5e53 (MIT), affaan-m/ECC @b38be6a (MIT), alvinunreal/oh-my-opencode-slim @5c6655f (MIT), google/elephant-goldfish-model @403d888 (Apache-2.0). Tabel lengkap: docs/RULES.md.
+
 ## OpenCode (engine)
 - Sumber: https://github.com/anomalyco/opencode — Lisensi: MIT, Copyright (c) 2025 opencode.
 - Tidak di-vendor: installer mengunduh binary rilis v2.2.4 (SHA256 terpin) ke `~/.lumitome/bin/opencode`.

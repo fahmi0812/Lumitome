@@ -297,5 +297,24 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("layer0: backend/API → coding, keuangan → finance, audit Express tidak dibajak coding", layer0("buat REST API express dengan test").sektor === "coding" && layer0("analisis laporan keuangan").sektor === "finance" && layer0("tolong audit keamanan kode Express").sektor !== "coding");
 }
 
+{
+  // v0.3.2: rules inti dimuat dari config dir Lumitome + update CLI
+  const os = await import("node:os"), cp = await import("node:child_process");
+  const rdir = "lumitome/rules", files = fs.readdirSync(rdir).filter((f) => f.endsWith(".md"));
+  const bytes = files.reduce((n, f) => n + fs.statSync(path.join(rdir, f)).size, 0);
+  ok(`rules inti: ${files.length} file, ${bytes} B (budget ≤ 6000 B ≈ 1.5k token)`, files.length >= 2 && bytes <= 6000 && fs.readFileSync(path.join(rdir, "00-core.md"), "utf8").includes("LUMI-CORE-"));
+  ok("config dir Lumitome membawa rules/agents/commands", ["rules", "agents", "commands"].every((n) => fs.existsSync(path.join("lumitome/config", n))) && fs.existsSync("lumitome/config/agents/orchestrator.md"));
+  const W = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
+  ok("wrapper menyetel instructions dari config dir (bukan proyek)", /finalCfg\.instructions = .*CFG_DIR, "rules"/.test(W));
+  const U = await import("../lumitome/lib/update.mjs");
+  ok("update: cmpVer semver", U.cmpVer("v0.3.10", "0.3.2") > 0 && U.cmpVer("0.3.2", "v0.3.2") === 0 && U.cmpVer("0.2.9", "0.3.0") < 0);
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "updtag-")), g = (...a) => cp.execFileSync("git", a, { cwd: tmp, stdio: "pipe" }).toString().trim();
+  g("init", "-q"); fs.writeFileSync(path.join(tmp, "a"), "1"); g("add", "a"); g("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "a");
+  const c1 = g("rev-parse", "HEAD"); g("tag", "v0.3.1"); g("-c", "user.name=t", "-c", "user.email=t@t", "tag", "-a", "v0.3.10", "-m", "x"); g("tag", "latest");
+  const tags = U.remoteTags(tmp);
+  ok("update: remoteTags = vX.Y.Z saja, urut semver, tag anotasi di-peel ke commit", tags.map((t) => t.tag).join() === "v0.3.1,v0.3.10" && tags.every((t) => t.sha === c1));
+  fs.rmSync(tmp, { recursive: true, force: true });
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
