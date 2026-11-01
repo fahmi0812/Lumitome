@@ -1,0 +1,43 @@
+{
+  "_note": "Ditulis 2026-11-01 19:35 WIB SEBELUM tuning router v0.3.1. dev = 17 query lama + 12 baru (boleh dipakai tuning); test = 24 baru (TIDAK dipakai tuning, skor dilaporkan). expect [] = benar bila pilihan kosong.",
+  "dev_new": [
+    ["perbaiki bug: fungsi login selalu return undefined", ["systematic-debugging", "root-cause-gate"]],
+    ["write unit tests first then implement the parser (TDD)", ["tdd-red-green-refactor"]],
+    ["bikin animasi parallax waktu scroll pakai gsap", ["gsap-scrolltrigger", "gsap-core"]],
+    ["setup row level security di supabase", ["supabase-ops"]],
+    ["parafrase teks ini biar tidak kedengaran seperti AI", ["humanizer-indonesia", "humanizer"]],
+    ["buatkan diagram sequence alur pembayaran", ["diagram-design"]],
+    ["hitung rasio profitabilitas ROE dan ROA dari neraca ini", ["analisis-laporan-keuangan"]],
+    ["jurnal umum dan buku besar toko kelontong", ["akuntansi-umkm"]],
+    ["sinyal beli saham BBCA besok apa?", []],
+    ["create an MCP server for the Notion API", ["mcp-builder"]],
+    ["deploi ke vercle dan atur domain custom", ["vercel-ops"]],
+    ["tulis skripsi bab 2 tinjauan pustaka format EYD", ["naskah-id", "laporan-generator", "penulis-ilmiah"]]
+  ],
+  "test": [
+    ["tes gagal terus setelah refactor, cari akar masalahnya", ["systematic-debugging", "root-cause-gate"]],
+    ["debug why the API returns 500 intermittently", ["systematic-debugging", "root-cause-gate"]],
+    ["sistematik debuging error null pointer di service", ["systematic-debugging", "root-cause-gate"]],
+    ["review kode di branch ini sebelum saya merge", ["code-review", "requesting-code-review"]],
+    ["reviewer kasih komentar di PR, bantu tanggapi", ["receiving-code-review"]],
+    ["scan kerentanan SQL injection di backend express", ["security-audit", "code-audit", "full-audit-keamanan"]],
+    ["reverse engineer file APK android ini", ["reverse-engineer-anything"]],
+    ["buat index mongodb biar query agregasi cepat", ["mongodb-ops"]],
+    ["design a landing page hero that doesn't look generic", ["hallmark", "design-taste-frontend", "impeccable", "banner-design"]],
+    ["bikin design system: token warna, tipografi, spek komponen", ["design-system"]],
+    ["buat deck presentasi investor 10 slide", ["slides"]],
+    ["research peer-reviewed papers on retrieval augmented generation", ["research", "deep-research"]],
+    ["cek fakta klaim ini dari banyak sumber", ["deep-research", "research"]],
+    ["write API reference docs and getting started guide for our SDK", ["technical-writer"]],
+    ["susun newsletter internal update progres tim bulan ini", ["internal-comms"]],
+    ["rekam demo aplikasi web jadi video dengan narasi", ["video-demo"]],
+    ["tambahkan efek suara sesuai timeline video", ["sound-design"]],
+    ["rencana anggaran rumah tangga dan dana darurat 6 bulan", ["keuangan-pribadi"]],
+    ["personal budget plan to pay off credit card debt", ["keuangan-pribadi"]],
+    ["kewajiban pajak UMKM dan cara lapor SPT", ["pajak-dasar-id"]],
+    ["laporan laba rugi sederhana untuk usaha katering", ["akuntansi-umkm"]],
+    ["analisa laporan keuangan tahunan emiten: likuiditas & solvabilitas", ["analisis-laporan-keuangan"]],
+    ["bot trading kripto otomatis dengan python", []],
+    ["prediksi harga bitcoin minggu depan buat scalping", []]
+  ]
+}
