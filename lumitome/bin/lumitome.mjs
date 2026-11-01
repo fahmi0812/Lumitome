@@ -134,6 +134,11 @@ for (const [name, def] of Object.entries(projectMcp())) {
   const on = wantMcp.includes("all") || wantMcp.includes(name);
   if (!on) mcpOverride[name] = { ...def, disabled: true };
 }
+// MCP skill_search milik Lumitome (path absolut instalasi) → tersedia di proyek mana pun tanpa config proyek
+for (const sec of ["coding", "security", "riset", "penulisan", "finance", "media"]) {
+  const n = `skills-${sec}`; if (!(wantMcp.includes("all") || wantMcp.includes(n))) continue;
+  mcpOverride[n] = { type: "local", command: [process.execPath, "--no-warnings", path.join(REPO, "router", "skill-search-mcp.mjs"), "--sector", sec, "--root", REPO], timeout: { startup: 30000, catalog: 30000, execution: 30000 } };
+}
 const DENY = (r) => ({ action: "shell", resource: r, effect: "deny" });
 const finalCfg = {
   update: "disable",

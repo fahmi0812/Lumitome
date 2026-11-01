@@ -12,7 +12,8 @@ import { openDb, searchSkills, SECTORS, DEFAULT_DB } from "./skill-db.mjs";
 const i = process.argv.indexOf("--sector");
 const sector = i >= 0 ? process.argv[i + 1] : process.env.SW_SECTOR;
 if (!SECTORS.includes(sector)) { process.stderr.write(`sektor tidak valid: ${sector}\n`); process.exit(2); }
-const root = process.env.SW_ROOT || process.cwd();
+const ri = process.argv.indexOf("--root");
+const root = ri >= 0 ? process.argv[ri + 1] : process.env.SW_ROOT || process.cwd();
 const dbFile = path.join(root, DEFAULT_DB);
 const VERSION = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
 

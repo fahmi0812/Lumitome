@@ -120,7 +120,8 @@ export async function cli({ argv, home, sub, log = console.log, err = (m) => pro
   try {
     const models = await add(home, { name, type, baseURL, key });
     log(`OK: provider '${name}' (${type}) — ${models.length} model terdeteksi. Contoh: ${models.slice(0, 5).map((m) => `${name}/${m}`).join(", ")}${models.length > 5 ? ", …" : ""}`);
-    log(`Pilih di TUI lewat /model, atau: lumitome run -m ${name}/${models[0]} "…"`);
+    const pref = models.includes("ag/gemini-3.8-flash-high") ? "ag/gemini-3.8-flash-high" : models[0];
+    log(`Pilih di TUI lewat /model, atau: lumitome run -m ${name}/${pref} "…"`);
     return 0;
   } catch (e) { err(`connect gagal: ${e.message}`); return 1; }
 }

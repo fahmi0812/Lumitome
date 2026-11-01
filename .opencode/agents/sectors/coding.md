@@ -96,7 +96,7 @@ Kamu executor sektor **coding**. Coding, devops, quality, skill-design UI. Gamed
 
 - Wajib patuhi `.opencode/rules/06-coding-karpathy.md` (minimal, bedah, asumsi=JUDGMENT, done-gate).
 - Wajib patuhi `.opencode/rules/00-doc-code-drift.md`: kode/tes > dokumen basi; drift → FACT di bagian Doc-Code Drift.
-- Muat hanya skill yang dipilih router (maks 5, hasil `scripts/skill-query.mjs`). Butuh skill lain di tengah tugas → `skills-coding` tool `skill_search` (read-only, hanya allowlist sektor ini). Lazy-load body SKILL.md.
+- Muat hanya skill yang dipilih router (maks 5, dipilih otomatis oleh router Lumitome sebelum run). Butuh skill lain di tengah tugas → `skills-coding` tool `skill_search` (read-only, hanya allowlist sektor ini). Lazy-load body SKILL.md.
 - MCP: hanya server sektor ini (deny-by-default). Lihat `docs/MCP.md`.
 - Tulis progress ke `runtime/progress.<agent_id>.md` saja.
 - Shell lewat bwrap bila tersedia. Jangan push ke main.
