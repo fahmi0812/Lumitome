@@ -33,10 +33,10 @@ This puts everything in `~/.lumitome` and adds a `lumitome` command in `~/.local
 **Windows, or any system with npm:**
 
 ```bash
-npm install -g github:fahmi0812/Lumitome
+npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-On Windows you need [Git for Windows](https://git-scm.com/download/win) for this command, because npm downloads Lumitome from GitHub. Run it in PowerShell or Command Prompt. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.3.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
@@ -89,7 +89,7 @@ lumitome update --rollback  # go back to the version you had before
 If you installed with npm, update with npm instead:
 
 ```bash
-npm install -g github:fahmi0812/Lumitome
+npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
 Lumitome does not update itself. It only updates when you run `lumitome update`. That command does not change the OpenCode version. On v0.3.1, which has no `update` command, run the install line again once.
@@ -126,11 +126,11 @@ More detail: [`lumitome/README.md`](lumitome/README.md) (all commands and settin
 
 Lumitome adalah asisten coding yang berjalan di terminal. Dibangun di atas OpenCode versi 2.2.4 yang dikunci, dan terpisah dari OpenCode yang sudah Anda pasang.
 
-**Pasang:** Linux/macOS: jalankan baris `curl ... install.sh | bash` di atas. Windows (atau OS apa pun yang punya npm): `npm install -g github:fahmi0812/Lumitome` (butuh Node.js 22.6+ dan Git). Setelah terbit di npm: `npm install -g lumitome`.
+**Pasang:** Linux/macOS: jalankan baris `curl ... install.sh | bash` di atas. Windows (atau OS apa pun yang punya npm): `npm install -g https://github.com/fahmi0812/Lumitome/tarball/main` (butuh Node.js 22.6+). Setelah terbit di npm: `npm install -g lumitome`.
 
 **Mulai:** ketik `lumitome`, lalu tekan `c` atau jalankan `lumitome connect`. Isi nama, alamat (base URL), dan API key. Layanan apa pun yang mirip API OpenAI atau Anthropic bisa dipakai. Daftar model diambil otomatis. Pilih model dengan `/model`.
 
-**Update:** `lumitome update` (instalasi npm: jalankan lagi `npm install -g github:fahmi0812/Lumitome`). Cek dulu dengan `lumitome update --check`. Batalkan dengan `lumitome update --rollback`.
+**Update:** `lumitome update` (instalasi npm: jalankan lagi `npm install -g https://github.com/fahmi0812/Lumitome/tarball/main`). Cek dulu dengan `lumitome update --check`. Batalkan dengan `lumitome update --rollback`.
 
 **Bedanya:**
 

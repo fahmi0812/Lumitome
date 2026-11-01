@@ -39,7 +39,7 @@ if (sub === "upgrade" || sub === "uninstall") die(2, `'${sub}' engine OpenCode d
 if (sub === "update") {
   // instalasi npm (tanpa .git): update lewat npm, bukan git
   if (!fs.existsSync(path.join(REPO, ".git")) && (env.LUMI_INSTALL === "npm" || REPO.split(path.sep).includes("node_modules"))) {
-    console.log(`lumitome ${VERSION} terpasang lewat npm. Perbarui dengan:\n  npm i -g github:fahmi0812/Lumitome\n(setelah terbit di npm: npm i -g ${env.LUMI_NPM_NAME || "lumitome"}@latest)\nEngine OpenCode tidak ikut berubah.`);
+    console.log(`lumitome ${VERSION} terpasang lewat npm. Perbarui dengan:\n  npm i -g https://github.com/fahmi0812/Lumitome/tarball/main\n(setelah terbit di npm: npm i -g ${env.LUMI_NPM_NAME || "lumitome"}@latest)\nEngine OpenCode tidak ikut berubah.`);
     process.exit(0);
   }
   const { update } = await import(path.join(ROOT, "lib", "update.mjs"));
