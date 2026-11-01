@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1 — Router skill L0-first
+
+- Pengayaan 86 skill aktif: alias id+en terkurasi (`router/skills-aliases.json`), sinonim dwibahasa & 3–5 contoh permintaan per skill dibangkitkan otomatis saat indeks (`router/enrich.mjs`; dump: `node scripts/skill-enrich.mjs`).
+- Retrieval L0 baru (`router/l0.mjs`): FTS5 BM25 unicode61 (nama/alias/sinonim/contoh/short/deskripsi) + koreksi typo trigram + daftar kemiripan trigram + hint Layer-0 → RRF.
+- L1 kini cadangan: hanya saat confidence rendah (margin BM25 < 0.15 / tanpa hit), timeout keras 3 s → L0, kandidat top-8 L0. `LUMI_ROUTER_L1=auto` default.
+- Cache pilihan per query ternormalisasi di `$LUMI_HOME/router-cache.json` (TTL 7 hari, invalid saat katalog berubah).
+- Eval v2 (`tests/router-eval-v2.json`, dev/test, ditulis sebelum tuning) + `tests/router-eval2.mjs`.
+
 ## 0.3.0 — Lumitome (repo mandiri)
 - Rebrand ke **Lumitome**; installer `fahmi0812/Lumitome`, `LUMI_HOME=~/.lumitome`, launcher `~/.local/bin/lumitome`, `install.sh --uninstall`.
 - Engine OpenCode v2.2.4 terpin + SHA256, terisolasi (XDG_* sendiri), autoupdate mati, `lumitome engine` / `upgrade-engine`.

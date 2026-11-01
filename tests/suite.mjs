@@ -191,10 +191,32 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   db.close();
   process.env.SW_9ROUTER_URL = "http://127.0.0.1:9/v1"; process.env.SW_L1_TIMEOUT_MS = "1500";
   const before = (() => { const d = SD.openDb("runtime/skills.db"); const c = d.prepare("SELECT count(*) c FROM route_log").get().c; d.close(); return c; })();
-  const rt = await SD.route("tolong perbaiki bug login yang gagal unit test");
+  const rt = await SD.route("tolong perbaiki bug login yang gagal unit test", { useL1: "always" });
   const after = (() => { const d = SD.openDb("runtime/skills.db"); const c = d.prepare("SELECT count(*) c FROM route_log").get().c; d.close(); return c; })();
   ok("route: 9router mati → fallback deterministik ≤5 + route_log tercatat", rt.l1.status === "unavailable" && rt.picked.length > 0 && rt.picked.length <= 5 && after === before + 1);
   delete process.env.SW_9ROUTER_URL;
+  {
+    // v0.3.1: enrichment, trigram, gating L1, timeout keras, cache rute
+    const d = SD.openDb("runtime/skills.db");
+    const en = d.prepare("SELECT json FROM skill_enrich").all().map((r) => JSON.parse(r.json));
+    ok(`enrich: ${en.length} skill aktif, masing2 3–5 contoh + alias`, en.length === 86 && en.every((e) => e.examples.length >= 3 && e.examples.length <= 5 && e.aliases_en.length > 0));
+    const L = await import("../router/l0.mjs");
+    const r1 = L.searchL0(d, "deploi ke vercle"); d.close();
+    ok("L0 trigram: typo 'deploi ke vercle' → vercel-ops top1", r1.candidates[0]?.name === "vercel-ops");
+    const rc = await SD.route("jurnal umum dan buku besar toko kelontong", { log: false });
+    ok("gating L1: query yakin → L1 skipped (tanpa panggilan model)", rc.l1.status === "skipped" && rc.picked[0] === "akuntansi-umkm");
+    process.env.SW_9ROUTER_URL = "http://10.255.255.1:9/v1"; process.env.SW_L1_TIMEOUT_MS = "3000";
+    const t0 = Date.now(); const rto = await SD.route("tolong perbaiki bug login yang gagal unit test", { useL1: "always", log: false });
+    ok("L1 timeout keras ≤3.5 s → fallback L0", Date.now() - t0 < 3500 && rto.picked.length > 0 && rto.l1.status !== "ok");
+    delete process.env.SW_9ROUTER_URL; delete process.env.SW_L1_TIMEOUT_MS;
+    const cf = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "rcache-")), "router-cache.json");
+    process.env.SW_ROUTE_CACHE = cf;
+    await SD.route("Jurnal umum, dan buku besar!", { log: false });
+    const c2 = await SD.route("jurnal umum dan buku besar", { log: false });
+    SD.routeCacheSet("x|y", "hash-lama", { picked: ["z"] });
+    ok("cache rute: query ternormalisasi hit; katalog beda → miss", c2.cached === true && SD.routeCacheGet("x|y", "hash-baru") === null && SD.routeCacheGet("x|y", "hash-lama") !== null);
+    delete process.env.SW_ROUTE_CACHE; fs.rmSync(path.dirname(cf), { recursive: true, force: true });
+  }
   // hash berubah → STALE
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "swidx-"));
   fs.cpSync(".opencode/skills", path.join(tmp, ".opencode/skills"), { recursive: true });

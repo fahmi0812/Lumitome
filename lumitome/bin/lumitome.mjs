@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
 const REPO = path.resolve(ROOT, "..");                 // repo Swanwright
-const VERSION = "0.3.0";
+const VERSION = "0.3.1";
 const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
 const env = { ...process.env };
 const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process.exit(code); };
@@ -129,8 +129,11 @@ if (sub === "run" && (env.LUMI_SKILLS ?? "auto") === "auto" && fs.existsSync(pat
     try {
       const SD = await import(path.join(REPO, "router", "skill-db.mjs"));
       const saved = process.cwd(); process.chdir(REPO);
-      if (env.LUMI_ROUTER_L1 === "1") { process.env.SW_9ROUTER_URL ||= env.LUMI_9ROUTER_URL || "http://127.0.0.1:20128/v1"; }
-      const r = await SD.route(prompt, { root: REPO, useL1: env.LUMI_ROUTER_L1 === "1", log: false });
+      // L1 = cadangan: "auto" (default) hanya saat confidence L0 rendah, timeout keras 3 s; "always"/"1"; "0" = mati
+      const l1m = String(env.LUMI_ROUTER_L1 ?? "auto"), useL1 = l1m === "0" ? false : (l1m === "always" || l1m === "1") ? "always" : true;
+      if (useL1) process.env.SW_9ROUTER_URL ||= env.LUMI_9ROUTER_URL || "http://127.0.0.1:20128/v1";
+      process.env.SW_ROUTE_CACHE ||= path.join(HOME, "router-cache.json");
+      const r = await SD.route(prompt, { root: REPO, useL1, log: false });
       process.chdir(saved);
       finalCfg.permissions.push({ action: "skill", resource: "*", effect: "deny" }, ...r.picked.map((n) => ({ action: "skill", resource: n, effect: "allow" })));
       skillNote = `skills=${r.picked.join(",") || "-"} (L1=${r.l1.status})`;

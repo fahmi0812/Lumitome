@@ -9,8 +9,9 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { createRequire } from "node:module";
 import { layer0, KEYWORD_RULES } from "./layer0-regex.mjs";
+import { enrichSkill, loadCurated } from "./enrich.mjs";
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 export const SECTORS = ["coding", "finance", "media", "penulisan", "riset", "security"];
 export const DEFAULT_DB = "runtime/skills.db";
 export const RRF_K = 60;
@@ -51,7 +52,8 @@ export function sanitize(s, max = 300) {
 // ---------- tokenisasi (ID+EN) ----------
 const STOP = new Set(("yang dan di ke dari untuk dengan ini itu atau pada dalam akan bisa tolong buat buatkan saya kami kamu " +
   "agar jadi juga sebuah ada tidak sudah lalu lebih the a an and or of to in for on with is are be this that it my me please " +
-  "make use using from by as at into how what can do kasus").split(/\s+/));
+  "make use using from by as at into how what can do kasus bantu perlu proyek kerjakan sekarang help need project cara bagaimana " +
+  "biar supaya mau ingin minta coba gimana apa").split(/\s+/));
 export function tokens(q) {
   return [...new Set(String(q || "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
     .split(/[^a-z0-9]+/).filter((t) => t.length >= 2 && !STOP.has(t) && !/^\d+$/.test(t)))].slice(0, 24);
@@ -170,6 +172,7 @@ export function sourceHash(root = ".") {
   h.update(`schema:${SCHEMA_VERSION}|embed:${embedProvider()}|`);
   h.update(fs.readFileSync(path.join(root, "router/skills-registry.json")));
   h.update(fs.readFileSync(path.join(root, "router/layer0-regex.mjs")));
+  for (const f of ["router/skills-aliases.json", "router/enrich.mjs"]) if (fs.existsSync(path.join(root, f))) h.update(fs.readFileSync(path.join(root, f)));
   for (const s of skills) h.update(`${s.name}:${s.status}:${s.content_sha}\n`);
   return { hash: h.digest("hex"), skills };
 }
@@ -185,6 +188,8 @@ CREATE TABLE skill (
   shadowed_by INTEGER REFERENCES skill(id), original_name TEXT);
 CREATE INDEX skill_sector ON skill(sector, status);
 CREATE VIRTUAL TABLE skill_fts USING fts5(name, triggers, short, description, tokenize='unicode61 remove_diacritics 2');
+CREATE VIRTUAL TABLE skill_fts2 USING fts5(name, aliases, synonyms, examples, short, description, tokenize='unicode61 remove_diacritics 2');
+CREATE TABLE skill_enrich (skill_id INTEGER PRIMARY KEY, json TEXT NOT NULL);
 CREATE TABLE agent_policy (agent TEXT, pattern TEXT, effect TEXT CHECK (effect IN ('allow','deny','ask')), priority INTEGER, PRIMARY KEY (agent, pattern));
 CREATE TABLE allowed_skill (agent TEXT, skill_id INTEGER REFERENCES skill(id), effect TEXT, PRIMARY KEY (agent, skill_id));
 CREATE TABLE skill_edge (src INTEGER, dst INTEGER, kind TEXT CHECK (kind IN ('duplicate','shadows','complements','conflicts')), weight REAL, PRIMARY KEY (src, dst, kind));
@@ -212,6 +217,9 @@ export async function buildIndex({ root = ".", file = DEFAULT_DB, quiet = false 
   const ins = db.prepare(`INSERT INTO skill (id,name,sector,pack,status,description,short,triggers,path,content_sha,upstream_url,upstream_sha,license,has_scripts,trust,requires_consent,original_name)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`);
   const insF = db.prepare("INSERT INTO skill_fts (rowid,name,triggers,short,description) VALUES (?,?,?,?,?)");
+  const curated = loadCurated(root);
+  const insF2 = db.prepare("INSERT INTO skill_fts2 (rowid,name,aliases,synonyms,examples,short,description) VALUES (?,?,?,?,?,?,?)");
+  const insE = db.prepare("INSERT INTO skill_enrich VALUES (?,?)");
   const insV = dim ? db.prepare("INSERT INTO skill_vec (rowid, embedding) VALUES (?, ?)") : null;
   db.exec("BEGIN");
   skills.forEach((s, i) => {
@@ -219,6 +227,11 @@ export async function buildIndex({ root = ".", file = DEFAULT_DB, quiet = false 
     ins.run(id, s.name, s.sector, s.pack, s.status, s.description, s.short, s.triggers, s.path, s.content_sha, s.upstream_url, s.upstream_sha, s.license, s.has_scripts,
       s.status === "disabled" ? "quarantined" : "reviewed", s.requires_consent, s.original_name);
     insF.run(id, s.name.replace(/-/g, " "), s.triggers, sanitize(s.short), sanitize(s.description, 1024));
+    if (s.status === "active") {
+      const e = enrichSkill(s, curated);
+      insE.run(id, JSON.stringify(e));
+      insF2.run(id, s.name.replace(/-/g, " "), [...e.aliases_id, ...e.aliases_en, s.triggers].join(" ; "), e.synonyms.join(" "), e.examples.join(" ; "), sanitize(s.short), sanitize(s.description, 1024));
+    }
     if (insV) insV.run(BigInt(id), new Uint8Array(vectors[i].buffer));
   });
   // dedup: deskripsi identik (setelah normalisasi) → duplikat; skill aktif = kanonik
@@ -371,7 +384,7 @@ export function parseSelection(txt) {
   throw new SyntaxError("objek JSON tidak tertutup");
 }
 export function routerKey() { return process.env.SW_9ROUTER_KEY || process.env.NINEROUTER_API_KEY || process.env.LUMI_9ROUTER_KEY || ""; }
-export async function selectL1(prompt, candidates, { root = "." } = {}) {
+export async function selectL1(prompt, candidates, { root = ".", timeoutMs } = {}) {
   const base = process.env.SW_9ROUTER_URL || process.env.LUMI_9ROUTER_URL || "http://127.0.0.1:20128/v1";
   const model = process.env.SW_ROUTER_MODEL || "ag/gemini-3.8-flash-high";
   const key = routerKey();
@@ -393,7 +406,7 @@ export async function selectL1(prompt, candidates, { root = "." } = {}) {
   const t0 = performance.now();
   try {
     const r = await fetch(`${base}/chat/completions`, {
-      method: "POST", signal: AbortSignal.timeout(Number(process.env.SW_L1_TIMEOUT_MS || 12000)),
+      method: "POST", signal: AbortSignal.timeout(timeoutMs || Number(process.env.SW_L1_TIMEOUT_MS || 3000)),
       headers: { "content-type": "application/json", accept: "application/json", "user-agent": "swanwright-router/0.2", authorization: `Bearer ${key || "9router"}` },
       body: JSON.stringify({ model, stream: false, temperature: 0, max_tokens: 400, response_format: { type: "json_object" }, messages: [{ role: "system", content: sys }, { role: "user", content: user }] }),
     });
@@ -421,20 +434,27 @@ export const TRADING_RE = /\b(trading|trader|backtest\w*|scalping|forex|sinyal (
 /** Alur penuh: Layer-0 → SQL filter → hybrid → RRF → dedup → top-N → L1 (atau fallback deterministik) → route_log. */
 export async function route(prompt, { root = ".", file = DEFAULT_DB, useL1 = true, log = true, n } = {}) {
   const l0 = layer0(prompt);
+  const L0 = { hit: l0.hit, sektor: l0.sektor || null, consent: !!l0.requiresConsent };
   // kebijakan: tidak ada skill/MCP trading → permintaan trading tidak memuat skill finance apa pun
-  if (TRADING_RE.test(prompt)) return { l0: { hit: l0.hit, sektor: l0.sektor || null, consent: !!l0.requiresConsent }, candidates: [], picked: [], l1: { status: "skipped" }, blocked: "trading", retr_ms: 0 };
+  if (TRADING_RE.test(prompt)) return { l0: L0, candidates: [], picked: [], l1: { status: "skipped" }, blocked: "trading", retr_ms: 0, conf: 0 };
   const db = openDb(path.join(root, file));
-  const sectors = l0.sektor ? [l0.sektor] : [];
-  let res = await searchSkills(db, buildQueries(prompt, l0), { sectors, n, hints: l0.skillsHint || [] });
-  let l1 = { status: "skipped" };
-  if (useL1 && res.candidates.length) l1 = await selectL1(prompt, res.candidates, { root });
-  // need_more → perlebar SEKALI (N×2, tanpa filter sektor), lalu pilih ulang (maks 2 panggilan L1)
-  if (useL1 && l1.status === "ok" && l1.need_more && !l1.skills.length) {
-    const wide = await searchSkills(db, buildQueries(prompt, l0), { sectors: [], n: (n || res.candidates.length || 12) * 2, hints: l0.skillsHint || [] });
-    if (wide.candidates.length > res.candidates.length) { const l1b = await selectL1(prompt, wide.candidates, { root }); if (l1b.status === "ok") { res = wide; l1 = { ...l1b, widened: true, ms: (l1.ms || 0) + (l1b.ms || 0) }; } }
+  const catalog = db.prepare("SELECT v FROM meta WHERE k='source_hash'").get()?.v || "";
+  const mode = useL1 === "always" ? "always" : useL1 ? "auto" : "off";
+  const ck = `${mode}|${normQuery(prompt)}`;
+  const hit = routeCacheGet(ck, catalog);
+  if (hit) { db.close(); return { ...hit, l0: L0, cached: true, retr_ms: 0 }; }
+  const { searchL0, pickL0 } = await import("./l0.mjs");
+  const res = searchL0(db, prompt, { sectors: l0.sektor ? [l0.sektor] : [], hints: l0.skillsHint || [], n: n || 12 });
+  const confTh = Number(process.env.SW_L1_CONF || 0.15);
+  const low = !res.candidates.length || res.conf < confTh;
+  let l1 = { status: "skipped", reason: low ? "no-candidates" : "confident" };
+  if (res.candidates.length && (mode === "always" || (mode === "auto" && low))) {
+    const tk = Number(process.env.SW_L1_TOPK || 8), ms = Number(process.env.SW_L1_TIMEOUT_MS || 3000);
+    let timer; const to = new Promise((r) => { timer = setTimeout(() => r({ status: "timeout", ms }), ms); });
+    l1 = await Promise.race([selectL1(prompt, res.candidates.slice(0, tk), { root, timeoutMs: ms }), to]); clearTimeout(timer);
   }
-  const picked = l1.status === "ok" ? l1.skills : fallbackPick(res.candidates);
-  const out = { l0: { hit: l0.hit, sektor: l0.sektor || null, consent: !!l0.requiresConsent }, candidates: res.candidates, picked, l1, retr_ms: res.retr_ms, allowed: res.allowedCount, vec: res.vec };
+  const picked = l1.status === "ok" && l1.skills.length ? l1.skills : pickL0(res.candidates);
+  const out = { l0: L0, candidates: res.candidates, picked, l1, conf: res.conf, fixes: res.fixes, retr_ms: res.retr_ms };
   if (log) {
     db.prepare(`INSERT INTO route_log (ts,session,task_hash,l0_sector,l0_explicit,candidates,picked,loaded,l1_model,l1_status,l1_ms,retr_ms)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(new Date().toISOString(), process.env.SW_SESSION || null, sha256(prompt).slice(0, 16), l0.sektor || null,
@@ -442,5 +462,32 @@ export async function route(prompt, { root = ".", file = DEFAULT_DB, useL1 = tru
       l1.model || null, l1.status, l1.ms ?? null, Math.round(res.retr_ms));
   }
   db.close();
+  // cache hanya hasil final yang stabil (L0 yakin, atau L1 ok); timeout/unavailable tidak di-cache
+  if (l1.status === "ok" || l1.status === "skipped") routeCacheSet(ck, catalog, { candidates: out.candidates, picked, l1: { ...l1, ms: 0 }, conf: res.conf, fixes: res.fixes });
   return out;
+}
+
+/** Normalisasi query untuk kunci cache: lowercase, tanpa diakritik/tanda baca, spasi tunggal. */
+export function normQuery(q) { return String(q).toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim(); }
+function routeCacheFile() {
+  if (process.env.SW_ROUTE_CACHE) return process.env.SW_ROUTE_CACHE === "0" ? null : process.env.SW_ROUTE_CACHE;
+  return process.env.LUMI_HOME ? path.join(process.env.LUMI_HOME, "router-cache.json") : null;
+}
+function routeCacheRead(f) { try { return JSON.parse(fs.readFileSync(f, "utf8")); } catch { return {}; } }
+export function routeCacheGet(key, catalog) {
+  const f = routeCacheFile(); if (!f) return null;
+  const e = routeCacheRead(f)[sha256(key).slice(0, 32)];
+  const ttl = Number(process.env.SW_ROUTE_CACHE_TTL_S || 604800) * 1000;
+  if (!e || e.catalog !== catalog || Date.now() - e.ts > ttl) return null;
+  return e.v;
+}
+export function routeCacheSet(key, catalog, v) {
+  const f = routeCacheFile(); if (!f) return;
+  try {
+    const c = routeCacheRead(f); const now = Date.now(), ttl = Number(process.env.SW_ROUTE_CACHE_TTL_S || 604800) * 1000;
+    for (const [k, e] of Object.entries(c)) if (e.catalog !== catalog || now - e.ts > ttl) delete c[k];
+    c[sha256(key).slice(0, 32)] = { ts: now, catalog, v };
+    const ks = Object.keys(c); for (const k of ks.slice(0, Math.max(0, ks.length - 1000))) delete c[k];
+    fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f + ".tmp", JSON.stringify(c), { mode: 0o600 }); fs.renameSync(f + ".tmp", f);
+  } catch {}
 }

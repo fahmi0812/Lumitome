@@ -34,7 +34,9 @@ Skill: harness memakai skill & DB router miliknya sendiri (`config/skills` → `
 | `LUMI_TRUST_PROJECT` | `0` | `1` = muat config/plugin/agent/MCP proyek (berbahaya untuk repo asing) |
 | `LUMI_MCP` | `codemem,skills-coding` | MCP proyek yang tetap aktif (hanya bila trusted); `all` |
 | `LUMI_SKILLS` | `auto` | `auto` = scoping router; `all` = semua skill terlihat |
-| `LUMI_ROUTER_L1` | `0` | `1` = pilih skill via LLM L1 (lambat ±8 s, presisi lebih tinggi, di-cache) |
+| `LUMI_ROUTER_L1` | `auto` | `auto` = LLM L1 hanya bila confidence L0 rendah (margin BM25 < `SW_L1_CONF`=0.15 / tanpa hit), timeout keras 3 s lalu L0; `always`/`1` = selalu; `0` = mati |
+| `SW_L1_TIMEOUT_MS` / `SW_L1_TOPK` | `3000` / `8` | timeout keras L1 & jumlah kandidat L0 yang dikirim |
+| `SW_ROUTE_CACHE` / `SW_ROUTE_CACHE_TTL_S` | `$LUMI_HOME/router-cache.json` / `604800` | cache pilihan per query ternormalisasi; invalid otomatis bila katalog (source_hash) berubah; `0` = mati |
 | `LUMI_DEADLINE_MS` | `300000` | batas keras satu `run` → exit 124 |
 | `LUMI_FIRST_OUTPUT_MS` | `90000` | provider diam (tanpa output/aksi) → exit 124 |
 | `LUMI_PREFLIGHT` / `_TIMEOUT_MS` / `_RETRIES` | `1` / `8000` / `2` | cek `GET {baseURL}` sebelum run (status HTTP apa pun = hidup) |
