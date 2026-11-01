@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# lumitome shim: pakai node + engine OpenCode terpin dari LUMI_HOME (~/.lumitome), lalu jalankan wrapper Node.
+set -euo pipefail
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"; DIR="$(dirname "$SELF")"
+LUMI_HOME="${LUMI_HOME:-$HOME/.lumitome}"; SW_HOME="$LUMI_HOME"; export LUMI_HOME SW_HOME
+[ -f "$SW_HOME/env.sh" ] && . "$SW_HOME/env.sh"
+exec node --experimental-strip-types --no-warnings "$DIR/lumitome.mjs" "$@"

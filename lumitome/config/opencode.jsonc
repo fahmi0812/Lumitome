@@ -1,0 +1,22 @@
+// Lumitome — config dasar (dimuat sebagai OPENCODE_CONFIG_DIR oleh bin/lumitome).
+// Override final yang tidak bisa dikalahkan config proyek dikirim wrapper via OPENCODE_CONFIG_CONTENT.
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "9router/ag/gemini-3.8-flash-high",
+  "default_agent": "build",
+  "providers": {
+    "9router": {
+      "name": "9router",
+      "package": "aisdk:@ai-sdk/openai-compatible",
+      "settings": { "baseURL": "{env:LUMI_9ROUTER_URL}", "apiKey": "{env:NINEROUTER_API_KEY}" },
+      "models": { "ag/gemini-3.8-flash-high": { "name": "gemini-3.8-flash-high (9router)" } }
+    }
+  },
+  "compaction": { "auto": true, "keep": { "tokens": 24000 }, "buffer": "20%" },
+  "tool_output": { "max_lines": 400, "max_bytes": 16384 },
+  "permissions": [
+    { "action": "*", "resource": "*", "effect": "allow" },
+    { "action": "external_directory", "resource": "*", "effect": "ask" },
+    { "action": "external_directory", "resource": "/tmp/*", "effect": "allow" }
+  ]
+}

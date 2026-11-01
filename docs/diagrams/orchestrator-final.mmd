@@ -1,0 +1,36 @@
+---
+config:
+  layout: elk
+  flowchart:
+    padding: 16
+---
+flowchart TB
+  A["Tugas masuk"] --> B["Restate niat 1–3 kalimat"]
+  B --> C{"Layer-0 regex<br/>slash / kata kunci"}
+  C -- "/pentest tanpa consent" --> X["Tolak<br/>minta consent + scope"]
+  C -- "sektor + hint" --> D["Filter SQL SEBELUM ranking<br/>status=aktif · pack · sektor · izin"]
+  C -- "tidak kena" --> D2["Filter SQL<br/>semua 82 skill aktif"]
+  D --> E["Query ganda<br/>q0 = tugas · q1 = hint Layer-0"]
+  D2 --> E
+  E --> F["FTS5 BM25<br/>(+ sqlite-vec bila ada embedding)"]
+  F --> G["Gabung RRF k=60<br/>+ pin $nama · dedup duplikat"]
+  G --> H["Kandidat top-24<br/>(batas 16–32)"]
+  H --> I{"9router hidup?"}
+  I -- "ya" --> J["1 panggilan PILIH-SAJA<br/>JSON ≤5 skill ⊆ kandidat"]
+  I -- "tidak" --> K["Fallback deterministik<br/>top-5 retrieval"]
+  J --> L{"skill kosong /<br/>need_more?"}
+  L -- "ya" --> M["Perlebar N sekali<br/>atau tanpa skill"]
+  L -- "tidak" --> N["Catat route_log"]
+  K --> N
+  M --> N
+  N --> O{"Jalur"}
+  O -- "fast-path" --> P["1 sub-agen sektor"]
+  O -- "serial / paralel ≤3" --> P2["Beberapa sub-agen sektor"]
+  P --> Q["Sub-agen: muat ≤5 skill<br/>MCP sektor sendiri saja<br/>skill_search bila kurang"]
+  P2 --> Q
+  Q --> R["Synthesizer"]
+  R --> S{"Done-gate + Scan-gate"}
+  S -- "lolos" --> T["DONE + FACT<br/>(perintah, exit, hash)"]
+  S -- "gagal" --> U{"Gagal ke-3?"}
+  U -- "belum" --> Q
+  U -- "ya" --> V["Anti-spin: berhenti<br/>tanya Fahmi"]

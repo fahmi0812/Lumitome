@@ -1,0 +1,12 @@
+{
+  "$comment": "TEMPLATE (opsional, default MATI). IBM ContextForge (https://github.com/IBM/mcp-context-forge): satu virtual server per sektor dari associated_tools. Impor lewat Admin UI/API ContextForge; [VERIFIKASI] nama field & URL endpoint virtual server di docs versi Anda (https://ibm.github.io/mcp-context-forge/). Token per sektor → env SW_MCP_TOKEN_<SEKTOR>, JANGAN di file ini.",
+  "gateway_url": "http://127.0.0.1:4444",
+  "virtual_servers": [
+    { "name": "sw-coding",    "description": "Swanwright sektor coding",    "associated_tools": ["github.get_file_contents", "github.search_code", "context7.resolve-library-id", "context7.get-library-docs"], "opencode_server": "gw-coding",    "env_token": "SW_MCP_TOKEN_CODING" },
+    { "name": "sw-media",     "description": "Swanwright sektor media/design", "associated_tools": [], "opencode_server": "gw-media", "env_token": "SW_MCP_TOKEN_MEDIA" },
+    { "name": "sw-riset",     "description": "Swanwright sektor riset",     "associated_tools": ["context7.get-library-docs"], "opencode_server": "gw-riset", "env_token": "SW_MCP_TOKEN_RISET" },
+    { "name": "sw-penulisan", "description": "Swanwright sektor penulisan", "associated_tools": [], "opencode_server": "gw-penulisan", "env_token": "SW_MCP_TOKEN_PENULISAN" },
+    { "name": "sw-security",  "description": "Swanwright sektor security (defensif saja)", "associated_tools": [], "opencode_server": "gw-security", "env_token": "SW_MCP_TOKEN_SECURITY" },
+    { "name": "sw-finance",   "description": "Swanwright sektor finance (data read-only, TANPA trading)", "associated_tools": [], "opencode_server": "gw-finance", "env_token": "SW_MCP_TOKEN_FINANCE" }
+  ]
+}

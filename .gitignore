@@ -1,0 +1,15 @@
+node_modules/
+runtime/*.db
+runtime/*.db-*
+runtime/*.sqlite*
+*.log
+.cache/
+.env
+.env.*
+*.bak
+backups/
+.DS_Store
+Thumbs.db
+*.tgz
+Swanwright.zip
+runtime/l1-cache.json

@@ -1,0 +1,9 @@
+[
+ {
+  "RuleID": "github-pat",
+  "File": "src/config.ts",
+  "StartLine": 3,
+  "Secret": "REDACTED",
+  "Fingerprint": "src/config.ts:github-pat:3"
+ }
+]

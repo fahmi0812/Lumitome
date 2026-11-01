@@ -1,0 +1,117 @@
+{
+ "results": [
+  {
+   "source": {
+    "path": "package-lock.json",
+    "type": "lockfile"
+   },
+   "packages": [
+    {
+     "package": {
+      "name": "lodash",
+      "version": "4.17.15",
+      "ecosystem": "npm",
+      "purl": "pkg:npm/lodash@4.17.15?source=PUBLIC_REGISTRY"
+     },
+     "groups": [
+      {
+       "ids": [
+        "GHSA-29mw-wpgm-hmr9"
+       ],
+       "aliases": [
+        "CVE-2020-28500",
+        "GHSA-29mw-wpgm-hmr9"
+       ],
+       "max_severity": "5.3"
+      }
+     ],
+     "vulnerabilities": [
+      {
+       "affected": [
+        {
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "4.0.0"
+            },
+            {
+             "fixed": "4.17.21"
+            }
+           ],
+           "type": "SEMVER"
+          }
+         ]
+        },
+        {
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "4.0.0"
+            },
+            {
+             "fixed": "4.17.21"
+            }
+           ],
+           "type": "SEMVER"
+          }
+         ]
+        },
+        {
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "4.0.0"
+            },
+            {
+             "last_affected": "4.5.1"
+            }
+           ],
+           "type": "SEMVER"
+          }
+         ]
+        },
+        {
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "4.0.0"
+            },
+            {
+             "last_affected": "4.5.1"
+            }
+           ],
+           "type": "SEMVER"
+          }
+         ]
+        },
+        {
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "4.0.0"
+            },
+            {
+             "fixed": "4.17.21"
+            }
+           ],
+           "type": "ECOSYSTEM"
+          }
+         ]
+        }
+       ],
+       "database_specific": {
+        "severity": "MODERATE"
+       },
+       "id": "GHSA-29mw-wpgm-hmr9"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,9 @@
+// fixture sengaja buruk (v0.1.6)
+{
+  "permissions": [{ "action": "shell", "resource": "*", "effect": "allow" }],
+  "mcp": { "servers": {
+    "github": { "type": "remote", "url": "https://api.githubcopilot.com/mcp/", "headers": { "Authorization": "Bearer ghp_FAKEFAKEFAKEFAKE0000" } },
+    "context7": { "type": "local", "command": ["npx", "-y", "@upstash/context7-mcp@latest"] },
+    "kali": { "type": "local", "command": ["kali-mcp"] }
+  } }
+}

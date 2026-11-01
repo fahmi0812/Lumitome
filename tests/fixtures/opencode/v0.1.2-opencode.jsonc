@@ -1,0 +1,45 @@
+// Swanwright OpenCode config — model via 9router only
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "9router/ag/gemini-3.8-flash-high",
+  "provider": {
+    "9router": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "9router",
+      "options": {
+        "baseURL": "http://127.0.0.1:20128/v1",
+        "apiKey": "9router"
+      }
+    }
+  },
+  "permission": {
+    "skill": {
+      "*": "allow",
+      "*offensive*": "ask"
+    }
+  },
+  "mcp": {
+    "timeout": 120000,
+    "servers": {
+      "context7": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "@upstash/context7-mcp@4.4.4"
+        ],
+        "enabled": true
+      },
+      "playwright": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "@playwright/mcp@0.0.83"
+        ],
+        "enabled": false
+      }
+    }
+  },
+  "plugin": [
+    "file://./.opencode/plugins/swanwright"
+  ]
+}

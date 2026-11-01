@@ -1,0 +1,73 @@
+---
+config:
+  layout: elk
+  flowchart:
+    padding: 18
+---
+flowchart TB
+  U["Pengguna (Fahmi)<br/>laptop: Linux / macOS / WSL2"]
+
+  subgraph INST["① Pemasangan — install.sh (idempoten, tanpa ~/.config/opencode)"]
+    direction LR
+    I1["OpenCode v2.2.4<br/>tarball rilis + SHA256SUMS"]
+    I2["Node 22.23.4<br/>node:sqlite + FTS5"]
+    I3["codebase-memory-mcp v0.12.1<br/>checksum · tanpa 'install'"]
+    I4["uv/uvx 0.13.6<br/>markitdown-mcp"]
+    I5["doctor<br/>skill=82 · MCP · plugin"]
+  end
+
+  subgraph OC["② OpenCode v2.2.4 + lapisan .opencode/ (Code Mode aktif)"]
+    direction TB
+    ORC["Orchestrator (primary)<br/>restate → routing → tahan DONE"]
+    SEK["Sub-agen sektor (depth=1)<br/>coding · media · riset · penulisan · security · finance"]
+    AUX["Elephant (spec) · Goldfish (review)<br/>Synthesizer (gabung)"]
+    ORC -- "≤5 skill + sektor" --> SEK
+    ORC -. "tugas kompleks" .-> AUX
+    SEK --> AUX
+  end
+
+  subgraph SQL["③ Skill Query Layer — runtime/skills.db"]
+    direction TB
+    REG["skills-registry + SKILL.md<br/>82 aktif · pack · disabled"]
+    IDX["skill-index.mjs<br/>rebuild bila hash berubah"]
+    DB["skill · skill_fts (BM25)<br/>skill_vec (opsional) · allowed_skill<br/>skill_edge · route_log"]
+    REG --> IDX --> DB
+  end
+
+  subgraph MCP["④ MCP per sektor — deny-by-default"]
+    direction LR
+    M1["context7 · codemem<br/>(aktif)"]
+    M2["playwright · chromedev<br/>markitdown (aktif)"]
+    M3["skills-&lt;sektor&gt;<br/>skill_search read-only"]
+    M4["figma (OAuth) · github (token)<br/>default MATI"]
+    M5["Gateway opsional gw-&lt;sektor&gt;<br/>Docker MCP / ContextForge · MATI"]
+  end
+
+  subgraph GATE["⑤ Pagar & bukti"]
+    direction LR
+    DG["Done-gate<br/>FACT / JUDGMENT"]
+    SG["Scan-gate<br/>osv-scanner + gitleaks"]
+    BW["Sandbox bwrap"]
+    PG["Plugin: blok push main<br/>+ blok cbm install"]
+  end
+
+  R9["9router 127.0.0.1:20128<br/>satu-satunya model"]
+
+  U --> INST
+  INST --> OC
+  U -- "tugas" --> ORC
+  ORC -- "Layer-0 + SQL + RRF" --> DB
+  ORC -- "1 panggilan pilih-saja" --> R9
+  SEK -- "inferensi" --> R9
+  SEK --> M1
+  SEK --> M2
+  SEK -. "butuh skill lain" .-> M3
+  M3 -. "baca" .-> DB
+  SEK -.-> M4
+  SEK -.-> M5
+  AUX --> DG
+  DG --> SG
+  SEK -. "shell" .-> BW
+  SEK -.-> PG
+  DG -- "lolos → hasil" --> U
+  DG -- "route_log" --> DB

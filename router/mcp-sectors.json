@@ -1,0 +1,33 @@
+{
+  "$comment": "Pemetaan MCP per sektor (v0.1.6). Sumber untuk scripts/gen-policy.mjs → frontmatter permissions agent. Deny-by-default (*_*), lalu allow server sektor sendiri. Tanpa Kali, tanpa trading.",
+  "servers": {
+    "context7":   { "kind": "direct", "default": "enabled",  "risk": "R", "src": "https://github.com/upstash/context7" },
+    "codemem":    { "kind": "direct", "default": "enabled",  "risk": "S", "src": "https://github.com/DeusData/codebase-memory-mcp", "pin": "v0.12.1", "ask": ["delete_project", "manage_adr"] },
+    "playwright": { "kind": "direct", "default": "enabled",  "risk": "S", "src": "https://github.com/microsoft/playwright-mcp" },
+    "chromedev":  { "kind": "direct", "default": "enabled",  "risk": "S", "src": "https://github.com/ChromeDevTools/chrome-devtools-mcp" },
+    "markitdown": { "kind": "direct", "default": "enabled",  "risk": "R", "src": "https://github.com/microsoft/markitdown" },
+    "figma":      { "kind": "direct", "default": "disabled", "risk": "S", "src": "https://developers.figma.com/docs/figma-mcp-server/", "needs": "OAuth (opencode mcp auth figma)" },
+    "github":     { "kind": "direct", "default": "disabled", "risk": "T", "src": "https://github.com/github/github-mcp-server", "needs": "env GITHUB_PERSONAL_ACCESS_TOKEN", "ask": ["create_*", "update_*", "merge_*", "push_*", "delete_*", "fork_*", "add_*", "request_*", "assign_*", "dismiss_*", "run_*", "cancel_*", "rerun_*"] }
+  },
+  "sectors": {
+    "coding":    ["context7", "codemem", "github", "playwright", "chromedev"],
+    "media":     ["figma", "playwright", "chromedev"],
+    "riset":     ["context7", "markitdown", "playwright"],
+    "penulisan": ["context7", "markitdown"],
+    "security":  ["context7", "codemem"],
+    "finance":   ["markitdown"]
+  },
+  "agents": {
+    "orchestrator": [],
+    "synthesizer": [],
+    "elephant": ["context7", "codemem"],
+    "goldfish": ["codemem"]
+  },
+  "gateway": {
+    "default": "disabled",
+    "host": "127.0.0.1",
+    "basePort": 8811,
+    "order": ["coding", "media", "riset", "penulisan", "security", "finance"]
+  },
+  "banned": ["kali", "metasploit", "nmap", "sqlmap", "trading", "alpaca", "ccxt", "freqtrade", "binance"]
+}

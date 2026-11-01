@@ -1,0 +1,309 @@
+// Swanwright v0.1.6 — konfigurasi native OpenCode V2 (diuji v2.2.4). Model hanya via 9router.
+// Skema: https://opencode.ai/config.json · MCP: https://opencode.ai/v2/docs/mcp-servers/
+// Rahasia HANYA via {env:NAME}. Tidak ada token di file ini. Lihat docs/MCP.md.
+// MCP deny-by-default (`*_*`), tiap agent sektor meng-allow servernya sendiri (scripts/gen-policy.mjs).
+// Code Mode (default v2: codemode=true) TIDAK dimatikan. Gateway (gw-*) & figma/github: disabled default.
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "9router/ag/gemini-3.8-flash-high",
+  "providers": {
+    "9router": {
+      "name": "9router",
+      "package": "aisdk:@ai-sdk/openai-compatible",
+      "settings": {
+        "baseURL": "{env:SW_9ROUTER_URL}",
+        "apiKey": "{env:SW_9ROUTER_KEY}"
+      },
+      "models": {
+        "ag/gemini-3.8-flash-high": {
+          "name": "gemini-3.8-flash-high (9router)"
+        }
+      }
+    }
+  },
+  "default_agent": "orchestrator",
+  "instructions": [
+    ".opencode/rules/00-doc-code-drift.md",
+    ".opencode/rules/01-hard-constraints.md",
+    ".opencode/rules/02-evidence.md",
+    ".opencode/rules/03-routing.md",
+    ".opencode/rules/04-correct.md",
+    ".opencode/rules/05-sectors.md"
+  ],
+  "permissions": [
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*offensive*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git push *main*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git push *master*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "codebase-memory-mcp install*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "codebase-memory-mcp update*",
+      "effect": "deny"
+    },
+    {
+      "action": "*_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "external_directory",
+      "resource": "*",
+      "effect": "ask"
+    }
+  ],
+  "mcp": {
+    "timeout": {
+      "startup": 60000
+    },
+    "servers": {
+      "context7": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "@upstash/context7-mcp@4.4.4"
+        ],
+        "timeout": {
+          "startup": 120000,
+          "catalog": 120000,
+          "execution": 120000
+        }
+      },
+      "codemem": {
+        "type": "local",
+        "command": [
+          "codebase-memory-mcp"
+        ],
+        "timeout": {
+          "startup": 60000,
+          "catalog": 60000,
+          "execution": 600000
+        }
+      },
+      "playwright": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "@playwright/mcp@0.0.83",
+          "--headless",
+          "--isolated"
+        ],
+        "timeout": {
+          "startup": 120000,
+          "catalog": 120000
+        }
+      },
+      "chromedev": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "chrome-devtools-mcp@1.12.0",
+          "--headless",
+          "--isolated",
+          "--usageStatistics=false"
+        ],
+        "timeout": {
+          "startup": 120000,
+          "catalog": 120000
+        }
+      },
+      "markitdown": {
+        "type": "local",
+        "command": [
+          "uvx",
+          "markitdown-mcp==0.0.1a8"
+        ],
+        "timeout": {
+          "startup": 180000,
+          "catalog": 120000
+        }
+      },
+      "figma": {
+        "type": "remote",
+        "url": "https://mcp.figma.com/mcp",
+        "disabled": true
+      },
+      "github": {
+        "type": "remote",
+        "url": "https://api.githubcopilot.com/mcp/",
+        "oauth": false,
+        "headers": {
+          "Authorization": "Bearer {env:GITHUB_PERSONAL_ACCESS_TOKEN}"
+        },
+        "disabled": true
+      },
+      "skills-coding": {
+        "type": "local",
+        "command": [
+          "node",
+          "--no-warnings",
+          "router/skill-search-mcp.mjs",
+          "--sector",
+          "coding"
+        ],
+        "timeout": {
+          "startup": 30000,
+          "catalog": 30000,
+          "execution": 30000
+        }
+      },
+      "skills-media": {
+        "type": "local",
+        "command": [
+          "node",
+          "--no-warnings",
+          "router/skill-search-mcp.mjs",
+          "--sector",
+          "media"
+        ],
+        "timeout": {
+          "startup": 30000,
+          "catalog": 30000,
+          "execution": 30000
+        }
+      },
+      "skills-riset": {
+        "type": "local",
+        "command": [
+          "node",
+          "--no-warnings",
+          "router/skill-search-mcp.mjs",
+          "--sector",
+          "riset"
+        ],
+        "timeout": {
+          "startup": 30000,
+          "catalog": 30000,
+          "execution": 30000
+        }
+      },
+      "skills-penulisan": {
+        "type": "local",
+        "command": [
+          "node",
+          "--no-warnings",
+          "router/skill-search-mcp.mjs",
+          "--sector",
+          "penulisan"
+        ],
+        "timeout": {
+          "startup": 30000,
+          "catalog": 30000,
+          "execution": 30000
+        }
+      },
+      "skills-security": {
+        "type": "local",
+        "command": [
+          "node",
+          "--no-warnings",
+          "router/skill-search-mcp.mjs",
+          "--sector",
+          "security"
+        ],
+        "timeout": {
+          "startup": 30000,
+          "catalog": 30000,
+          "execution": 30000
+        }
+      },
+      "skills-finance": {
+        "type": "local",
+        "command": [
+          "node",
+          "--no-warnings",
+          "router/skill-search-mcp.mjs",
+          "--sector",
+          "finance"
+        ],
+        "timeout": {
+          "startup": 30000,
+          "catalog": 30000,
+          "execution": 30000
+        }
+      },
+      "gw-coding": {
+        "type": "remote",
+        "url": "http://127.0.0.1:8811/mcp",
+        "oauth": false,
+        "headers": {
+          "Authorization": "Bearer {env:SW_MCP_TOKEN_CODING}"
+        },
+        "disabled": true
+      },
+      "gw-media": {
+        "type": "remote",
+        "url": "http://127.0.0.1:8812/mcp",
+        "oauth": false,
+        "headers": {
+          "Authorization": "Bearer {env:SW_MCP_TOKEN_MEDIA}"
+        },
+        "disabled": true
+      },
+      "gw-riset": {
+        "type": "remote",
+        "url": "http://127.0.0.1:8813/mcp",
+        "oauth": false,
+        "headers": {
+          "Authorization": "Bearer {env:SW_MCP_TOKEN_RISET}"
+        },
+        "disabled": true
+      },
+      "gw-penulisan": {
+        "type": "remote",
+        "url": "http://127.0.0.1:8814/mcp",
+        "oauth": false,
+        "headers": {
+          "Authorization": "Bearer {env:SW_MCP_TOKEN_PENULISAN}"
+        },
+        "disabled": true
+      },
+      "gw-security": {
+        "type": "remote",
+        "url": "http://127.0.0.1:8815/mcp",
+        "oauth": false,
+        "headers": {
+          "Authorization": "Bearer {env:SW_MCP_TOKEN_SECURITY}"
+        },
+        "disabled": true
+      },
+      "gw-finance": {
+        "type": "remote",
+        "url": "http://127.0.0.1:8816/mcp",
+        "oauth": false,
+        "headers": {
+          "Authorization": "Bearer {env:SW_MCP_TOKEN_FINANCE}"
+        },
+        "disabled": true
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+# Allowlist osv-scanner (dibaca otomatis dari root proyek).
+# Setiap entri WAJIB punya `reason` (dicek `npm run validate`) dan sebaiknya `ignoreUntil`.
+# Contoh:
+# [[IgnoredVulns]]
+# id = "GHSA-xxxx-xxxx-xxxx"
+# ignoreUntil = 2027-01-31
+# reason = "Tidak terjangkau: fungsi rentan tidak dipanggil; tiket #123"

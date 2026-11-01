@@ -1,0 +1,13 @@
+# Konfigurasi gitleaks (dibaca otomatis dari root proyek). Mewarisi rule bawaan.
+[extend]
+useDefault = true
+
+# Allowlist: setiap [[allowlists]] WAJIB punya `description` berisi alasan (dicek `npm run validate`).
+# Contoh:
+# [[allowlists]]
+# description = "Fixture tes palsu, bukan secret nyata"
+# paths = ['''tests/fixtures/.*''']
+
+[[allowlists]]
+description = "Payload/contoh dokumentasi pentest yang di-vendor di pack red-team (nonaktif), bukan kredensial nyata"
+paths = ['''^packs/red-team/''']

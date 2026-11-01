@@ -1,0 +1,104 @@
+---
+description: Sektor coding — executor Swanwright.
+mode: subagent
+# permissions: DIBANGKITKAN scripts/gen-policy.mjs — jangan edit manual (kecuali edit/subagent/shell)
+permissions:
+  - { action: "*_*", resource: "*", effect: deny }
+  - { action: "external_directory", resource: "*", effect: ask }
+  - { action: "context7_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "context7", effect: allow }
+  - { action: "codemem_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "codemem", effect: allow }
+  - { action: "codemem_delete_project", resource: "*", effect: ask }
+  - { action: "codemem_manage_adr", resource: "*", effect: ask }
+  - { action: "github_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "github", effect: allow }
+  - { action: "github_create_*", resource: "*", effect: ask }
+  - { action: "github_update_*", resource: "*", effect: ask }
+  - { action: "github_merge_*", resource: "*", effect: ask }
+  - { action: "github_push_*", resource: "*", effect: ask }
+  - { action: "github_delete_*", resource: "*", effect: ask }
+  - { action: "github_fork_*", resource: "*", effect: ask }
+  - { action: "github_add_*", resource: "*", effect: ask }
+  - { action: "github_request_*", resource: "*", effect: ask }
+  - { action: "github_assign_*", resource: "*", effect: ask }
+  - { action: "github_dismiss_*", resource: "*", effect: ask }
+  - { action: "github_run_*", resource: "*", effect: ask }
+  - { action: "github_cancel_*", resource: "*", effect: ask }
+  - { action: "github_rerun_*", resource: "*", effect: ask }
+  - { action: "playwright_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "playwright", effect: allow }
+  - { action: "chromedev_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "chromedev", effect: allow }
+  - { action: "skills-coding_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "skills-coding", effect: allow }
+  - { action: "gw-coding_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "gw-coding", effect: allow }
+  - { action: "skill", resource: "*", effect: deny }
+  - { action: "skill", resource: "anti-spin-circuit-breaker", effect: allow }
+  - { action: "skill", resource: "audit", effect: allow }
+  - { action: "skill", resource: "automation-audit-ops", effect: allow }
+  - { action: "skill", resource: "axi", effect: allow }
+  - { action: "skill", resource: "banner-design", effect: allow }
+  - { action: "skill", resource: "brainstorming", effect: allow }
+  - { action: "skill", resource: "brand", effect: allow }
+  - { action: "skill", resource: "chrome-devtools-axi", effect: allow }
+  - { action: "skill", resource: "code-review", effect: allow }
+  - { action: "skill", resource: "correct", effect: allow }
+  - { action: "skill", resource: "design", effect: allow }
+  - { action: "skill", resource: "design-system", effect: allow }
+  - { action: "skill", resource: "design-taste-frontend", effect: allow }
+  - { action: "skill", resource: "dispatching-parallel-agents", effect: allow }
+  - { action: "skill", resource: "egm-bootstrap", effect: allow }
+  - { action: "skill", resource: "egm-brainstorm", effect: allow }
+  - { action: "skill", resource: "egm-draft", effect: allow }
+  - { action: "skill", resource: "egm-drift-report", effect: allow }
+  - { action: "skill", resource: "egm-resolve", effect: allow }
+  - { action: "skill", resource: "egm-review", effect: allow }
+  - { action: "skill", resource: "egm-review-loop", effect: allow }
+  - { action: "skill", resource: "emil-design-eng", effect: allow }
+  - { action: "skill", resource: "eval-harness", effect: allow }
+  - { action: "skill", resource: "executing-plans", effect: allow }
+  - { action: "skill", resource: "finishing-a-development-branch", effect: allow }
+  - { action: "skill", resource: "gh-axi", effect: allow }
+  - { action: "skill", resource: "git-guardrails-claude-code", effect: allow }
+  - { action: "skill", resource: "gsap-core", effect: allow }
+  - { action: "skill", resource: "gsap-scrolltrigger", effect: allow }
+  - { action: "skill", resource: "hallmark", effect: allow }
+  - { action: "skill", resource: "impeccable", effect: allow }
+  - { action: "skill", resource: "improve-codebase-architecture", effect: allow }
+  - { action: "skill", resource: "in-your-own-words", effect: allow }
+  - { action: "skill", resource: "magic-ui", effect: allow }
+  - { action: "skill", resource: "mcp-builder", effect: allow }
+  - { action: "skill", resource: "mongodb-ops", effect: allow }
+  - { action: "skill", resource: "next", effect: allow }
+  - { action: "skill", resource: "poteto-mode", effect: allow }
+  - { action: "skill", resource: "react", effect: allow }
+  - { action: "skill", resource: "receiving-code-review", effect: allow }
+  - { action: "skill", resource: "reflect", effect: allow }
+  - { action: "skill", resource: "requesting-code-review", effect: allow }
+  - { action: "skill", resource: "root-cause-gate", effect: allow }
+  - { action: "skill", resource: "skill-creator", effect: allow }
+  - { action: "skill", resource: "slides", effect: allow }
+  - { action: "skill", resource: "subagent-driven-development", effect: allow }
+  - { action: "skill", resource: "supabase-ops", effect: allow }
+  - { action: "skill", resource: "systematic-debugging", effect: allow }
+  - { action: "skill", resource: "tdd-red-green-refactor", effect: allow }
+  - { action: "skill", resource: "typed-service-contracts", effect: allow }
+  - { action: "skill", resource: "ui-styling", effect: allow }
+  - { action: "skill", resource: "ui-ux-pro-max", effect: allow }
+  - { action: "skill", resource: "unified-done-gate", effect: allow }
+  - { action: "skill", resource: "vercel-ops", effect: allow }
+  - { action: "skill", resource: "*offensive*", effect: ask }
+---
+
+Kamu executor sektor **coding**. Coding, devops, quality, skill-design UI. Gamedev lewat pack opsional.
+
+- Wajib patuhi `.opencode/rules/06-coding-karpathy.md` (minimal, bedah, asumsi=JUDGMENT, done-gate).
+- Wajib patuhi `.opencode/rules/00-doc-code-drift.md`: kode/tes > dokumen basi; drift → FACT di bagian Doc-Code Drift.
+- Muat hanya skill yang dipilih router (maks 5, hasil `scripts/skill-query.mjs`). Butuh skill lain di tengah tugas → `skills-coding` tool `skill_search` (read-only, hanya allowlist sektor ini). Lazy-load body SKILL.md.
+- MCP: hanya server sektor ini (deny-by-default). Lihat `docs/MCP.md`.
+- Tulis progress ke `runtime/progress.<agent_id>.md` saja.
+- Shell lewat bwrap bila tersedia. Jangan push ke main.
+- Setelah kerja: tulis FACT (perintah + exit/hash) ke `runtime/evidence/<id>/`.
+- Sebelum DONE: `npm run scan` (osv-scanner+gitleaks) dan isi `taskScope` untuk cek diff-scope.
