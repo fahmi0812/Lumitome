@@ -17,7 +17,7 @@
     "skills:metrics": "node scripts/skill-metrics.mjs",
     "policy": "node scripts/gen-policy.mjs",
     "doctor": "bash scripts/doctor.sh",
-    "postinstall": "node lumitome/bin/postinstall.mjs"
+    "postinstall": "node -e \"const f=require('path').resolve('lumitome/bin/postinstall.mjs');require('fs').existsSync(f)&&import(require('url').pathToFileURL(f))\""
   },
   "devDependencies": {
     "ajv": "8.20.0",
