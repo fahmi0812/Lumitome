@@ -1,154 +1,123 @@
 <div align="center">
 
-<img src="assets/brand/banner-1600x900.png" alt="Lumitome — the book of light for your AI agent" width="100%"/>
+<img src="assets/brand/banner-1600x900.png" alt="Lumitome banner" width="100%"/>
 
 <br/>
 
-<img src="assets/brand/icon-256.png" alt="Lumitome emblem: six-leaf golden clover" width="96"/>
+<img src="assets/brand/icon-256.png" alt="Lumitome icon" width="96"/>
 
 # Lumitome
 
-**A safe-by-default AI coding CLI, built on a pinned OpenCode engine.**
-*Lumi* = light · *tome* = book — “the book of light”.
-
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.1-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.2-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
-![Language](https://img.shields.io/github/languages/top/fahmi0812/Lumitome?color=c9962e)
-
-[What is it](#-what-is-lumitome) · [Features](#-features) · [How it works](#-how-it-works) · [Quick start](#-quick-start) · [Structure](#-project-structure) · [Roadmap](#-roadmap) · [Bahasa Indonesia](#-ringkasan-bahasa-indonesia)
 
 </div>
 
----
+Lumitome is a coding assistant that runs in your terminal. It is built on OpenCode, locked to version 2.2.4, and it runs separately from any OpenCode you already have installed.
 
-## ✦ What is Lumitome
+You give it a task, such as "fix the failing tests". It reads your code, edits files, and runs commands to get it done.
 
-Lumitome is a command-line AI assistant for coding. You type a task (for example *“fix the failing tests”*), and it plans, edits files, and runs commands for you.
+## Install
 
-Under the hood it runs **OpenCode v2.2.4**, locked to an exact version and checked with SHA256, plus the **Swanwright harness**: a set of guards that keep the AI safe and honest. The model provider is **9router**.
-
-*(Formerly known as “Swanforge”.)*
-
-## ✦ Why
-
-AI agents are powerful, but they can read your secrets, delete files, push to `main`, or claim “done” when tests still fail. Lumitome is built so that **the safe choice is the default** and **“done” has to be proven**.
-
-## ✦ Features
-
-These all exist in the code today.
-
-| | Feature | In plain words |
-|---|---|---|
-| 🔒 | **Isolated engine** | The engine lives in `~/.lumitome/bin/opencode`, not on your global PATH. Your own OpenCode config, data, sessions and `auth.json` are never read or written. |
-| 📌 | **No auto-update** | The engine version is pinned. It only changes when you run `lumitome upgrade-engine <version> --sha256 <hash>` and confirm. |
-| 🛡️ | **Untrusted repos stay untrusted** | Project config, plugins, agents and MCP servers are ignored unless you set `LUMI_TRUST_PROJECT=1`. |
-| 🧱 | **Guard + sandbox** | Reading `.env`/secret files is blocked, `rm -rf` outside the workspace is blocked, force-push / push to main is blocked. Shell commands run inside `bwrap` (read-only filesystem except the workspace, clean environment). |
-| ✅ | **Done means proven** | A *done-gate* checks the real exit code of the last test run (even when hidden behind `\|\| true` or pipes). *Anti-spin* stops repeated failing actions. A run stops with exit `124` if the provider goes silent (≤90 s) or after a 5-minute deadline. |
-| 📚 | **Focused skills** | 86 active skills (coding, research, writing, media, security, basic finance). A router picks at most 3 per task, using a local search index (BM25 + trigram) with an optional LLM fallback. No trading skills. |
-
-## ✦ How it works
-
-```mermaid
-flowchart LR
-    U["You: lumitome run &quot;task&quot;"] --> W["lumitome wrapper<br/>(isolated env, pinned engine)"]
-    W --> R["Skill router<br/>picks ≤3 skills"]
-    W --> E["OpenCode v2.2.4<br/>(engine)"]
-    R --> E
-    E -->|every tool call| G["Guard + bwrap sandbox"]
-    G --> P["9router<br/>(AI model)"]
-    E --> D{"Done-gate:<br/>tests really pass?"}
-    D -->|yes| OK["✔ Finished"]
-    D -->|no| E
-```
-
-More detail: [`ARCHITECTURE.md`](ARCHITECTURE.md), [`docs/ROUTING.md`](docs/ROUTING.md), [`docs/harness/SWANWRIGHT-README.md`](docs/harness/SWANWRIGHT-README.md).
-
-## ✦ Quick start
-
-Requirements: Linux, `bash`, `curl`, Node.js ≥ 22.6, and an OpenAI- or Anthropic-compatible endpoint (e.g. 9router).
+You need Linux, `bash`, `curl`, and Node.js 22.6 or newer.
 
 ```bash
-# 1. Install (into ~/.lumitome, plus a launcher at ~/.local/bin/lumitome)
 curl -fsSL https://raw.githubusercontent.com/fahmi0812/Lumitome/main/install.sh | bash
-
-# 2. Open it (no environment variables needed)
-lumitome
-
-# 3. Connect a provider: press  c + Enter  at the prompt, or run
-lumitome connect      # Custom OpenAI-compatible / Anthropic-compatible: name, base URL, API key
 ```
 
-Models are detected automatically (`GET {base}/models`) and appear in `/model`. Built-in OpenCode providers stay available via `/connect` inside the TUI. Headless: `lumitome run "fix the failing tests"`.
+This puts everything in `~/.lumitome` and adds a `lumitome` command in `~/.local/bin`.
 
-Manage providers: `lumitome connect --list`, `lumitome connect --remove <name>`, `lumitome models --refresh`. Keys are stored in `~/.lumitome/credentials.json` (mode 0600) and are never printed. `NINEROUTER_API_KEY` / `LUMI_KEY_<NAME>` environment variables still work as overrides.
+## First run
 
-**Updating:** `lumitome update --check` shows the current vs latest release. `lumitome update` downloads the tag, verifies it, and swaps it in atomically with a backup (`lumitome update --rollback` undoes it). The pinned OpenCode engine is never changed by `update`; use `lumitome upgrade-engine`. Coming from v0.3.1 (no `update` command yet)? Re-run the install one-liner once.
+Start it:
 
-Uninstall (removes only `~/.lumitome` and the launcher; your OpenCode stays untouched):
+```bash
+lumitome
+```
+
+Then connect an AI provider. Press `c` and Enter at the prompt, or run:
+
+```bash
+lumitome connect
+```
+
+It asks for a name, a base URL, and an API key. Any service that works like the OpenAI API or the Anthropic API will do. Lumitome finds the provider's models by itself. Pick one with `/model`.
+
+Other provider commands:
+
+- `lumitome connect --list` shows your providers.
+- `lumitome connect --remove <name>` removes one.
+- `lumitome models --refresh` looks up the model list again.
+
+Your keys are saved in `~/.lumitome/credentials.json`. Only your user can read that file, and Lumitome never prints the keys.
+
+To run one task without the interactive screen:
+
+```bash
+lumitome run "fix the failing tests"
+```
+
+## Updating
+
+```bash
+lumitome update --check     # is there a newer version?
+lumitome update             # install it
+lumitome update --rollback  # go back to the version you had before
+```
+
+Lumitome does not update itself. It only updates when you run `lumitome update`. That command does not change the OpenCode version. On v0.3.1, which has no `update` command, run the install line again once.
+
+## What it does differently
+
+- **It asks before risky actions, not before every step.** For example, deleting files outside your project, or pushing to the `main` branch, is stopped.
+- **It keeps your secrets in.** It will not read `.env` files or other secret files, and it will not send them anywhere.
+- **It checks its work before saying "done".** It looks at the real result of the last test run. If the tests failed, the task is not done.
+- **It leaves your own OpenCode alone.** Lumitome keeps its own copy of OpenCode in `~/.lumitome`. It does not read or change your OpenCode settings, sessions, or saved logins.
+- **It does not trust a project's own settings by default.** Plugins and settings that come with a cloned project are ignored unless you turn them on with `LUMI_TRUST_PROJECT=1`.
+
+## Uninstall
 
 ```bash
 bash ~/.lumitome/src/install.sh --uninstall
 ```
 
-Installer options: `bash install.sh --help`. All CLI flags, environment variables and exit codes: [`lumitome/README.md`](lumitome/README.md).
+This removes `~/.lumitome` and the `lumitome` command. Nothing else is touched.
 
-**For contributors** (from a clone):
+## For contributors
 
 ```bash
 npm install
-npm test          # test suite
-npm run validate  # config/schema validation
-npm run doctor    # environment check
+npm test
+npm run validate
 ```
 
-## ✦ Project structure
+More detail: [`lumitome/README.md`](lumitome/README.md) (all commands and settings), [`ARCHITECTURE.md`](ARCHITECTURE.md), [`CHANGELOG.md`](CHANGELOG.md).
 
-```
-Lumitome/
-├── lumitome/        # the CLI wrapper (bin/) and its engine config, plugins, skills
-├── harness/         # Swanwright guards: done-gate, anti-spin, guard, sandbox, scan-gate
-├── router/          # skill router: index, aliases, L0 search, L1 prompt
-├── packs/           # optional skill packs (enable with npm run enable-pack)
-├── config/          # MCP gateway config
-├── scripts/         # validation, indexing, doctor, upstream sync
-├── tests/           # test suite and router evaluation sets
-├── docs/            # architecture, routing, MCP, rules, PRD
-├── assets/          # logos, banners, diagrams (brand kit in assets/brand/)
-└── install.sh       # installer / uninstaller
-```
+## Bahasa Indonesia
 
-## ✦ Roadmap
+Lumitome adalah asisten coding yang berjalan di terminal. Dibangun di atas OpenCode versi 2.2.4 yang dikunci, dan terpisah dari OpenCode yang sudah Anda pasang.
 
-Planned, **not yet available**:
+**Pasang:** jalankan baris `curl ... install.sh | bash` di atas.
 
-- On-demand MCP broker that loads tool servers only when a task needs them (today: optional per-sector MCP gateway, off by default — see [`docs/MCP-GATEWAY.md`](docs/MCP-GATEWAY.md))
-- Broader multilingual and multi-field use beyond coding (domain taxonomy)
-- More skill packs and better routing accuracy
+**Mulai:** ketik `lumitome`, lalu tekan `c` atau jalankan `lumitome connect`. Isi nama, alamat (base URL), dan API key. Layanan apa pun yang mirip API OpenAI atau Anthropic bisa dipakai. Daftar model diambil otomatis. Pilih model dengan `/model`.
 
-See [`CHANGELOG.md`](CHANGELOG.md) for what has shipped.
+**Update:** `lumitome update`. Cek dulu dengan `lumitome update --check`. Batalkan dengan `lumitome update --rollback`.
 
-## ✦ Contributing
+**Bedanya:**
 
-Issues and pull requests are welcome.
+- Hanya bertanya atau berhenti sebelum tindakan berbahaya.
+- Tidak membaca atau membocorkan file `.env` dan file rahasia lain.
+- Memeriksa hasil tes sebelum bilang "selesai".
+- Tidak menyentuh pengaturan dan data OpenCode milik Anda.
 
-1. Fork and create a branch (pushes to `main` are blocked by design).
-2. Run `npm test` and `npm run validate` before opening a PR.
-3. Keep changes small and explain *why* in the PR.
+**Hapus:** `bash ~/.lumitome/src/install.sh --uninstall`.
 
-Agent/contributor rules: [`AGENTS.md`](AGENTS.md), [`docs/RULES.md`](docs/RULES.md).
+## License and credits
 
-## ✦ Ringkasan Bahasa Indonesia
+MIT. See [`LICENSE`](LICENSE).
 
-**Lumitome** (“kitab cahaya”) adalah CLI AI untuk coding yang **aman secara default**. Berjalan di atas engine **OpenCode v2.2.4 yang dikunci versinya** plus harness **Swanwright**, dengan provider **9router**. Engine terisolasi dari OpenCode milik Anda, tanpa auto-update, repo asing tidak dipercaya, perintah berbahaya diblokir dan shell dijalankan di sandbox, serta tugas baru dianggap “selesai” bila tes benar-benar lulus. Mulai: `curl … install.sh | bash` → `lumitome` → `lumitome connect` (atau tekan `c`). Model terdeteksi otomatis. Update: `lumitome update`.
-
-## ✦ License & credits
-
-MIT — see [`LICENSE`](LICENSE).
-
-- Based on [fahmi0812/Swanwright](https://github.com/fahmi0812/Swanwright) (MIT)
-- Engine: [OpenCode](https://github.com/anomalyco/opencode) (MIT, downloaded at install time, not vendored)
-- Third-party skills: [`NOTICE.md`](NOTICE.md)
-- Brand kit (six-leaf clover grimoire) generated from [`assets/brand/generate.py`](assets/brand/generate.py)
-
-<div align="center"><sub>Made with light by <a href="https://github.com/fahmi0812">fahmi0812</a></sub></div>
+- Based on [fahmi0812/Swanwright](https://github.com/fahmi0812/Swanwright) (MIT).
+- Uses [OpenCode](https://github.com/anomalyco/opencode) (MIT). It is downloaded during install, not copied into this repo.
+- The built-in rules are written in our own words, based on: multica-ai/andrej-karpathy-skills, obra/superpowers, poteto/noodle, unicodef1wn/grokbot-field-notes, qkal/Canny, affaan-m/ECC, alvinunreal/oh-my-opencode-slim (all MIT), and google/elephant-goldfish-model (Apache-2.0). Full list with versions: [`docs/RULES.md`](docs/RULES.md).
+- Third-party skills and their licenses: [`NOTICE.md`](NOTICE.md).
