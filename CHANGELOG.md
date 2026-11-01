@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.4 — Rilis tag untuk perbaikan pasca-0.3.3
+
+- postinstall npm lebih aman (tidak menggagalkan instalasi bila unduh engine gagal; dicoba lagi saat first-run).
+- `lumitome update` pada instalasi npm kini menyarankan `npm install -g https://github.com/fahmi0812/Lumitome/tarball/main` (bukan `github:` yang bisa gagal).
+- README: instalasi npm via tarball GitHub.
+
 ## 0.3.3 — Port service sendiri + instalasi npm (Windows)
 
 - FIX: `lumitome` (TUI) gagal dengan `Managed service port 49374 ... already in use` bila OpenCode milik user (`opencode serve --service`) sedang jalan. Penyebab: TUI OpenCode 2.2.4 memakai background server ("managed service") dengan port default 49374; state & registrasi Lumitome sudah terpisah, tapi port tidak. Kini wrapper menulis port milik Lumitome ke `$LUMI_HOME/config/service.json` (deterministik per LUMI_HOME, 50000–59999; pindah otomatis bila terpakai proses lain; override `LUMI_SERVICE_PORT`). Registrasi service tetap di `$LUMI_HOME/state/opencode/`. Service milik user tidak pernah dipakai ulang, disentuh, atau dimatikan.
