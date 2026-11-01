@@ -316,5 +316,27 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   fs.rmSync(tmp, { recursive: true, force: true });
 }
 
+{
+  // v0.3.2: provider custom (connect) — deteksi model, file 0600, key tidak di providers.json/config
+  const os = await import("node:os"), http = await import("node:http");
+  const srv = http.createServer((q, r) => { const oa = q.headers.authorization === "Bearer k1", an = q.headers["x-api-key"] === "k1" && q.headers["anthropic-version"];
+    r.setHeader("content-type", "application/json");
+    if (q.url === "/v1/models" && oa) return r.end(JSON.stringify({ data: [{ id: "m-b" }, { id: "m-a" }] }));
+    if (q.url.startsWith("/an/v1/models") && an) return r.end(JSON.stringify(q.url.includes("after_id") ? { data: [{ id: "c-2" }], has_more: false } : { data: [{ id: "c-1" }], has_more: true, last_id: "c-1" }));
+    r.statusCode = 401; r.end("{}"); });
+  await new Promise((r) => srv.listen(0, "127.0.0.1", r)); const base = `http://127.0.0.1:${srv.address().port}`;
+  const PV = await import("../lumitome/lib/providers.mjs"); const home = fs.mkdtempSync(path.join(os.tmpdir(), "lumiprov-"));
+  const m1 = await PV.add(home, { name: "oa", type: "openai", baseURL: `${base}/v1`, key: "k1" });
+  const m2 = await PV.add(home, { name: "an", type: "anthropic", baseURL: `${base}/an`, key: "k1" });
+  let bad = ""; try { await PV.add(home, { name: "x", type: "openai", baseURL: `${base}/v1`, key: "salah" }); } catch (e) { bad = e.message; }
+  const F = PV.files(home), mode = (f) => fs.statSync(f).mode & 0o777;
+  const frag = PV.opencodeFragment(home, {});
+  ok("connect: deteksi model OpenAI (Bearer) & Anthropic (x-api-key, paginasi)", m1.join() === "m-a,m-b" && m2.join() === "c-1,c-2" && /401/.test(bad));
+  ok("connect: providers.json & credentials.json 0600; key tidak di providers.json/config", mode(F.prov) === 0o600 && mode(F.cred) === 0o600 && !fs.readFileSync(F.prov, "utf8").includes("k1") && !JSON.stringify(frag.providers).includes("k1") && frag.env.LUMI_KEY_OA === "k1");
+  ok("connect: paket SDK sesuai tipe + model muncul di config", frag.providers.oa.package.includes("openai-compatible") && frag.providers.an.package.includes("anthropic") && frag.providers.an.settings.baseURL.endsWith("/an/v1") && !!frag.providers.an.models["c-2"]);
+  ok("connect: env LUMI_KEY_<NAMA> menimpa file; hapus provider", PV.opencodeFragment(home, { LUMI_KEY_OA: "envk" }).env.LUMI_KEY_OA === "envk" && PV.remove(home, "an") && !PV.opencodeFragment(home, {}).providers.an);
+  srv.close(); fs.rmSync(home, { recursive: true, force: true });
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

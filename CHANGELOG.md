@@ -5,6 +5,13 @@
 - Rules inti Lumitome (`lumitome/rules/00-core.md`, `01-safety.md`, ±0.8k token): sintesis Karpathy, superpowers, poteto, grokbot-field-notes, Canny, dll (atribusi + SHA di docs/RULES.md). Selaras auto-mode: asumsi dicatat, tanya hanya untuk risiko merusak.
 - FIX: rules, agents, dan commands sebelumnya tidak termuat di bawah wrapper (config proyek mati, config Lumitome tanpa `instructions`). Kini dimuat dari config dir Lumitome (`$LUMI_HOME/config/{rules,agents,commands}`) di proyek mana pun.
 - BARU `lumitome update [--check] [--to vX.Y.Z] [--sha <commit>] [--yes] [--rollback]`: tag rilis terbaru dari origin. Alurnya: clone tag → verifikasi commit = sha tag dan VERSION = tag → swap atomik dengan backup → cek pasca-pasang → rollback otomatis bila gagal. Engine OpenCode tidak disentuh dan tidak ada auto-update.
+- Onboarding provider:
+  - `lumitome` (TUI) kini terbuka tanpa env/provider. Tanpa provider muncul prompt: `c` → wizard, Enter → TUI (`/connect` bawaan OpenCode).
+  - `lumitome connect`: Custom OpenAI-compatible / Anthropic-compatible, boleh banyak provider. Model dideteksi otomatis (GET /models; Anthropic memakai x-api-key + anthropic-version + paginasi) dan muncul di `/model`.
+  - Perintah kelola: `--list`, `--remove`, `lumitome models --refresh`.
+  - Key disimpan di `$LUMI_HOME/credentials.json` 0600, masuk config hanya sebagai `{env:LUMI_KEY_*}`, tidak pernah dicetak; guard menolak `*LUMI_KEY_*`.
+  - `run` tanpa provider → exit 2 dengan pesan jelas.
+- Wrapper memblok `upgrade`/`update`/`uninstall` milik engine OpenCode (engine terpin).
 - Pengguna v0.3.1 (belum punya `lumitome update`): jalankan ulang one-liner installer sekali; installer menarik main terbaru ke `~/.lumitome/src`.
 
 ## 0.3.1 — Router skill L0-first

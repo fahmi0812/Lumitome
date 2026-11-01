@@ -6,7 +6,9 @@
  *  - run: --standalone, model default, headless (ask → deny), jurnal, done-gate, anti-spin, retry timeout, cleanup proses
  * Exit: 0 ok | 1 error opencode | 2 argumen salah | 3 DONE-GATE FAIL | 4 ANTI-SPIN trip | 5 guard tidak termuat | 124 timeout provider
  */
-import { spawn, execFileSync } from "node:child_process";
+import { spawn, spawnSync, execFileSync } from "node:child_process";
+import readlineMod from "node:readline";
+const await_rl = () => readlineMod.createInterface({ input: process.stdin, output: process.stderr, terminal: false });
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -72,7 +74,34 @@ if (sub === "engine" || sub === "upgrade-engine") {
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
   process.exit(0);
 }
-if (!env.NINEROUTER_API_KEY) die(2, "NINEROUTER_API_KEY belum di-set (key 9router; tidak pernah dicetak)");
+// ---------- provider: custom (LUMI_HOME/providers.json + credentials.json 0600) + env NINEROUTER_API_KEY (override) ----------
+const PV = await import(path.join(ROOT, "lib", "providers.mjs"));
+if (sub === "connect" || (sub === "models" && argv.includes("--refresh")) || (sub === "models" && argv.includes("--lumitome"))) {
+  process.exit(await PV.cli({ argv: argv.slice(1), home: ISO_HOME, sub }));
+}
+const FRAG = PV.opencodeFragment(ISO_HOME, env);
+const HAS_9R_ENV = !!env.NINEROUTER_API_KEY;
+const HAS_PROVIDER = HAS_9R_ENV || Object.keys(FRAG.providers).length > 0;
+function chooseModel() {
+  if (env.LUMI_MODEL) return env.LUMI_MODEL;
+  if (HAS_9R_ENV || FRAG.providers["9router"]?.models["ag/gemini-3.8-flash-high"]) return DEFAULT_MODEL;
+  const [n, p] = Object.entries(FRAG.providers)[0] || []; return n ? `${n}/${Object.keys(p.models)[0]}` : null;
+}
+const MODEL = chooseModel();
+if (!HAS_PROVIDER) {
+  if (sub === "run") die(2, "belum ada provider. Tambah: `lumitome connect` (Custom OpenAI/Anthropic-compatible) atau export NINEROUTER_API_KEY");
+  if (sub === "") {
+    process.stderr.write("\n  Lumitome: belum ada provider model.\n  • [c] + Enter : tambah provider Custom OpenAI/Anthropic-compatible sekarang (mis. 9router) — sama dengan `lumitome connect`\n  • Enter       : buka TUI; di dalamnya ketik /connect untuk provider bawaan OpenCode\n  (TUI terbuka otomatis dalam 15 detik)\n> ");
+    const pick = process.stdin.isTTY && env.LUMI_ONBOARD !== "0" ? await new Promise((resolve) => {
+      const rl = (await_rl()); const t = setTimeout(() => { rl.close(); resolve(""); }, 15000);
+      rl.once("line", (l) => { clearTimeout(t); rl.close(); resolve(l.trim().toLowerCase()); });
+    }) : "";
+    if (pick === "c") {
+      const c = spawnSync(process.execPath, [fileURLToPath(import.meta.url), "connect"], { stdio: "inherit", env: process.env });
+      if (c.status === 0) process.exit(spawnSync(process.execPath, [fileURLToPath(import.meta.url), ...argv], { stdio: "inherit", env: process.env }).status ?? 1);
+    }
+  }
+}
 
 // binary OpenCode milik lumitome (terpin, di dir sendiri) — tidak memakai/menimpa `opencode` global user
 function ocBin() {
@@ -117,13 +146,17 @@ const finalCfg = {
     { action: "shell", resource: "*git push *", effect: "ask" },
     // .env: isi ditolak lapis-1 (guard) + di-mask /dev/null oleh bwrap; daftar nama (ls/find/glob) diizinkan
     ...["*id_rsa*", "*id_ed25519*", "*.ssh/*", "*rm -rf /*", "*rm -rf ~*", "*rm -fr /*", "*rm -rf ..*", "*sudo *",
-      "*git push *-f*", "*git push *--force*", "*git push *main*", "*git push *master*", "*git push *+*", "*printenv*", "*NINEROUTER_API_KEY*"].map(DENY),
+      "*git push *-f*", "*git push *--force*", "*git push *main*", "*git push *master*", "*git push *+*", "*printenv*", "*NINEROUTER_API_KEY*", "*LUMI_KEY_*"].map(DENY),
     { action: "read", resource: "*.env", effect: "deny" }, { action: "read", resource: "*.env.*", effect: "deny" },
     { action: "read", resource: "*.env.example", effect: "allow" }, { action: "read", resource: "*secrets.env", effect: "deny" },
     { action: "read", resource: "*id_rsa*", effect: "deny" }, { action: "read", resource: "*/.ssh/*", effect: "deny" },
     { action: "external_directory", resource: "*", effect: "ask" },
   ],
 };
+// provider custom → config final (key hanya via env {env:LUMI_KEY_*}); timeout berlaku untuk semua provider
+for (const [n, p] of Object.entries(FRAG.providers)) finalCfg.providers[n] = { ...p, settings: { ...p.settings, headerTimeout: idle, chunkTimeout: idle, timeout: Number(env.LUMI_TOTAL_TIMEOUT_MS || 900000) } };
+if (MODEL) finalCfg.model = MODEL;
+if (!HAS_9R_ENV && !FRAG.providers["9router"]) finalCfg.disabled_providers = ["9router"];
 
 // ---------- skill scoping (kurangi prompt sistem): hanya ≤5 skill hasil router yang terlihat ----------
 const VALUE_FLAGS = new Set(["-m", "--model", "-s", "--session", "--agent", "--format", "-f", "--file", "--title", "--log-level", "--server"]);
@@ -138,7 +171,9 @@ if (sub === "run" && (env.LUMI_SKILLS ?? "auto") === "auto" && fs.existsSync(pat
       const saved = process.cwd(); process.chdir(REPO);
       // L1 = cadangan: "auto" (default) hanya saat confidence L0 rendah, timeout keras 3 s; "always"/"1"; "0" = mati
       const l1m = String(env.LUMI_ROUTER_L1 ?? "auto"), useL1 = l1m === "0" ? false : (l1m === "always" || l1m === "1") ? "always" : true;
-      if (useL1) process.env.SW_9ROUTER_URL ||= env.LUMI_9ROUTER_URL || "http://127.0.0.1:20128/v1";
+      const r9 = FRAG.providers["9router"];
+      if (useL1) process.env.SW_9ROUTER_URL ||= env.LUMI_9ROUTER_URL || r9?.settings.baseURL || "http://127.0.0.1:20128/v1";
+      if (useL1 && !process.env.NINEROUTER_API_KEY && r9) process.env.SW_9ROUTER_KEY ||= FRAG.env.LUMI_KEY_9ROUTER;
       process.env.SW_ROUTE_CACHE ||= path.join(HOME, "router-cache.json");
       const r = await SD.route(prompt, { root: REPO, useL1, log: false });
       process.chdir(saved);
@@ -176,6 +211,7 @@ Object.assign(env, {
   LUMI_HARNESS: path.join(REPO, "harness", "lumi-guard.mjs"),
   LUMI_TOOLDIRS: toolDirs.join(":"), LUMI_SBX_DIR: path.join(HOME, "sbx"),
   LUMI_9ROUTER_URL: env.LUMI_9ROUTER_URL || "http://127.0.0.1:20128/v1",
+  ...FRAG.env,
 });
 if (TRUST) process.stderr.write("lumitome: PERINGATAN — LUMI_TRUST_PROJECT=1: config, plugin, agent & MCP proyek di workspace ini DIMUAT dan dapat menjalankan kode. Pakai hanya untuk repo tepercaya.\n");
 else { env.OPENCODE_DISABLE_PROJECT_CONFIG = "1"; }
@@ -216,7 +252,7 @@ if (sub === "run") {
   if (mIdx.length === 1 && rest[mIdx[0]].startsWith("--model=") === false && !rest[mIdx[0] + 1]) die(2, "-m butuh nilai provider/model");
   if (!promptOf(rest) && !rest.some((a) => ["-c", "--continue", "-s", "--session", "-f", "--file"].includes(a))) die(2, "run butuh pesan (atau --session/--continue/--file)");
   const model = env.LUMI_MODEL && mIdx.length === 0 ? env.LUMI_MODEL : null;
-  args = ["run", "--standalone", ...(mIdx.length ? [] : ["-m", model || DEFAULT_MODEL]), ...rest];
+  args = ["run", "--standalone", ...(mIdx.length ? [] : ["-m", model || MODEL]), ...rest];
   env.LUMI_HEADLESS = "1";
 } else if (["session", "debug", "mcp", "models", "stats"].includes(sub) && !args.includes("--standalone") && !args.includes("--server")) {
   args = [...args, "--standalone"];
@@ -280,7 +316,8 @@ let deadlineHit = false, stallHit = false;
 // preflight provider (murah, ~0.3 s): GET {baseURL} — status HTTP apa pun (mis. 401) = server hidup.
 // Server diam/hang → gagal cepat 124 tanpa menunggu retry internal OpenCode (~55 s/percobaan).
 async function preflight() {
-  const base = env.LUMI_9ROUTER_URL, to = Number(env.LUMI_PREFLIGHT_TIMEOUT_MS || 8000), n = Number(env.LUMI_PREFLIGHT_RETRIES ?? 2);
+  const mi = args.indexOf("-m"), prov = mi >= 0 ? String(args[mi + 1]).split("/")[0] : "9router";
+  const base = FRAG.providers[prov]?.settings.baseURL || env.LUMI_9ROUTER_URL, to = Number(env.LUMI_PREFLIGHT_TIMEOUT_MS || 8000), n = Number(env.LUMI_PREFLIGHT_RETRIES ?? 2);
   for (let i = 0; i <= n; i++) {
     const t0 = Date.now();
     // Promise.race: AbortSignal saja tidak menjamin batas waktu (DNS/TLS di threadpool bisa menggantung)
@@ -292,7 +329,7 @@ async function preflight() {
   return false;
 }
 if (sub === "run" && env.LUMI_PREFLIGHT !== "0" && !(await preflight())) {
-  process.stderr.write(`lumitome: GAGAL — provider ${env.LUMI_9ROUTER_URL} tidak merespons (preflight); tidak menjalankan opencode\n`); process.exit(124);
+  process.stderr.write(`lumitome: GAGAL — provider ${MODEL || env.LUMI_9ROUTER_URL} tidak merespons (preflight); tidak menjalankan opencode\n`); process.exit(124);
 }
 let res; const retries = Number(env.LUMI_RETRIES ?? 2);
 for (let attempt = 0; ; attempt++) {

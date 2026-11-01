@@ -34,6 +34,8 @@ Skill: harness memakai skill & DB router miliknya sendiri (`config/skills` → `
 | `LUMI_TRUST_PROJECT` | `0` | `1` = muat config/plugin/agent/MCP proyek (berbahaya untuk repo asing) |
 | `LUMI_MCP` | `codemem,skills-coding` | MCP proyek yang tetap aktif (hanya bila trusted); `all` |
 | `LUMI_SKILLS` | `auto` | `auto` = scoping router; `all` = semua skill terlihat |
+| `LUMI_KEY_<NAMA>` | – | override API key provider hasil `lumitome connect` (nama huruf besar, non-alnum → `_`); 9router juga `NINEROUTER_API_KEY` |
+| `LUMI_ONBOARD` | `1` | `0` = tanpa prompt onboarding saat TUI dibuka tanpa provider |
 | `LUMI_ROUTER_L1` | `auto` | `auto` = LLM L1 hanya bila confidence L0 rendah (margin BM25 < `SW_L1_CONF`=0.15 / tanpa hit), timeout keras 3 s lalu L0; `always`/`1` = selalu; `0` = mati |
 | `SW_L1_TIMEOUT_MS` / `SW_L1_TOPK` | `3000` / `8` | timeout keras L1 & jumlah kandidat L0 yang dikirim |
 | `SW_ROUTE_CACHE` / `SW_ROUTE_CACHE_TTL_S` | `$LUMI_HOME/router-cache.json` / `604800` | cache pilihan per query ternormalisasi; invalid otomatis bila katalog (source_hash) berubah; `0` = mati |
