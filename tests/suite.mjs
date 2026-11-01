@@ -338,5 +338,53 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   srv.close(); fs.rmSync(home, { recursive: true, force: true });
 }
 
+{
+  // v0.3.3: managed service TUI tidak bentrok dengan `opencode serve --service` milik user (port 49374)
+  const os = await import("node:os"), net = await import("node:net"), cp = await import("node:child_process");
+  const SP = await import("../lumitome/lib/service-port.mjs");
+  const dummy = net.createServer(); const held = await new Promise((r) => { dummy.once("error", () => r(false)); dummy.listen(SP.OPENCODE_DEFAULT_SERVICE_PORT, "127.0.0.1", () => r(true)); });
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "lumisvc-")), cfgDir = path.join(home, "config"), stateHome = path.join(home, "state");
+  fs.mkdirSync(cfgDir); fs.writeFileSync(path.join(cfgDir, "service.json"), JSON.stringify({ port: 49374, password: "pw-keep" }));
+  const a = await SP.ensureServicePort({ home, cfgDir, stateHome, env: {} });
+  const saved = JSON.parse(fs.readFileSync(a.file, "utf8"));
+  ok("service: port Lumitome ≠ 49374, disimpan di LUMI_HOME/config/service.json (password dipertahankan, 0600)", a.port !== 49374 && saved.port === a.port && saved.password === "pw-keep" && (fs.statSync(a.file).mode & 0o777) === 0o600);
+  const b = await SP.ensureServicePort({ home, cfgDir, stateHome, env: {} });
+  ok("service: port stabil antar-jalan; deterministik per LUMI_HOME", b.port === a.port && !b.changed && SP.derivePort(home) === SP.derivePort(home + "/") && SP.derivePort(home) !== SP.derivePort(home + "x"));
+  const blocker = net.createServer(); await new Promise((r) => blocker.listen(a.port, "127.0.0.1", r));
+  const c = await SP.ensureServicePort({ home, cfgDir, stateHome, env: {} });
+  fs.mkdirSync(path.join(stateHome, "opencode"), { recursive: true });
+  fs.writeFileSync(path.join(stateHome, "opencode", "service.json"), JSON.stringify({ url: `http://127.0.0.1:${c.port}`, pid: process.pid }));
+  const busyOwn = net.createServer(); await new Promise((r) => busyOwn.listen(c.port, "127.0.0.1", r));
+  const d = await SP.ensureServicePort({ home, cfgDir, stateHome, env: {} });
+  ok("service: port terpakai proses lain → pindah; dipakai service Lumitome sendiri → dipakai ulang", c.port !== a.port && c.port !== 49374 && d.port === c.port);
+  blocker.close(); busyOwn.close();
+  // integrasi dengan engine asli (bila ada): `lumitome service start` sukses walau 49374 dipakai
+  const eng = process.env.LUMI_TEST_ENGINE || [path.join(os.homedir(), ".lumitome", "bin", "opencode")].find((f) => fs.existsSync(f));
+  if (eng) {
+    const lh = fs.mkdtempSync(path.join(os.tmpdir(), "lumisvc-e2e-"));
+    const r = cp.spawnSync(process.execPath, ["--experimental-strip-types", "--no-warnings", "lumitome/bin/lumitome.mjs", "service", "start"], { encoding: "utf8", timeout: 60000, cwd: process.cwd(),
+      env: { ...process.env, LUMI_HOME: lh, LUMI_OPENCODE: eng, LUMI_WORKSPACE: lh, NINEROUTER_API_KEY: "" } });
+    const port = JSON.parse(fs.readFileSync(path.join(lh, "config", "service.json"), "utf8")).port;
+    ok(`service e2e: engine asli 'service start' exit 0 di port sendiri walau 49374 terpakai (held=${held})`, r.status === 0 && !/already in use/.test(r.stderr + r.stdout) && (r.stdout || "").includes(`:${port}`) && port !== 49374);
+    fs.rmSync(lh, { recursive: true, force: true });
+  } else console.log("[SKIP] service e2e (set LUMI_TEST_ENGINE=/path/opencode)");
+  if (held) dummy.close(); fs.rmSync(home, { recursive: true, force: true });
+}
+
+{
+  // v0.3.3: paket npm & logika path Windows
+  const EN = await import("../lumitome/lib/engine.mjs");
+  const wh = EN.lumiHome({}, path.win32, "C:\\Users\\Fahmi");
+  ok("npm/win: LUMI_HOME = %USERPROFILE%\\.lumitome; engine = bin\\opencode.exe", wh === "C:\\Users\\Fahmi\\.lumitome" && EN.engineBin(wh, "win32") === "C:\\Users\\Fahmi\\.lumitome\\bin\\opencode.exe");
+  const w = EN.assetFor("2.2.4", "win32", "x64"), l = EN.assetFor("2.2.4", "linux", "x64"), m = EN.assetFor("2.2.4", "darwin", "arm64");
+  ok("npm/engine: aset terpin + SHA256 per platform (win32-x64 zip, linux tar.gz, darwin zip)", w.name === "opencode-windows-x64.zip" && /^[0-9a-f]{64}$/.test(w.sha256) && l.name.endsWith(".tar.gz") && m.name.endsWith(".zip") && w.url.includes("/v2.2.4/"));
+  let bad = ""; await EN.installEngine({ home: fs.mkdtempSync(path.join((await import("node:os")).tmpdir(), "lumieng-")), log: () => {}, fetchImpl: async () => ({ ok: true, arrayBuffer: async () => new TextEncoder().encode("palsu").buffer }) }).catch((e) => { bad = e.message; });
+  ok("npm/engine: unduhan dengan SHA256 salah ditolak", /SHA256 tidak cocok/.test(bad));
+  const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+  ok("npm: package publishable (tidak private), bin lumitome → cli.mjs (node, tanpa bash), postinstall", !pkg.private && pkg.bin.lumitome === "lumitome/bin/cli.mjs" && /postinstall\.mjs/.test(pkg.scripts.postinstall) && fs.readFileSync(pkg.bin.lumitome, "utf8").startsWith("#!/usr/bin/env node"));
+  const Wsrc = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
+  ok("win: wrapper tanpa /proc wajib, tanpa `sleep`/setpriv di Windows, sandbox off + guard tetap", Wsrc.includes("HAS_PROC") && !Wsrc.includes('execFileSync("sleep"') && Wsrc.includes('process.platform === "linux" && (() =>') && Wsrc.includes('env.LUMI_SANDBOX = "off"'));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

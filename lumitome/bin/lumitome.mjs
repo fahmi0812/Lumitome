@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
 const REPO = path.resolve(ROOT, "..");                 // repo Swanwright
-const VERSION = "0.3.2";
+const VERSION = "0.3.3";
 const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
 const env = { ...process.env };
 const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process.exit(code); };
@@ -37,41 +37,38 @@ if (argv[0] === "--version" || argv[0] === "-v") {
 if (sub === "upgrade" || sub === "uninstall") die(2, `'${sub}' engine OpenCode diblok (engine terpin). Kode Lumitome: lumitome update; engine: lumitome upgrade-engine <versi> --sha256 <hash>; hapus: install.sh --uninstall`);
 // ---------- update kode Lumitome (manual; engine tidak disentuh) ----------
 if (sub === "update") {
+  // instalasi npm (tanpa .git): update lewat npm, bukan git
+  if (!fs.existsSync(path.join(REPO, ".git")) && (env.LUMI_INSTALL === "npm" || REPO.split(path.sep).includes("node_modules"))) {
+    console.log(`lumitome ${VERSION} terpasang lewat npm. Perbarui dengan:\n  npm i -g github:fahmi0812/Lumitome\n(setelah terbit di npm: npm i -g ${env.LUMI_NPM_NAME || "lumitome"}@latest)\nEngine OpenCode tidak ikut berubah.`);
+    process.exit(0);
+  }
   const { update } = await import(path.join(ROOT, "lib", "update.mjs"));
   process.exit(await update({ argv: argv.slice(1), version: VERSION, repo: REPO, home: ISO_HOME }));
 }
 // ---------- engine terpin: hanya diganti lewat perintah eksplisit ----------
 if (sub === "engine" || sub === "upgrade-engine") {
+  const EN = await import(path.join(ROOT, "lib", "engine.mjs"));
   const home = env.SW_HOME || env.LUMI_HOME || path.join(os.homedir(), ".lumitome");
-  const cur = path.join(home, "bin", "opencode");
+  const cur = EN.engineBin(home);
   const ver = () => { try { return execFileSync(cur, ["--version"], { encoding: "utf8", env: isoEnv() }).trim(); } catch { return "(tidak ada)"; } };
   if (sub === "engine") { console.log(`engine: ${cur}\nversi:  ${ver()}\nautoupdate: mati (OPENCODE_DISABLE_AUTOUPDATE=1, update:"disable")`); process.exit(0); }
   const [v, ...rest] = argv.slice(1);
   const shaArg = rest[rest.indexOf("--sha256") + 1];
   if (!v || !/^\d+\.\d+\.\d+$/.test(v) || rest.indexOf("--sha256") < 0 || !/^[0-9a-f]{64}$/.test(shaArg || ""))
     die(2, "pakai: lumitome upgrade-engine <x.y.z> --sha256 <sha256 arsip rilis> [--yes]  (checksum wajib; lihat SHA256SUMS rilis OpenCode)");
-  const plat = `${process.platform === "darwin" ? "darwin" : "linux"}-${process.arch === "arm64" ? "arm64" : "x64"}`;
-  const asset = `opencode-${plat}.${process.platform === "darwin" ? "zip" : "tar.gz"}`;
-  const url = `https://github.com/anomalyco/opencode/releases/download/v${v}/${asset}`;
+  const url = EN.assetFor(v).url;
   if (!rest.includes("--yes")) {
     process.stderr.write(`Ganti engine ${ver()} → v${v}\n  ${url}\n  sha256 ${shaArg}\nKetik 'ya' untuk lanjut: `);
     const ans = await new Promise((r) => { process.stdin.once("data", (d) => r(String(d).trim())); });
     if (ans !== "ya") die(1, "dibatalkan");
   }
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-eng-"));
-  try {
-    const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
-    const got = crypto.createHash("sha256").update(buf).digest("hex");
-    if (got !== shaArg) die(1, `SHA256 tidak cocok: ${got} != ${shaArg}; engine lama dipertahankan`);
-    fs.writeFileSync(path.join(tmp, asset), buf);
-    execFileSync(asset.endsWith(".zip") ? "unzip" : "tar", asset.endsWith(".zip") ? ["-qo", path.join(tmp, asset), "-d", tmp] : ["-xzf", path.join(tmp, asset), "-C", tmp]);
-    const bin = execFileSync("find", [tmp, "-type", "f", "-name", "opencode"], { encoding: "utf8" }).split("\n")[0];
-    const dst = path.join(home, "engines", v); fs.mkdirSync(dst, { recursive: true });
-    fs.copyFileSync(bin, path.join(dst, "opencode")); fs.chmodSync(path.join(dst, "opencode"), 0o755);
-    if (fs.existsSync(cur) && !fs.lstatSync(cur).isSymbolicLink()) { const old = execFileSync(cur, ["--version"], { encoding: "utf8", env: isoEnv() }).trim().replace(/^v/, ""); fs.mkdirSync(path.join(home, "engines", old), { recursive: true }); fs.renameSync(cur, path.join(home, "engines", old, "opencode")); }
-    fs.rmSync(cur, { force: true }); fs.symlinkSync(path.join(dst, "opencode"), cur);
-    console.log(`engine → ${ver()} (${cur}); rollback: lumitome upgrade-engine tidak perlu — ln -sfn ${home}/engines/<versi>/opencode ${cur}`);
-  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+  const dst = path.join(home, "engines", v, EN.exeName());
+  try { await EN.installEngine({ home, version: v, sha: shaArg, dst }); } catch (e) { die(1, `${e.message}; engine lama dipertahankan`); }
+  // simpan engine lama ke engines/<versi>, lalu ganti bin/opencode (Windows: salin; lainnya: symlink)
+  if (fs.existsSync(cur) && !fs.lstatSync(cur).isSymbolicLink()) { const old = ver().replace(/^.*?v?(\d+\.\d+\.\d+).*$/s, "$1"); const od = path.join(home, "engines", old); fs.mkdirSync(od, { recursive: true }); fs.renameSync(cur, path.join(od, EN.exeName())); }
+  fs.rmSync(cur, { force: true });
+  if (process.platform === "win32") fs.copyFileSync(dst, cur); else fs.symlinkSync(dst, cur);
+  console.log(`engine → ${ver()} (${cur}); versi lama di ${path.join(home, "engines")}`);
   process.exit(0);
 }
 // ---------- provider: custom (LUMI_HOME/providers.json + credentials.json 0600) + env NINEROUTER_API_KEY (override) ----------
@@ -106,8 +103,9 @@ if (!HAS_PROVIDER) {
 // binary OpenCode milik lumitome (terpin, di dir sendiri) — tidak memakai/menimpa `opencode` global user
 function ocBin() {
   if (env.LUMI_OPENCODE) return env.LUMI_OPENCODE;
-  for (const d of [env.SW_HOME, env.LUMI_HOME, path.join(os.homedir(), ".lumitome")]) if (d && fs.existsSync(path.join(d, "bin", "opencode"))) return path.join(d, "bin", "opencode");
-  return "opencode";
+  const exe = process.platform === "win32" ? "opencode.exe" : "opencode";
+  for (const d of [env.SW_HOME, env.LUMI_HOME, path.join(os.homedir(), ".lumitome")]) if (d && fs.existsSync(path.join(d, "bin", exe))) return path.join(d, "bin", exe);
+  return exe;
 }
 const HOME = env.LUMI_HOME || path.join(os.homedir(), ".lumitome");
 const WS = fs.realpathSync(env.LUMI_WORKSPACE || process.cwd());
@@ -191,10 +189,28 @@ if (sub === "run" && (env.LUMI_SKILLS ?? "auto") === "auto" && fs.existsSync(pat
 // password server) ke OPENCODE_CONFIG_DIR — jangan sampai masuk ke direktori repo.
 const CFG_DIR = path.join(HOME, "config");
 fs.mkdirSync(CFG_DIR, { recursive: true, mode: 0o700 });
-for (const n of ["opencode.jsonc", "plugins", "skills", "rules", "agents", "commands"]) {
-  const dst = path.join(CFG_DIR, n), src = path.join(ROOT, "config", n);
+// sumber asli (bukan symlink repo lumitome/config/* — symlink hilang di paket npm & checkout Windows)
+const CFG_SRC = { "opencode.jsonc": path.join(ROOT, "config", "opencode.jsonc"), plugins: path.join(ROOT, "config", "plugins"),
+  skills: path.join(REPO, ".opencode", "skills"), rules: path.join(ROOT, "rules"), agents: path.join(REPO, ".opencode", "agents"), commands: path.join(REPO, ".opencode", "commands") };
+for (const [n, src] of Object.entries(CFG_SRC)) {
+  if (!fs.existsSync(src)) continue;
+  const dst = path.join(CFG_DIR, n);
   let cur = null; try { cur = fs.readlinkSync(dst); } catch {}
-  if (cur !== src) { try { fs.rmSync(dst, { force: true }); } catch {} fs.symlinkSync(src, dst); }
+  if (cur !== src) linkInto(src, dst);
+}
+// Windows: symlink butuh hak admin/Developer Mode → direktori pakai junction, file disalin
+function linkInto(src, dst) {
+  try { fs.rmSync(dst, { force: true, recursive: !fs.lstatSync(dst).isSymbolicLink() && fs.lstatSync(dst).isDirectory() }); } catch {}
+  const dir = fs.statSync(src).isDirectory();
+  if (process.platform !== "win32") return fs.symlinkSync(src, dst);
+  try { fs.symlinkSync(src, dst, dir ? "junction" : "file"); } catch { fs.cpSync(src, dst, { recursive: true }); }
+}
+// TUI/attach memakai "managed service" OpenCode (port default 49374 — sama dengan `opencode serve --service` milik
+// user). Lumitome memakai port & state sendiri di LUMI_HOME; service milik user tidak disentuh/dimatikan.
+if (sub !== "run") {
+  const SP = await import(path.join(ROOT, "lib", "service-port.mjs"));
+  const sp = await SP.ensureServicePort({ home: HOME, cfgDir: CFG_DIR, stateHome: path.join(HOME, "state"), env });
+  if (env.LUMI_DEBUG) process.stderr.write(`lumitome: service port ${sp.port} (${sp.reason}) — ${sp.file}\n`);
 }
 try { fs.chmodSync(path.join(CFG_DIR, "service.json"), 0o600); } catch {}
 // rules inti Lumitome dari config dir milik Lumitome (bukan proyek) → aktif di proyek mana pun walau trust off
@@ -214,10 +230,12 @@ Object.assign(env, {
   XDG_CONFIG_HOME: path.join(HOME, "xdg-config"),
   PWD: WS, LUMI_WORKSPACE: WS, LUMI_JOURNAL: JOURNAL, LUMI_RUN_ID: RUN_ID,
   LUMI_HARNESS: path.join(REPO, "harness", "lumi-guard.mjs"),
-  LUMI_TOOLDIRS: toolDirs.join(":"), LUMI_SBX_DIR: path.join(HOME, "sbx"),
+  LUMI_TOOLDIRS: toolDirs.join(path.delimiter), LUMI_SBX_DIR: path.join(HOME, "sbx"),
   LUMI_9ROUTER_URL: env.LUMI_9ROUTER_URL || "http://127.0.0.1:20128/v1",
   ...FRAG.env,
 });
+// Windows: tidak ada bwrap → sandbox OS mati, tapi guard (deny rules, .env, anti-spin, push main) tetap aktif
+if (process.platform === "win32" && !env.LUMI_SANDBOX) { env.LUMI_SANDBOX = "off"; if (sub !== "run" || env.LUMI_DEBUG) process.stderr.write("lumitome: Windows — tanpa sandbox bwrap; guard Lumitome tetap aktif (perintah berbahaya & file rahasia diblok)\n"); }
 if (TRUST) process.stderr.write("lumitome: PERINGATAN — LUMI_TRUST_PROJECT=1: config, plugin, agent & MCP proyek di workspace ini DIMUAT dan dapat menjalankan kode. Pakai hanya untuk repo tepercaya.\n");
 else { env.OPENCODE_DISABLE_PROJECT_CONFIG = "1"; }
 env.SW_9ROUTER_URL ||= env.LUMI_9ROUTER_URL; env.SW_9ROUTER_KEY ||= env.NINEROUTER_API_KEY; // config proyek Swanwright
@@ -235,8 +253,9 @@ if (sub === "serve" || sub === "web") {
 }
 const redact = (t) => { let o = t.replace(/(server password\s*[:=]?\s*)\S+/gi, "$1[REDACTED]"); if (SERVE_PW) o = o.split(SERVE_PW).join("[REDACTED]"); return o; };
 // reaper: proses milik wrapper lumitome lain yang sudah mati (mis. kena kill -9) dibersihkan saat start
+const HAS_PROC = fs.existsSync("/proc/self/environ");
 function reapOrphans() {
-  let n = 0;
+  let n = 0; if (!HAS_PROC) return 0;
   for (const d of fs.readdirSync("/proc")) {
     if (!/^\d+$/.test(d)) continue;
     let e; try { e = fs.readFileSync(`/proc/${d}/environ`, "latin1"); } catch { continue; }
@@ -265,7 +284,7 @@ if (sub === "run") {
 
 // ---------- jalankan + cleanup ----------
 function descendantsByRunId() {
-  const out = [];
+  const out = []; if (!HAS_PROC) return out;
   for (const d of fs.readdirSync("/proc")) {
     if (!/^\d+$/.test(d) || Number(d) === process.pid) continue;
     try { if (fs.readFileSync(`/proc/${d}/environ`, "latin1").includes(`LUMI_RUN_ID=${RUN_ID}`)) out.push(Number(d)); } catch {}
@@ -275,12 +294,12 @@ function descendantsByRunId() {
 function cleanup() {
   let pids = descendantsByRunId();
   for (const p of pids) try { process.kill(p, "SIGTERM"); } catch {}
-  const t0 = Date.now(); while (Date.now() - t0 < 1500 && (pids = descendantsByRunId()).length) execFileSync("sleep", ["0.1"]);
+  const t0 = Date.now(); while (Date.now() - t0 < 1500 && (pids = descendantsByRunId()).length) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
   for (const p of pids) try { process.kill(p, "SIGKILL"); } catch {}
   return pids.length;
 }
 const PIPED = new Set(["run", "serve", "web"]);
-const HAS_SETPRIV = (() => { try { execFileSync("setpriv", ["--pdeathsig", "SIGTERM", "--", "true"], { stdio: "ignore" }); return true; } catch { return false; } })();
+const HAS_SETPRIV = process.platform === "linux" && (() => { try { execFileSync("setpriv", ["--pdeathsig", "SIGTERM", "--", "true"], { stdio: "ignore" }); return true; } catch { return false; } })();
 function runOnce(a) {
   return new Promise((resolve) => {
     // setpriv --pdeathsig: opencode ikut mati bila wrapper kena SIGKILL (sisa MCP lalu dibersihkan reaper)

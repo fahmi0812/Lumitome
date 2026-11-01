@@ -1,7 +1,6 @@
 {
   "name": "lumitome",
-  "private": true,
-  "version": "0.3.2",
+  "version": "0.3.3",
   "type": "module",
   "description": "Lumitome — CLI AI coding aman di atas OpenCode v2 (engine terpin) + harness Swanwright",
   "engines": {
@@ -17,7 +16,8 @@
     "skills:query": "node scripts/skill-query.mjs",
     "skills:metrics": "node scripts/skill-metrics.mjs",
     "policy": "node scripts/gen-policy.mjs",
-    "doctor": "bash scripts/doctor.sh"
+    "doctor": "bash scripts/doctor.sh",
+    "postinstall": "node lumitome/bin/postinstall.mjs"
   },
   "devDependencies": {
     "ajv": "8.20.0",
@@ -28,10 +28,45 @@
   },
   "license": "MIT",
   "bin": {
-    "lumitome": "lumitome/bin/lumitome"
+    "lumitome": "lumitome/bin/cli.mjs"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/fahmi0812/Lumitome.git"
-  }
+  },
+  "files": [
+    "lumitome/",
+    "harness/",
+    "router/",
+    "scripts/",
+    "packs/",
+    "config/",
+    "consent/",
+    "runtime/",
+    "opencode.jsonc",
+    ".opencode/",
+    "install.sh",
+    "VERSION",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "NOTICE.md",
+    "!runtime/*.db",
+    "!runtime/*.db-*",
+    "!runtime/*.sqlite*",
+    "AGENTS.md",
+    "ARCHITECTURE.md"
+  ],
+  "os": [
+    "linux",
+    "darwin",
+    "win32"
+  ],
+  "keywords": [
+    "opencode",
+    "cli",
+    "ai",
+    "coding-agent"
+  ],
+  "homepage": "https://github.com/fahmi0812/Lumitome#readme"
 }

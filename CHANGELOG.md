@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.3 — Port service sendiri + instalasi npm (Windows)
+
+- FIX: `lumitome` (TUI) gagal dengan `Managed service port 49374 ... already in use` bila OpenCode milik user (`opencode serve --service`) sedang jalan. Penyebab: TUI OpenCode 2.2.4 memakai background server ("managed service") dengan port default 49374; state & registrasi Lumitome sudah terpisah, tapi port tidak. Kini wrapper menulis port milik Lumitome ke `$LUMI_HOME/config/service.json` (deterministik per LUMI_HOME, 50000–59999; pindah otomatis bila terpakai proses lain; override `LUMI_SERVICE_PORT`). Registrasi service tetap di `$LUMI_HOME/state/opencode/`. Service milik user tidak pernah dipakai ulang, disentuh, atau dimatikan.
+- BARU instalasi npm untuk Windows/macOS/Linux: `npm install -g github:fahmi0812/Lumitome` (nanti `npm install -g lumitome`). Bin `lumitome` = `lumitome/bin/cli.mjs` (Node, tanpa bash). postinstall/first-run mengunduh engine OpenCode 2.2.4 untuk platform (linux/darwin x64/arm64, win32 x64/arm64), verifikasi SHA256 terpin, simpan di `~/.lumitome` (`%USERPROFILE%\.lumitome`). Tanpa auto-update.
+- Wrapper aman untuk Windows: `opencode.exe`, junction/salin alih-alih symlink, tanpa `/proc`/`setpriv`/`sleep`; tanpa bwrap → sandbox OS mati, guard Lumitome tetap aktif.
+- Config dir tidak lagi bergantung pada symlink `lumitome/config/{skills,agents,commands,rules}` (hilang di paket npm/checkout Windows).
+- `lumitome update` pada instalasi npm menampilkan perintah npm. `upgrade-engine` memakai unduh+verifikasi yang sama (zip Windows/macOS, tar.gz Linux).
+- Tes regresi: port service vs listener di 49374 (unit + e2e engine asli `service start`), path Windows, SHA256 salah ditolak, paket npm.
+
 ## 0.3.2 — Rules inti + `lumitome update`
 
 - Rules inti Lumitome (`lumitome/rules/00-core.md`, `01-safety.md`, ±0.8k token): sintesis Karpathy, superpowers, poteto, grokbot-field-notes, Canny, dll (atribusi + SHA di docs/RULES.md). Selaras auto-mode: asumsi dicatat, tanya hanya untuk risiko merusak.
