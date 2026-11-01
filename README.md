@@ -66,20 +66,24 @@ More detail: [`ARCHITECTURE.md`](ARCHITECTURE.md), [`docs/ROUTING.md`](docs/ROUT
 
 ## ✦ Quick start
 
-Requirements: Linux, `bash`, `curl`, Node.js ≥ 22.6, and access to a 9router endpoint.
+Requirements: Linux, `bash`, `curl`, Node.js ≥ 22.6, and an OpenAI- or Anthropic-compatible endpoint (e.g. 9router).
 
 ```bash
 # 1. Install (into ~/.lumitome, plus a launcher at ~/.local/bin/lumitome)
 curl -fsSL https://raw.githubusercontent.com/fahmi0812/Lumitome/main/install.sh | bash
 
-# 2. Configure the provider (the key is never printed or written to disk)
-export NINEROUTER_API_KEY=...
-export LUMI_9ROUTER_URL=http://127.0.0.1:20128/v1   # or your 9router URL
+# 2. Open it (no environment variables needed)
+lumitome
 
-# 3. Use it
-lumitome run "fix the failing tests"   # headless, one task
-lumitome                               # interactive TUI
+# 3. Connect a provider: press  c + Enter  at the prompt, or run
+lumitome connect      # Custom OpenAI-compatible / Anthropic-compatible: name, base URL, API key
 ```
+
+Models are detected automatically (`GET {base}/models`) and appear in `/model`. Built-in OpenCode providers stay available via `/connect` inside the TUI. Headless: `lumitome run "fix the failing tests"`.
+
+Manage providers: `lumitome connect --list`, `lumitome connect --remove <name>`, `lumitome models --refresh`. Keys are stored in `~/.lumitome/credentials.json` (mode 0600) and are never printed. `NINEROUTER_API_KEY` / `LUMI_KEY_<NAME>` environment variables still work as overrides.
+
+**Updating:** `lumitome update --check` shows the current vs latest release. `lumitome update` downloads the tag, verifies it, and swaps it in atomically with a backup (`lumitome update --rollback` undoes it). The pinned OpenCode engine is never changed by `update`; use `lumitome upgrade-engine`. Coming from v0.3.1 (no `update` command yet)? Re-run the install one-liner once.
 
 Uninstall (removes only `~/.lumitome` and the launcher; your OpenCode stays untouched):
 
@@ -136,7 +140,7 @@ Agent/contributor rules: [`AGENTS.md`](AGENTS.md), [`docs/RULES.md`](docs/RULES.
 
 ## ✦ Ringkasan Bahasa Indonesia
 
-**Lumitome** (“kitab cahaya”) adalah CLI AI untuk coding yang **aman secara default**. Berjalan di atas engine **OpenCode v2.2.4 yang dikunci versinya** plus harness **Swanwright**, dengan provider **9router**. Engine terisolasi dari OpenCode milik Anda, tanpa auto-update, repo asing tidak dipercaya, perintah berbahaya diblokir dan shell dijalankan di sandbox, serta tugas baru dianggap “selesai” bila tes benar-benar lulus. Instal dengan perintah `curl … install.sh | bash` di atas, set `NINEROUTER_API_KEY`, lalu jalankan `lumitome run "tugas"`.
+**Lumitome** (“kitab cahaya”) adalah CLI AI untuk coding yang **aman secara default**. Berjalan di atas engine **OpenCode v2.2.4 yang dikunci versinya** plus harness **Swanwright**, dengan provider **9router**. Engine terisolasi dari OpenCode milik Anda, tanpa auto-update, repo asing tidak dipercaya, perintah berbahaya diblokir dan shell dijalankan di sandbox, serta tugas baru dianggap “selesai” bila tes benar-benar lulus. Mulai: `curl … install.sh | bash` → `lumitome` → `lumitome connect` (atau tekan `c`). Model terdeteksi otomatis. Update: `lumitome update`.
 
 ## ✦ License & credits
 

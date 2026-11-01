@@ -11,6 +11,8 @@
   - Perintah kelola: `--list`, `--remove`, `lumitome models --refresh`.
   - Key disimpan di `$LUMI_HOME/credentials.json` 0600, masuk config hanya sebagai `{env:LUMI_KEY_*}`, tidak pernah dicetak; guard menolak `*LUMI_KEY_*`.
   - `run` tanpa provider → exit 2 dengan pesan jelas.
+- Agent orchestrator/sektor tidak lagi merujuk `scripts/skill-query.mjs` (path repo). Skill dipilih router Lumitome sebelum run; MCP `skill_search` (`skills-<sektor>`) didaftarkan wrapper dengan path absolut instalasi, sehingga tersedia di proyek mana pun.
+- README (brand kit tetap): Quickstart install → `lumitome` → `lumitome connect`, bagian Updating.
 - Wrapper memblok `upgrade`/`update`/`uninstall` milik engine OpenCode (engine terpin).
 - Pengguna v0.3.1 (belum punya `lumitome update`): jalankan ulang one-liner installer sekali; installer menarik main terbaru ke `~/.lumitome/src`.
 
