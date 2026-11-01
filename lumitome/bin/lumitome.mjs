@@ -31,6 +31,8 @@ if (argv[0] === "--version" || argv[0] === "-v") {
   let oc = "?"; try { oc = execFileSync(ocBin(), ["--version"], { encoding: "utf8", env: isoEnv() }).trim(); } catch {}
   console.log(`lumitome ${VERSION} (${oc})`); process.exit(0);
 }
+// subcommand engine yang mengubah binary terpin (self-upgrade/uninstall OpenCode) diblok: engine hanya via upgrade-engine
+if (sub === "upgrade" || sub === "uninstall") die(2, `'${sub}' engine OpenCode diblok (engine terpin). Kode Lumitome: lumitome update; engine: lumitome upgrade-engine <versi> --sha256 <hash>; hapus: install.sh --uninstall`);
 // ---------- update kode Lumitome (manual; engine tidak disentuh) ----------
 if (sub === "update") {
   const { update } = await import(path.join(ROOT, "lib", "update.mjs"));
