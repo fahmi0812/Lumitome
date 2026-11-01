@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../../assets/banner.png" alt="Swanwright — The Elegant AI Coding Harness" width="100%"/>
+  <img src="../../assets/brand/banner-1600x900.png" alt="Swanwright — The Elegant AI Coding Harness" width="100%"/>
 </p>
 
 <h3 align="center"><em>Anggun di permukaan. Presisi di kedalaman.</em></h3>
@@ -216,7 +216,7 @@ Kode Swanwright: **MIT** — lihat [`LICENSE`](../../LICENSE).
 Skill pihak ketiga: [`NOTICE.md`](../../NOTICE.md) · [`docs/SKILLS-CATALOG.md`](../SKILLS-CATALOG.md).
 
 <p align="center">
-  <img src="../../assets/logo.svg" alt="swan" width="96"/>
+  <img src="../../assets/brand/logo.svg" alt="swan" width="96"/>
   <br/>
   <sub>Swanwright · v0.1.6</sub>
 </p>
