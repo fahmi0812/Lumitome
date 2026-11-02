@@ -62,6 +62,15 @@ export async function refresh(home, only) {
   writeJ(F.prov, all); return out;
 }
 
+/** Timeout HTTP provider untuk engine (ms, bilangan bulat positif). Nilai env tidak valid → default. */
+export const TIMEOUT_DEFAULTS = { headerTimeout: 300000, chunkTimeout: 900000, timeout: 3600000 };
+export function providerTimeouts(env = process.env) {
+  const n = (v, d) => { const x = Number(v); return Number.isSafeInteger(x) && x > 0 ? x : d; };
+  return { headerTimeout: n(env.LUMI_HEADER_TIMEOUT_MS, TIMEOUT_DEFAULTS.headerTimeout),
+    chunkTimeout: n(env.LUMI_IDLE_TIMEOUT_MS, TIMEOUT_DEFAULTS.chunkTimeout),
+    timeout: n(env.LUMI_TOTAL_TIMEOUT_MS, TIMEOUT_DEFAULTS.timeout) };
+}
+
 /** Fragmen config OpenCode + env berisi key (key hanya lewat env proses engine, config memakai {env:...}). */
 export function opencodeFragment(home, env = process.env) {
   const providers = {}, penv = {};

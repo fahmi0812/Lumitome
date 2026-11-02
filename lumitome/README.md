@@ -43,8 +43,9 @@ Skill: harness memakai skill & DB router miliknya sendiri (`config/skills` → `
 | `LUMI_DEADLINE_MS` | `300000` | batas keras satu `run` → exit 124 |
 | `LUMI_FIRST_OUTPUT_MS` | `90000` | provider diam (tanpa output/aksi) → exit 124 |
 | `LUMI_PREFLIGHT` / `_TIMEOUT_MS` / `_RETRIES` | `1` / `8000` / `2` | cek `GET {baseURL}` sebelum run (status HTTP apa pun = hidup) |
-| `LUMI_IDLE_TIMEOUT_MS` | `60000` | header/chunk timeout provider |
-| `LUMI_TOTAL_TIMEOUT_MS` | `900000` | timeout total permintaan provider |
+| `LUMI_HEADER_TIMEOUT_MS` | `300000` | batas tunggu header respons provider |
+| `LUMI_IDLE_TIMEOUT_MS` | `900000` | batas jeda antar-chunk stream; lewat batas ini muncul "Timed out waiting for response data" |
+| `LUMI_TOTAL_TIMEOUT_MS` | `3600000` | batas total satu permintaan provider |
 | `LUMI_RETRIES` | `2` | retry wrapper bila timeout sebelum ada aksi |
 | `LUMI_SANDBOX` | `bwrap` | `off` hanya untuk debug |
 | `LUMI_DONE_GATE` | `on` | `off` mematikan done-gate |

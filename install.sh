@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Lumitome 0.3.10 — installer (Linux / macOS / Windows via WSL2). Idempoten. Terisolasi dari OpenCode milik user:
+# Lumitome 0.3.11 — installer (Linux / macOS / Windows via WSL2). Idempoten. Terisolasi dari OpenCode milik user:
 #   engine OpenCode v2.2.4 terpin (SHA256) di $LUMI_HOME/bin (default ~/.lumitome) — TIDAK ditaruh di PATH global,
 #   tidak menyentuh ~/.config/opencode, ~/.local/share/opencode (auth.json, sesi) atau `opencode` global.
 #   Satu-satunya file di luar $LUMI_HOME: launcher $LUMI_BIN_DIR/lumitome (default ~/.local/bin).
@@ -7,7 +7,7 @@
 #   atau: bash install.sh [--doctor] [--dry-run] [--uninstall] [--no-node] [--no-cbm] [--no-uv] [--skip-npm] [--with-browsers] [--project DIR]
 set -euo pipefail
 
-SW_VERSION=0.3.10
+SW_VERSION=0.3.11
 OC_VERSION=2.2.4
 CBM_VERSION=0.12.1
 UV_VERSION=0.13.6

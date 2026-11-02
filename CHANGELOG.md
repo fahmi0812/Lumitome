@@ -2,6 +2,11 @@
 
 ## Belum dirilis
 
+## 0.3.11 — Jawaban panjang tidak lagi terputus "Timed out waiting for response data"
+
+- Sebelumnya wrapper memasang batas jeda antar-chunk 60 detik ke provider. Model reasoning lewat proxy (mis. 9router) bisa diam lebih lama di tengah jawaban, lalu request diputus, di-retry, dan pesan ditandai interrupted.
+- Default baru, sama untuk 9router dan semua provider custom: `LUMI_HEADER_TIMEOUT_MS`=300000 (header), `LUMI_IDLE_TIMEOUT_MS`=900000 (jeda antar-chunk), `LUMI_TOTAL_TIMEOUT_MS`=3600000 (total). Bisa ditimpa lewat env; nilai tidak valid kembali ke default. Engine tidak diubah.
+
 ## 0.3.10 — `lumitome connect` membuka layar provider; logo tidak dobel
 
 - `lumitome connect` di terminal sekarang membuka layar provider yang sama dengan `lumitome provider`. Mode teks lama hanya untuk non-TTY, `lumitome connect --text`, atau bila flag (`--type/--name/--base-url/--key-env/--key-stdin/--list/--remove`) dipakai.

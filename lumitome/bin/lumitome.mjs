@@ -18,7 +18,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
 const REPO = path.resolve(ROOT, "..");                 // repo Swanwright
-const VERSION = "0.3.10";
+const VERSION = "0.3.11";
 const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
 const env = { ...process.env };
 const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process.exit(code); };
@@ -130,7 +130,6 @@ function projectMcp() {
   }
   return {};
 }
-const idle = Number(env.LUMI_IDLE_TIMEOUT_MS || 60000);
 // default: codemem + 4 sektor inti; finance/media hanya via LUMI_MCP=all atau daftar eksplisit
 const DEFAULT_MCP = "codemem,skills-coding,skills-riset,skills-penulisan,skills-security";
 const wantMcp = (env.LUMI_MCP ?? DEFAULT_MCP).split(",").map((s) => s.trim()).filter(Boolean);
@@ -161,10 +160,12 @@ if (sub === "" || sub === "run") {
 // agent default: orchestrator di TUI; `run` headless tetap build (delegasi orchestrator headless belum terverifikasi live). LUMI_AGENT menimpa
 const RUN_AGENT = "build";
 const DENY = (r) => ({ action: "shell", resource: r, effect: "deny" });
+// header 300 s, jeda antar-chunk 900 s, total 1 jam (LUMI_*_TIMEOUT_MS)
+const TIMEOUTS = PV.providerTimeouts(env);
 const finalCfg = {
   update: "disable",
   ...(env.LUMI_AGENT ? { default_agent: env.LUMI_AGENT } : { default_agent: sub === "run" ? RUN_AGENT : "orchestrator" }),
-  providers: { "9router": { settings: { headerTimeout: idle, chunkTimeout: idle, timeout: Number(env.LUMI_TOTAL_TIMEOUT_MS || 900000) } } },
+  providers: { "9router": { settings: { ...TIMEOUTS } } },
   ...(Object.keys(mcpOverride).length ? { mcp: { servers: mcpOverride } } : {}),
   // lapis-2 (lapis-1 = plugin guard): deny di akhir rantai → last-match-wins
   permissions: [
@@ -180,7 +181,7 @@ const finalCfg = {
   ],
 };
 // provider custom → config final (key hanya via env {env:LUMI_KEY_*}); timeout berlaku untuk semua provider
-for (const [n, p] of Object.entries(FRAG.providers)) finalCfg.providers[n] = { ...p, settings: { ...p.settings, headerTimeout: idle, chunkTimeout: idle, timeout: Number(env.LUMI_TOTAL_TIMEOUT_MS || 900000) } };
+for (const [n, p] of Object.entries(FRAG.providers)) finalCfg.providers[n] = { ...p, settings: { ...p.settings, ...TIMEOUTS } };
 if (MODEL) finalCfg.model = MODEL;
 if (!HAS_9R_ENV && !FRAG.providers["9router"]) finalCfg.disabled_providers = ["9router"];
 

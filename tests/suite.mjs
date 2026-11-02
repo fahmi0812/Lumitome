@@ -441,7 +441,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const thKeys = ["primary", "text", "textMuted", "background", "border", "syntaxKeyword", "markdownHeading", "diffAdded"];
   ok("theme lumitome: varian dark+light, refs valid, emas brand", thKeys.every((k) => TH.theme[k]?.dark && TH.theme[k]?.light) && Object.values(TH.theme).every((v) => [v.dark, v.light].every((c) => /^#[0-9A-Fa-f]{6}$/.test(c) || c in TH.defs)) && TH.defs.champagne === "#F3D27A" && TH.defs.cornsilk === "#FFF8DC");
   ok("wrapper: themes ditautkan ke OPENCODE_CONFIG_DIR, cli.json di CFG_DIR (bukan ~/.config user), binary engine tidak disentuh", /themes: path\.join\(ROOT, "config", "themes"\)/.test(W) && /cliFile = path\.join\(CFG_DIR, "cli\.json"\)/.test(W) && !/writeFileSync\([^)]*ocBin/.test(W));
-  ok("versi 0.3.10 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.10") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.10" && /VERSION = "0\.3\.10"/.test(W) && /SW_VERSION=0\.3\.10/.test(inst));
+  ok("versi 0.3.11 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.11") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.11" && /VERSION = "0\.3\.11"/.test(W) && /SW_VERSION=0\.3\.11/.test(inst));
 }
 
 {
@@ -484,6 +484,18 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("ui/glyph: mode ASCII → key '***', hapus 'x', tanpa karakter non-ASCII", fa.includes("***") && /1 model\s+x/.test(fa) && !/[^\x00-\x7f]/.test(fa));
   const C = fs.readFileSync("lumitome/bin/cli.mjs", "utf8");
   ok("npm/win: cli.mjs menjalankan wrapper dengan stdio inherit (TTY + raw mode tersedia untuk layar provider)", /spawn\(process\.execPath, \[[^\]]*lumitome\.mjs[^\]]*\], \{ stdio: "inherit"/.test(C));
+}
+{
+  // v0.3.11: timeout provider
+  const PVT = await import("../lumitome/lib/providers.mjs");
+  const d = PVT.providerTimeouts({});
+  ok("timeout: default header 300000, chunk 900000, total 3600000", d.headerTimeout === 300000 && d.chunkTimeout === 900000 && d.timeout === 3600000);
+  const o = PVT.providerTimeouts({ LUMI_HEADER_TIMEOUT_MS: "120000", LUMI_IDLE_TIMEOUT_MS: "600000", LUMI_TOTAL_TIMEOUT_MS: "7200000" });
+  ok("timeout: env override", o.headerTimeout === 120000 && o.chunkTimeout === 600000 && o.timeout === 7200000);
+  const b = PVT.providerTimeouts({ LUMI_HEADER_TIMEOUT_MS: "0", LUMI_IDLE_TIMEOUT_MS: "false", LUMI_TOTAL_TIMEOUT_MS: "-5" });
+  ok("timeout: env tidak valid → default (bilangan bulat positif saja)", b.headerTimeout === 300000 && b.chunkTimeout === 900000 && b.timeout === 3600000);
+  const WT = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
+  ok("timeout: 9router + semua provider custom memakai providerTimeouts, tanpa default 60000 lama", /"9router": \{ settings: \{ \.\.\.TIMEOUTS \} \}/.test(WT) && /\.\.\.p\.settings, \.\.\.TIMEOUTS/.test(WT) && !/LUMI_IDLE_TIMEOUT_MS \|\| 60000/.test(WT));
 }
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
