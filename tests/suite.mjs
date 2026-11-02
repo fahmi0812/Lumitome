@@ -385,7 +385,11 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const wh = EN.lumiHome({}, path.win32, "C:\\Users\\Fahmi");
   ok("npm/win: LUMI_HOME = %USERPROFILE%\\.lumitome; engine = bin\\opencode.exe", wh === "C:\\Users\\Fahmi\\.lumitome" && EN.engineBin(wh, "win32") === "C:\\Users\\Fahmi\\.lumitome\\bin\\opencode.exe");
   const w = EN.assetFor("2.2.4", "win32", "x64"), l = EN.assetFor("2.2.4", "linux", "x64"), m = EN.assetFor("2.2.4", "darwin", "arm64");
-  ok("npm/engine: aset terpin + SHA256 per platform (win32-x64 zip, linux tar.gz, darwin zip)", w.name === "opencode-windows-x64.zip" && /^[0-9a-f]{64}$/.test(w.sha256) && l.name.endsWith(".tar.gz") && m.name.endsWith(".zip") && w.url.includes("/v2.2.4/"));
+  ok("npm/engine: aset terpin + SHA256 per platform (win32-x64 zip, linux tar.gz, darwin zip)", w.name === "opencode-windows-x64.zip" && /^[0-9a-f]{64}$/.test(w.sha256) && l.name.endsWith(".tar.gz") && m.name.endsWith(".zip") && w.url.includes("/releases/download/engine-2.2.4-lumi.1/"));
+  const wu = EN.assetFor("2.2.4", "win32", "x64", "upstream"), lu = EN.assetFor("2.2.4", "linux", "x64", "upstream");
+  ok("npm/engine: LUMI_ENGINE=upstream → aset resmi anomalyco v2.2.4 dengan pin lama", EN.engineFlavor({ LUMI_ENGINE: "upstream" }) === "upstream" && EN.engineFlavor({}) === "lumi" && wu.url.includes("anomalyco/opencode/releases/download/v2.2.4/") && lu.sha256 === "1b70ce4a88e27c3643c2bb61c757dfe173b4e3629926ce808d45f3774d87826e" && wu.sha256 !== w.sha256);
+  ok("npm/engine: semua platform terpin punya build Lumitome + SHA256", Object.keys(EN.OC_PINS).every((k) => /^[0-9a-f]{64}$/.test(EN.LUMI_PINS[k]?.[1] || "")) && fs.existsSync("engine/patches/logo.patch"));
+  ok("npm/engine: versi lain (upgrade-engine) tetap dari rilis resmi", EN.assetFor("2.3.0", "linux", "x64").url.includes("anomalyco/opencode/releases/download/v2.3.0/"));
   let bad = ""; await EN.installEngine({ home: fs.mkdtempSync(path.join((await import("node:os")).tmpdir(), "lumieng-")), log: () => {}, fetchImpl: async () => ({ ok: true, arrayBuffer: async () => new TextEncoder().encode("palsu").buffer }) }).catch((e) => { bad = e.message; });
   ok("npm/engine: unduhan dengan SHA256 salah ditolak", /SHA256 tidak cocok/.test(bad));
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
@@ -430,12 +434,14 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("brand: banner tanpa warna background (aman terang/gelap)", !/\x1b\[(48|4\d)[;m]/.test(BR.banner({ mode: "truecolor" }) + BR.banner({ mode: "256" })));
   ok("brand: judul OSC 0 'Lumitome', karakter kontrol dibuang", BR.titleSeq() === "\x1b]0;Lumitome\x07" && BR.titleSeq("a\x07b") === "\x1b]0;ab\x07");
   const s1 = BR.seedCliConfig({}), s2 = BR.seedCliConfig({ theme: { name: "aura" }, terminal: { title: true }, x: 1 });
-  ok("brand: cli.json di-seed theme lumitome + terminal.title:false; pilihan user dihormati", s1.changed && s1.config.theme.name === "lumitome" && s1.config.terminal.title === false && !s2.changed && s2.config.theme.name === "aura" && s2.config.terminal.title === true);
+  ok("brand: cli.json tanpa seed theme (theme bawaan) + terminal.title:false; pilihan user dihormati", s1.changed && s1.config.theme === undefined && s1.config.terminal.title === false && !s2.changed && s2.config.theme.name === "aura" && s2.config.terminal.title === true);
+  const s3 = BR.seedCliConfig({ theme: { name: "lumitome" }, terminal: { title: false } }, { migrated: false }), s4 = BR.seedCliConfig({ theme: { name: "lumitome" }, terminal: { title: false } }, { migrated: true });
+  ok("brand: theme lumitome dari v0.3.7 dilepas sekali (hanya logo emas); dipilih lagi setelahnya → dihormati", s3.changed && s3.config.theme === undefined && !s4.changed && s4.config.theme.name === "lumitome");
   const TH = JSON.parse(fs.readFileSync("lumitome/config/themes/lumitome.json", "utf8"));
   const thKeys = ["primary", "text", "textMuted", "background", "border", "syntaxKeyword", "markdownHeading", "diffAdded"];
   ok("theme lumitome: varian dark+light, refs valid, emas brand", thKeys.every((k) => TH.theme[k]?.dark && TH.theme[k]?.light) && Object.values(TH.theme).every((v) => [v.dark, v.light].every((c) => /^#[0-9A-Fa-f]{6}$/.test(c) || c in TH.defs)) && TH.defs.champagne === "#F3D27A" && TH.defs.cornsilk === "#FFF8DC");
   ok("wrapper: themes ditautkan ke OPENCODE_CONFIG_DIR, cli.json di CFG_DIR (bukan ~/.config user), binary engine tidak disentuh", /themes: path\.join\(ROOT, "config", "themes"\)/.test(W) && /cliFile = path\.join\(CFG_DIR, "cli\.json"\)/.test(W) && !/writeFileSync\([^)]*ocBin/.test(W));
-  ok("versi 0.3.7 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.7") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.7" && /VERSION = "0\.3\.7"/.test(W) && /SW_VERSION=0\.3\.7/.test(inst));
+  ok("versi 0.3.8 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.8") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.8" && /VERSION = "0\.3\.8"/.test(W) && /SW_VERSION=0\.3\.8/.test(inst));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

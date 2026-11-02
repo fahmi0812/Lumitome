@@ -8,7 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { lumiHome, engineBin, engineVersion, installEngine, OC_VERSION } from "../lib/engine.mjs";
+import { lumiHome, engineBin, engineVersion, installEngine, ensureEngine, OC_VERSION } from "../lib/engine.mjs";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const say = (m) => process.stderr.write(`lumitome postinstall: ${m}\n`);
@@ -23,8 +23,8 @@ try {
   fs.mkdirSync(path.join(home, "bin"), { recursive: true });
   if (!fs.existsSync(path.join(home, ".lumitome-home"))) fs.writeFileSync(path.join(home, ".lumitome-home"), "");
   const bin = engineBin(home);
-  if (engineVersion(bin, { ...process.env, XDG_STATE_HOME: path.join(home, "state"), XDG_DATA_HOME: path.join(home, "data"), XDG_CONFIG_HOME: path.join(home, "xdg-config"), XDG_CACHE_HOME: path.join(home, "cache"), OPENCODE_DISABLE_AUTOUPDATE: "1" }) === OC_VERSION) say(`engine v${OC_VERSION} sudah ada (${bin})`);
-  else await installEngine({ home, log: say });
+  const r = await ensureEngine({ home, bin, log: say, env: { ...process.env, XDG_STATE_HOME: path.join(home, "state"), XDG_DATA_HOME: path.join(home, "data"), XDG_CONFIG_HOME: path.join(home, "xdg-config"), XDG_CACHE_HOME: path.join(home, "cache"), OPENCODE_DISABLE_AUTOUPDATE: "1" } });
+  if (!r.installed) say(`engine v${OC_VERSION} sudah ada (${bin}, ${r.flavor || "upstream"})`);
   // codebase-memory-mcp (codemem) terpin — gagal tidak fatal (dicoba lagi saat first-run)
   if (process.env.LUMI_SKIP_CBM_DOWNLOAD !== "1") {
     const CM = await import(pathToFileURL(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "lib", "codemem.mjs")).href);

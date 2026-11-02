@@ -2,6 +2,12 @@
 
 ## Belum dirilis
 
+## 0.3.8 — Logo LUMITOME di layar awal; hanya logo yang emas
+
+- Engine sekarang build Lumitome dari OpenCode v2.2.4 (tag upstream `v2.2.4`, commit 45898d0). Satu-satunya perubahan: tulisan blok di layar awal jadi `LUMITOME` berwarna emas (`LUMI` emas tua + `TOME` champagne). Patch: `engine/patches/logo.patch`. Binary dibangun dengan skrip build upstream (Bun 1.4.4) dan dirilis di `engine-2.2.4-lumi.1` (linux x64/arm64, darwin x64/arm64, windows x64/arm64), terpin SHA256 di `lumitome/lib/engine.mjs` dan `install.sh`.
+- Theme kembali ke tampilan bawaan OpenCode; theme `lumitome` tidak lagi di-seed. Instalasi v0.3.7 dilepas dari theme `lumitome` sekali saja (penanda `$LUMI_HOME/config/.theme-default-v038`); kalau dipilih lagi lewat `<leader>t`, pilihan itu dihormati.
+- `LUMI_ENGINE=upstream` → pakai binary resmi OpenCode v2.2.4 (pin lama). Engine lama tidak dihapus bila unduhan gagal; tanpa engine dan build Lumitome gagal → otomatis jatuh ke upstream. `lumitome engine` menampilkan build yang terpasang. Auto-update engine tetap mati.
+
 ## 0.3.7 — Branding Lumitome (white-gold / champagne)
 
 - BARU theme OpenCode `lumitome` (`lumitome/config/themes/lumitome.json`, varian dark & light) dari palet brand kit `assets/brand` (#FFF8DC → #F3D27A → #E8C266 → #C9962E → #9C6F17). Jadi default lewat `cli.json` terisolasi di `$LUMI_HOME/config`; theme yang dipilih user (`<leader>t`) dihormati. Logo layar awal ikut berwarna emas.

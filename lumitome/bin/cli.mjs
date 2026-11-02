@@ -8,7 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { lumiHome, engineBin, engineVersion, installEngine, OC_VERSION } from "../lib/engine.mjs";
+import { lumiHome, engineBin, engineVersion, installEngine, ensureEngine, OC_VERSION } from "../lib/engine.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const [maj, min] = process.versions.node.split(".").map(Number);
@@ -21,8 +21,8 @@ fs.mkdirSync(path.join(home, "bin"), { recursive: true });
 if (!fs.existsSync(path.join(home, ".lumitome-home"))) fs.writeFileSync(path.join(home, ".lumitome-home"), "");
 const bin = env.LUMI_OPENCODE || engineBin(home);
 const isoEnv = { ...env, XDG_CONFIG_HOME: path.join(home, "xdg-config"), XDG_DATA_HOME: path.join(home, "data"), XDG_STATE_HOME: path.join(home, "state"), XDG_CACHE_HOME: path.join(home, "cache"), OPENCODE_DISABLE_AUTOUPDATE: "1" };
-if (!env.LUMI_OPENCODE && engineVersion(bin, isoEnv) === null) {
-  try { await installEngine({ home }); }
+if (!env.LUMI_OPENCODE) {
+  try { await ensureEngine({ home, bin, env: isoEnv }); }
   catch (e) { process.stderr.write(`lumitome: gagal memasang engine OpenCode v${OC_VERSION}: ${e.message}\n`); process.exit(1); }
 }
 env.LUMI_OPENCODE = bin;

@@ -18,7 +18,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
 const REPO = path.resolve(ROOT, "..");                 // repo Swanwright
-const VERSION = "0.3.7";
+const VERSION = "0.3.8";
 const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
 const env = { ...process.env };
 const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process.exit(code); };
@@ -51,12 +51,12 @@ if (sub === "engine" || sub === "upgrade-engine") {
   const home = env.SW_HOME || env.LUMI_HOME || path.join(os.homedir(), ".lumitome");
   const cur = EN.engineBin(home);
   const ver = () => { try { return execFileSync(cur, ["--version"], { encoding: "utf8", env: isoEnv() }).trim(); } catch { return "(tidak ada)"; } };
-  if (sub === "engine") { console.log(`engine: ${cur}\nversi:  ${ver()}\nautoupdate: mati (OPENCODE_DISABLE_AUTOUPDATE=1, update:"disable")`); process.exit(0); }
+  if (sub === "engine") { console.log(`engine: ${cur}\nversi:  ${ver()}\nbuild:  ${EN.installedFlavor(cur) || "upstream"} (LUMI_ENGINE=upstream → OpenCode resmi)\nautoupdate: mati (OPENCODE_DISABLE_AUTOUPDATE=1, update:"disable")`); process.exit(0); }
   const [v, ...rest] = argv.slice(1);
   const shaArg = rest[rest.indexOf("--sha256") + 1];
   if (!v || !/^\d+\.\d+\.\d+$/.test(v) || rest.indexOf("--sha256") < 0 || !/^[0-9a-f]{64}$/.test(shaArg || ""))
     die(2, "pakai: lumitome upgrade-engine <x.y.z> --sha256 <sha256 arsip rilis> [--yes]  (checksum wajib; lihat SHA256SUMS rilis OpenCode)");
-  const url = EN.assetFor(v).url;
+  const url = EN.assetFor(v, process.platform, process.arch, "upstream").url;
   if (!rest.includes("--yes")) {
     process.stderr.write(`Ganti engine ${ver()} → v${v}\n  ${url}\n  sha256 ${shaArg}\nKetik 'ya' untuk lanjut: `);
     const ans = await new Promise((r) => { process.stdin.once("data", (d) => r(String(d).trim())); });
@@ -260,15 +260,17 @@ env.SW_9ROUTER_URL ||= env.LUMI_9ROUTER_URL; env.SW_9ROUTER_KEY ||= env.NINEROUT
 delete env.OPENCODE_CONFIG;
 
 // ---------- branding (tanpa patch engine) ----------
-// theme "lumitome" (lumitome/config/themes) + terminal.title:false di cli.json TERISOLASI (LUMI_HOME/config) — kunci milik user dihormati
+// theme bawaan OpenCode (hanya logo emas, dari engine Lumitome) + terminal.title:false di cli.json TERISOLASI (LUMI_HOME/config) — kunci milik user dihormati
 {
   const BR = await import(pathToFileURL(path.join(ROOT, "lib", "brand.mjs")).href);
   // engine v2.2.4: OPENCODE_CONFIG_DIR juga menjadi lokasi cli.json (terverifikasi; XDG_CONFIG_HOME/opencode/cli.json diabaikan saat CONFIG_DIR di-set)
   const cliFile = path.join(CFG_DIR, "cli.json");
   try {
     let cur = {}; try { cur = JSON.parse(fs.readFileSync(cliFile, "utf8")); } catch {}
-    const r = BR.seedCliConfig(cur);
+    const mark = path.join(CFG_DIR, ".theme-default-v038");
+    const r = BR.seedCliConfig(cur, { migrated: fs.existsSync(mark) });
     if (r.changed && env.LUMI_NO_BRAND !== "1") { fs.mkdirSync(path.dirname(cliFile), { recursive: true }); fs.writeFileSync(cliFile, JSON.stringify(r.config, null, 2) + "\n", { mode: 0o600 }); }
+    if (env.LUMI_NO_BRAND !== "1" && !fs.existsSync(mark)) { fs.mkdirSync(CFG_DIR, { recursive: true }); fs.writeFileSync(mark, ""); }
   } catch (e) { if (env.LUMI_DEBUG) process.stderr.write(`lumitome: cli.json branding dilewati (${e.message})\n`); }
   if (sub === "" && process.stderr.isTTY && env.LUMI_NO_BRAND !== "1") {
     let ver = ""; try { ver = fs.readFileSync(path.join(REPO, "VERSION"), "utf8").trim(); } catch {}

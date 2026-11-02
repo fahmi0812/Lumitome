@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.7-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.8-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -36,7 +36,7 @@ This puts everything in `~/.lumitome` and adds a `lumitome` command in `~/.local
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.7.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.8.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
@@ -100,6 +100,12 @@ npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 
 Lumitome does not update itself. It only updates when you run `lumitome update`. That command does not change the OpenCode version. On v0.3.1, which has no `update` command, run the install line again once.
 
+### About the OpenCode copy
+
+Lumitome runs OpenCode 2.2.4. The only change we made is the logo on the start screen: it says LUMITOME in gold instead of "opencode". Everything else, including the colors, is plain OpenCode 2.2.4.
+
+We built it from the official 2.2.4 source with OpenCode's own build script. The change is in [`engine/patches/logo.patch`](engine/patches/logo.patch), and the files are on the [engine-2.2.4-lumi.1](https://github.com/fahmi0812/Lumitome/releases/tag/engine-2.2.4-lumi.1) release page with their SHA256 hashes. If you want the unchanged official OpenCode instead, set `LUMI_ENGINE=upstream` before you install or run Lumitome.
+
 ## What it does differently
 
 - **It asks before risky actions, not before every step.** For example, deleting files outside your project, or pushing to the `main` branch, is stopped.
@@ -152,6 +158,6 @@ Lumitome adalah asisten coding yang berjalan di terminal. Dibangun di atas OpenC
 MIT. See [`LICENSE`](LICENSE).
 
 - Based on [fahmi0812/Swanwright](https://github.com/fahmi0812/Swanwright) (MIT).
-- Uses [OpenCode](https://github.com/anomalyco/opencode) (MIT). It is downloaded during install, not copied into this repo.
+- Uses [OpenCode](https://github.com/anomalyco/opencode) (MIT). It is downloaded during install, not copied into this repo. Our build changes only the start-screen logo ([`engine/patches/logo.patch`](engine/patches/logo.patch)).
 - The built-in rules are written in our own words, based on: multica-ai/andrej-karpathy-skills, obra/superpowers, poteto/noodle, unicodef1wn/grokbot-field-notes, qkal/Canny, affaan-m/ECC, alvinunreal/oh-my-opencode-slim (all MIT), and google/elephant-goldfish-model (Apache-2.0). Full list with versions: [`docs/RULES.md`](docs/RULES.md).
 - Third-party skills and their licenses: [`NOTICE.md`](NOTICE.md).

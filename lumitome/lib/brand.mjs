@@ -42,11 +42,14 @@ export function banner({ mode = colorMode(), version = "", tagline = "The book o
 }
 /** OSC 0 judul jendela/tab (xterm, GNOME, iTerm2, Windows Terminal, PowerShell/conhost). */
 export const titleSeq = (t = TITLE) => `\x1b]0;${String(t).replace(/[\x00-\x1f\x7f]/g, "")}\x07`;
-/** Default UI engine (cli.json terisolasi): theme lumitome + engine tidak menimpa judul "Lumitome". Kunci milik user dihormati. */
-export function seedCliConfig(cur) {
+/** Default UI engine (cli.json terisolasi): theme bawaan OpenCode + engine tidak menimpa judul "Lumitome". Kunci milik user dihormati.
+ *  v0.3.8: hanya logo yang emas (dari engine Lumitome). Theme "lumitome" yang dulu di-seed v0.3.7 dilepas SEKALI (migrated=false). */
+export function seedCliConfig(cur, { migrated = true } = {}) {
   const c = cur && typeof cur === "object" && !Array.isArray(cur) ? { ...cur } : {};
   let changed = false;
-  if (!c.theme || typeof c.theme !== "object" || !c.theme.name) { c.theme = { ...(c.theme || {}), name: "lumitome" }; changed = true; }
+  if (!migrated && c.theme && typeof c.theme === "object" && c.theme.name === "lumitome") {
+    const { name, ...rest } = c.theme; if (Object.keys(rest).length) c.theme = rest; else delete c.theme; changed = true;
+  }
   if (!c.terminal || typeof c.terminal !== "object" || c.terminal.title === undefined) { c.terminal = { ...(c.terminal || {}), title: false }; changed = true; }
   return { config: c, changed };
 }

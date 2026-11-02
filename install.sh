@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Lumitome 0.3.7 — installer (Linux / macOS / Windows via WSL2). Idempoten. Terisolasi dari OpenCode milik user:
+# Lumitome 0.3.8 — installer (Linux / macOS / Windows via WSL2). Idempoten. Terisolasi dari OpenCode milik user:
 #   engine OpenCode v2.2.4 terpin (SHA256) di $LUMI_HOME/bin (default ~/.lumitome) — TIDAK ditaruh di PATH global,
 #   tidak menyentuh ~/.config/opencode, ~/.local/share/opencode (auth.json, sesi) atau `opencode` global.
 #   Satu-satunya file di luar $LUMI_HOME: launcher $LUMI_BIN_DIR/lumitome (default ~/.local/bin).
@@ -7,7 +7,7 @@
 #   atau: bash install.sh [--doctor] [--dry-run] [--uninstall] [--no-node] [--no-cbm] [--no-uv] [--skip-npm] [--with-browsers] [--project DIR]
 set -euo pipefail
 
-SW_VERSION=0.3.7
+SW_VERSION=0.3.8
 OC_VERSION=2.2.4
 CBM_VERSION=0.12.1
 UV_VERSION=0.13.6
@@ -85,24 +85,39 @@ fetch() {
 mkdir -p "$BIN"; [ "$DRY" = 1 ] || touch "$SW_HOME/.lumitome-home"
 
 # ---------- OpenCode v2.2.4 ----------
+# default: build Lumitome (OpenCode v2.2.4, hanya logo diganti; engine/patches/logo.patch). LUMI_ENGINE=upstream → binary resmi.
+LUMI_ENGINE_TAG=engine-2.2.4-lumi.1
 oc_asset() { case "$OS-$ARCH" in
   linux-x64) echo "opencode-linux-x64.tar.gz 1b70ce4a88e27c3643c2bb61c757dfe173b4e3629926ce808d45f3774d87826e";;
   linux-arm64) echo "opencode-linux-arm64.tar.gz 81edcae078f36356cde3cf57d0cc6627896b18d1bddf47317cb025c56fcffd93";;
   darwin-x64) echo "opencode-darwin-x64.zip 2be9b7671f94a9636b85ff31fcfce613f197c5204ec90291982d692010d072fd";;
   darwin-arm64) echo "opencode-darwin-arm64.zip 4e093cae2931773c354896d98e7da0cfa3607c110aeaf255ba07f9c2d2238219";; esac; }
-say "1/7 OpenCode v$OC_VERSION"
+lumi_asset() { case "$OS-$ARCH" in
+  linux-x64) echo "opencode-linux-x64.tar.gz be6d3d72ee5de8e8db2fa3409ecf690b41590b5b639838e81ad6d5f9e4c2d0cb";;
+  linux-arm64) echo "opencode-linux-arm64.tar.gz 47a0a48a23a37d5976aa4ca354ed83a1bc9c8d633991e4075f1d4124598508e6";;
+  darwin-x64) echo "opencode-darwin-x64.zip 14c6d9a29be862112417fec61e3413105e619783af4c44c3c55c6d38df1e7482";;
+  darwin-arm64) echo "opencode-darwin-arm64.zip ce0b62ac9baad5bd7146c53892d879832bd3fcc9e0e579b81ba5e0d76b0e5284";; esac; }
+if [ "${LUMI_ENGINE:-}" = upstream ] || [ -z "$(lumi_asset)" ]; then
+  OC_FLAVOR=upstream; OC_BASE="https://github.com/anomalyco/opencode/releases/download/v$OC_VERSION"; OC_PICK="$(oc_asset)"
+else
+  OC_FLAVOR=$LUMI_ENGINE_TAG; OC_BASE="https://github.com/fahmi0812/Lumitome/releases/download/$LUMI_ENGINE_TAG"; OC_PICK="$(lumi_asset)"
+fi
+say "1/7 OpenCode v$OC_VERSION ($OC_FLAVOR)"
 # engine dijalankan dengan XDG terisolasi → tidak menulis log/state ke ~/.local/share/opencode milik user
 oc_engine() { XDG_DATA_HOME="$SW_HOME/xdg/data" XDG_CONFIG_HOME="$SW_HOME/xdg/config" XDG_STATE_HOME="$SW_HOME/xdg/state" XDG_CACHE_HOME="$SW_HOME/xdg/cache" \
   OPENCODE_DISABLE_AUTOUPDATE=1 OPENCODE_DISABLE_MODELS_FETCH=1 "$BIN/opencode" "$@"; }
-if [ -x "$BIN/opencode" ] && oc_engine --version 2>/dev/null | grep -q "v$OC_VERSION"; then ok "sudah terpasang ($BIN/opencode)"
+oc_have_flavor() { cat "$BIN/opencode.flavor" 2>/dev/null || echo upstream; }
+if [ -x "$BIN/opencode" ] && oc_engine --version 2>/dev/null | grep -q "v$OC_VERSION" && [ "$(oc_have_flavor)" = "$OC_FLAVOR" ]; then ok "sudah terpasang ($BIN/opencode, $OC_FLAVOR)"
 else
-  set -- $(oc_asset); base="https://github.com/anomalyco/opencode/releases/download/v$OC_VERSION"
-  fetch "$base/$1" "$2" "$base/SHA256SUMS"
+  set -- $OC_PICK
+  fetch "$OC_BASE/$1" "$2" "$OC_BASE/SHA256SUMS"
   if [ "$DRY" = 0 ]; then
+    rm -rf "$TMP/oc"
     case "$1" in *.zip) unzip -qo "$TMP/$1" -d "$TMP/oc";; *) mkdir -p "$TMP/oc" && tar -xzf "$TMP/$1" -C "$TMP/oc";; esac
-    install -m 0755 "$(find "$TMP/oc" -type f -name opencode | head -1)" "$BIN/opencode"
+    rm -f "$BIN/opencode"; install -m 0755 "$(find "$TMP/oc" -type f -name opencode | head -1)" "$BIN/opencode"
+    echo "$OC_FLAVOR" > "$BIN/opencode.flavor"
     oc_engine --version | grep -q "v$OC_VERSION" || die "versi opencode tidak sesuai"
-    ok "$(oc_engine --version)"
+    ok "$(oc_engine --version) ($OC_FLAVOR)"
   fi
 fi
 command -v opencode >/dev/null 2>&1 && ok "opencode global user dibiarkan apa adanya ($(command -v opencode); tidak dijalankan); engine lumitome terpisah di $BIN"
