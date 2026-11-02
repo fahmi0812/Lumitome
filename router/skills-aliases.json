@@ -68,6 +68,7 @@
   "interrogate": {"id": ["uji tekanan ide", "cari titik buta"], "en": ["stress test", "blind spots", "adversarial review"]},
   "humanizer-indonesia": {"id": ["humanisasi teks", "parafrase", "tidak terdengar ai", "gaya alami"], "en": ["humanize indonesian", "paraphrase"]},
   "humanizer": {"id": ["humanizer inggris"], "en": ["humanize text", "remove ai tone", "rewrite naturally", "paraphrase"]},
+  "drawio-diagram": {"id": ["diagram draw.io", "file drawio", "gambar arsitektur cloud", "diagram jaringan", "diagram aws"], "en": ["draw.io diagram", "drawio file", "diagrams.net", "cloud architecture diagram", "network diagram", "aws diagram"]},
   "diagram-design": {"id": ["diagram", "flowchart", "diagram alur", "sequence diagram", "erd"], "en": ["diagram", "flowchart", "sequence diagram", "architecture diagram", "er diagram"]},
   "naskah-id": {"id": ["naskah ilmiah", "eyd", "tata bahasa", "sunting naskah", "artikel"], "en": ["indonesian manuscript", "academic editing"]},
   "smartdoc": {"id": ["intelijen dokumen"], "en": ["smartdoc", "document intelligence"]},

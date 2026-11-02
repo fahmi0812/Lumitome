@@ -149,7 +149,7 @@ export function checkMcpPolicy(file = "opencode.jsonc", mapFile = "router/mcp-se
     if (/codebase-memory-mcp\s+(install|update)/.test(cmd)) e.push(`mcp.servers.${n}: jangan jalankan install/update`);
     if (s.codemode === false) e.push(`mcp.servers.${n}: Code Mode wajib tetap aktif`);
   }
-  for (const n of ["figma", "github"]) if (sv[n] && sv[n].disabled !== true) e.push(`mcp.servers.${n}: wajib disabled default`);
+  for (const n of ["figma", "github", "drawio"]) if (sv[n] && sv[n].disabled !== true) e.push(`mcp.servers.${n}: wajib disabled default`);
   for (const n of Object.keys(sv)) if (n.startsWith("gw-") && sv[n].disabled !== true) e.push(`mcp.servers.${n}: gateway wajib disabled default`);
   for (const n of ["context7", "codemem"]) if (!sv[n] || sv[n].disabled) e.push(`mcp.servers.${n}: wajib ada & enabled`);
   for (const [sec, list] of Object.entries(M.sectors)) for (const n of [...list, `skills-${sec}`, `gw-${sec}`]) if (!sv[n]) e.push(`mapping ${sec}: server ${n} tidak ada di config`);

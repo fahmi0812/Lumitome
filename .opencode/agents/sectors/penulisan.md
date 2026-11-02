@@ -9,6 +9,8 @@ permissions:
   - { action: "opencode_list_mcp_resources", resource: "context7", effect: allow }
   - { action: "markitdown_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "markitdown", effect: allow }
+  - { action: "drawio_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "drawio", effect: allow }
   - { action: "skills-penulisan_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "skills-penulisan", effect: allow }
   - { action: "gw-penulisan_*", resource: "*", effect: allow }
@@ -16,6 +18,7 @@ permissions:
   - { action: "skill", resource: "*", effect: deny }
   - { action: "skill", resource: "diagram-design", effect: allow }
   - { action: "skill", resource: "doc-coauthoring", effect: allow }
+  - { action: "skill", resource: "drawio-diagram", effect: allow }
   - { action: "skill", resource: "humanizer", effect: allow }
   - { action: "skill", resource: "humanizer-indonesia", effect: allow }
   - { action: "skill", resource: "internal-comms", effect: allow }

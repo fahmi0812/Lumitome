@@ -7,13 +7,14 @@
     "chromedev":  { "kind": "direct", "default": "enabled",  "risk": "S", "src": "https://github.com/ChromeDevTools/chrome-devtools-mcp" },
     "markitdown": { "kind": "direct", "default": "enabled",  "risk": "R", "src": "https://github.com/microsoft/markitdown" },
     "figma":      { "kind": "direct", "default": "disabled", "risk": "S", "src": "https://developers.figma.com/docs/figma-mcp-server/", "needs": "OAuth (opencode mcp auth figma)" },
-    "github":     { "kind": "direct", "default": "disabled", "risk": "T", "src": "https://github.com/github/github-mcp-server", "needs": "env GITHUB_PERSONAL_ACCESS_TOKEN", "ask": ["create_*", "update_*", "merge_*", "push_*", "delete_*", "fork_*", "add_*", "request_*", "assign_*", "dismiss_*", "run_*", "cancel_*", "rerun_*"] }
+    "github":     { "kind": "direct", "default": "disabled", "risk": "T", "src": "https://github.com/github/github-mcp-server", "needs": "env GITHUB_PERSONAL_ACCESS_TOKEN", "ask": ["create_*", "update_*", "merge_*", "push_*", "delete_*", "fork_*", "add_*", "request_*", "assign_*", "dismiss_*", "run_*", "cancel_*", "rerun_*"] },
+    "drawio":     { "kind": "direct", "default": "disabled", "risk": "S", "src": "https://github.com/DayuanJiang/next-ai-draw-io", "pin": "@next-ai-drawio/mcp-server@0.4.11", "needs": "opt-in LUMI_MCP=...,drawio (preview browser lokal)" }
   },
   "sectors": {
     "coding":    ["context7", "codemem", "github", "playwright", "chromedev"],
     "media":     ["figma", "playwright", "chromedev"],
     "riset":     ["context7", "markitdown", "playwright"],
-    "penulisan": ["context7", "markitdown"],
+    "penulisan": ["context7", "markitdown", "drawio"],
     "security":  ["context7", "codemem"],
     "finance":   ["markitdown"]
   },

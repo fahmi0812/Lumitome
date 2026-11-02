@@ -139,6 +139,8 @@ for (const sec of ["coding", "security", "riset", "penulisan", "finance", "media
   const n = `skills-${sec}`; if (!(wantMcp.includes("all") || wantMcp.includes(n))) continue;
   mcpOverride[n] = { type: "local", command: [process.execPath, "--no-warnings", path.join(REPO, "router", "skill-search-mcp.mjs"), "--sector", sec, "--root", REPO], timeout: { startup: 30000, catalog: 30000, execution: 30000 } };
 }
+// drawio (next-ai-draw-io, terpin) — opsional, mati default; hanya bila disebut eksplisit di LUMI_MCP (tidak ikut "all")
+if (wantMcp.includes("drawio")) mcpOverride.drawio = { type: "local", command: ["npx", "-y", "@next-ai-drawio/mcp-server@0.4.11"], environment: { BROWSER: env.BROWSER || "" }, timeout: { startup: 120000, catalog: 120000, execution: 120000 } };
 // codemem global: binary absolut di LUMI_HOME/bin (bukan PATH, bukan config proyek). Tidak pernah `install`.
 const CM = await import(pathToFileURL(path.join(ROOT, "lib", "codemem.mjs")).href);
 if (wantMcp.includes("all") || wantMcp.includes("codemem")) {

@@ -77,6 +77,7 @@ Pack: `npm run enable-pack -- <nama>`. Karpathy via rules/06. Finance: belum ada
 - humanizer-indonesia: humanizer Indonesia: sunting teks agar tak terbaca AI/terjemahan, kembali ke gaya penulis
 - humanizer: humanizer EN: tulis ulang teks berbau AI tanpa mengubah isi
 - diagram-design: diagram arsitektur, flowchart, sequence, state machine, ER, timeline
+- drawio-diagram: diagram draw.io (.drawio), arsitektur cloud, jaringan; MCP drawio opsional
 - naskah-id: naskah ilmiah Indonesia: tulis dan sunting (EYD V)
 - smartdoc: smartdoc: intelijen dokumen per job
 - smartbook-ingest: smartbook: kompilasi buku/modul/manual reusable

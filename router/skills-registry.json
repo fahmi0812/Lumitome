@@ -419,6 +419,27 @@
       "from_pack": "misc"
     },
     {
+      "id": "drawio-diagram",
+      "name": "drawio-diagram",
+      "sektor": "penulisan",
+      "description": "diagram draw.io/diagrams.net (.drawio), arsitektur, cloud AWS/GCP/Azure, jaringan; MCP drawio opsional",
+      "triggers": [
+        "drawio",
+        "draw.io",
+        "diagrams.net"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "DayuanJiang/next-ai-draw-io",
+      "sha": "c9dc5f5cc62e7e5a327a62b39027d80033e1548c",
+      "license": "Apache-2.0",
+      "original_id": "dayuanjiang-next-ai-draw-io__drawio-diagram",
+      "original_name": "drawio-diagram"
+    },
+    {
       "id": "egm-bootstrap",
       "name": "egm-bootstrap",
       "sektor": "coding",

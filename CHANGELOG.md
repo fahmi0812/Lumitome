@@ -1,5 +1,10 @@
 # Changelog
 
+## Belum dirilis
+
+- BARU skill `drawio-diagram` (sektor penulisan): diagram draw.io/diagrams.net (.drawio, .drawio.svg), berbasis [DayuanJiang/next-ai-draw-io](https://github.com/DayuanJiang/next-ai-draw-io) @ `c9dc5f5` (Apache-2.0). Alias id/en ("diagram draw.io", "diagrams.net", "aws diagram", …). Skill aktif: 87.
+- BARU MCP opsional `drawio` (`@next-ai-drawio/mcp-server@0.4.11`, terpin): mati default, tidak ikut `LUMI_MCP=all`; nyalakan dengan menyebutnya, mis. `LUMI_MCP=codemem,skills-coding,skills-riset,skills-penulisan,skills-security,drawio`. Tool `drawio_*` hanya untuk sektor penulisan.
+
 ## 0.3.6 — Default baru: orchestrator, 5 MCP, code memory di mana saja
 
 - Default MCP: `codemem`, `skills-coding`, `skills-riset`, `skills-penulisan`, `skills-security`. `skills-finance`/`skills-media` hanya lewat `LUMI_MCP=all` atau daftar eksplisit. Skill `*offensive*` tetap `ask`.

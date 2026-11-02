@@ -133,7 +133,7 @@ ok("perubahan fitur biasa -> tanpa WARN drift", checkRewriteToDocs({ changedFile
 
 // --- v0.1.3: kompatibilitas OpenCode ---
 const act = checkSkillsDir(".opencode/skills");
-ok("86 skill aktif valid (nama=folder, regex, deskripsi)", act.errors.length === 0 && act.names.length === 86);
+ok("87 skill aktif valid (nama=folder, regex, deskripsi)", act.errors.length === 0 && act.names.length === 87);
 ok("semua pack skill valid", fs.readdirSync("packs").every((p) => checkSkillsDir(`packs/${p}/skills`).errors.length === 0));
 const bad = checkSkillsDir("tests/fixtures/opencode/bad-skills");
 ok("fixture: folder foo__bar / name beda -> FAIL", bad.errors.some((e) => e.includes("foo__bar")) && !bad.errors.some((e) => e.includes("good-one")));
@@ -169,7 +169,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const { checkMcpPolicy } = await import("../scripts/check-opencode.mjs");
   delete process.env.SW_EMBED; delete process.env.SW_EMBED_MODEL;
   const built = await SD.buildIndex({ quiet: true });
-  ok("indeks: 86 aktif, api/llm-security disabled", built.counts.active === 86 && built.counts.disabled > 0);
+  ok("indeks: 87 aktif, api/llm-security disabled", built.counts.active === 87 && built.counts.disabled > 0);
   const db = SD.openDb("runtime/skills.db", { readOnly: true });
   const st = Object.fromEntries(db.prepare("SELECT name,status FROM skill WHERE name IN ('api-security','llm-security')").all().map((r) => [r.name, r.status]));
   ok("api-security & llm-security status=disabled di indeks", st["api-security"] === "disabled" && st["llm-security"] === "disabled");
@@ -200,7 +200,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
     // v0.3.1: enrichment, trigram, gating L1, timeout keras, cache rute
     const d = SD.openDb("runtime/skills.db");
     const en = d.prepare("SELECT json FROM skill_enrich").all().map((r) => JSON.parse(r.json));
-    ok(`enrich: ${en.length} skill aktif, masing2 3–5 contoh + alias`, en.length === 86 && en.every((e) => e.examples.length >= 3 && e.examples.length <= 5 && e.aliases_en.length > 0));
+    ok(`enrich: ${en.length} skill aktif, masing2 3–5 contoh + alias`, en.length === 87 && en.every((e) => e.examples.length >= 3 && e.examples.length <= 5 && e.aliases_en.length > 0));
     const L = await import("../router/l0.mjs");
     const r1 = L.searchL0(d, "deploi ke vercle"); d.close();
     ok("L0 trigram: typo 'deploi ke vercle' → vercel-ops top1", r1.candidates[0]?.name === "vercel-ops");
@@ -420,6 +420,8 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("registry aktif == folder .opencode/skills; gen-registry --check bersih", gr.status === 0 && JSON.stringify(regIds) === JSON.stringify(fs.readdirSync(".opencode/skills").filter((d) => fs.existsSync(path.join(".opencode/skills", d, "SKILL.md"))).sort()));
   const SDB = await import("../router/skill-db.mjs");
   ok("salinan cermin pack (impeccable-2.., design-2) tidak diindeks; foldernya tetap ada", !SDB.collectSkills(".").some((x) => /^impeccable-\d+$|^design-2$/.test(x.name)) && fs.existsSync("packs/design-extra/skills/impeccable-2/SKILL.md"));
+  const Wd = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8"), oc = fs.readFileSync("opencode.jsonc", "utf8");
+  ok("drawio: skill aktif terpin SHA + MCP opsional (mati default, versi npx terpin, tidak ikut 'all')", fs.existsSync(".opencode/skills/drawio-diagram/SKILL.md") && /c9dc5f5cc62e7e5a327a62b39027d80033e1548c/.test(fs.readFileSync(".opencode/skills/drawio-diagram/SKILL.md", "utf8")) && /if \(wantMcp\.includes\("drawio"\)\)/.test(Wd) && /"@next-ai-drawio\/mcp-server@0\.4\.11"\s*\],\s*"disabled": true/.test(oc));
   ok("versi 0.3.6 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.6") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.6" && /VERSION = "0\.3\.6"/.test(W) && /SW_VERSION=0\.3\.6/.test(inst));
 }
 

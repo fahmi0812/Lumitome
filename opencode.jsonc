@@ -106,6 +106,20 @@
           "execution": 600000
         }
       },
+      "drawio": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "@next-ai-drawio/mcp-server@0.4.11"
+        ],
+        "disabled": true,
+        "timeout": {
+          "startup": 120000,
+          "catalog": 120000,
+          "execution": 120000
+        }
+      },
       "playwright": {
         "type": "local",
         "command": [
