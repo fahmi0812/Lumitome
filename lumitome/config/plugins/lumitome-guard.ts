@@ -5,6 +5,8 @@
  * tool.execute.before: tolak (throw) / bungkus bwrap; tool.execute.after: jurnal + anti-spin.
  */
 import fs from "node:fs";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 const SHELL = new Set(["shell", "bash"]);
 const FILE = new Set(["read", "edit", "write", "glob", "grep", "list", "patch", "multiedit", "apply_patch"]);
@@ -17,12 +19,12 @@ export default {
   id: "lumitome-guard",
   async setup(ctx: any) {
     let g: any = null; let closed = "";
-    try { g = await import(env.LUMI_HARNESS || "../../../harness/lumi-guard.mjs"); }
+    try { g = await import(env.LUMI_HARNESS ? pathToFileURL(env.LUMI_HARNESS).href : "../../../harness/lumi-guard.mjs"); }
     catch (e) { closed = `LUMI_GUARD_CLOSED: modul guard gagal dimuat (${String(e)}) — shell & tool tulis ditolak`; }
     const sandbox = env.LUMI_SANDBOX || "bwrap";
     if (g && sandbox === "bwrap" && !g.bwrapAvailable()) closed = "SANDBOX_CLOSED: bwrap tidak tersedia/tidak bisa membuat namespace. Shell ditolak (fail-closed). Pasang bubblewrap (apt install bubblewrap) atau set LUMI_SANDBOX=off secara sadar.";
     const spin = g ? new g.RuntimeSpin({ maxFail: Number(env.LUMI_SPIN_MAX_FAIL || 3), maxRepeat: Number(env.LUMI_SPIN_MAX_REPEAT || 4) }) : null;
-    const toolDirs = (env.LUMI_TOOLDIRS || "").split(":").filter(Boolean);
+    const toolDirs = (env.LUMI_TOOLDIRS || "").split(path.delimiter).filter(Boolean);
     const headless = env.LUMI_HEADLESS === "1";
     jot({ kind: "guard", status: closed ? "closed" : "ok", sandbox, ws: WS, reason: closed || undefined });
 

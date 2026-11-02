@@ -13,12 +13,12 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import crypto from "node:crypto";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
 const REPO = path.resolve(ROOT, "..");                 // repo Swanwright
-const VERSION = "0.3.4";
+const VERSION = "0.3.5";
 const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
 const env = { ...process.env };
 const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process.exit(code); };
@@ -42,12 +42,12 @@ if (sub === "update") {
     console.log(`lumitome ${VERSION} terpasang lewat npm. Perbarui dengan:\n  npm i -g https://github.com/fahmi0812/Lumitome/tarball/main\n(setelah terbit di npm: npm i -g ${env.LUMI_NPM_NAME || "lumitome"}@latest)\nEngine OpenCode tidak ikut berubah.`);
     process.exit(0);
   }
-  const { update } = await import(path.join(ROOT, "lib", "update.mjs"));
+  const { update } = await import(pathToFileURL(path.join(ROOT, "lib", "update.mjs")).href);
   process.exit(await update({ argv: argv.slice(1), version: VERSION, repo: REPO, home: ISO_HOME }));
 }
 // ---------- engine terpin: hanya diganti lewat perintah eksplisit ----------
 if (sub === "engine" || sub === "upgrade-engine") {
-  const EN = await import(path.join(ROOT, "lib", "engine.mjs"));
+  const EN = await import(pathToFileURL(path.join(ROOT, "lib", "engine.mjs")).href);
   const home = env.SW_HOME || env.LUMI_HOME || path.join(os.homedir(), ".lumitome");
   const cur = EN.engineBin(home);
   const ver = () => { try { return execFileSync(cur, ["--version"], { encoding: "utf8", env: isoEnv() }).trim(); } catch { return "(tidak ada)"; } };
@@ -72,7 +72,7 @@ if (sub === "engine" || sub === "upgrade-engine") {
   process.exit(0);
 }
 // ---------- provider: custom (LUMI_HOME/providers.json + credentials.json 0600) + env NINEROUTER_API_KEY (override) ----------
-const PV = await import(path.join(ROOT, "lib", "providers.mjs"));
+const PV = await import(pathToFileURL(path.join(ROOT, "lib", "providers.mjs")).href);
 if (sub === "connect" || (sub === "models" && argv.includes("--refresh")) || (sub === "models" && argv.includes("--lumitome"))) {
   process.exit(await PV.cli({ argv: argv.slice(1), home: ISO_HOME, sub }));
 }
@@ -170,7 +170,7 @@ if (sub === "run" && (env.LUMI_SKILLS ?? "auto") === "auto" && fs.existsSync(pat
   const prompt = promptOf(argv.slice(1));
   if (prompt) {
     try {
-      const SD = await import(path.join(REPO, "router", "skill-db.mjs"));
+      const SD = await import(pathToFileURL(path.join(REPO, "router", "skill-db.mjs")).href);
       const saved = process.cwd(); process.chdir(REPO);
       // L1 = cadangan: "auto" (default) hanya saat confidence L0 rendah, timeout keras 3 s; "always"/"1"; "0" = mati
       const l1m = String(env.LUMI_ROUTER_L1 ?? "auto"), useL1 = l1m === "0" ? false : (l1m === "always" || l1m === "1") ? "always" : true;
@@ -208,7 +208,7 @@ function linkInto(src, dst) {
 // TUI/attach memakai "managed service" OpenCode (port default 49374 — sama dengan `opencode serve --service` milik
 // user). Lumitome memakai port & state sendiri di LUMI_HOME; service milik user tidak disentuh/dimatikan.
 if (sub !== "run") {
-  const SP = await import(path.join(ROOT, "lib", "service-port.mjs"));
+  const SP = await import(pathToFileURL(path.join(ROOT, "lib", "service-port.mjs")).href);
   const sp = await SP.ensureServicePort({ home: HOME, cfgDir: CFG_DIR, stateHome: path.join(HOME, "state"), env });
   if (env.LUMI_DEBUG) process.stderr.write(`lumitome: service port ${sp.port} (${sp.reason}) — ${sp.file}\n`);
 }
@@ -380,11 +380,11 @@ if (sub === "run") {
   else if (code === 0 && guard?.status === "closed") { process.stderr.write(`lumitome: ${guard.reason}\n`); code = 5; }
   else if (code === 0 && !guard) { process.stderr.write("lumitome: LUMI_GUARD_MISSING — plugin guard tidak termuat; hasil tidak tepercaya\n"); code = 5; }
   else if (code === 0 && env.LUMI_DONE_GATE !== "off") {
-    const { doneGateFromJournal } = await import(path.join(REPO, "harness", "lumi-guard.mjs"));
+    const { doneGateFromJournal } = await import(pathToFileURL(path.join(REPO, "harness", "lumi-guard.mjs")).href);
     const dg = doneGateFromJournal(j);
     if (dg.spin) { process.stderr.write(`lumitome: ANTI-SPIN TRIP — ${dg.spin.reason}\n`); code = 4; }
     else if (dg.ran && dg.last.exit !== 0) {
-      const { evaluateDoneGate } = await import(path.join(REPO, "harness", "done-gate.ts")).catch(() => ({}));
+      const { evaluateDoneGate } = await import(pathToFileURL(path.join(REPO, "harness", "done-gate.ts")).href).catch(() => ({}));
       const r = evaluateDoneGate ? evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], testCommandExitCode: dg.last.exit, facts: dg.facts }) : { isDone: false, failureReason: "tes gagal" };
       process.stderr.write(`lumitome: DONE-GATE FAIL — ${r.failureReason}${dg.last.why ? ` (${dg.last.why})` : ""}; FACT: \`${dg.last.command}\` exit=${dg.last.raw_exit ?? dg.last.exit}\n`); code = 3;
     } else if (dg.ran) process.stderr.write(`lumitome: DONE-GATE PASS — FACT: \`${dg.last.command}\` exit=0\n`);

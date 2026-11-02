@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.5 — Perbaikan Windows
+
+- FIX Windows: `lumitome` gagal dengan ERR_UNSUPPORTED_ESM_URL_SCHEME karena import() dinamis menerima path mentah `C:\...`. Kini semua memakai pathToFileURL (wrapper + plugin guard).
+- FIX Windows: LUMI_TOOLDIRS dipisah dengan path.delimiter (`;`), bukan `:`.
+
 ## 0.3.4 — Rilis tag untuk perbaikan pasca-0.3.3
 
 - postinstall npm lebih aman (tidak menggagalkan instalasi bila unduh engine gagal; dicoba lagi saat first-run).

@@ -372,6 +372,13 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
 }
 
 {
+  // v0.3.5: Windows ESM - import() dinamis wajib file:// URL, bukan path mentah (C:\\...)
+  const files = ["lumitome/bin/lumitome.mjs", "lumitome/bin/cli.mjs", "lumitome/config/plugins/lumitome-guard.ts"];
+  const bad = files.filter((f) => /await import\((path\.join|env\.LUMI_HARNESS \|\|)/.test(fs.readFileSync(path.join(path.dirname(new URL(import.meta.url).pathname), "..", f), "utf8")));
+  ok("win: import() dinamis memakai pathToFileURL (tanpa ERR_UNSUPPORTED_ESM_URL_SCHEME)", bad.length === 0);
+}
+
+{
   // v0.3.3: paket npm & logika path Windows
   const EN = await import("../lumitome/lib/engine.mjs");
   const wh = EN.lumiHome({}, path.win32, "C:\\Users\\Fahmi");
