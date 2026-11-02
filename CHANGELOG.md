@@ -2,6 +2,12 @@
 
 ## Belum dirilis
 
+## 0.3.9 — Layar provider; API key tampil sebagai •
+
+- BARU layar provider (`lumitome/lib/provider-ui.mjs`, Node murni): logo LUMITOME emas, daftar provider tersimpan (`nama  N model  ×`, Del → konfirmasi y), form Tipe (OpenAI · Anthropic compatible) / Nama / Base URL / API Key, status `✓ Terhubung · N model terdeteksi`. Muncul otomatis saat `lumitome` dibuka tanpa provider; buka lagi dengan `lumitome provider`. Penyimpanan sama dengan `lumitome connect` (providers.json + credentials.json 0600, key lewat env ke engine).
+- PERBAIKAN Windows: API key di `lumitome connect` tidak lagi kosong/tak terlihat; tampil • per karakter. Backspace `\b` dan DEL, Enter CRLF, bracketed paste dan paste biasa ditangani.
+- Batasan: `/provider` di dalam TUI engine belum ada (butuh patch engine); di TUI tetap ada `/connect` bawaan OpenCode.
+
 ## 0.3.8 — Logo LUMITOME di layar awal; hanya logo yang emas
 
 - Engine sekarang build Lumitome dari OpenCode v2.2.4 (tag upstream `v2.2.4`, commit 45898d0). Satu-satunya perubahan: tulisan blok di layar awal jadi `LUMITOME` berwarna emas (`LUMI` emas tua + `TOME` champagne). Patch: `engine/patches/logo.patch`. Binary dibangun dengan skrip build upstream (Bun 1.4.4) dan dirilis di `engine-2.2.4-lumi.1` (linux x64/arm64, darwin x64/arm64, windows x64/arm64), terpin SHA256 di `lumitome/lib/engine.mjs` dan `install.sh`.

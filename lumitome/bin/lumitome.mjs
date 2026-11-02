@@ -18,7 +18,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
 const REPO = path.resolve(ROOT, "..");                 // repo Swanwright
-const VERSION = "0.3.8";
+const VERSION = "0.3.9";
 const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
 const env = { ...process.env };
 const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process.exit(code); };
@@ -73,6 +73,13 @@ if (sub === "engine" || sub === "upgrade-engine") {
 }
 // ---------- provider: custom (LUMI_HOME/providers.json + credentials.json 0600) + env NINEROUTER_API_KEY (override) ----------
 const PV = await import(pathToFileURL(path.join(ROOT, "lib", "providers.mjs")).href);
+// menu provider (layar penuh): `lumitome provider`, dan otomatis saat belum ada provider
+async function providerMenu() {
+  if (!process.stdin.isTTY || !process.stdout.isTTY) die(2, "menu provider butuh terminal interaktif; pakai: lumitome connect --type openai|anthropic --name <n> --base-url <url> --key-env VAR");
+  const UI = await import(pathToFileURL(path.join(ROOT, "lib", "provider-ui.mjs")).href);
+  return UI.run({ home: ISO_HOME, PV });
+}
+if (sub === "provider") { await providerMenu(); process.exit(0); }
 if (sub === "connect" || (sub === "models" && argv.includes("--refresh")) || (sub === "models" && argv.includes("--lumitome"))) {
   process.exit(await PV.cli({ argv: argv.slice(1), home: ISO_HOME, sub }));
 }
@@ -88,15 +95,10 @@ const MODEL = chooseModel();
 if (!HAS_PROVIDER) {
   if (sub === "run") die(2, "belum ada provider. Tambah: `lumitome connect` (Custom OpenAI/Anthropic-compatible) atau export NINEROUTER_API_KEY");
   if (sub === "") {
-    process.stderr.write("\n  Lumitome: belum ada provider model.\n  • [c] + Enter : tambah provider Custom OpenAI/Anthropic-compatible sekarang (mis. 9router) — sama dengan `lumitome connect`\n  • Enter       : buka TUI; di dalamnya ketik /connect untuk provider bawaan OpenCode\n  (TUI terbuka otomatis dalam 15 detik)\n> ");
-    const pick = process.stdin.isTTY && env.LUMI_ONBOARD !== "0" ? await new Promise((resolve) => {
-      const rl = (await_rl()); const t = setTimeout(() => { rl.close(); resolve(""); }, 15000);
-      rl.once("line", (l) => { clearTimeout(t); rl.close(); resolve(l.trim().toLowerCase()); });
-    }) : "";
-    if (pick === "c") {
-      const c = spawnSync(process.execPath, [fileURLToPath(import.meta.url), "connect"], { stdio: "inherit", env: process.env });
-      if (c.status === 0) process.exit(spawnSync(process.execPath, [fileURLToPath(import.meta.url), ...argv], { stdio: "inherit", env: process.env }).status ?? 1);
-    }
+    if (process.stdin.isTTY && process.stdout.isTTY && env.LUMI_ONBOARD !== "0") {
+      const n = await providerMenu();
+      if (n > 0) process.exit(spawnSync(process.execPath, [fileURLToPath(import.meta.url), ...argv], { stdio: "inherit", env: process.env }).status ?? 1);
+    } else process.stderr.write("lumitome: belum ada provider model. Tambah: `lumitome provider` (menu) atau `lumitome connect`; di TUI: /connect\n");
   }
 }
 

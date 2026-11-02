@@ -77,21 +77,7 @@ export function opencodeFragment(home, env = process.env) {
 
 // ---------- CLI ----------
 function ask(rl, q) { return new Promise((r) => rl.question(q, r)); }
-function askHidden(q) {
-  return new Promise((resolve) => {
-    const out = process.stderr; out.write(q); let buf = "";
-    const stdin = process.stdin; const raw = stdin.isTTY; if (raw) stdin.setRawMode(true); stdin.resume(); stdin.setEncoding("utf8");
-    const on = (ch) => {
-      for (const c of ch) {
-        if (c === "\r" || c === "\n") { stdin.removeListener("data", on); if (raw) stdin.setRawMode(false); stdin.pause(); out.write("\n"); return resolve(buf); }
-        if (c === "\u0003") { out.write("\n"); process.exit(130); }
-        if (c === "\u007f") { buf = buf.slice(0, -1); continue; }
-        buf += c;
-      }
-    };
-    stdin.on("data", on);
-  });
-}
+async function askHidden(q) { const { askMasked } = await import("./provider-ui.mjs"); return askMasked(q); }
 
 export async function cli({ argv, home, sub, log = console.log, err = (m) => process.stderr.write(m + "\n") }) {
   const val = (f) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : undefined; }, flag = (f) => argv.includes(f);
@@ -110,12 +96,12 @@ export async function cli({ argv, home, sub, log = console.log, err = (m) => pro
   if (interactive) {
     if (!process.stdin.isTTY) { err("connect: non-interaktif butuh --type openai|anthropic --name <n> --base-url <url> (--key-env VAR | --key-stdin)"); return 2; }
     const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
-    err("Tambah provider Lumitome\n  1) Custom OpenAI-compatible (9router, OpenRouter, vLLM, LM Studio, Ollama /v1, …)\n  2) Custom Anthropic-compatible\n  (provider bawaan OpenCode: buka `lumitome` lalu ketik /connect)");
+    err("Tambah provider Lumitome\n  1) Custom OpenAI-compatible (9router, OpenRouter, vLLM, LM Studio, Ollama /v1, …)\n  2) Custom Anthropic-compatible\n  (menu layar penuh: lumitome provider · provider bawaan OpenCode: di TUI ketik /connect)");
     if (!type) { const t = (await ask(rl, "Pilih [1/2]: ")).trim(); type = t === "2" ? "anthropic" : "openai"; }
     if (!name) name = (await ask(rl, "Nama (mis. 9router): ")).trim().toLowerCase();
     if (!baseURL) baseURL = (await ask(rl, type === "anthropic" ? "Base URL (mis. https://api.example.com): " : "Base URL (mis. http://127.0.0.1:20128/v1): ")).trim();
     rl.close();
-    if (!key) key = (await askHidden("API key (tidak ditampilkan): ")).trim();
+    if (!key) key = (await askHidden("API key (tampil sebagai •): ")).trim();
   }
   try {
     const models = await add(home, { name, type, baseURL, key });

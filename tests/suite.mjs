@@ -441,8 +441,36 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const thKeys = ["primary", "text", "textMuted", "background", "border", "syntaxKeyword", "markdownHeading", "diffAdded"];
   ok("theme lumitome: varian dark+light, refs valid, emas brand", thKeys.every((k) => TH.theme[k]?.dark && TH.theme[k]?.light) && Object.values(TH.theme).every((v) => [v.dark, v.light].every((c) => /^#[0-9A-Fa-f]{6}$/.test(c) || c in TH.defs)) && TH.defs.champagne === "#F3D27A" && TH.defs.cornsilk === "#FFF8DC");
   ok("wrapper: themes ditautkan ke OPENCODE_CONFIG_DIR, cli.json di CFG_DIR (bukan ~/.config user), binary engine tidak disentuh", /themes: path\.join\(ROOT, "config", "themes"\)/.test(W) && /cliFile = path\.join\(CFG_DIR, "cli\.json"\)/.test(W) && !/writeFileSync\([^)]*ocBin/.test(W));
-  ok("versi 0.3.8 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.8") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.8" && /VERSION = "0\.3\.8"/.test(W) && /SW_VERSION=0\.3\.8/.test(inst));
+  ok("versi 0.3.9 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.9") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.9" && /VERSION = "0\.3\.9"/.test(W) && /SW_VERSION=0\.3\.9/.test(inst));
 }
 
+{
+  // v0.3.9: menu provider (layar penuh) + input API key tersamar (•), termasuk urutan tombol Windows
+  const UI = await import("../lumitome/lib/provider-ui.mjs");
+  const P = (s, st) => UI.parseKeys(s, st).map((k) => k.t + (k.v !== undefined ? ":" + k.v : ""));
+  ok("ui/keys: Enter CRLF (Windows) = satu enter; \\b (Windows) & DEL = backspace", P("\r\n").join() === "enter" && P("\b\x7f").join() === "backspace,backspace" && P("\r").join() === "enter");
+  ok("ui/keys: panah, Tab/Shift+Tab, Del (\\x1b[3~), Esc, Ctrl+C, SS3 (conhost)", P("\x1b[A\x1bOB\t\x1b[Z\x1b[3~\x1b\x03").join() === "up,down,tab,shift-tab,delete,esc,ctrl-c");
+  const st0 = { paste: null };
+  const pa = [...UI.parseKeys("\x1b[200~sk-ab", st0), ...UI.parseKeys("cd\r\n\x1b[201~", st0)];
+  ok("ui/paste: bracketed paste terpecah 2 chunk + CRLF → satu teks tanpa newline", pa.length === 1 && pa[0].t === "paste" && pa[0].v === "sk-abcd");
+  ok("ui/paste: paste tanpa bracket (cmd lama) → satu token teks", P("sk-xyz").join() === "paste:sk-xyz");
+  let b = ""; for (const k of UI.parseKeys("ab\x1b[200~cd\r\n\x1b[201~\b")) b = UI.maskedStep(b, k).buf;
+  ok("ui/masked: ketik + paste + backspace → nilai benar, tampil • per karakter", b === "abc" && UI.mask(b) === "•••" && UI.maskedStep("x", { t: "enter" }).done);
+  const st = UI.initState({ a: { models: ["m1", "m2"] } });
+  for (const k of UI.parseKeys("\x1b[Z")) UI.reduce(st, k);
+  const typeKey = (s) => { for (const k of UI.parseKeys(s)) UI.reduce(st, k); };
+  st.focus = "form:name"; typeKey("My9R"); typeKey("\t"); typeKey("http://x/v1"); typeKey("\t"); typeKey("\x1b[200~SECRETKEY\x1b[201~"); typeKey("\b");
+  const fr = UI.render(st, 100, 30);
+  ok("ui/form: nama huruf kecil, Tab pindah field, key tersamar di layar (tidak tampil teks asli)", st.name === "my9r" && st.baseURL === "http://x/v1" && st.key === "SECRETKE" && fr.includes("••••••••") && !fr.includes("SECRETKE"));
+  ok("ui/form: Enter = simpan; Esc = lewati", UI.reduce(st, { t: "enter" })?.save === true && UI.reduce(UI.initState({}), { t: "esc" })?.exit === true);
+  const s2 = UI.initState({ a: { models: ["m"] }, b: { models: [] } }); s2.focus = "list:1";
+  UI.reduce(s2, { t: "delete" }); const c1 = s2.confirm; const r1 = UI.reduce(s2, { t: "char", v: "y" });
+  const s3 = UI.initState({ a: { models: ["m"] } }); s3.focus = "list:0"; UI.reduce(s3, { t: "delete" }); UI.reduce(s3, { t: "char", v: "n" });
+  ok("ui/list: Del → konfirmasi → y hapus; tombol lain batal", c1 === "b" && r1?.remove === "b" && s3.confirm === null);
+  const f0 = UI.render(UI.initState({ a: { models: ["m1", "m2"] } }), 100, 30);
+  ok("ui/render: logo LUMITOME emas, latar hitam, daftar 'N model ×', footer", f0.includes("38;2;201;150;46") && f0.includes("38;2;243;210;122") && f0.includes("48;2;0;0;0") && /a\s+2 model\s+×/.test(f0) && f0.includes("Tab pindah · Enter simpan · Del hapus · Esc lewati") && !/[┌┐└┘│]/.test(f0));
+  const W = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
+  ok("ui/wrapper: `lumitome provider` + menu otomatis saat belum ada provider", W.includes('sub === "provider"') && /if \(!HAS_PROVIDER\)[\s\S]{0,400}providerMenu\(\)/.test(W));
+}
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
