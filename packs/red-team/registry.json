@@ -1,0 +1,14 @@
+{
+  "pack": "red-team",
+  "note": "dibangkitkan scripts/gen-registry.mjs; skill tanpa entri memakai frontmatter SKILL.md",
+  "skills": [
+    {
+      "id": "apk-reverse-2",
+      "mirror_of": "apk-reverse"
+    },
+    {
+      "id": "reverse-skill-router-2",
+      "mirror_of": "reverse-skill-router"
+    }
+  ]
+}

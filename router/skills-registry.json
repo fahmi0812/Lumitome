@@ -2,62 +2,356 @@
   "version": 3,
   "skills": [
     {
-      "id": "humanizer-indonesia",
-      "name": "humanizer-indonesia",
-      "sektor": "penulisan",
-      "description": "humanizer Indonesia: sunting teks agar tak terbaca AI/terjemahan, kembali ke gaya penulis",
+      "id": "akuntansi-umkm",
+      "name": "akuntansi-umkm",
+      "sektor": "finance",
+      "description": "akuntansi UMKM: pembukuan, jurnal, buku besar, laba rugi, neraca",
       "triggers": [
-        "humanizer",
-        "indonesia"
+        "akuntansi",
+        "pembukuan",
+        "jurnal",
+        "umkm",
+        "neraca"
       ],
       "champion": true,
       "fallback": null,
       "cost": "s",
       "requires_consent": false,
       "pack": "",
-      "src": "adhiprib/humanizer-indonesia",
-      "sha": "14e19a018d3b39f07a460388237ea4b167c8d70b",
+      "src": "fahmi0812/Swanwright",
+      "sha": "da868bdb4a5423bfd017d19aa5f2ad4a3d5d089b",
       "license": "MIT",
-      "original_id": "adhiprib-humanizer-indonesia__humanizer-indonesia",
-      "original_name": "humanizer-indonesia"
+      "original_id": "swanwright__akuntansi-umkm",
+      "original_name": "akuntansi-umkm"
     },
     {
-      "id": "mcp-builder",
-      "name": "mcp-builder",
+      "id": "analisis-laporan-keuangan",
+      "name": "analisis-laporan-keuangan",
+      "sektor": "finance",
+      "description": "analisis laporan keuangan: rasio likuiditas/solvabilitas/profitabilitas, arus kas",
+      "triggers": [
+        "laporan keuangan",
+        "rasio",
+        "likuiditas",
+        "profitabilitas"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/Swanwright",
+      "sha": "da868bdb4a5423bfd017d19aa5f2ad4a3d5d089b",
+      "license": "MIT",
+      "original_id": "swanwright__analisis-laporan-keuangan",
+      "original_name": "analisis-laporan-keuangan"
+    },
+    {
+      "id": "anti-spin-circuit-breaker",
+      "name": "anti-spin-circuit-breaker",
       "sektor": "coding",
-      "description": "bangun server MCP (Model Context Protocol) berkualitas untuk layanan eksternal",
+      "description": "anti-spin: batas iterasi keras (maks 3)",
       "triggers": [
-        "builder"
+        "anti",
+        "spin"
       ],
       "champion": true,
       "fallback": null,
       "cost": "s",
       "requires_consent": false,
       "pack": "",
-      "src": "anthropics/skills",
-      "sha": "ca45fc496a3436251f191354091d557da31c15b5",
-      "license": "PER-SKILL",
-      "original_id": "anthropics-skills__mcp-builder",
-      "original_name": "mcp-builder"
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
+      "license": "MIT",
+      "original_id": "swanwright__anti-spin",
+      "original_name": "Anti-Spin Circuit Breaker"
     },
     {
-      "id": "humanizer",
-      "name": "humanizer",
-      "sektor": "penulisan",
-      "description": "humanizer EN: tulis ulang teks berbau AI tanpa mengubah isi",
+      "id": "audit",
+      "name": "audit",
+      "sektor": "coding",
+      "description": "audit kualitas UI (impeccable)",
       "triggers": [
-        "humanizer"
+        "audit"
       ],
       "champion": true,
       "fallback": null,
       "cost": "s",
       "requires_consent": false,
       "pack": "",
-      "src": "blader/humanizer",
-      "sha": "0ef9fe5bc3572734fd3ae6c448fe00a30cd5dcf0",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__audit",
+      "original_name": "audit"
+    },
+    {
+      "id": "automation-audit-ops",
+      "name": "automation-audit-ops",
+      "sektor": "coding",
+      "description": "audit inventaris otomasi live berbasis bukti",
+      "triggers": [
+        "automation",
+        "audit"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
       "license": "MIT",
-      "original_id": "blader-humanizer__humanizer",
-      "original_name": "humanizer"
+      "original_id": "swanwright__automation-audit-ops",
+      "original_name": "automation-audit-ops"
+    },
+    {
+      "id": "axi",
+      "name": "axi",
+      "sektor": "coding",
+      "description": "AXI: standar ergonomi CLI untuk agen via shell",
+      "triggers": [],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "kunchenguid/axi",
+      "sha": "4184081afe3ad7ef658a982c0c224df8fb4e97fe",
+      "license": "MIT",
+      "original_id": "kunchenguid-axi__axi",
+      "original_name": "axi"
+    },
+    {
+      "id": "banner-design",
+      "name": "banner-design",
+      "sektor": "coding",
+      "description": "banner sosmed, iklan, hero website",
+      "triggers": [
+        "banner",
+        "design"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "license": "MIT",
+      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__banner-design",
+      "original_name": "banner-design"
+    },
+    {
+      "id": "brainstorming",
+      "name": "brainstorming",
+      "sektor": "coding",
+      "description": "brainstorming desain sebelum fitur/komponen baru",
+      "triggers": [
+        "brainstorming",
+        "brainstorm fitur"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "obra/superpowers",
+      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "license": "MIT",
+      "original_id": "obra-superpowers__brainstorming",
+      "original_name": "brainstorming",
+      "activated_in": "0.1.4",
+      "from_pack": "misc"
+    },
+    {
+      "id": "brand",
+      "name": "brand",
+      "sektor": "coding",
+      "description": "brand voice, identitas visual, messaging",
+      "triggers": [
+        "brand"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "license": "MIT",
+      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__brand",
+      "original_name": "brand"
+    },
+    {
+      "id": "chrome-devtools-axi",
+      "name": "chrome-devtools-axi",
+      "sektor": "coding",
+      "description": "kontrol Chromium via chrome-devtools-axi",
+      "triggers": [
+        "chrome",
+        "devtools"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
+      "license": "MIT",
+      "original_id": "swanwright__chrome-devtools-axi",
+      "original_name": "chrome-devtools-axi"
+    },
+    {
+      "id": "code-audit",
+      "name": "code-audit",
+      "sektor": "security",
+      "description": "audit keamanan kode sumber (SAST: Semgrep/CodeQL) + verifikasi fix",
+      "triggers": [
+        "code audit",
+        "sast",
+        "semgrep",
+        "codeql"
+      ],
+      "champion": true,
+      "fallback": "security-audit",
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "zhaoxuya520/reverse-skill",
+      "sha": "cab634bd855fc287f6e420c1f36fd1a6b9245960",
+      "license": "MIT",
+      "original_id": "zhaoxuya520-reverse-skill__code-audit",
+      "original_name": "code-audit",
+      "activated_in": "0.1.4",
+      "from_pack": "red-team"
+    },
+    {
+      "id": "code-review",
+      "name": "code-review",
+      "sektor": "coding",
+      "description": "code review perubahan sejak commit/branch: standar + kebenaran",
+      "triggers": [
+        "code review",
+        "review kode",
+        "review pr"
+      ],
+      "champion": true,
+      "fallback": "requesting-code-review",
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "mattpocock/skills",
+      "sha": "a496f5513d4a4cf889bc48e189e579f4b0bdf6aa",
+      "license": "MIT",
+      "original_id": "mattpocock-skills__code-review",
+      "original_name": "code-review",
+      "activated_in": "0.1.4",
+      "from_pack": "misc"
+    },
+    {
+      "id": "correct",
+      "name": "correct",
+      "sektor": "coding",
+      "description": "/correct: jadikan kesalahan berulang agen mustahil (arsitektur/tipe/lint/tes)",
+      "triggers": [
+        "/correct",
+        "kesalahan berulang"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "cursor/plugins",
+      "sha": "4dd1d05818d19792e7cd6e818f1667f95f7e1dbe",
+      "license": "MIT",
+      "original_id": "cursor-plugins__correct",
+      "original_name": "correct",
+      "activated_in": "0.1.4",
+      "from_pack": "misc"
+    },
+    {
+      "id": "deep-research",
+      "name": "deep-research",
+      "sektor": "riset",
+      "description": "deep-research multi-sumber: klaim vs bukti",
+      "triggers": [
+        "deep",
+        "research"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
+      "license": "MIT",
+      "original_id": "swanwright__deep-research",
+      "original_name": "Deep Research"
+    },
+    {
+      "id": "design",
+      "name": "design",
+      "sektor": "coding",
+      "description": "design menyeluruh: identitas brand, logo, aset",
+      "triggers": [
+        "design"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "license": "MIT",
+      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__design",
+      "original_name": "design"
+    },
+    {
+      "id": "design-system",
+      "name": "design-system",
+      "sektor": "coding",
+      "description": "design-system: token, spesifikasi komponen",
+      "triggers": [
+        "design",
+        "system"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "license": "MIT",
+      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__design-system",
+      "original_name": "design-system"
+    },
+    {
+      "id": "design-taste-frontend",
+      "name": "design-taste-frontend",
+      "sektor": "coding",
+      "description": "art direction frontend anti-slop (tasteskill v2)",
+      "triggers": [
+        "taste frontend",
+        "anti-slop"
+      ],
+      "champion": true,
+      "fallback": "hallmark",
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "Leonxlnx/taste-skill",
+      "sha": "12af471f627f866411b4bd785b19646d3672784c",
+      "license": "MIT",
+      "original_id": "leonxlnx-taste-skill__design-taste-frontend",
+      "original_name": "design-taste-frontend",
+      "activated_in": "0.1.4",
+      "from_pack": "design-extra"
     },
     {
       "id": "diagram-design",
@@ -80,121 +374,49 @@
       "original_name": "diagram-design"
     },
     {
-      "id": "security-audit",
-      "name": "security-audit",
-      "sektor": "security",
-      "description": "security-audit: review kerentanan kode, API, layanan, CLI, library",
+      "id": "dispatching-parallel-agents",
+      "name": "dispatching-parallel-agents",
+      "sektor": "coding",
+      "description": "bagi ≥2 tugas independen ke subagen paralel",
       "triggers": [
-        "security",
-        "audit"
+        "paralel agen",
+        "parallel agents"
       ],
       "champion": true,
-      "fallback": null,
+      "fallback": "subagent-driven-development",
       "cost": "s",
       "requires_consent": false,
       "pack": "",
-      "src": "cloudflare/security-audit-skill",
-      "sha": "c1c8a8c1471069fb0e188eeaff69b8e8db6564a8",
+      "src": "obra/superpowers",
+      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
       "license": "MIT",
-      "original_id": "cloudflare-security-audit-skill__security-audit",
-      "original_name": "security-audit"
+      "original_id": "obra-superpowers__dispatching-parallel-agents",
+      "original_name": "dispatching-parallel-agents",
+      "activated_in": "0.1.4",
+      "from_pack": "misc"
     },
     {
-      "id": "ink",
-      "name": "ink",
-      "sektor": "coding",
-      "description": "Ink terminal renderer for json-render",
-      "triggers": [],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "coding-extra",
-      "src": "google-labs-code/design.md",
-      "sha": "6e5da5382f41edbba9d73b2c62f33f32e9971f15",
-      "license": "Apache-2.0",
-      "original_id": "google-labs-code-design-md__ink",
-      "original_name": "ink"
-    },
-    {
-      "id": "tdd-red-green-refactor",
-      "name": "tdd-red-green-refactor",
-      "sektor": "coding",
-      "description": "TDD Red-Green-Refactor disiplin di TypeScript/Node",
+      "id": "doc-coauthoring",
+      "name": "doc-coauthoring",
+      "sektor": "penulisan",
+      "description": "ko-penulisan dokumen terstruktur: proposal, spec, decision doc",
       "triggers": [
-        "green",
-        "refactor"
+        "proposal",
+        "spec teknis",
+        "decision doc"
       ],
       "champion": true,
       "fallback": null,
       "cost": "s",
       "requires_consent": false,
       "pack": "",
-      "src": "google-labs-code/design.md",
-      "sha": "6e5da5382f41edbba9d73b2c62f33f32e9971f15",
-      "license": "Apache-2.0",
-      "original_id": "google-labs-code-design-md__tdd-red-green-refactor",
-      "original_name": "tdd-red-green-refactor"
-    },
-    {
-      "id": "typed-service-contracts",
-      "name": "typed-service-contracts",
-      "sektor": "coding",
-      "description": "kontrak servis TypeScript type-safe pola Spec+Handler",
-      "triggers": [
-        "typed",
-        "service",
-        "contracts"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "google-labs-code/design.md",
-      "sha": "6e5da5382f41edbba9d73b2c62f33f32e9971f15",
-      "license": "Apache-2.0",
-      "original_id": "google-labs-code-design-md__typed-service-contracts",
-      "original_name": "typed-service-contracts"
-    },
-    {
-      "id": "agent-dx-cli-scale",
-      "name": "agent-dx-cli-scale",
-      "sektor": "coding",
-      "description": "A scoring scale for evaluating how well a CLI is designed",
-      "triggers": [
-        "agent",
-        "scale"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "coding-extra",
-      "src": "google-labs-code/design.md",
-      "sha": "6e5da5382f41edbba9d73b2c62f33f32e9971f15",
-      "license": "Apache-2.0",
-      "original_id": "google-labs-code-design-md__agent-dx-cli-scale",
-      "original_name": "agent-dx-cli-scale"
-    },
-    {
-      "id": "egm-brainstorm",
-      "name": "egm-brainstorm",
-      "sektor": "coding",
-      "description": "EGM: brainstorming ide → concepts brief",
-      "triggers": [
-        "brainstorm"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "google/elephant-goldfish-model",
-      "sha": "403d8881d62022490637d740657b33f01e321ea8",
-      "license": "Apache-2.0",
-      "original_id": "google-elephant-goldfish-model__egm-brainstorm",
-      "original_name": "egm-brainstorm"
+      "src": "anthropics/skills",
+      "sha": "ca45fc496a3436251f191354091d557da31c15b5",
+      "license": "PER-SKILL",
+      "original_id": "anthropics-skills__doc-coauthoring",
+      "original_name": "doc-coauthoring",
+      "activated_in": "0.1.4",
+      "from_pack": "misc"
     },
     {
       "id": "egm-bootstrap",
@@ -216,12 +438,12 @@
       "original_name": "egm-bootstrap"
     },
     {
-      "id": "egm-review",
-      "name": "egm-review",
+      "id": "egm-brainstorm",
+      "name": "egm-brainstorm",
       "sektor": "coding",
-      "description": "EGM: protokol Goldfish Review dokumen desain",
+      "description": "EGM: brainstorming ide → concepts brief",
       "triggers": [
-        "review"
+        "brainstorm"
       ],
       "champion": true,
       "fallback": null,
@@ -231,8 +453,27 @@
       "src": "google/elephant-goldfish-model",
       "sha": "403d8881d62022490637d740657b33f01e321ea8",
       "license": "Apache-2.0",
-      "original_id": "google-elephant-goldfish-model__egm-review",
-      "original_name": "egm-review"
+      "original_id": "google-elephant-goldfish-model__egm-brainstorm",
+      "original_name": "egm-brainstorm"
+    },
+    {
+      "id": "egm-draft",
+      "name": "egm-draft",
+      "sektor": "coding",
+      "description": "EGM: draft dokumen desain per bagian dari brief",
+      "triggers": [
+        "draft"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "google/elephant-goldfish-model",
+      "sha": "403d8881d62022490637d740657b33f01e321ea8",
+      "license": "Apache-2.0",
+      "original_id": "google-elephant-goldfish-model__egm-draft",
+      "original_name": "egm-draft"
     },
     {
       "id": "egm-drift-report",
@@ -255,12 +496,12 @@
       "original_name": "egm-drift-report"
     },
     {
-      "id": "egm-draft",
-      "name": "egm-draft",
+      "id": "egm-resolve",
+      "name": "egm-resolve",
       "sektor": "coding",
-      "description": "EGM: draft dokumen desain per bagian dari brief",
+      "description": "EGM: resolusi temuan review oleh Elephant",
       "triggers": [
-        "draft"
+        "resolve"
       ],
       "champion": true,
       "fallback": null,
@@ -270,8 +511,27 @@
       "src": "google/elephant-goldfish-model",
       "sha": "403d8881d62022490637d740657b33f01e321ea8",
       "license": "Apache-2.0",
-      "original_id": "google-elephant-goldfish-model__egm-draft",
-      "original_name": "egm-draft"
+      "original_id": "google-elephant-goldfish-model__egm-resolve",
+      "original_name": "egm-resolve"
+    },
+    {
+      "id": "egm-review",
+      "name": "egm-review",
+      "sektor": "coding",
+      "description": "EGM: protokol Goldfish Review dokumen desain",
+      "triggers": [
+        "review"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "google/elephant-goldfish-model",
+      "sha": "403d8881d62022490637d740657b33f01e321ea8",
+      "license": "Apache-2.0",
+      "original_id": "google-elephant-goldfish-model__egm-review",
+      "original_name": "egm-review"
     },
     {
       "id": "egm-review-loop",
@@ -294,81 +554,616 @@
       "original_name": "egm-review-loop"
     },
     {
-      "id": "egm-resolve",
-      "name": "egm-resolve",
+      "id": "emil-design-eng",
+      "name": "emil-design-eng",
       "sektor": "coding",
-      "description": "EGM: resolusi temuan review oleh Elephant",
+      "description": "polish UI ala Emil Kowalski: komponen, animasi, detail",
       "triggers": [
-        "resolve"
+        "ui polish",
+        "emil"
       ],
       "champion": true,
       "fallback": null,
       "cost": "s",
       "requires_consent": false,
       "pack": "",
-      "src": "google/elephant-goldfish-model",
-      "sha": "403d8881d62022490637d740657b33f01e321ea8",
-      "license": "Apache-2.0",
-      "original_id": "google-elephant-goldfish-model__egm-resolve",
-      "original_name": "egm-resolve"
+      "src": "emilkowalski/skills",
+      "sha": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "license": "MIT",
+      "original_id": "emilkowalski-skills__emil-design-eng",
+      "original_name": "emil-design-eng",
+      "activated_in": "0.1.4",
+      "from_pack": "design-extra"
     },
     {
-      "id": "axi",
-      "name": "axi",
+      "id": "eval-harness",
+      "name": "eval-harness",
       "sektor": "coding",
-      "description": "AXI: standar ergonomi CLI untuk agen via shell",
+      "description": "eval-harness: set eval bernama + aturan lulus",
+      "triggers": [
+        "eval",
+        "harness"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
+      "license": "MIT",
+      "original_id": "swanwright__eval-harness",
+      "original_name": "Eval Harness"
+    },
+    {
+      "id": "executing-plans",
+      "name": "executing-plans",
+      "sektor": "coding",
+      "description": "eksekusi rencana implementasi di sesi ini",
+      "triggers": [
+        "executing",
+        "plans"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "obra/superpowers",
+      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "license": "MIT",
+      "original_id": "obra-superpowers__executing-plans",
+      "original_name": "executing-plans"
+    },
+    {
+      "id": "figure-it-out",
+      "name": "figure-it-out",
+      "sektor": "riset",
+      "description": "playbook teraudit untuk masalah besar/ambigu (migrasi, perubahan multi-bagian)",
+      "triggers": [
+        "figure it out",
+        "playbook migrasi"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "cursor/plugins",
+      "sha": "4dd1d05818d19792e7cd6e818f1667f95f7e1dbe",
+      "license": "MIT",
+      "original_id": "cursor-plugins__figure-it-out",
+      "original_name": "figure-it-out",
+      "activated_in": "0.1.4",
+      "from_pack": "misc"
+    },
+    {
+      "id": "finishing-a-development-branch",
+      "name": "finishing-a-development-branch",
+      "sektor": "coding",
+      "description": "selesaikan branch: tes lulus → pilih integrasi (PR/merge), tanpa push main",
+      "triggers": [
+        "selesaikan branch",
+        "finishing branch"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "obra/superpowers",
+      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "license": "MIT",
+      "original_id": "obra-superpowers__finishing-a-development-branch",
+      "original_name": "finishing-a-development-branch",
+      "activated_in": "0.1.4",
+      "from_pack": "misc"
+    },
+    {
+      "id": "full-audit-keamanan",
+      "name": "full-audit-keamanan",
+      "sektor": "security",
+      "description": "full audit keamanan: kerentanan kode dan konfigurasi",
+      "triggers": [
+        "full",
+        "audit",
+        "keamanan"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
+      "license": "MIT",
+      "original_id": "swanwright__full-audit-keamanan",
+      "original_name": "Full Audit Keamanan"
+    },
+    {
+      "id": "gh-axi",
+      "name": "gh-axi",
+      "sektor": "coding",
+      "description": "GitHub via gh-axi: issue, PR, CI (tanpa push main)",
       "triggers": [],
       "champion": true,
       "fallback": null,
       "cost": "s",
       "requires_consent": false,
       "pack": "",
-      "src": "kunchenguid/axi",
-      "sha": "4184081afe3ad7ef658a982c0c224df8fb4e97fe",
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
       "license": "MIT",
-      "original_id": "kunchenguid-axi__axi",
-      "original_name": "axi"
+      "original_id": "swanwright__gh-axi",
+      "original_name": "gh-axi"
     },
     {
-      "id": "reverse-engineer-anything",
-      "name": "reverse-engineer-anything",
-      "sektor": "security",
-      "description": "reverse engineer native/Electron/APK/firmware/browser dengan REA",
+      "id": "git-guardrails-claude-code",
+      "name": "git-guardrails-claude-code",
+      "sektor": "coding",
+      "description": "hook pengaman git (blok push/reset --hard/clean)",
       "triggers": [
-        "reverse",
-        "engineer",
-        "anything"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": true,
-      "pack": "",
-      "src": "morluto/rea",
-      "sha": "8f920bb65b8d8ae669411501b0a3a59a62883ac3",
-      "license": "MIT",
-      "original_id": "morluto-rea__reverse-engineer-anything",
-      "original_name": "reverse-engineer-anything"
-    },
-    {
-      "id": "rea-tool-design",
-      "name": "rea-tool-design",
-      "sektor": "security",
-      "description": "REA: desain tool investigasi CLI/MCP",
-      "triggers": [
-        "tool",
-        "design"
+        "git guardrail",
+        "blok git berbahaya"
       ],
       "champion": true,
       "fallback": null,
       "cost": "s",
       "requires_consent": false,
       "pack": "",
-      "src": "morluto/rea",
-      "sha": "8f920bb65b8d8ae669411501b0a3a59a62883ac3",
+      "src": "mattpocock/skills",
+      "sha": "a496f5513d4a4cf889bc48e189e579f4b0bdf6aa",
       "license": "MIT",
-      "original_id": "morluto-rea__rea-tool-design",
-      "original_name": "rea-tool-design"
+      "original_id": "mattpocock-skills__git-guardrails-claude-code",
+      "original_name": "git-guardrails-claude-code",
+      "activated_in": "0.1.4",
+      "from_pack": "misc"
+    },
+    {
+      "id": "gsap-core",
+      "name": "gsap-core",
+      "sektor": "coding",
+      "description": "GSAP core: tween, easing, stagger, matchMedia",
+      "triggers": [
+        "gsap"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "greensock/gsap-skills",
+      "sha": "aed9cfd3277740755f6bfc1155c7aa645403b760",
+      "license": "MIT",
+      "original_id": "greensock-gsap-skills__gsap-core",
+      "original_name": "gsap-core",
+      "activated_in": "0.1.4",
+      "from_pack": "design-extra"
+    },
+    {
+      "id": "gsap-scrolltrigger",
+      "name": "gsap-scrolltrigger",
+      "sektor": "coding",
+      "description": "GSAP ScrollTrigger: animasi scroll, pin, scrub, parallax",
+      "triggers": [
+        "scrolltrigger",
+        "animasi scroll"
+      ],
+      "champion": true,
+      "fallback": "gsap-core",
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "greensock/gsap-skills",
+      "sha": "aed9cfd3277740755f6bfc1155c7aa645403b760",
+      "license": "MIT",
+      "original_id": "greensock-gsap-skills__gsap-scrolltrigger",
+      "original_name": "gsap-scrolltrigger",
+      "activated_in": "0.1.4",
+      "from_pack": "design-extra"
+    },
+    {
+      "id": "hallmark",
+      "name": "hallmark",
+      "sektor": "coding",
+      "description": "desain halaman/website baru yang terasa didesain, bukan generik",
+      "triggers": [
+        "hallmark",
+        "desain landing"
+      ],
+      "champion": false,
+      "fallback": "design-taste-frontend",
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "Nutlope/hallmark",
+      "sha": "4f6a46c6dc325d40ab268c93e25c7b96676ebccd",
+      "license": "MIT",
+      "original_id": "nutlope-hallmark__hallmark",
+      "original_name": "hallmark",
+      "activated_in": "0.1.4",
+      "from_pack": "design-extra"
+    },
+    {
+      "id": "humanizer",
+      "name": "humanizer",
+      "sektor": "penulisan",
+      "description": "humanizer EN: tulis ulang teks berbau AI tanpa mengubah isi",
+      "triggers": [
+        "humanizer"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "blader/humanizer",
+      "sha": "0ef9fe5bc3572734fd3ae6c448fe00a30cd5dcf0",
+      "license": "MIT",
+      "original_id": "blader-humanizer__humanizer",
+      "original_name": "humanizer"
+    },
+    {
+      "id": "humanizer-indonesia",
+      "name": "humanizer-indonesia",
+      "sektor": "penulisan",
+      "description": "humanizer Indonesia: sunting teks agar tak terbaca AI/terjemahan, kembali ke gaya penulis",
+      "triggers": [
+        "humanizer",
+        "indonesia"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "adhiprib/humanizer-indonesia",
+      "sha": "14e19a018d3b39f07a460388237ea4b167c8d70b",
+      "license": "MIT",
+      "original_id": "adhiprib-humanizer-indonesia__humanizer-indonesia",
+      "original_name": "humanizer-indonesia"
+    },
+    {
+      "id": "impeccable",
+      "name": "impeccable",
+      "sektor": "coding",
+      "description": "impeccable: desain/redesain frontend berkualitas",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable",
+      "original_name": "impeccable"
+    },
+    {
+      "id": "improve-codebase-architecture",
+      "name": "improve-codebase-architecture",
+      "sektor": "coding",
+      "description": "pindai arsitektur codebase → laporan HTML peluang perbaikan",
+      "triggers": [
+        "arsitektur codebase",
+        "improve architecture"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "mattpocock/skills",
+      "sha": "a496f5513d4a4cf889bc48e189e579f4b0bdf6aa",
+      "license": "MIT",
+      "original_id": "mattpocock-skills__improve-codebase-architecture",
+      "original_name": "improve-codebase-architecture",
+      "activated_in": "0.1.4",
+      "from_pack": "misc"
+    },
+    {
+      "id": "in-your-own-words",
+      "name": "in-your-own-words",
+      "sektor": "coding",
+      "description": "/in-your-own-words: restate tujuan user sebelum kerja",
+      "triggers": [
+        "/in-your-own-words",
+        "restate"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "cursor/plugins",
+      "sha": "4dd1d05818d19792e7cd6e818f1667f95f7e1dbe",
+      "license": "MIT",
+      "original_id": "cursor-plugins__in-your-own-words",
+      "original_name": "in-your-own-words",
+      "activated_in": "0.1.4",
+      "from_pack": "misc"
+    },
+    {
+      "id": "internal-comms",
+      "name": "internal-comms",
+      "sektor": "penulisan",
+      "description": "komunikasi internal: update status, newsletter, laporan tim",
+      "triggers": [
+        "komunikasi internal",
+        "newsletter",
+        "status update"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "anthropics/skills",
+      "sha": "ca45fc496a3436251f191354091d557da31c15b5",
+      "license": "PER-SKILL",
+      "original_id": "anthropics-skills__internal-comms",
+      "original_name": "internal-comms",
+      "activated_in": "0.1.4",
+      "from_pack": "misc"
+    },
+    {
+      "id": "interrogate",
+      "name": "interrogate",
+      "sektor": "riset",
+      "description": "review adversarial multi-model: cari blind spot, stress test",
+      "triggers": [
+        "interrogate",
+        "adversarial review",
+        "blind spot"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "cursor/plugins",
+      "sha": "4dd1d05818d19792e7cd6e818f1667f95f7e1dbe",
+      "license": "MIT",
+      "original_id": "cursor-plugins__interrogate",
+      "original_name": "interrogate",
+      "activated_in": "0.1.4",
+      "from_pack": "misc"
+    },
+    {
+      "id": "keuangan-pribadi",
+      "name": "keuangan-pribadi",
+      "sektor": "finance",
+      "description": "keuangan pribadi: budgeting, dana darurat, utang, arus kas rumah tangga",
+      "triggers": [
+        "keuangan",
+        "budget",
+        "anggaran",
+        "tabungan",
+        "utang"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/Swanwright",
+      "sha": "da868bdb4a5423bfd017d19aa5f2ad4a3d5d089b",
+      "license": "MIT",
+      "original_id": "swanwright__keuangan-pribadi",
+      "original_name": "keuangan-pribadi"
+    },
+    {
+      "id": "laporan-generator",
+      "name": "laporan-generator",
+      "sektor": "penulisan",
+      "description": "dokumen akademik Indonesia → PDF/DOCX: skripsi, laporan PKL, makalah",
+      "triggers": [
+        "laporan pkl",
+        "laporan magang",
+        "makalah",
+        "docx"
+      ],
+      "champion": true,
+      "fallback": "naskah-id",
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "FRCHN-GSTN/MenulisCep4t",
+      "sha": "ba5389fc518668f79e1b358b742786607df80cd1",
+      "license": "MIT",
+      "original_id": "frchn-gstn-menuliscep4t__laporan-generator",
+      "original_name": "laporan-generator",
+      "activated_in": "0.1.4",
+      "from_pack": "misc"
+    },
+    {
+      "id": "magic-ui",
+      "name": "magic-ui",
+      "sektor": "coding",
+      "description": "komponen Magic UI di React/Next.js (shadcn registry)",
+      "triggers": [
+        "magic ui",
+        "magicui"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "magicuidesign/magicui",
+      "sha": "efe76fc5755eca1142dd4f74c1d6f0ace2887e3c",
+      "license": "MIT",
+      "original_id": "magicuidesign-magicui__magic-ui",
+      "original_name": "magic-ui",
+      "activated_in": "0.1.4",
+      "from_pack": "design-extra"
+    },
+    {
+      "id": "mcp-builder",
+      "name": "mcp-builder",
+      "sektor": "coding",
+      "description": "bangun server MCP (Model Context Protocol) berkualitas untuk layanan eksternal",
+      "triggers": [
+        "builder"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "anthropics/skills",
+      "sha": "ca45fc496a3436251f191354091d557da31c15b5",
+      "license": "PER-SKILL",
+      "original_id": "anthropics-skills__mcp-builder",
+      "original_name": "mcp-builder"
+    },
+    {
+      "id": "mongodb-ops",
+      "name": "mongodb-ops",
+      "sektor": "coding",
+      "description": "MongoDB: skema, indeks, query",
+      "triggers": [
+        "mongodb"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
+      "license": "MIT",
+      "original_id": "swanwright__mongodb-ops",
+      "original_name": "mongodb-ops"
+    },
+    {
+      "id": "motion-design",
+      "name": "motion-design",
+      "sektor": "media",
+      "description": "aturan rasa motion graphics Remotion: timing, easing, tipografi",
+      "triggers": [
+        "motion design",
+        "remotion"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "whaleyxbt/claude-motion",
+      "sha": "e627941543d9988b155dc610bb9cc0115a5e365e",
+      "license": "MIT",
+      "original_id": "whaleyxbt-claude-motion__motion-design",
+      "original_name": "motion-design",
+      "activated_in": "0.1.4",
+      "from_pack": "motion"
+    },
+    {
+      "id": "naskah-id",
+      "name": "naskah-id",
+      "sektor": "penulisan",
+      "description": "naskah ilmiah Indonesia: tulis dan sunting (EYD V)",
+      "triggers": [
+        "naskah"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "nothinx/naskah-id",
+      "sha": "e18d574c6b93f407c5339abe03d52d2cfac75992",
+      "license": "MIT",
+      "original_id": "nothinx-naskah-id__naskah-id",
+      "original_name": "naskah-id"
+    },
+    {
+      "id": "next",
+      "name": "next",
+      "sektor": "coding",
+      "description": "json-render Next.js: spec JSON → app Next.js (@json-render/next)",
+      "triggers": [
+        "json-render next"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "vercel-labs/json-render",
+      "sha": "92b273065ba224491ba789f9de6936d32e8a37f8",
+      "license": "Apache-2.0",
+      "original_id": "vercel-labs-json-render__next",
+      "original_name": "next",
+      "activated_in": "0.1.4",
+      "from_pack": "coding-extra"
+    },
+    {
+      "id": "pajak-dasar-id",
+      "name": "pajak-dasar-id",
+      "sektor": "finance",
+      "description": "pajak dasar Indonesia: PPh OP, SPT, NPWP, UMKM — edukasi + rujuk DJP",
+      "triggers": [
+        "pajak",
+        "spt",
+        "npwp",
+        "pph"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/Swanwright",
+      "sha": "da868bdb4a5423bfd017d19aa5f2ad4a3d5d089b",
+      "license": "MIT",
+      "original_id": "swanwright__pajak-dasar-id",
+      "original_name": "pajak-dasar-id"
+    },
+    {
+      "id": "penulis-ilmiah",
+      "name": "penulis-ilmiah",
+      "sektor": "penulisan",
+      "description": "penulis ilmiah formal ID/EN",
+      "triggers": [
+        "penulis",
+        "ilmiah"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
+      "license": "MIT",
+      "original_id": "swanwright__penulis-ilmiah",
+      "original_name": "Penulis Ilmiah"
+    },
+    {
+      "id": "poteto-mode",
+      "name": "poteto-mode",
+      "sektor": "coding",
+      "description": "/poteto-mode: gaya ringkas, kode sederhana, kerja terverifikasi",
+      "triggers": [
+        "/poteto-mode",
+        "poteto"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "cursor/plugins",
+      "sha": "4dd1d05818d19792e7cd6e818f1667f95f7e1dbe",
+      "license": "MIT",
+      "original_id": "cursor-plugins__poteto-mode",
+      "original_name": "poteto-mode",
+      "activated_in": "0.1.4",
+      "from_pack": "misc"
     },
     {
       "id": "rea-analysis-optimization",
@@ -431,1250 +1226,45 @@
       "original_name": "rea-ci-tests-audit"
     },
     {
-      "id": "karpathy-guidelines",
-      "name": "karpathy-guidelines",
-      "sektor": "coding",
-      "description": "pedoman Karpathy (inti dipindah ke rules/06-coding-karpathy.md)",
-      "triggers": [
-        "karpathy",
-        "guidelines"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "coding-extra",
-      "src": "multica-ai/andrej-karpathy-skills",
-      "sha": "2c606141936f1eeef17fa3043a72095b4765b9c2",
-      "license": "MIT",
-      "original_id": "multica-ai-andrej-karpathy-skills__karpathy-guidelines",
-      "original_name": "karpathy-guidelines"
-    },
-    {
-      "id": "slides",
-      "name": "slides",
-      "sektor": "coding",
-      "description": "slides HTML strategis dengan Chart",
-      "triggers": [
-        "slides"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
-      "license": "MIT",
-      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__slides",
-      "original_name": "slides"
-    },
-    {
-      "id": "ui-ux-pro-max",
-      "name": "ui-ux-pro-max",
-      "sektor": "coding",
-      "description": "UI/UX pro: desain web, mobile, desktop",
-      "triggers": [],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
-      "license": "MIT",
-      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__ui-ux-pro-max",
-      "original_name": "ui-ux-pro-max"
-    },
-    {
-      "id": "brand",
-      "name": "brand",
-      "sektor": "coding",
-      "description": "brand voice, identitas visual, messaging",
-      "triggers": [
-        "brand"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
-      "license": "MIT",
-      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__brand",
-      "original_name": "brand"
-    },
-    {
-      "id": "design",
-      "name": "design",
-      "sektor": "coding",
-      "description": "design menyeluruh: identitas brand, logo, aset",
-      "triggers": [
-        "design"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
-      "license": "MIT",
-      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__design",
-      "original_name": "design"
-    },
-    {
-      "id": "design-system",
-      "name": "design-system",
-      "sektor": "coding",
-      "description": "design-system: token, spesifikasi komponen",
-      "triggers": [
-        "design",
-        "system"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
-      "license": "MIT",
-      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__design-system",
-      "original_name": "design-system"
-    },
-    {
-      "id": "ui-styling",
-      "name": "ui-styling",
-      "sektor": "coding",
-      "description": "styling UI indah dan aksesibel",
-      "triggers": [
-        "styling"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
-      "license": "MIT",
-      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__ui-styling",
-      "original_name": "ui-styling"
-    },
-    {
-      "id": "banner-design",
-      "name": "banner-design",
-      "sektor": "coding",
-      "description": "banner sosmed, iklan, hero website",
-      "triggers": [
-        "banner",
-        "design"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
-      "license": "MIT",
-      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__banner-design",
-      "original_name": "banner-design"
-    },
-    {
-      "id": "slides-2",
-      "name": "slides-2",
-      "sektor": "coding",
-      "description": "Create strategic HTML presentations with Chart",
-      "triggers": [
-        "slides"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
-      "license": "MIT",
-      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__slides-2",
-      "original_name": "slides"
-    },
-    {
-      "id": "brand-2",
-      "name": "brand-2",
-      "sektor": "coding",
-      "description": "Brand voice, visual identity, messaging frameworks, asset",
-      "triggers": [
-        "brand"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
-      "license": "MIT",
-      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__brand-2",
-      "original_name": "brand"
-    },
-    {
-      "id": "design-2",
-      "name": "design-2",
-      "sektor": "coding",
-      "description": "Comprehensive design skill: brand identity, design",
-      "triggers": [
-        "design"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
-      "license": "MIT",
-      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__design-2",
-      "original_name": "design"
-    },
-    {
-      "id": "design-system-2",
-      "name": "design-system-2",
-      "sektor": "coding",
-      "description": "Token architecture, component specifications, and slide",
-      "triggers": [
-        "design",
-        "system"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
-      "license": "MIT",
-      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__design-system-2",
-      "original_name": "design-system"
-    },
-    {
-      "id": "ui-styling-2",
-      "name": "ui-styling-2",
-      "sektor": "coding",
-      "description": "Create beautiful, accessible user interfaces with",
-      "triggers": [
-        "styling"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
-      "license": "MIT",
-      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__ui-styling-2",
-      "original_name": "ui-styling"
-    },
-    {
-      "id": "banner-design-2",
-      "name": "banner-design-2",
-      "sektor": "coding",
-      "description": "Design banners for social media, ads, website heroes,",
-      "triggers": [
-        "banner",
-        "design"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
-      "license": "MIT",
-      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__banner-design-2",
-      "original_name": "banner-design"
-    },
-    {
-      "id": "naskah-id",
-      "name": "naskah-id",
-      "sektor": "penulisan",
-      "description": "naskah ilmiah Indonesia: tulis dan sunting (EYD V)",
-      "triggers": [
-        "naskah"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "nothinx/naskah-id",
-      "sha": "e18d574c6b93f407c5339abe03d52d2cfac75992",
-      "license": "MIT",
-      "original_id": "nothinx-naskah-id__naskah-id",
-      "original_name": "naskah-id"
-    },
-    {
-      "id": "executing-plans",
-      "name": "executing-plans",
-      "sektor": "coding",
-      "description": "eksekusi rencana implementasi di sesi ini",
-      "triggers": [
-        "executing",
-        "plans"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "obra/superpowers",
-      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
-      "license": "MIT",
-      "original_id": "obra-superpowers__executing-plans",
-      "original_name": "executing-plans"
-    },
-    {
-      "id": "subagent-driven-development",
-      "name": "subagent-driven-development",
-      "sektor": "coding",
-      "description": "rencana implementasi via subagen independen",
-      "triggers": [
-        "subagent",
-        "driven",
-        "development"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "obra/superpowers",
-      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
-      "license": "MIT",
-      "original_id": "obra-superpowers__subagent-driven-development",
-      "original_name": "subagent-driven-development"
-    },
-    {
-      "id": "systematic-debugging",
-      "name": "systematic-debugging",
-      "sektor": "coding",
-      "description": "debugging sistematis untuk bug/tes gagal",
-      "triggers": [
-        "systematic",
-        "debugging"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "obra/superpowers",
-      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
-      "license": "MIT",
-      "original_id": "obra-superpowers__systematic-debugging",
-      "original_name": "systematic-debugging"
-    },
-    {
-      "id": "impeccable",
-      "name": "impeccable",
-      "sektor": "coding",
-      "description": "impeccable: desain/redesain frontend berkualitas",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-12",
-      "name": "impeccable-12",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-2",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-19",
-      "name": "impeccable-19",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-3",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-20",
-      "name": "impeccable-20",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-4",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-21",
-      "name": "impeccable-21",
-      "sektor": "coding",
-      "description": "fixture",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-5",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-22",
-      "name": "impeccable-22",
-      "sektor": "coding",
-      "description": "fixture",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-6",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "audit",
-      "name": "audit",
-      "sektor": "coding",
-      "description": "audit kualitas UI (impeccable)",
-      "triggers": [
-        "audit"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__audit",
-      "original_name": "audit"
-    },
-    {
-      "id": "impeccable-23",
-      "name": "impeccable-23",
-      "sektor": "coding",
-      "description": "fixture",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-7",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-24",
-      "name": "impeccable-24",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-8",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-25",
-      "name": "impeccable-25",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-9",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-2",
-      "name": "impeccable-2",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-10",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-3",
-      "name": "impeccable-3",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-11",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-4",
-      "name": "impeccable-4",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-12",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-5",
-      "name": "impeccable-5",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-13",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-6",
-      "name": "impeccable-6",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-14",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-7",
-      "name": "impeccable-7",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-15",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-8",
-      "name": "impeccable-8",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-16",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-9",
-      "name": "impeccable-9",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-17",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-10",
-      "name": "impeccable-10",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-18",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-11",
-      "name": "impeccable-11",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-19",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-13",
-      "name": "impeccable-13",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-20",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-14",
-      "name": "impeccable-14",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-21",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-15",
-      "name": "impeccable-15",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-22",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-16",
-      "name": "impeccable-16",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-23",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-17",
-      "name": "impeccable-17",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-24",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "impeccable-18",
-      "name": "impeccable-18",
-      "sektor": "coding",
-      "description": "Use when the user wants to design, redesign, shape,",
-      "triggers": [
-        "impeccable"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "design-extra",
-      "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
-      "license": "Apache-2.0",
-      "original_id": "pbakaus-impeccable__impeccable-25",
-      "original_name": "impeccable"
-    },
-    {
-      "id": "smartdoc",
-      "name": "smartdoc",
-      "sektor": "penulisan",
-      "description": "smartdoc: intelijen dokumen per job",
-      "triggers": [
-        "smartdoc"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
-      "license": "MIT",
-      "original_id": "swanwright__smartdoc",
-      "original_name": "smartdoc"
-    },
-    {
-      "id": "smartbook-ingest",
-      "name": "smartbook-ingest",
-      "sektor": "penulisan",
-      "description": "smartbook: kompilasi buku/modul/manual reusable",
-      "triggers": [
-        "smartbook",
-        "ingest"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
-      "license": "MIT",
-      "original_id": "swanwright__smartbook-ingest",
-      "original_name": "smartbook-ingest"
-    },
-    {
-      "id": "mongodb-ops",
-      "name": "mongodb-ops",
-      "sektor": "coding",
-      "description": "MongoDB: skema, indeks, query",
-      "triggers": [
-        "mongodb"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
-      "license": "MIT",
-      "original_id": "swanwright__mongodb-ops",
-      "original_name": "mongodb-ops"
-    },
-    {
-      "id": "supabase-ops",
-      "name": "supabase-ops",
-      "sektor": "coding",
-      "description": "Supabase: Auth, RLS, Postgres, edge",
-      "triggers": [
-        "supabase"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
-      "license": "MIT",
-      "original_id": "swanwright__supabase-ops",
-      "original_name": "supabase-ops"
-    },
-    {
-      "id": "vercel-ops",
-      "name": "vercel-ops",
-      "sektor": "coding",
-      "description": "Vercel: deploy, env proyek, domain",
-      "triggers": [
-        "vercel"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
-      "license": "MIT",
-      "original_id": "swanwright__vercel-ops",
-      "original_name": "vercel-ops"
-    },
-    {
-      "id": "automation-audit-ops",
-      "name": "automation-audit-ops",
-      "sektor": "coding",
-      "description": "audit inventaris otomasi live berbasis bukti",
-      "triggers": [
-        "automation",
-        "audit"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
-      "license": "MIT",
-      "original_id": "swanwright__automation-audit-ops",
-      "original_name": "automation-audit-ops"
-    },
-    {
-      "id": "anti-spin-circuit-breaker",
-      "name": "anti-spin-circuit-breaker",
-      "sektor": "coding",
-      "description": "anti-spin: batas iterasi keras (maks 3)",
-      "triggers": [
-        "anti",
-        "spin"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
-      "license": "MIT",
-      "original_id": "swanwright__anti-spin",
-      "original_name": "Anti-Spin Circuit Breaker"
-    },
-    {
-      "id": "unified-done-gate",
-      "name": "unified-done-gate",
-      "sektor": "coding",
-      "description": "done-gate deterministik sebelum DONE (tes, scan CVE/secret, diff-scope)",
-      "triggers": [
-        "unified",
-        "done",
-        "gate"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
-      "license": "MIT",
-      "original_id": "swanwright__unified-done-gate",
-      "original_name": "Unified Done-Gate"
-    },
-    {
-      "id": "root-cause-gate",
-      "name": "root-cause-gate",
-      "sektor": "coding",
-      "description": "root-cause: fix akar masalah vs gejala",
-      "triggers": [
-        "root",
-        "cause",
-        "gate"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
-      "license": "MIT",
-      "original_id": "swanwright__root-cause-gate",
-      "original_name": "Root Cause Gate"
-    },
-    {
-      "id": "eval-harness",
-      "name": "eval-harness",
-      "sektor": "coding",
-      "description": "eval-harness: set eval bernama + aturan lulus",
-      "triggers": [
-        "eval",
-        "harness"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
-      "license": "MIT",
-      "original_id": "swanwright__eval-harness",
-      "original_name": "Eval Harness"
-    },
-    {
-      "id": "deep-research",
-      "name": "deep-research",
-      "sektor": "riset",
-      "description": "deep-research multi-sumber: klaim vs bukti",
-      "triggers": [
-        "deep",
-        "research"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
-      "license": "MIT",
-      "original_id": "swanwright__deep-research",
-      "original_name": "Deep Research"
-    },
-    {
-      "id": "honey",
-      "name": "honey",
-      "sektor": "coding",
-      "description": "Dense handoff prose for agent-to-agent messages",
-      "triggers": [
-        "honey"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "coding-extra",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
-      "license": "MIT",
-      "original_id": "swanwright__honey",
-      "original_name": "honey"
-    },
-    {
-      "id": "hackathon-winner-thinking",
-      "name": "hackathon-winner-thinking",
-      "sektor": "coding",
-      "description": "High-impact ideation, judging criteria alignment,",
-      "triggers": [
-        "hackathon",
-        "winner",
-        "thinking"
-      ],
-      "champion": false,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "coding-extra",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
-      "license": "MIT",
-      "original_id": "swanwright__hackathon-winner-thinking",
-      "original_name": "Hackathon Winner Thinking"
-    },
-    {
-      "id": "gh-axi",
-      "name": "gh-axi",
-      "sektor": "coding",
-      "description": "GitHub via gh-axi: issue, PR, CI (tanpa push main)",
-      "triggers": [],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
-      "license": "MIT",
-      "original_id": "swanwright__gh-axi",
-      "original_name": "gh-axi"
-    },
-    {
-      "id": "penulis-ilmiah",
-      "name": "penulis-ilmiah",
-      "sektor": "penulisan",
-      "description": "penulis ilmiah formal ID/EN",
-      "triggers": [
-        "penulis",
-        "ilmiah"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
-      "license": "MIT",
-      "original_id": "swanwright__penulis-ilmiah",
-      "original_name": "Penulis Ilmiah"
-    },
-    {
-      "id": "full-audit-keamanan",
-      "name": "full-audit-keamanan",
+      "id": "rea-tool-design",
+      "name": "rea-tool-design",
       "sektor": "security",
-      "description": "full audit keamanan: kerentanan kode dan konfigurasi",
+      "description": "REA: desain tool investigasi CLI/MCP",
       "triggers": [
-        "full",
-        "audit",
-        "keamanan"
+        "tool",
+        "design"
       ],
       "champion": true,
       "fallback": null,
       "cost": "s",
       "requires_consent": false,
       "pack": "",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
+      "src": "morluto/rea",
+      "sha": "8f920bb65b8d8ae669411501b0a3a59a62883ac3",
       "license": "MIT",
-      "original_id": "swanwright__full-audit-keamanan",
-      "original_name": "Full Audit Keamanan"
+      "original_id": "morluto-rea__rea-tool-design",
+      "original_name": "rea-tool-design"
     },
     {
-      "id": "chrome-devtools-axi",
-      "name": "chrome-devtools-axi",
+      "id": "react",
+      "name": "react",
       "sektor": "coding",
-      "description": "kontrol Chromium via chrome-devtools-axi",
+      "description": "json-render React: spec JSON → komponen React (@json-render/react)",
       "triggers": [
-        "chrome",
-        "devtools"
+        "json-render react"
       ],
       "champion": true,
       "fallback": null,
       "cost": "s",
       "requires_consent": false,
       "pack": "",
-      "src": "fahmi0812/SuperQuantumAGI",
-      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
-      "license": "MIT",
-      "original_id": "swanwright__chrome-devtools-axi",
-      "original_name": "chrome-devtools-axi"
-    },
-    {
-      "id": "brainstorming",
-      "name": "brainstorming",
-      "sektor": "coding",
-      "description": "brainstorming desain sebelum fitur/komponen baru",
-      "triggers": [
-        "brainstorming",
-        "brainstorm fitur"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "obra/superpowers",
-      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
-      "license": "MIT",
-      "original_id": "obra-superpowers__brainstorming",
-      "original_name": "brainstorming",
+      "src": "vercel-labs/json-render",
+      "sha": "92b273065ba224491ba789f9de6936d32e8a37f8",
+      "license": "Apache-2.0",
+      "original_id": "vercel-labs-json-render__react",
+      "original_name": "react",
       "activated_in": "0.1.4",
-      "from_pack": "misc"
-    },
-    {
-      "id": "code-review",
-      "name": "code-review",
-      "sektor": "coding",
-      "description": "code review perubahan sejak commit/branch: standar + kebenaran",
-      "triggers": [
-        "code review",
-        "review kode",
-        "review pr"
-      ],
-      "champion": true,
-      "fallback": "requesting-code-review",
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "mattpocock/skills",
-      "sha": "a496f5513d4a4cf889bc48e189e579f4b0bdf6aa",
-      "license": "MIT",
-      "original_id": "mattpocock-skills__code-review",
-      "original_name": "code-review",
-      "activated_in": "0.1.4",
-      "from_pack": "misc"
-    },
-    {
-      "id": "requesting-code-review",
-      "name": "requesting-code-review",
-      "sektor": "coding",
-      "description": "minta review sebelum merge/selesai fitur besar",
-      "triggers": [
-        "minta review",
-        "request review"
-      ],
-      "champion": false,
-      "fallback": "code-review",
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "obra/superpowers",
-      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
-      "license": "MIT",
-      "original_id": "obra-superpowers__requesting-code-review",
-      "original_name": "requesting-code-review",
-      "activated_in": "0.1.4",
-      "from_pack": "misc"
+      "from_pack": "coding-extra"
     },
     {
       "id": "receiving-code-review",
@@ -1695,116 +1285,6 @@
       "license": "MIT",
       "original_id": "obra-superpowers__receiving-code-review",
       "original_name": "receiving-code-review",
-      "activated_in": "0.1.4",
-      "from_pack": "misc"
-    },
-    {
-      "id": "finishing-a-development-branch",
-      "name": "finishing-a-development-branch",
-      "sektor": "coding",
-      "description": "selesaikan branch: tes lulus → pilih integrasi (PR/merge), tanpa push main",
-      "triggers": [
-        "selesaikan branch",
-        "finishing branch"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "obra/superpowers",
-      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
-      "license": "MIT",
-      "original_id": "obra-superpowers__finishing-a-development-branch",
-      "original_name": "finishing-a-development-branch",
-      "activated_in": "0.1.4",
-      "from_pack": "misc"
-    },
-    {
-      "id": "dispatching-parallel-agents",
-      "name": "dispatching-parallel-agents",
-      "sektor": "coding",
-      "description": "bagi ≥2 tugas independen ke subagen paralel",
-      "triggers": [
-        "paralel agen",
-        "parallel agents"
-      ],
-      "champion": true,
-      "fallback": "subagent-driven-development",
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "obra/superpowers",
-      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
-      "license": "MIT",
-      "original_id": "obra-superpowers__dispatching-parallel-agents",
-      "original_name": "dispatching-parallel-agents",
-      "activated_in": "0.1.4",
-      "from_pack": "misc"
-    },
-    {
-      "id": "git-guardrails-claude-code",
-      "name": "git-guardrails-claude-code",
-      "sektor": "coding",
-      "description": "hook pengaman git (blok push/reset --hard/clean)",
-      "triggers": [
-        "git guardrail",
-        "blok git berbahaya"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "mattpocock/skills",
-      "sha": "a496f5513d4a4cf889bc48e189e579f4b0bdf6aa",
-      "license": "MIT",
-      "original_id": "mattpocock-skills__git-guardrails-claude-code",
-      "original_name": "git-guardrails-claude-code",
-      "activated_in": "0.1.4",
-      "from_pack": "misc"
-    },
-    {
-      "id": "improve-codebase-architecture",
-      "name": "improve-codebase-architecture",
-      "sektor": "coding",
-      "description": "pindai arsitektur codebase → laporan HTML peluang perbaikan",
-      "triggers": [
-        "arsitektur codebase",
-        "improve architecture"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "mattpocock/skills",
-      "sha": "a496f5513d4a4cf889bc48e189e579f4b0bdf6aa",
-      "license": "MIT",
-      "original_id": "mattpocock-skills__improve-codebase-architecture",
-      "original_name": "improve-codebase-architecture",
-      "activated_in": "0.1.4",
-      "from_pack": "misc"
-    },
-    {
-      "id": "correct",
-      "name": "correct",
-      "sektor": "coding",
-      "description": "/correct: jadikan kesalahan berulang agen mustahil (arsitektur/tipe/lint/tes)",
-      "triggers": [
-        "/correct",
-        "kesalahan berulang"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "cursor/plugins",
-      "sha": "4dd1d05818d19792e7cd6e818f1667f95f7e1dbe",
-      "license": "MIT",
-      "original_id": "cursor-plugins__correct",
-      "original_name": "correct",
       "activated_in": "0.1.4",
       "from_pack": "misc"
     },
@@ -1831,267 +1311,26 @@
       "from_pack": "misc"
     },
     {
-      "id": "poteto-mode",
-      "name": "poteto-mode",
+      "id": "requesting-code-review",
+      "name": "requesting-code-review",
       "sektor": "coding",
-      "description": "/poteto-mode: gaya ringkas, kode sederhana, kerja terverifikasi",
+      "description": "minta review sebelum merge/selesai fitur besar",
       "triggers": [
-        "/poteto-mode",
-        "poteto"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "cursor/plugins",
-      "sha": "4dd1d05818d19792e7cd6e818f1667f95f7e1dbe",
-      "license": "MIT",
-      "original_id": "cursor-plugins__poteto-mode",
-      "original_name": "poteto-mode",
-      "activated_in": "0.1.4",
-      "from_pack": "misc"
-    },
-    {
-      "id": "in-your-own-words",
-      "name": "in-your-own-words",
-      "sektor": "coding",
-      "description": "/in-your-own-words: restate tujuan user sebelum kerja",
-      "triggers": [
-        "/in-your-own-words",
-        "restate"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "cursor/plugins",
-      "sha": "4dd1d05818d19792e7cd6e818f1667f95f7e1dbe",
-      "license": "MIT",
-      "original_id": "cursor-plugins__in-your-own-words",
-      "original_name": "in-your-own-words",
-      "activated_in": "0.1.4",
-      "from_pack": "misc"
-    },
-    {
-      "id": "react",
-      "name": "react",
-      "sektor": "coding",
-      "description": "json-render React: spec JSON → komponen React (@json-render/react)",
-      "triggers": [
-        "json-render react"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "vercel-labs/json-render",
-      "sha": "92b273065ba224491ba789f9de6936d32e8a37f8",
-      "license": "Apache-2.0",
-      "original_id": "vercel-labs-json-render__react",
-      "original_name": "react",
-      "activated_in": "0.1.4",
-      "from_pack": "coding-extra"
-    },
-    {
-      "id": "next",
-      "name": "next",
-      "sektor": "coding",
-      "description": "json-render Next.js: spec JSON → app Next.js (@json-render/next)",
-      "triggers": [
-        "json-render next"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "vercel-labs/json-render",
-      "sha": "92b273065ba224491ba789f9de6936d32e8a37f8",
-      "license": "Apache-2.0",
-      "original_id": "vercel-labs-json-render__next",
-      "original_name": "next",
-      "activated_in": "0.1.4",
-      "from_pack": "coding-extra"
-    },
-    {
-      "id": "skill-creator",
-      "name": "skill-creator",
-      "sektor": "coding",
-      "description": "buat/perbarui skill (SKILL.md) yang efektif",
-      "triggers": [
-        "buat skill",
-        "skill creator"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "vercel-labs/json-render",
-      "sha": "92b273065ba224491ba789f9de6936d32e8a37f8",
-      "license": "Apache-2.0",
-      "original_id": "vercel-labs-json-render__skill-creator",
-      "original_name": "skill-creator",
-      "activated_in": "0.1.4",
-      "from_pack": "coding-extra"
-    },
-    {
-      "id": "design-taste-frontend",
-      "name": "design-taste-frontend",
-      "sektor": "coding",
-      "description": "art direction frontend anti-slop (tasteskill v2)",
-      "triggers": [
-        "taste frontend",
-        "anti-slop"
-      ],
-      "champion": true,
-      "fallback": "hallmark",
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "Leonxlnx/taste-skill",
-      "sha": "12af471f627f866411b4bd785b19646d3672784c",
-      "license": "MIT",
-      "original_id": "leonxlnx-taste-skill__design-taste-frontend",
-      "original_name": "design-taste-frontend",
-      "activated_in": "0.1.4",
-      "from_pack": "design-extra"
-    },
-    {
-      "id": "emil-design-eng",
-      "name": "emil-design-eng",
-      "sektor": "coding",
-      "description": "polish UI ala Emil Kowalski: komponen, animasi, detail",
-      "triggers": [
-        "ui polish",
-        "emil"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "emilkowalski/skills",
-      "sha": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
-      "license": "MIT",
-      "original_id": "emilkowalski-skills__emil-design-eng",
-      "original_name": "emil-design-eng",
-      "activated_in": "0.1.4",
-      "from_pack": "design-extra"
-    },
-    {
-      "id": "hallmark",
-      "name": "hallmark",
-      "sektor": "coding",
-      "description": "desain halaman/website baru yang terasa didesain, bukan generik",
-      "triggers": [
-        "hallmark",
-        "desain landing"
+        "minta review",
+        "request review"
       ],
       "champion": false,
-      "fallback": "design-taste-frontend",
+      "fallback": "code-review",
       "cost": "s",
       "requires_consent": false,
       "pack": "",
-      "src": "Nutlope/hallmark",
-      "sha": "4f6a46c6dc325d40ab268c93e25c7b96676ebccd",
+      "src": "obra/superpowers",
+      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
       "license": "MIT",
-      "original_id": "nutlope-hallmark__hallmark",
-      "original_name": "hallmark",
+      "original_id": "obra-superpowers__requesting-code-review",
+      "original_name": "requesting-code-review",
       "activated_in": "0.1.4",
-      "from_pack": "design-extra"
-    },
-    {
-      "id": "magic-ui",
-      "name": "magic-ui",
-      "sektor": "coding",
-      "description": "komponen Magic UI di React/Next.js (shadcn registry)",
-      "triggers": [
-        "magic ui",
-        "magicui"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "magicuidesign/magicui",
-      "sha": "efe76fc5755eca1142dd4f74c1d6f0ace2887e3c",
-      "license": "MIT",
-      "original_id": "magicuidesign-magicui__magic-ui",
-      "original_name": "magic-ui",
-      "activated_in": "0.1.4",
-      "from_pack": "design-extra"
-    },
-    {
-      "id": "gsap-core",
-      "name": "gsap-core",
-      "sektor": "coding",
-      "description": "GSAP core: tween, easing, stagger, matchMedia",
-      "triggers": [
-        "gsap"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "greensock/gsap-skills",
-      "sha": "aed9cfd3277740755f6bfc1155c7aa645403b760",
-      "license": "MIT",
-      "original_id": "greensock-gsap-skills__gsap-core",
-      "original_name": "gsap-core",
-      "activated_in": "0.1.4",
-      "from_pack": "design-extra"
-    },
-    {
-      "id": "gsap-scrolltrigger",
-      "name": "gsap-scrolltrigger",
-      "sektor": "coding",
-      "description": "GSAP ScrollTrigger: animasi scroll, pin, scrub, parallax",
-      "triggers": [
-        "scrolltrigger",
-        "animasi scroll"
-      ],
-      "champion": true,
-      "fallback": "gsap-core",
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "greensock/gsap-skills",
-      "sha": "aed9cfd3277740755f6bfc1155c7aa645403b760",
-      "license": "MIT",
-      "original_id": "greensock-gsap-skills__gsap-scrolltrigger",
-      "original_name": "gsap-scrolltrigger",
-      "activated_in": "0.1.4",
-      "from_pack": "design-extra"
-    },
-    {
-      "id": "code-audit",
-      "name": "code-audit",
-      "sektor": "security",
-      "description": "audit keamanan kode sumber (SAST: Semgrep/CodeQL) + verifikasi fix",
-      "triggers": [
-        "code audit",
-        "sast",
-        "semgrep",
-        "codeql"
-      ],
-      "champion": true,
-      "fallback": "security-audit",
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "zhaoxuya520/reverse-skill",
-      "sha": "cab634bd855fc287f6e420c1f36fd1a6b9245960",
-      "license": "MIT",
-      "original_id": "zhaoxuya520-reverse-skill__code-audit",
-      "original_name": "code-audit",
-      "activated_in": "0.1.4",
-      "from_pack": "red-team"
+      "from_pack": "misc"
     },
     {
       "id": "research",
@@ -2117,119 +1356,270 @@
       "from_pack": "misc"
     },
     {
-      "id": "figure-it-out",
-      "name": "figure-it-out",
-      "sektor": "riset",
-      "description": "playbook teraudit untuk masalah besar/ambigu (migrasi, perubahan multi-bagian)",
+      "id": "reverse-engineer-anything",
+      "name": "reverse-engineer-anything",
+      "sektor": "security",
+      "description": "reverse engineer native/Electron/APK/firmware/browser dengan REA",
       "triggers": [
-        "figure it out",
-        "playbook migrasi"
+        "reverse",
+        "engineer",
+        "anything"
       ],
       "champion": true,
       "fallback": null,
       "cost": "s",
-      "requires_consent": false,
+      "requires_consent": true,
       "pack": "",
-      "src": "cursor/plugins",
-      "sha": "4dd1d05818d19792e7cd6e818f1667f95f7e1dbe",
+      "src": "morluto/rea",
+      "sha": "8f920bb65b8d8ae669411501b0a3a59a62883ac3",
       "license": "MIT",
-      "original_id": "cursor-plugins__figure-it-out",
-      "original_name": "figure-it-out",
-      "activated_in": "0.1.4",
-      "from_pack": "misc"
+      "original_id": "morluto-rea__reverse-engineer-anything",
+      "original_name": "reverse-engineer-anything"
     },
     {
-      "id": "interrogate",
-      "name": "interrogate",
-      "sektor": "riset",
-      "description": "review adversarial multi-model: cari blind spot, stress test",
+      "id": "review-loop",
+      "name": "review-loop",
+      "sektor": "media",
+      "description": "review visual motion graphics: contact sheet → kritik → perbaiki",
       "triggers": [
-        "interrogate",
-        "adversarial review",
-        "blind spot"
+        "review motion",
+        "contact sheet"
       ],
       "champion": true,
-      "fallback": null,
+      "fallback": "motion-design",
       "cost": "s",
       "requires_consent": false,
       "pack": "",
-      "src": "cursor/plugins",
-      "sha": "4dd1d05818d19792e7cd6e818f1667f95f7e1dbe",
+      "src": "whaleyxbt/claude-motion",
+      "sha": "e627941543d9988b155dc610bb9cc0115a5e365e",
       "license": "MIT",
-      "original_id": "cursor-plugins__interrogate",
-      "original_name": "interrogate",
+      "original_id": "whaleyxbt-claude-motion__review-loop",
+      "original_name": "review-loop",
       "activated_in": "0.1.4",
-      "from_pack": "misc"
+      "from_pack": "motion"
     },
     {
-      "id": "doc-coauthoring",
-      "name": "doc-coauthoring",
-      "sektor": "penulisan",
-      "description": "ko-penulisan dokumen terstruktur: proposal, spec, decision doc",
+      "id": "root-cause-gate",
+      "name": "root-cause-gate",
+      "sektor": "coding",
+      "description": "root-cause: fix akar masalah vs gejala",
       "triggers": [
-        "proposal",
-        "spec teknis",
-        "decision doc"
+        "root",
+        "cause",
+        "gate"
       ],
       "champion": true,
       "fallback": null,
       "cost": "s",
       "requires_consent": false,
       "pack": "",
-      "src": "anthropics/skills",
-      "sha": "ca45fc496a3436251f191354091d557da31c15b5",
-      "license": "PER-SKILL",
-      "original_id": "anthropics-skills__doc-coauthoring",
-      "original_name": "doc-coauthoring",
-      "activated_in": "0.1.4",
-      "from_pack": "misc"
-    },
-    {
-      "id": "laporan-generator",
-      "name": "laporan-generator",
-      "sektor": "penulisan",
-      "description": "dokumen akademik Indonesia → PDF/DOCX: skripsi, laporan PKL, makalah",
-      "triggers": [
-        "laporan pkl",
-        "laporan magang",
-        "makalah",
-        "docx"
-      ],
-      "champion": true,
-      "fallback": "naskah-id",
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "FRCHN-GSTN/MenulisCep4t",
-      "sha": "ba5389fc518668f79e1b358b742786607df80cd1",
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
       "license": "MIT",
-      "original_id": "frchn-gstn-menuliscep4t__laporan-generator",
-      "original_name": "laporan-generator",
-      "activated_in": "0.1.4",
-      "from_pack": "misc"
+      "original_id": "swanwright__root-cause-gate",
+      "original_name": "Root Cause Gate"
     },
     {
-      "id": "internal-comms",
-      "name": "internal-comms",
-      "sektor": "penulisan",
-      "description": "komunikasi internal: update status, newsletter, laporan tim",
+      "id": "security-audit",
+      "name": "security-audit",
+      "sektor": "security",
+      "description": "security-audit: review kerentanan kode, API, layanan, CLI, library",
       "triggers": [
-        "komunikasi internal",
-        "newsletter",
-        "status update"
+        "security",
+        "audit"
       ],
       "champion": true,
       "fallback": null,
       "cost": "s",
       "requires_consent": false,
       "pack": "",
-      "src": "anthropics/skills",
-      "sha": "ca45fc496a3436251f191354091d557da31c15b5",
-      "license": "PER-SKILL",
-      "original_id": "anthropics-skills__internal-comms",
-      "original_name": "internal-comms",
+      "src": "cloudflare/security-audit-skill",
+      "sha": "c1c8a8c1471069fb0e188eeaff69b8e8db6564a8",
+      "license": "MIT",
+      "original_id": "cloudflare-security-audit-skill__security-audit",
+      "original_name": "security-audit"
+    },
+    {
+      "id": "skill-creator",
+      "name": "skill-creator",
+      "sektor": "coding",
+      "description": "buat/perbarui skill (SKILL.md) yang efektif",
+      "triggers": [
+        "buat skill",
+        "skill creator"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "vercel-labs/json-render",
+      "sha": "92b273065ba224491ba789f9de6936d32e8a37f8",
+      "license": "Apache-2.0",
+      "original_id": "vercel-labs-json-render__skill-creator",
+      "original_name": "skill-creator",
       "activated_in": "0.1.4",
-      "from_pack": "misc"
+      "from_pack": "coding-extra"
+    },
+    {
+      "id": "slides",
+      "name": "slides",
+      "sektor": "coding",
+      "description": "slides HTML strategis dengan Chart",
+      "triggers": [
+        "slides"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "license": "MIT",
+      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__slides",
+      "original_name": "slides"
+    },
+    {
+      "id": "smartbook-ingest",
+      "name": "smartbook-ingest",
+      "sektor": "penulisan",
+      "description": "smartbook: kompilasi buku/modul/manual reusable",
+      "triggers": [
+        "smartbook",
+        "ingest"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
+      "license": "MIT",
+      "original_id": "swanwright__smartbook-ingest",
+      "original_name": "smartbook-ingest"
+    },
+    {
+      "id": "smartdoc",
+      "name": "smartdoc",
+      "sektor": "penulisan",
+      "description": "smartdoc: intelijen dokumen per job",
+      "triggers": [
+        "smartdoc"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
+      "license": "MIT",
+      "original_id": "swanwright__smartdoc",
+      "original_name": "smartdoc"
+    },
+    {
+      "id": "sound-design",
+      "name": "sound-design",
+      "sektor": "media",
+      "description": "sound design prosedural: cue sheet sfx sesuai timeline video",
+      "triggers": [
+        "sound design",
+        "sfx"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "whaleyxbt/claude-motion",
+      "sha": "e627941543d9988b155dc610bb9cc0115a5e365e",
+      "license": "MIT",
+      "original_id": "whaleyxbt-claude-motion__sound-design",
+      "original_name": "sound-design",
+      "activated_in": "0.1.4",
+      "from_pack": "motion"
+    },
+    {
+      "id": "subagent-driven-development",
+      "name": "subagent-driven-development",
+      "sektor": "coding",
+      "description": "rencana implementasi via subagen independen",
+      "triggers": [
+        "subagent",
+        "driven",
+        "development"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "obra/superpowers",
+      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "license": "MIT",
+      "original_id": "obra-superpowers__subagent-driven-development",
+      "original_name": "subagent-driven-development"
+    },
+    {
+      "id": "supabase-ops",
+      "name": "supabase-ops",
+      "sektor": "coding",
+      "description": "Supabase: Auth, RLS, Postgres, edge",
+      "triggers": [
+        "supabase"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
+      "license": "MIT",
+      "original_id": "swanwright__supabase-ops",
+      "original_name": "supabase-ops"
+    },
+    {
+      "id": "systematic-debugging",
+      "name": "systematic-debugging",
+      "sektor": "coding",
+      "description": "debugging sistematis untuk bug/tes gagal",
+      "triggers": [
+        "systematic",
+        "debugging"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "obra/superpowers",
+      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "license": "MIT",
+      "original_id": "obra-superpowers__systematic-debugging",
+      "original_name": "systematic-debugging"
+    },
+    {
+      "id": "tdd-red-green-refactor",
+      "name": "tdd-red-green-refactor",
+      "sektor": "coding",
+      "description": "TDD Red-Green-Refactor disiplin di TypeScript/Node",
+      "triggers": [
+        "green",
+        "refactor"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "google-labs-code/design.md",
+      "sha": "6e5da5382f41edbba9d73b2c62f33f32e9971f15",
+      "license": "Apache-2.0",
+      "original_id": "google-labs-code-design-md__tdd-red-green-refactor",
+      "original_name": "tdd-red-green-refactor"
     },
     {
       "id": "technical-writer",
@@ -2255,26 +1645,101 @@
       "from_pack": "coding-extra"
     },
     {
-      "id": "motion-design",
-      "name": "motion-design",
-      "sektor": "media",
-      "description": "aturan rasa motion graphics Remotion: timing, easing, tipografi",
+      "id": "typed-service-contracts",
+      "name": "typed-service-contracts",
+      "sektor": "coding",
+      "description": "kontrak servis TypeScript type-safe pola Spec+Handler",
       "triggers": [
-        "motion design",
-        "remotion"
+        "typed",
+        "service",
+        "contracts"
       ],
       "champion": true,
       "fallback": null,
       "cost": "s",
       "requires_consent": false,
       "pack": "",
-      "src": "whaleyxbt/claude-motion",
-      "sha": "e627941543d9988b155dc610bb9cc0115a5e365e",
+      "src": "google-labs-code/design.md",
+      "sha": "6e5da5382f41edbba9d73b2c62f33f32e9971f15",
+      "license": "Apache-2.0",
+      "original_id": "google-labs-code-design-md__typed-service-contracts",
+      "original_name": "typed-service-contracts"
+    },
+    {
+      "id": "ui-styling",
+      "name": "ui-styling",
+      "sektor": "coding",
+      "description": "styling UI indah dan aksesibel",
+      "triggers": [
+        "styling"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
       "license": "MIT",
-      "original_id": "whaleyxbt-claude-motion__motion-design",
-      "original_name": "motion-design",
-      "activated_in": "0.1.4",
-      "from_pack": "motion"
+      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__ui-styling",
+      "original_name": "ui-styling"
+    },
+    {
+      "id": "ui-ux-pro-max",
+      "name": "ui-ux-pro-max",
+      "sektor": "coding",
+      "description": "UI/UX pro: desain web, mobile, desktop",
+      "triggers": [],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "license": "MIT",
+      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__ui-ux-pro-max",
+      "original_name": "ui-ux-pro-max"
+    },
+    {
+      "id": "unified-done-gate",
+      "name": "unified-done-gate",
+      "sektor": "coding",
+      "description": "done-gate deterministik sebelum DONE (tes, scan CVE/secret, diff-scope)",
+      "triggers": [
+        "unified",
+        "done",
+        "gate"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
+      "license": "MIT",
+      "original_id": "swanwright__unified-done-gate",
+      "original_name": "Unified Done-Gate"
+    },
+    {
+      "id": "vercel-ops",
+      "name": "vercel-ops",
+      "sektor": "coding",
+      "description": "Vercel: deploy, env proyek, domain",
+      "triggers": [
+        "vercel"
+      ],
+      "champion": true,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
+      "license": "MIT",
+      "original_id": "swanwright__vercel-ops",
+      "original_name": "vercel-ops"
     },
     {
       "id": "video-demo",
@@ -2299,28 +1764,6 @@
       "from_pack": "motion"
     },
     {
-      "id": "sound-design",
-      "name": "sound-design",
-      "sektor": "media",
-      "description": "sound design prosedural: cue sheet sfx sesuai timeline video",
-      "triggers": [
-        "sound design",
-        "sfx"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "whaleyxbt/claude-motion",
-      "sha": "e627941543d9988b155dc610bb9cc0115a5e365e",
-      "license": "MIT",
-      "original_id": "whaleyxbt-claude-motion__sound-design",
-      "original_name": "sound-design",
-      "activated_in": "0.1.4",
-      "from_pack": "motion"
-    },
-    {
       "id": "web-sims",
       "name": "web-sims",
       "sektor": "media",
@@ -2341,118 +1784,6 @@
       "original_name": "web-sims",
       "activated_in": "0.1.4",
       "from_pack": "motion"
-    },
-    {
-      "id": "review-loop",
-      "name": "review-loop",
-      "sektor": "media",
-      "description": "review visual motion graphics: contact sheet → kritik → perbaiki",
-      "triggers": [
-        "review motion",
-        "contact sheet"
-      ],
-      "champion": true,
-      "fallback": "motion-design",
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "whaleyxbt/claude-motion",
-      "sha": "e627941543d9988b155dc610bb9cc0115a5e365e",
-      "license": "MIT",
-      "original_id": "whaleyxbt-claude-motion__review-loop",
-      "original_name": "review-loop",
-      "activated_in": "0.1.4",
-      "from_pack": "motion"
-    },
-    {
-      "id": "keuangan-pribadi",
-      "name": "keuangan-pribadi",
-      "sektor": "finance",
-      "description": "keuangan pribadi: budgeting, dana darurat, utang, arus kas rumah tangga",
-      "triggers": [
-        "keuangan",
-        "budget",
-        "anggaran",
-        "tabungan",
-        "utang"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/Swanwright",
-      "sha": "da868bdb4a5423bfd017d19aa5f2ad4a3d5d089b",
-      "license": "MIT",
-      "original_id": "swanwright__keuangan-pribadi",
-      "original_name": "keuangan-pribadi"
-    },
-    {
-      "id": "pajak-dasar-id",
-      "name": "pajak-dasar-id",
-      "sektor": "finance",
-      "description": "pajak dasar Indonesia: PPh OP, SPT, NPWP, UMKM — edukasi + rujuk DJP",
-      "triggers": [
-        "pajak",
-        "spt",
-        "npwp",
-        "pph"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/Swanwright",
-      "sha": "da868bdb4a5423bfd017d19aa5f2ad4a3d5d089b",
-      "license": "MIT",
-      "original_id": "swanwright__pajak-dasar-id",
-      "original_name": "pajak-dasar-id"
-    },
-    {
-      "id": "akuntansi-umkm",
-      "name": "akuntansi-umkm",
-      "sektor": "finance",
-      "description": "akuntansi UMKM: pembukuan, jurnal, buku besar, laba rugi, neraca",
-      "triggers": [
-        "akuntansi",
-        "pembukuan",
-        "jurnal",
-        "umkm",
-        "neraca"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/Swanwright",
-      "sha": "da868bdb4a5423bfd017d19aa5f2ad4a3d5d089b",
-      "license": "MIT",
-      "original_id": "swanwright__akuntansi-umkm",
-      "original_name": "akuntansi-umkm"
-    },
-    {
-      "id": "analisis-laporan-keuangan",
-      "name": "analisis-laporan-keuangan",
-      "sektor": "finance",
-      "description": "analisis laporan keuangan: rasio likuiditas/solvabilitas/profitabilitas, arus kas",
-      "triggers": [
-        "laporan keuangan",
-        "rasio",
-        "likuiditas",
-        "profitabilitas"
-      ],
-      "champion": true,
-      "fallback": null,
-      "cost": "s",
-      "requires_consent": false,
-      "pack": "",
-      "src": "fahmi0812/Swanwright",
-      "sha": "da868bdb4a5423bfd017d19aa5f2ad4a3d5d089b",
-      "license": "MIT",
-      "original_id": "swanwright__analisis-laporan-keuangan",
-      "original_name": "analisis-laporan-keuangan"
     }
   ]
 }

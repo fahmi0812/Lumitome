@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.6 — Default baru: orchestrator, 5 MCP, code memory di mana saja
+
+- Default MCP: `codemem`, `skills-coding`, `skills-riset`, `skills-penulisan`, `skills-security`. `skills-finance`/`skills-media` hanya lewat `LUMI_MCP=all` atau daftar eksplisit. Skill `*offensive*` tetap `ask`.
+- `codemem` (codebase-memory-mcp v0.12.1) kini didaftarkan wrapper secara global dengan path absolut `$LUMI_HOME/bin/codebase-memory-mcp[.exe]` — aktif di proyek mana pun, tidak lagi hanya dari config proyek Swanwright. Binary tidak ada → dilewati dengan satu baris pemberitahuan. `codebase-memory-mcp install` tidak pernah dijalankan.
+- npm/Windows: postinstall & first-run memasang codebase-memory-mcp v0.12.1 (SHA256 terpin per platform: linux/darwin/win32 × x64/arm64). Gagal unduh tidak fatal.
+- Auto-index: `lumitome` (TUI/run) di folder proyek yang belum diindeks memulai `codebase-memory-mcp cli index_repository` di latar (detached, prioritas rendah). Dilewati di HOME, root, folder sistem, atau tanpa penanda proyek (.git, package.json, pyproject.toml, go.mod, Cargo.toml, …). Status di `$LUMI_HOME/codemem-index.json`. Matikan: `LUMI_AUTO_INDEX=0`.
+- Agent default TUI = `orchestrator` (deskripsi agent kini "Lumitome"). `lumitome run` headless tetap `build`. `LUMI_AGENT` tetap menimpa.
+- FIX registry skill: `router/skills-registry.json` berisi 121 entri padahal skill aktif 86. Penyebabnya: importer lama memindai semua SKILL.md upstream, termasuk salinan per-harness (`.trae/`, `.agent/`, `.rovodev/` …), lalu memberi akhiran -2..-25 dan memasukkan entri pack ke registry aktif. Sekarang registry dibangkitkan `scripts/gen-registry.mjs` (`npm run skills:registry`) dan isinya sama dengan folder `.opencode/skills`. Metadata pack pindah ke `packs/<pack>/registry.json`. Salinan cermin (66, mis. `impeccable-2..25`, `design-2`) ditandai `mirror_of` dan tidak diindeks router; foldernya tetap ada. `validate` memeriksa registry == folder. Presisi router (test) tetap 0.938.
+
 ## 0.3.5 — Perbaikan Windows
 
 - FIX Windows: `lumitome` gagal dengan ERR_UNSUPPORTED_ESM_URL_SCHEME karena import() dinamis menerima path mentah `C:\...`. Kini semua memakai pathToFileURL (wrapper + plugin guard).

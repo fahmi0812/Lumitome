@@ -68,9 +68,10 @@ ok("karpathy rule isi a-d", ["minimal", "bedah", "JUDGMENT", "done-gate"].every(
 const kr = layer0("tolong perubahan bedah saja, ala karpathy");
 ok("layer0 karpathy -> coding + rule 06", kr.hit && kr.sektor === "coding" && kr.rules.includes("06-coding-karpathy"));
 const reg = JSON.parse(fs.readFileSync("router/skills-registry.json", "utf8"));
-const ks = reg.skills.find((s) => s.id.endsWith("karpathy-guidelines"));
+const regCE = JSON.parse(fs.readFileSync("packs/coding-extra/registry.json", "utf8"));
+const ks = regCE.skills.find((s) => s.id.endsWith("karpathy-guidelines")) && !reg.skills.some((s) => s.id === "karpathy-guidelines") ? regCE.skills.find((s) => s.id === "karpathy-guidelines") : null;
 const idx = fs.readFileSync("router/skills-index.md", "utf8");
-ok("karpathy-guidelines di pack, champion false, tidak di indeks, tetap vendored",
+ok("karpathy-guidelines di pack (packs/coding-extra/registry.json, bukan registry aktif), champion false, tidak di indeks, tetap vendored",
   ks && ks.pack === "coding-extra" && ks.champion === false && !idx.includes("karpathy-guidelines") &&
   fs.existsSync(`packs/coding-extra/skills/${ks.id}/SKILL.md`));
 ok("indeks aktif <= ~1.5k tok", Math.ceil(idx.length / 4) <= 1600);
@@ -391,6 +392,35 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("npm: package publishable (tidak private), bin lumitome → cli.mjs (node, tanpa bash), postinstall", !pkg.private && pkg.bin.lumitome === "lumitome/bin/cli.mjs" && /postinstall\.mjs/.test(pkg.scripts.postinstall) && fs.readFileSync(pkg.bin.lumitome, "utf8").startsWith("#!/usr/bin/env node"));
   const Wsrc = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
   ok("win: wrapper tanpa /proc wajib, tanpa `sleep`/setpriv di Windows, sandbox off + guard tetap", Wsrc.includes("HAS_PROC") && !Wsrc.includes('execFileSync("sleep"') && Wsrc.includes('process.platform === "linux" && (() =>') && Wsrc.includes('env.LUMI_SANDBOX = "off"'));
+}
+
+{
+  // v0.3.6: codemem global + auto-index + default MCP/agent
+  const CM = await import("../lumitome/lib/codemem.mjs"); const osm = await import("node:os");
+  ok("cbm: binary di LUMI_HOME/bin (.exe di Windows)", CM.cbmBin("C:\\Users\\F\\.lumitome", "win32") === "C:\\Users\\F\\.lumitome\\bin\\codebase-memory-mcp.exe" && CM.cbmBin("/h/.lumitome", "linux") === "/h/.lumitome/bin/codebase-memory-mcp");
+  const keys = ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "win32-x64", "win32-arm64"];
+  const inst = fs.readFileSync("install.sh", "utf8");
+  ok("cbm: pin 6 platform + SHA256, versi sama dengan install.sh", keys.every((k) => /^[0-9a-f]{64}$/.test(CM.CBM_PINS[k][1])) && inst.includes(`CBM_VERSION=${CM.CBM_VERSION}`) && ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64"].every((k) => inst.includes(CM.CBM_PINS[k][1])) && CM.cbmAsset("win32", "x64").name.endsWith("windows-amd64.zip"));
+  let bad = ""; await CM.installCbm({ home: fs.mkdtempSync(path.join(osm.tmpdir(), "lumicbm-")), log: () => {}, fetchImpl: async () => ({ ok: true, arrayBuffer: async () => new TextEncoder().encode("x").buffer }) }).catch((e) => { bad = e.message; });
+  ok("cbm: SHA256 salah ditolak", /SHA256 tidak cocok/.test(bad));
+  ok("cbm: MCP codemem = path absolut tanpa argumen; null bila binary tidak ada", CM.codememServer("/h", () => true).command.join(" ") === "/h/bin/codebase-memory-mcp" && CM.codememServer("/h", () => false) === null);
+  const ex = (set) => (f) => set.some((m) => f.endsWith(m));
+  const o = { home: "/home/u", platform: "linux", env: {} };
+  ok("auto-index: lewati home/root/sistem/tanpa marker/LUMI_AUTO_INDEX=0", CM.autoIndexSkip("/home/u", { ...o, exists: () => true }) && CM.autoIndexSkip("/", { ...o, exists: () => true }) && CM.autoIndexSkip("/usr/lib", { ...o, exists: () => true }) && CM.autoIndexSkip("/home/u/x", { ...o, exists: () => false }) && CM.autoIndexSkip("/home/u/p", { ...o, env: { LUMI_AUTO_INDEX: "0" }, exists: () => true }));
+  ok("auto-index: proyek dengan .git / package.json / go.mod → jalan", ["/.git", "/package.json", "/go.mod", "/Cargo.toml", "/pyproject.toml"].every((m) => CM.autoIndexSkip("/home/u/p", { ...o, exists: ex([m]) }) === null));
+  ok("auto-index win: C:\\Windows & home dilewati", !!CM.autoIndexSkip("C:\\Windows\\System32", { home: "C:\\Users\\F", platform: "win32", env: {}, exists: () => true }) && !!CM.autoIndexSkip("c:\\users\\f", { home: "C:\\Users\\F", platform: "win32", env: {}, exists: () => true }));
+  const W = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
+  ok("default MCP = codemem + skills coding/riset/penulisan/security (finance/media hanya all/daftar)", /DEFAULT_MCP = "codemem,skills-coding,skills-riset,skills-penulisan,skills-security"/.test(W));
+  ok("default agent = orchestrator (TUI), build (run headless); LUMI_AGENT menimpa", /default_agent: env\.LUMI_AGENT/.test(W) && /RUN_AGENT = "build"/.test(W) && /: "orchestrator" }/.test(W) && /"default_agent": "orchestrator"/.test(fs.readFileSync("lumitome/config/opencode.jsonc", "utf8")));
+  ok("tidak pernah menjalankan `codebase-memory-mcp install`", !/\["install"/.test(fs.readFileSync("lumitome/lib/codemem.mjs", "utf8") + W));
+  const orch = fs.readFileSync(".opencode/agents/orchestrator.md", "utf8");
+  ok("orchestrator: subagent allow (delegasi di auto mode); deskripsi agent tanpa 'Swanwright'", /action: subagent, resource: "\*", effect: allow/.test(orch) && !fs.readdirSync(".opencode/agents", { recursive: true }).filter((f) => f.endsWith(".md")).some((f) => /^description:.*Swanwright/m.test(fs.readFileSync(path.join(".opencode/agents", f), "utf8"))));
+  const gr = (await import("node:child_process")).spawnSync(process.execPath, ["scripts/gen-registry.mjs", "--check"], { encoding: "utf8" });
+  const regIds = JSON.parse(fs.readFileSync("router/skills-registry.json", "utf8")).skills.map((s) => s.id).sort();
+  ok("registry aktif == folder .opencode/skills; gen-registry --check bersih", gr.status === 0 && JSON.stringify(regIds) === JSON.stringify(fs.readdirSync(".opencode/skills").filter((d) => fs.existsSync(path.join(".opencode/skills", d, "SKILL.md"))).sort()));
+  const SDB = await import("../router/skill-db.mjs");
+  ok("salinan cermin pack (impeccable-2.., design-2) tidak diindeks; foldernya tetap ada", !SDB.collectSkills(".").some((x) => /^impeccable-\d+$|^design-2$/.test(x.name)) && fs.existsSync("packs/design-extra/skills/impeccable-2/SKILL.md"));
+  ok("versi 0.3.6 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.6") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.6" && /VERSION = "0\.3\.6"/.test(W) && /SW_VERSION=0\.3\.6/.test(inst));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

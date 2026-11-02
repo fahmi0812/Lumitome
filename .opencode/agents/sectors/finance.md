@@ -1,5 +1,5 @@
 ---
-description: Sektor finance — executor Swanwright.
+description: Sektor finance — executor Lumitome.
 mode: subagent
 # permissions: DIBANGKITKAN scripts/gen-policy.mjs — jangan edit manual (kecuali edit/subagent/shell)
 permissions:

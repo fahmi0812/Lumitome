@@ -1,5 +1,5 @@
 ---
-description: Sektor penulisan — executor Swanwright.
+description: Sektor penulisan — executor Lumitome.
 mode: subagent
 # permissions: DIBANGKITKAN scripts/gen-policy.mjs — jangan edit manual (kecuali edit/subagent/shell)
 permissions:

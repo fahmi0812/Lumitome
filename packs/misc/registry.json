@@ -1,0 +1,26 @@
+{
+  "pack": "misc",
+  "note": "dibangkitkan scripts/gen-registry.mjs; skill tanpa entri memakai frontmatter SKILL.md",
+  "skills": [
+    {
+      "id": "laporan-generator-2",
+      "mirror_of": "laporan-generator"
+    },
+    {
+      "id": "laporan-generator-3",
+      "mirror_of": "laporan-generator"
+    },
+    {
+      "id": "skill-creator-2",
+      "mirror_of": "skill-creator"
+    },
+    {
+      "id": "tdd-2",
+      "mirror_of": "tdd"
+    },
+    {
+      "id": "teach-2",
+      "mirror_of": "teach"
+    }
+  ]
+}

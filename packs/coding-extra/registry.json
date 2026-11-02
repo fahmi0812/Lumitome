@@ -1,0 +1,107 @@
+{
+  "pack": "coding-extra",
+  "note": "dibangkitkan scripts/gen-registry.mjs; skill tanpa entri memakai frontmatter SKILL.md",
+  "skills": [
+    {
+      "id": "agent-dx-cli-scale",
+      "name": "agent-dx-cli-scale",
+      "sektor": "coding",
+      "description": "A scoring scale for evaluating how well a CLI is designed",
+      "triggers": [
+        "agent",
+        "scale"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "coding-extra",
+      "src": "google-labs-code/design.md",
+      "sha": "6e5da5382f41edbba9d73b2c62f33f32e9971f15",
+      "license": "Apache-2.0",
+      "original_id": "google-labs-code-design-md__agent-dx-cli-scale",
+      "original_name": "agent-dx-cli-scale"
+    },
+    {
+      "id": "hackathon-winner-thinking",
+      "name": "hackathon-winner-thinking",
+      "sektor": "coding",
+      "description": "High-impact ideation, judging criteria alignment,",
+      "triggers": [
+        "hackathon",
+        "winner",
+        "thinking"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "coding-extra",
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
+      "license": "MIT",
+      "original_id": "swanwright__hackathon-winner-thinking",
+      "original_name": "Hackathon Winner Thinking"
+    },
+    {
+      "id": "honey",
+      "name": "honey",
+      "sektor": "coding",
+      "description": "Dense handoff prose for agent-to-agent messages",
+      "triggers": [
+        "honey"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "coding-extra",
+      "src": "fahmi0812/SuperQuantumAGI",
+      "sha": "2b97a157f488669bd818af183eea1b2ff47f860c",
+      "license": "MIT",
+      "original_id": "swanwright__honey",
+      "original_name": "honey"
+    },
+    {
+      "id": "ink",
+      "name": "ink",
+      "sektor": "coding",
+      "description": "Ink terminal renderer for json-render",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "coding-extra",
+      "src": "google-labs-code/design.md",
+      "sha": "6e5da5382f41edbba9d73b2c62f33f32e9971f15",
+      "license": "Apache-2.0",
+      "original_id": "google-labs-code-design-md__ink",
+      "original_name": "ink"
+    },
+    {
+      "id": "ink-2",
+      "mirror_of": "ink"
+    },
+    {
+      "id": "karpathy-guidelines",
+      "name": "karpathy-guidelines",
+      "sektor": "coding",
+      "description": "pedoman Karpathy (inti dipindah ke rules/06-coding-karpathy.md)",
+      "triggers": [
+        "karpathy",
+        "guidelines"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "coding-extra",
+      "src": "multica-ai/andrej-karpathy-skills",
+      "sha": "2c606141936f1eeef17fa3043a72095b4765b9c2",
+      "license": "MIT",
+      "original_id": "multica-ai-andrej-karpathy-skills__karpathy-guidelines",
+      "original_name": "karpathy-guidelines"
+    }
+  ]
+}

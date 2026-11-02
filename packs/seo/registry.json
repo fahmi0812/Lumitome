@@ -1,0 +1,14 @@
+{
+  "pack": "seo",
+  "note": "dibangkitkan scripts/gen-registry.mjs; skill tanpa entri memakai frontmatter SKILL.md",
+  "skills": [
+    {
+      "id": "seo-dataforseo-2",
+      "mirror_of": "seo-dataforseo"
+    },
+    {
+      "id": "seo-image-gen-2",
+      "mirror_of": "seo-image-gen"
+    }
+  ]
+}

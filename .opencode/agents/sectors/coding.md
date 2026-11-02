@@ -1,5 +1,5 @@
 ---
-description: Sektor coding — executor Swanwright.
+description: Sektor coding — executor Lumitome.
 mode: subagent
 # permissions: DIBANGKITKAN scripts/gen-policy.mjs — jangan edit manual (kecuali edit/subagent/shell)
 permissions:

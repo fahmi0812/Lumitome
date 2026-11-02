@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { lumiHome, engineBin, engineVersion, installEngine, OC_VERSION } from "../lib/engine.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -26,6 +26,16 @@ if (!env.LUMI_OPENCODE && engineVersion(bin, isoEnv) === null) {
   catch (e) { process.stderr.write(`lumitome: gagal memasang engine OpenCode v${OC_VERSION}: ${e.message}\n`); process.exit(1); }
 }
 env.LUMI_OPENCODE = bin;
+// codebase-memory-mcp terpin (codemem): first-run, tidak fatal; satu kali percobaan per 24 jam bila gagal
+if (env.LUMI_SKIP_CBM_DOWNLOAD !== "1") {
+  const CM = await import(pathToFileURL(path.join(HERE, "..", "lib", "codemem.mjs")).href);
+  const mark = path.join(home, ".cbm-download-failed");
+  let recent = false; try { recent = Date.now() - fs.statSync(mark).mtimeMs < 86400000; } catch {}
+  if (!fs.existsSync(CM.cbmBin(home)) && !recent) {
+    try { await CM.installCbm({ home }); fs.rmSync(mark, { force: true }); }
+    catch (e) { fs.writeFileSync(mark, ""); process.stderr.write(`lumitome: codebase-memory-mcp tidak terpasang (${e.message}); codemem dilewati\n`); }
+  }
+}
 // tools milik LUMI_HOME (codebase-memory-mcp/uv bila ada) di depan PATH
 const key = Object.keys(env).find((k) => k.toUpperCase() === "PATH") || "PATH";
 env[key] = [path.join(home, "bin"), env[key]].filter(Boolean).join(path.delimiter);

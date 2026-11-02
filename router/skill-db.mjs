@@ -137,6 +137,13 @@ export function sectorAllowlist(skills) {
 export function collectSkills(root = ".") {
   const reg = JSON.parse(fs.readFileSync(path.join(root, "router/skills-registry.json"), "utf8")).skills;
   const regById = new Map(reg.map((s) => [s.id, s]));
+  // metadata pack nonaktif: packs/<pack>/registry.json (scripts/gen-registry.mjs); salinan cermin (mirror_of) tidak diindeks
+  const mirrors = new Set();
+  const pk = path.join(root, "packs");
+  if (fs.existsSync(pk)) for (const p of fs.readdirSync(pk)) {
+    const f = path.join(pk, p, "registry.json"); if (!fs.existsSync(f)) continue;
+    for (const s of JSON.parse(fs.readFileSync(f, "utf8")).skills || []) { if (s.mirror_of) mirrors.add(`${p}/${s.id}`); else if (!regById.has(s.id)) regById.set(s.id, s); }
+  }
   const out = [];
   const add = (dir, pack, status) => {
     const md = path.join(dir, "SKILL.md");
@@ -162,7 +169,7 @@ export function collectSkills(root = ".") {
   if (fs.existsSync(packs)) for (const p of fs.readdirSync(packs).sort()) {
     const sd = path.join(packs, p, "skills");
     if (!fs.existsSync(sd)) continue;
-    for (const d of fs.readdirSync(sd).sort()) add(path.join(sd, d), p, p === "red-team" ? "disabled" : "pack");
+    for (const d of fs.readdirSync(sd).sort()) if (!mirrors.has(`${p}/${d}`)) add(path.join(sd, d), p, p === "red-team" ? "disabled" : "pack");
   }
   return out;
 }
@@ -172,6 +179,7 @@ export function sourceHash(root = ".") {
   h.update(`schema:${SCHEMA_VERSION}|embed:${embedProvider()}|`);
   h.update(fs.readFileSync(path.join(root, "router/skills-registry.json")));
   h.update(fs.readFileSync(path.join(root, "router/layer0-regex.mjs")));
+  if (fs.existsSync(path.join(root, "packs"))) for (const p of fs.readdirSync(path.join(root, "packs")).sort()) { const f = path.join(root, "packs", p, "registry.json"); if (fs.existsSync(f)) h.update(fs.readFileSync(f)); }
   for (const f of ["router/skills-aliases.json", "router/enrich.mjs"]) if (fs.existsSync(path.join(root, f))) h.update(fs.readFileSync(path.join(root, f)));
   for (const s of skills) h.update(`${s.name}:${s.status}:${s.content_sha}\n`);
   return { hash: h.digest("hex"), skills };

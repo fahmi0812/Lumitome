@@ -1,0 +1,110 @@
+{
+  "pack": "gamedev",
+  "note": "dibangkitkan scripts/gen-registry.mjs; skill tanpa entri memakai frontmatter SKILL.md",
+  "skills": [
+    {
+      "id": "asset-pipeline-2",
+      "mirror_of": "asset-pipeline"
+    },
+    {
+      "id": "asset-pipeline-3",
+      "mirror_of": "asset-pipeline"
+    },
+    {
+      "id": "blitz3d-decomp-2",
+      "mirror_of": "blitz3d-decomp"
+    },
+    {
+      "id": "blitz3d-decomp-3",
+      "mirror_of": "blitz3d-decomp"
+    },
+    {
+      "id": "fal-assets-2",
+      "mirror_of": "fal-assets"
+    },
+    {
+      "id": "fal-assets-3",
+      "mirror_of": "fal-assets"
+    },
+    {
+      "id": "game-automation-2",
+      "mirror_of": "game-automation"
+    },
+    {
+      "id": "game-automation-3",
+      "mirror_of": "game-automation"
+    },
+    {
+      "id": "game-recon-2",
+      "mirror_of": "game-recon"
+    },
+    {
+      "id": "game-recon-3",
+      "mirror_of": "game-recon"
+    },
+    {
+      "id": "game-research-websearch-2",
+      "mirror_of": "game-research-websearch"
+    },
+    {
+      "id": "game-research-websearch-3",
+      "mirror_of": "game-research-websearch"
+    },
+    {
+      "id": "mashup-mods-2",
+      "mirror_of": "mashup-mods"
+    },
+    {
+      "id": "mashup-mods-3",
+      "mirror_of": "mashup-mods"
+    },
+    {
+      "id": "mod-any-game-2",
+      "mirror_of": "mod-any-game"
+    },
+    {
+      "id": "mod-any-game-3",
+      "mirror_of": "mod-any-game"
+    },
+    {
+      "id": "port-a-mod-2",
+      "mirror_of": "port-a-mod"
+    },
+    {
+      "id": "port-a-mod-3",
+      "mirror_of": "port-a-mod"
+    },
+    {
+      "id": "publish-mod-2",
+      "mirror_of": "publish-mod"
+    },
+    {
+      "id": "publish-mod-3",
+      "mirror_of": "publish-mod"
+    },
+    {
+      "id": "reverse-engineering-2",
+      "mirror_of": "reverse-engineering"
+    },
+    {
+      "id": "reverse-engineering-3",
+      "mirror_of": "reverse-engineering"
+    },
+    {
+      "id": "share-field-notes-2",
+      "mirror_of": "share-field-notes"
+    },
+    {
+      "id": "share-field-notes-3",
+      "mirror_of": "share-field-notes"
+    },
+    {
+      "id": "showcase-video-2",
+      "mirror_of": "showcase-video"
+    },
+    {
+      "id": "showcase-video-3",
+      "mirror_of": "showcase-video"
+    }
+  ]
+}

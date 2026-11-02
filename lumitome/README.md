@@ -30,9 +30,10 @@ Skill: harness memakai skill & DB router miliknya sendiri (`config/skills` → `
 | `NINEROUTER_API_KEY` | — (wajib) | key 9router; dipakai via `{env:…}` |
 | `LUMI_9ROUTER_URL` | `http://127.0.0.1:20128/v1` | base URL provider |
 | `LUMI_MODEL` | `9router/ag/gemini-3.8-flash-high` | model `run` (bila tanpa `-m`) |
-| `LUMI_AGENT` | `build` | agent default |
+| `LUMI_AGENT` | `orchestrator` (TUI) / `build` (`run`) | agent default |
 | `LUMI_TRUST_PROJECT` | `0` | `1` = muat config/plugin/agent/MCP proyek (berbahaya untuk repo asing) |
-| `LUMI_MCP` | `codemem,skills-coding` | MCP proyek yang tetap aktif (hanya bila trusted); `all` |
+| `LUMI_MCP` | `codemem,skills-coding,skills-riset,skills-penulisan,skills-security` | MCP aktif; `all` = tambah skills-finance & skills-media |
+| `LUMI_AUTO_INDEX` | `1` | `0` = jangan indeks folder proyek otomatis |
 | `LUMI_SKILLS` | `auto` | `auto` = scoping router; `all` = semua skill terlihat |
 | `LUMI_KEY_<NAMA>` | – | override API key provider hasil `lumitome connect` (nama huruf besar, non-alnum → `_`); 9router juga `NINEROUTER_API_KEY` |
 | `LUMI_ONBOARD` | `1` | `0` = tanpa prompt onboarding saat TUI dibuka tanpa provider |

@@ -1,5 +1,5 @@
 ---
-description: Sektor security — executor Swanwright.
+description: Sektor security — executor Lumitome.
 mode: subagent
 # permissions: DIBANGKITKAN scripts/gen-policy.mjs — jangan edit manual (kecuali edit/subagent/shell)
 permissions:

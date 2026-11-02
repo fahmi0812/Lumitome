@@ -3,7 +3,8 @@ import { execSync } from "child_process";
 /** Re-fetch pinned SHAs listed in router/skills-registry.json + NOTICE pointers. */
 const reg = JSON.parse(fs.readFileSync("router/skills-registry.json", "utf8"));
 const bySrc = new Map();
-for (const s of reg.skills) {
+const packSkills = fs.readdirSync("packs").flatMap((p) => { try { return JSON.parse(fs.readFileSync(`packs/${p}/registry.json`, "utf8")).skills.filter((s) => s.src); } catch { return []; } });
+for (const s of [...reg.skills, ...packSkills]) {
   if (!bySrc.has(s.src)) bySrc.set(s.src, s.sha);
 }
 console.log("Pinned sources:");

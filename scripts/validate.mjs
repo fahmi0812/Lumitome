@@ -9,6 +9,11 @@ const pass = (m) => console.log("[PASS]", m);
 
 const reg = JSON.parse(fs.readFileSync("router/skills-registry.json", "utf8"));
 pass(`registry skills: ${reg.skills.length} (aktif ${reg.skills.filter((s) => !s.pack).length})`);
+// registry aktif == folder skill nyata di .opencode/skills (scripts/gen-registry.mjs)
+{ const real = fs.readdirSync(".opencode/skills").filter((d) => fs.existsSync(path.join(".opencode/skills", d, "SKILL.md"))).sort();
+  const regIds = reg.skills.map((s) => s.id).sort();
+  if (JSON.stringify(real) !== JSON.stringify(regIds)) fail(`registry (${regIds.length}) != folder skill aktif (${real.length}) — jalankan node scripts/gen-registry.mjs`);
+  else pass(`registry == folder skill aktif (${real.length})`); }
 const ids = new Set();
 for (const s of reg.skills) {
   if (ids.has(s.id)) fail(`duplicate id ${s.id}`);

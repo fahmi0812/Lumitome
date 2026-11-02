@@ -18,7 +18,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
 const REPO = path.resolve(ROOT, "..");                 // repo Swanwright
-const VERSION = "0.3.5";
+const VERSION = "0.3.6";
 const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
 const env = { ...process.env };
 const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process.exit(code); };
@@ -126,7 +126,9 @@ function projectMcp() {
   return {};
 }
 const idle = Number(env.LUMI_IDLE_TIMEOUT_MS || 60000);
-const wantMcp = (env.LUMI_MCP ?? "codemem,skills-coding").split(",").map((s) => s.trim()).filter(Boolean);
+// default: codemem + 4 sektor inti; finance/media hanya via LUMI_MCP=all atau daftar eksplisit
+const DEFAULT_MCP = "codemem,skills-coding,skills-riset,skills-penulisan,skills-security";
+const wantMcp = (env.LUMI_MCP ?? DEFAULT_MCP).split(",").map((s) => s.trim()).filter(Boolean);
 const mcpOverride = {};
 for (const [name, def] of Object.entries(projectMcp())) {
   const on = wantMcp.includes("all") || wantMcp.includes(name);
@@ -137,10 +139,24 @@ for (const sec of ["coding", "security", "riset", "penulisan", "finance", "media
   const n = `skills-${sec}`; if (!(wantMcp.includes("all") || wantMcp.includes(n))) continue;
   mcpOverride[n] = { type: "local", command: [process.execPath, "--no-warnings", path.join(REPO, "router", "skill-search-mcp.mjs"), "--sector", sec, "--root", REPO], timeout: { startup: 30000, catalog: 30000, execution: 30000 } };
 }
+// codemem global: binary absolut di LUMI_HOME/bin (bukan PATH, bukan config proyek). Tidak pernah `install`.
+const CM = await import(pathToFileURL(path.join(ROOT, "lib", "codemem.mjs")).href);
+if (wantMcp.includes("all") || wantMcp.includes("codemem")) {
+  const def = CM.codememServer(ISO_HOME);
+  if (def) mcpOverride.codemem = def;
+  else if (sub === "" || sub === "run" || env.LUMI_DEBUG) process.stderr.write(`lumitome: codemem dilewati — ${CM.cbmBin(ISO_HOME)} belum ada\n`);
+}
+// auto-index folder proyek di latar (detached, prioritas rendah); LUMI_AUTO_INDEX=0 untuk mematikan
+if (sub === "" || sub === "run") {
+  try { const st = CM.maybeAutoIndex({ home: ISO_HOME, dir: WS, env: { ...process.env }, runner: path.join(ROOT, "lib", "codemem-index-run.mjs") });
+    if (env.LUMI_DEBUG || st === "started") { if (sub === "" || env.LUMI_DEBUG) process.stderr.write(`lumitome: auto-index ${st}\n`); } } catch (e) { if (env.LUMI_DEBUG) process.stderr.write(`lumitome: auto-index gagal (${e.message})\n`); }
+}
+// agent default: orchestrator di TUI; `run` headless tetap build (delegasi orchestrator headless belum terverifikasi live). LUMI_AGENT menimpa
+const RUN_AGENT = "build";
 const DENY = (r) => ({ action: "shell", resource: r, effect: "deny" });
 const finalCfg = {
   update: "disable",
-  ...(env.LUMI_AGENT ? { default_agent: env.LUMI_AGENT } : { default_agent: "build" }),
+  ...(env.LUMI_AGENT ? { default_agent: env.LUMI_AGENT } : { default_agent: sub === "run" ? RUN_AGENT : "orchestrator" }),
   providers: { "9router": { settings: { headerTimeout: idle, chunkTimeout: idle, timeout: Number(env.LUMI_TOTAL_TIMEOUT_MS || 900000) } } },
   ...(Object.keys(mcpOverride).length ? { mcp: { servers: mcpOverride } } : {}),
   // lapis-2 (lapis-1 = plugin guard): deny di akhir rantai → last-match-wins

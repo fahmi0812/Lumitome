@@ -1,0 +1,608 @@
+{
+  "pack": "design-extra",
+  "note": "dibangkitkan scripts/gen-registry.mjs; skill tanpa entri memakai frontmatter SKILL.md",
+  "skills": [
+    {
+      "id": "banner-design-2",
+      "name": "banner-design-2",
+      "sektor": "coding",
+      "description": "Design banners for social media, ads, website heroes,",
+      "triggers": [
+        "banner",
+        "design"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "license": "MIT",
+      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__banner-design-2",
+      "original_name": "banner-design",
+      "mirror_of": "banner-design"
+    },
+    {
+      "id": "brand-2",
+      "name": "brand-2",
+      "sektor": "coding",
+      "description": "Brand voice, visual identity, messaging frameworks, asset",
+      "triggers": [
+        "brand"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "license": "MIT",
+      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__brand-2",
+      "original_name": "brand",
+      "mirror_of": "brand"
+    },
+    {
+      "id": "design-2",
+      "name": "design-2",
+      "sektor": "coding",
+      "description": "Comprehensive design skill: brand identity, design",
+      "triggers": [
+        "design"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "license": "MIT",
+      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__design-2",
+      "original_name": "design",
+      "mirror_of": "design"
+    },
+    {
+      "id": "design-system-2",
+      "name": "design-system-2",
+      "sektor": "coding",
+      "description": "Token architecture, component specifications, and slide",
+      "triggers": [
+        "design",
+        "system"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "license": "MIT",
+      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__design-system-2",
+      "original_name": "design-system",
+      "mirror_of": "design-system"
+    },
+    {
+      "id": "impeccable-10",
+      "name": "impeccable-10",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-18",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-11",
+      "name": "impeccable-11",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-19",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-12",
+      "name": "impeccable-12",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-2",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-13",
+      "name": "impeccable-13",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-20",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-14",
+      "name": "impeccable-14",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-21",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-15",
+      "name": "impeccable-15",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-22",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-16",
+      "name": "impeccable-16",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-23",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-17",
+      "name": "impeccable-17",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-24",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-18",
+      "name": "impeccable-18",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-25",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-19",
+      "name": "impeccable-19",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-3",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-2",
+      "name": "impeccable-2",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-10",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-20",
+      "name": "impeccable-20",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-4",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-21",
+      "name": "impeccable-21",
+      "sektor": "coding",
+      "description": "fixture",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-5",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-22",
+      "name": "impeccable-22",
+      "sektor": "coding",
+      "description": "fixture",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-6",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-23",
+      "name": "impeccable-23",
+      "sektor": "coding",
+      "description": "fixture",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-7",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-24",
+      "name": "impeccable-24",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-8",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-25",
+      "name": "impeccable-25",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-9",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-3",
+      "name": "impeccable-3",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-11",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-4",
+      "name": "impeccable-4",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-12",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-5",
+      "name": "impeccable-5",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-13",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-6",
+      "name": "impeccable-6",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-14",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-7",
+      "name": "impeccable-7",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-15",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-8",
+      "name": "impeccable-8",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-16",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "impeccable-9",
+      "name": "impeccable-9",
+      "sektor": "coding",
+      "description": "Use when the user wants to design, redesign, shape,",
+      "triggers": [
+        "impeccable"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "pbakaus/impeccable",
+      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "license": "Apache-2.0",
+      "original_id": "pbakaus-impeccable__impeccable-17",
+      "original_name": "impeccable",
+      "mirror_of": "impeccable"
+    },
+    {
+      "id": "slides-2",
+      "name": "slides-2",
+      "sektor": "coding",
+      "description": "Create strategic HTML presentations with Chart",
+      "triggers": [
+        "slides"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "license": "MIT",
+      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__slides-2",
+      "original_name": "slides",
+      "mirror_of": "slides"
+    },
+    {
+      "id": "ui-styling-2",
+      "name": "ui-styling-2",
+      "sektor": "coding",
+      "description": "Create beautiful, accessible user interfaces with",
+      "triggers": [
+        "styling"
+      ],
+      "champion": false,
+      "fallback": null,
+      "cost": "s",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "license": "MIT",
+      "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__ui-styling-2",
+      "original_name": "ui-styling",
+      "mirror_of": "ui-styling"
+    }
+  ]
+}
