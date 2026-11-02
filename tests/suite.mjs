@@ -441,7 +441,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const thKeys = ["primary", "text", "textMuted", "background", "border", "syntaxKeyword", "markdownHeading", "diffAdded"];
   ok("theme lumitome: varian dark+light, refs valid, emas brand", thKeys.every((k) => TH.theme[k]?.dark && TH.theme[k]?.light) && Object.values(TH.theme).every((v) => [v.dark, v.light].every((c) => /^#[0-9A-Fa-f]{6}$/.test(c) || c in TH.defs)) && TH.defs.champagne === "#F3D27A" && TH.defs.cornsilk === "#FFF8DC");
   ok("wrapper: themes ditautkan ke OPENCODE_CONFIG_DIR, cli.json di CFG_DIR (bukan ~/.config user), binary engine tidak disentuh", /themes: path\.join\(ROOT, "config", "themes"\)/.test(W) && /cliFile = path\.join\(CFG_DIR, "cli\.json"\)/.test(W) && !/writeFileSync\([^)]*ocBin/.test(W));
-  ok("versi 0.3.13 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.13") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.13" && /VERSION = "0\.3\.13"/.test(W) && /SW_VERSION=0\.3\.13/.test(inst));
+  ok("versi 0.3.14 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.14") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.14" && /VERSION = "0\.3\.14"/.test(W) && /SW_VERSION=0\.3\.14/.test(inst));
 }
 
 {
@@ -573,6 +573,43 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("wrapper: cleanup & reaper melewati PID service; `service stop|status`; sidik config sebelum TUI", /keep\.has\(Number\(d\)\)/.test(W13) && /\(keep \?\?= keepPids\(\)\)\.has/.test(W13) && /argv\[1\] === "stop" \|\| argv\[1\] === "status"/.test(W13) && /ensureFresh\(HOME, fp\)/.test(W13));
   ok("wrapper: pesan timeout tidak memakai variabel `idle` yang sudah dihapus", !/\$\{idle\}/.test(W13));
   fs.rmSync(h, { recursive: true, force: true });
+}
+{
+  // v0.3.14: tampilan update sederhana (spinner satu baris), non-TTY polos, ASCII, error singkat, mode npm
+  const osm = await import("node:os");
+  const UI = await import("../lumitome/lib/update-ui.mjs");
+  const U = await import("../lumitome/lib/update.mjs");
+  const sink = (tty = false) => { const o = { buf: "", isTTY: tty, write(s) { o.buf += s; return true; } }; return o; };
+  const ESC = /\x1b\[/;
+  const o1 = sink(); const u1 = UI.createUI({ out: o1, mode: { tty: false, color: false, ascii: false } });
+  u1.logo(); u1.step("Memeriksa"); u1.step("Mengunduh"); u1.done("Selesai — v1.2.3");
+  ok("update UI non-TTY: baris polos tanpa ANSI/animasi/logo", o1.buf === "Memeriksa…\nMengunduh…\nSelesai — v1.2.3\n" && !ESC.test(o1.buf));
+  const o2 = sink(true); const u2 = UI.createUI({ out: o2, mode: { tty: true, color: true, ascii: false }, interval: 10 });
+  u2.logo(); u2.step("Memasang"); await new Promise((r) => setTimeout(r, 60)); u2.done("Selesai — v1.2.3");
+  const frames = o2.buf.split("\r\x1b[2K").filter((x) => /Memasang/.test(x));
+  ok("update UI TTY: logo emas, spinner braille di satu baris (\\r), baris akhir ✓", o2.buf.includes("\x1b[38;2;201;150;46m█") && frames.length >= 3 && new Set(frames.map((f) => f.replace(/\x1b\[[0-9;?]*m/g, "")[0])).size >= 3 && /✓\x1b\[0m Selesai — v1\.2\.3\n/.test(o2.buf) && o2.buf.endsWith("\x1b[?25h"));
+  ok("update UI: hanya logo & glyph berwarna (teks status warna default)", !/\x1b\[38;2;[0-9;]+mMemasang/.test(o2.buf) && !/\x1b\[38;2;[0-9;]+mSelesai/.test(o2.buf));
+  ok("update UI ASCII: Windows non-UTF-8 / LUMI_ASCII=1 → glyph ASCII; WT/UTF-8 → Unicode", UI.uiMode({ env: {}, isTTY: true, platform: "win32", codepage: 437 }).ascii && UI.uiMode({ env: { LUMI_ASCII: "1" }, isTTY: true, platform: "linux" }).ascii && !UI.uiMode({ env: { WT_SESSION: "x" }, isTTY: true, platform: "win32", codepage: 437 }).ascii && !UI.uiMode({ env: {}, isTTY: true, platform: "win32", codepage: 65001 }).ascii);
+  const o3 = sink(true); const u3 = UI.createUI({ out: o3, mode: { tty: true, color: false, ascii: true }, interval: 10 }); u3.logo(); u3.step("Mengunduh"); await new Promise((r) => setTimeout(r, 30)); u3.done("Selesai");
+  ok("update UI ASCII: logo teks, spinner |/-\\, tanpa karakter Unicode", /L U M I T O M E/.test(o3.buf) && /[|/\\-] Mengunduh\.\.\./.test(o3.buf) && /OK Selesai/.test(o3.buf) && !/[^\x00-\x7f]/.test(o3.buf));
+  ok("update UI: CI / TERM=dumb → tanpa animasi", !UI.uiMode({ env: { CI: "1" }, isTTY: true }).tty && !UI.uiMode({ env: { TERM: "dumb" }, isTTY: true }).tty);
+  const home = fs.mkdtempSync(path.join(osm.tmpdir(), "lumiupd-")); const repo = path.join(home, "src"); fs.mkdirSync(repo);
+  const o4 = sink(); const e4 = new Error("fatal: unable to access 'x': Could not resolve host"); e4.detail = "fatal: unable to access 'x': Could not resolve host";
+  const r4 = await U.update({ argv: ["--check"], version: "0.3.14", repo, home, env: { LUMI_INSTALL: "npm" }, out: o4, tagsImpl: async () => { throw e4; } });
+  ok("update error: satu baris manusiawi + saran, detail teknis tidak di layar tapi di logs/update.log", r4 === 1 && o4.buf === "Memeriksa…\nTidak bisa memeriksa versi terbaru.\nCek koneksi internet, lalu coba lagi.\n" && fs.readFileSync(path.join(home, "logs", "update.log"), "utf8").includes("Could not resolve host"));
+  const o5 = sink(); await U.update({ argv: ["--check", "--verbose"], version: "0.3.14", repo, home, env: { LUMI_INSTALL: "npm" }, out: o5, tagsImpl: async () => { throw e4; } });
+  ok("update error --verbose: detail ikut tampil", o5.buf.includes("Could not resolve host"));
+  ok("update npm-mode: tanpa .git + LUMI_INSTALL=npm / di node_modules → npm; ada .git → git", U.isNpmInstall(repo, { LUMI_INSTALL: "npm" }) && U.isNpmInstall(path.join("C:", "x", "node_modules", "lumitome"), {}, () => false) && !U.isNpmInstall(repo, {}) && !U.isNpmInstall("/r", { LUMI_INSTALL: "npm" }, (f) => f.endsWith(".git")));
+  const calls = []; const o6 = sink();
+  const r6 = await U.update({ argv: ["--yes"], version: "0.3.14", repo, home, env: { LUMI_INSTALL: "npm" }, out: o6, tagsImpl: async () => [{ tag: "v0.3.15", sha: "a" }], runImpl: async (cmd, args, o) => { calls.push([cmd, ...args]); o.log("npm WARN deprecated noise"); return ""; } });
+  ok("update npm-mode: npm install -g tarball tag, noise npm hanya di log, satu baris hasil", r6 === 0 && calls.length === 1 && calls[0][0] === "npm" && calls[0].includes("-g") && calls[0].includes(U.TARBALL("v0.3.15")) && o6.buf.trim().split("\n").pop() === "Selesai — v0.3.15" && !o6.buf.includes("npm WARN") && fs.readFileSync(path.join(home, "logs", "update.log"), "utf8").includes("npm WARN deprecated noise"));
+  const o7 = sink(); const r7 = await U.update({ argv: [], version: "0.3.15", repo, home, env: { LUMI_INSTALL: "npm" }, out: o7, tagsImpl: async () => [{ tag: "v0.3.15", sha: "a" }] });
+  ok("update: sudah terbaru → satu baris tenang", r7 === 0 && o7.buf.trim().split("\n").pop() === "Sudah versi terbaru — v0.3.15");
+  const o8 = sink(); const r8 = await U.update({ argv: [], version: "0.3.14", repo, home, env: { LUMI_INSTALL: "npm" }, out: o8, tagsImpl: async () => [{ tag: "v0.3.15", sha: "a" }] });
+  ok("update non-TTY tanpa --yes: berhenti dengan saran --yes", r8 === 1 && o8.buf.includes("lumitome update --yes"));
+  const UPD = fs.readFileSync("lumitome/lib/update.mjs", "utf8");
+  ok("update: setelah pasang → migrasi config + stop service LUMI_HOME; engine tidak disentuh", /migrateConfigFile/.test(UPD) && /S\.stop\(home\)/.test(UPD) && !/bin[\\/"', ]+opencode/.test(UPD.replace(/^\s*\*.*$/gm, "")));
+  fs.rmSync(home, { recursive: true, force: true });
 }
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

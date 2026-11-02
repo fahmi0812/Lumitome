@@ -18,7 +18,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
 const REPO = path.resolve(ROOT, "..");                 // repo Swanwright
-const VERSION = "0.3.13";
+const VERSION = "0.3.14";
 const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
 const env = { ...process.env };
 const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process.exit(code); };
@@ -40,11 +40,7 @@ if (argv[0] === "--version" || argv[0] === "-v") {
 if (sub === "upgrade" || sub === "uninstall") die(2, `'${sub}' engine OpenCode diblok (engine terpin). Kode Lumitome: lumitome update; engine: lumitome upgrade-engine <versi> --sha256 <hash>; hapus: install.sh --uninstall`);
 // ---------- update kode Lumitome (manual; engine tidak disentuh) ----------
 if (sub === "update") {
-  // instalasi npm (tanpa .git): update lewat npm, bukan git
-  if (!fs.existsSync(path.join(REPO, ".git")) && (env.LUMI_INSTALL === "npm" || REPO.split(path.sep).includes("node_modules"))) {
-    console.log(`lumitome ${VERSION} terpasang lewat npm. Perbarui dengan:\n  npm i -g https://github.com/fahmi0812/Lumitome/tarball/main\n(setelah terbit di npm: npm i -g ${env.LUMI_NPM_NAME || "lumitome"}@latest)\nEngine OpenCode tidak ikut berubah.`);
-    process.exit(0);
-  }
+  // git (install.sh) atau npm: keduanya ditangani update.mjs (npm → npm install -g tarball tag, output ke log)
   const { update } = await import(pathToFileURL(path.join(ROOT, "lib", "update.mjs")).href);
   process.exit(await update({ argv: argv.slice(1), version: VERSION, repo: REPO, home: ISO_HOME }));
 }

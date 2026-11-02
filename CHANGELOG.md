@@ -2,6 +2,15 @@
 
 ## Belum dirilis
 
+## 0.3.14 — `lumitome update` yang sederhana
+
+- Tampilan baru: logo LUMITOME emas, satu baris status dengan spinner (Memeriksa, Mengunduh, Memasang, Merapikan), lalu satu baris hasil `Selesai — vX.Y.Z`. Kalau sudah terbaru: satu baris `Sudah versi terbaru`. `--check` juga satu baris.
+- Error tampil sebagai satu kalimat singkat plus saran. Detail teknis selalu ditulis ke `~/.lumitome/logs/update.log`, dan tampil di layar dengan `--verbose` atau `LUMI_DEBUG=1`.
+- Instalasi npm: `lumitome update` sekarang menjalankan `npm install -g` ke tarball rilis sendiri. Output npm hanya masuk ke log.
+- Sesudah update, config dimigrasi dan service latar lama milik Lumitome dihentikan otomatis. Tidak perlu lagi mematikan proses lewat PowerShell.
+- Terminal non-TTY / CI: baris polos tanpa animasi dan tanpa warna. Konsol Windows non-UTF-8 atau `LUMI_ASCII=1`: spinner dan logo ASCII.
+- Backup, rollback otomatis bila versi baru gagal jalan, dan `--rollback` tetap sama. Engine tidak diubah.
+
 ## 0.3.13 — Lumitome terbuka lebih cepat; model langsung tampil
 
 - Penyebab terbesar: plugin guard memuat modul harness dengan import relatif literal. Dari salinan di `~/.lumitome/config/plugins`, path itu tidak ada, sehingga engine memantau folder induk terdekat secara rekursif (mis. `C:\Users` atau `/home`) setiap folder dibuka. Import sekarang dibangun saat runtime. Tidak ada `.git` yang dibuat di folder user, dan engine tidak diubah.

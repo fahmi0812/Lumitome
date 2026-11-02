@@ -99,11 +99,7 @@ lumitome update             # install it
 lumitome update --rollback  # go back to the version you had before
 ```
 
-If you installed with npm, update with npm instead:
-
-```bash
-npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
-```
+This works the same for npm installs: `lumitome update` runs npm for you. You see one status line while it works and one line when it is done. If something goes wrong you get a short message; the full details are in `~/.lumitome/logs/update.log` (Windows: `%USERPROFILE%\.lumitome\logs\update.log`), or add `--verbose` to see them on screen. After updating, Lumitome stops its old background service so the next start uses the new version. `--rollback` is only for git installs.
 
 Lumitome does not update itself. It only updates when you run `lumitome update`. That command does not change the OpenCode version. On v0.3.1, which has no `update` command, run the install line again once.
 
