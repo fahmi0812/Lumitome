@@ -8,11 +8,11 @@
     "9router": {
       "name": "9router",
       "package": "aisdk:@ai-sdk/openai-compatible",
-      "settings": { "baseURL": "{env:LUMI_9ROUTER_URL}", "apiKey": "{env:NINEROUTER_API_KEY}" },
+      "settings": { "baseURL": "{env:LUMI_9ROUTER_URL}", "apiKey": "{env:LUMI_KEY_9ROUTER}" },
       "models": { "ag/gemini-3.8-flash-high": { "name": "gemini-3.8-flash-high (9router)" } }
     }
   },
-  "compaction": { "auto": true, "keep": { "tokens": 24000 }, "buffer": "20%" },
+  "compaction": { "auto": true, "keep": { "tokens": 24000 }, "buffer": 20000 },
   "tool_output": { "max_lines": 400, "max_bytes": 16384 },
   "permissions": [
     { "action": "*", "resource": "*", "effect": "allow" },

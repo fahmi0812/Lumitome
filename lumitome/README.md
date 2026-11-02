@@ -27,7 +27,7 @@ Skill: harness memakai skill & DB router miliknya sendiri (`config/skills` → `
 
 | Env | Default | Fungsi |
 |---|---|---|
-| `NINEROUTER_API_KEY` | — (wajib) | key 9router; dipakai via `{env:…}` |
+| `NINEROUTER_API_KEY` | — | key 9router lewat env. Boleh kosong kalau key sudah disimpan dengan `lumitome connect`. Wrapper meneruskannya ke engine sebagai `LUMI_KEY_9ROUTER` |
 | `LUMI_9ROUTER_URL` | `http://127.0.0.1:20128/v1` | base URL provider |
 | `LUMI_MODEL` | `9router/ag/gemini-3.8-flash-high` | model `run` (bila tanpa `-m`) |
 | `LUMI_AGENT` | `orchestrator` (TUI) / `build` (`run`) | agent default |
@@ -62,3 +62,15 @@ Internal (diset wrapper, jangan diisi manual): `LUMI_WORKSPACE`, `LUMI_JOURNAL`,
 ## Exit code (`run`)
 
 0 ok · 1 error OpenCode · 2 argumen salah (`-m` ganda, tanpa pesan, tanpa key) · 3 DONE-GATE FAIL (tes terakhir exit≠0) · 4 ANTI-SPIN (trip tanpa verifikasi lulus sesudahnya) · 5 guard tak termuat / sandbox tertutup · 124 provider diam / timeout / deadline.
+
+## Server di latar (serve)
+
+TUI Lumitome menyalakan server engine sendiri di port milik Lumitome (bukan 49374), dan key provider diteruskan otomatis.
+
+Jangan jalankan `~/.lumitome/bin/opencode serve --service` (Windows: `%USERPROFILE%\.lumitome\bin\opencode.exe serve --service`) secara langsung. Proses itu tidak membawa key dari `credentials.json`, sehingga 9router menjawab 401 "Invalid/Missing API key". Pakai:
+
+```
+lumitome serve --service
+```
+
+Server OpenCode milik Anda sendiri (di luar `.lumitome`) tidak disentuh.

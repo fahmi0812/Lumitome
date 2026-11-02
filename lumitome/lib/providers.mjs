@@ -81,6 +81,9 @@ export function opencodeFragment(home, env = process.env) {
       settings: { baseURL: p.type === "anthropic" && !/\/v1$/.test(p.baseURL) ? `${p.baseURL}/v1` : p.baseURL, apiKey: `{env:${ev}}` },
       models: Object.fromEntries(p.models.map((m) => [m, { name: `${m} (${n})` }])) };
   }
+  // 9router: wrapper selalu men-set KEDUA nama (config dasar memakai LUMI_KEY_9ROUTER; skrip lama memakai NINEROUTER_API_KEY)
+  const k9 = penv.LUMI_KEY_9ROUTER || env.LUMI_KEY_9ROUTER || env.NINEROUTER_API_KEY || readJ(files(home).cred)["9router"];
+  if (k9) { penv.LUMI_KEY_9ROUTER = k9; penv.NINEROUTER_API_KEY = k9; }
   return { providers, env: penv };
 }
 

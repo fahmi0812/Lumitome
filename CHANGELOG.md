@@ -2,6 +2,12 @@
 
 ## Belum dirilis
 
+## 0.3.12 — 401 "Invalid/Missing API key" di server latar; compaction.buffer valid
+
+- Config dasar memakai `{env:NINEROUTER_API_KEY}`, padahal wrapper hanya mengisi `LUMI_KEY_9ROUTER` dari `credentials.json`. Server engine yang berjalan tanpa variabel itu mengirim key kosong ke 9router. Sekarang config dasar memakai `{env:LUMI_KEY_9ROUTER}`, dan wrapper selalu mengisi `LUMI_KEY_9ROUTER` dan `NINEROUTER_API_KEY` (dari env atau `credentials.json`) untuk semua perintah, termasuk `lumitome serve --service`.
+- `compaction.buffer: "20%"` tidak valid di engine 2.2.4 (hanya integer token; persen baru ada di 2.2.5). Diganti `20000`.
+- Salinan config lama di `~/.lumitome/config/opencode.jsonc` dimigrasi otomatis saat `lumitome update` dan saat `lumitome` dijalankan. Key tidak pernah ditulis ke file config.
+
 ## 0.3.11 — Jawaban panjang tidak lagi terputus "Timed out waiting for response data"
 
 - Sebelumnya wrapper memasang batas jeda antar-chunk 60 detik ke provider. Model reasoning lewat proxy (mis. 9router) bisa diam lebih lama di tengah jawaban, lalu request diputus, di-retry, dan pesan ditandai interrupted.

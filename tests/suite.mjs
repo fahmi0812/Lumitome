@@ -441,7 +441,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const thKeys = ["primary", "text", "textMuted", "background", "border", "syntaxKeyword", "markdownHeading", "diffAdded"];
   ok("theme lumitome: varian dark+light, refs valid, emas brand", thKeys.every((k) => TH.theme[k]?.dark && TH.theme[k]?.light) && Object.values(TH.theme).every((v) => [v.dark, v.light].every((c) => /^#[0-9A-Fa-f]{6}$/.test(c) || c in TH.defs)) && TH.defs.champagne === "#F3D27A" && TH.defs.cornsilk === "#FFF8DC");
   ok("wrapper: themes ditautkan ke OPENCODE_CONFIG_DIR, cli.json di CFG_DIR (bukan ~/.config user), binary engine tidak disentuh", /themes: path\.join\(ROOT, "config", "themes"\)/.test(W) && /cliFile = path\.join\(CFG_DIR, "cli\.json"\)/.test(W) && !/writeFileSync\([^)]*ocBin/.test(W));
-  ok("versi 0.3.11 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.11") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.11" && /VERSION = "0\.3\.11"/.test(W) && /SW_VERSION=0\.3\.11/.test(inst));
+  ok("versi 0.3.12 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.12") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.12" && /VERSION = "0\.3\.12"/.test(W) && /SW_VERSION=0\.3\.12/.test(inst));
 }
 
 {
@@ -496,6 +496,33 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("timeout: env tidak valid → default (bilangan bulat positif saja)", b.headerTimeout === 300000 && b.chunkTimeout === 900000 && b.timeout === 3600000);
   const WT = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
   ok("timeout: 9router + semua provider custom memakai providerTimeouts, tanpa default 60000 lama", /"9router": \{ settings: \{ \.\.\.TIMEOUTS \} \}/.test(WT) && /\.\.\.p\.settings, \.\.\.TIMEOUTS/.test(WT) && !/LUMI_IDLE_TIMEOUT_MS \|\| 60000/.test(WT));
+}
+{
+  // v0.3.12: key 9router untuk semua jalur engine (termasuk serve --service) + compaction.buffer + migrasi
+  const osm = await import("node:os");
+  const PV12 = await import("../lumitome/lib/providers.mjs");
+  const CM12 = await import("../lumitome/lib/config-migrate.mjs");
+  const h = fs.mkdtempSync(path.join(osm.tmpdir(), "lumi12-"));
+  fs.writeFileSync(path.join(h, "providers.json"), JSON.stringify({ providers: { "9router": { type: "openai", baseURL: "http://127.0.0.1:1/v1", models: ["m"] } } }));
+  fs.writeFileSync(path.join(h, "credentials.json"), JSON.stringify({ "9router": "k-file" }));
+  const f1 = PV12.opencodeFragment(h, {});
+  ok("key: credentials.json → LUMI_KEY_9ROUTER dan NINEROUTER_API_KEY (env engine/serve)", f1.env.LUMI_KEY_9ROUTER === "k-file" && f1.env.NINEROUTER_API_KEY === "k-file" && f1.providers["9router"].settings.apiKey === "{env:LUMI_KEY_9ROUTER}");
+  const h2 = fs.mkdtempSync(path.join(osm.tmpdir(), "lumi12b-"));
+  const f2 = PV12.opencodeFragment(h2, { NINEROUTER_API_KEY: "k-env" });
+  ok("key: hanya NINEROUTER_API_KEY di env → LUMI_KEY_9ROUTER ikut di-set", f2.env.LUMI_KEY_9ROUTER === "k-env" && f2.env.NINEROUTER_API_KEY === "k-env");
+  ok("key: tanpa key apa pun → tidak ada env key", !("LUMI_KEY_9ROUTER" in PV12.opencodeFragment(h2, {}).env));
+  const base = fs.readFileSync("lumitome/config/opencode.jsonc", "utf8");
+  const sch = JSON.parse(fs.readFileSync("scripts/schema/opencode-config.schema.json", "utf8")).properties.compaction.properties.buffer;
+  const buf = (base.match(/"buffer"\s*:\s*([^,}\s]+)/) || [])[1];
+  ok("config dasar: compaction.buffer integer sesuai schema 2.2.4; apiKey 9router = {env:LUMI_KEY_9ROUTER}", sch.type === "integer" && /^\d+$/.test(buf) && Number.isSafeInteger(Number(buf)) && base.includes('"apiKey": "{env:LUMI_KEY_9ROUTER}"') && !base.includes("NINEROUTER_API_KEY"));
+  const W12 = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
+  ok("wrapper: env key dari FRAG di-inject untuk semua sub-perintah (serve juga)", /\.\.\.FRAG\.env,/.test(W12) && /migrateConfigFile/.test(W12) && /migrateConfigFile/.test(fs.readFileSync("lumitome/lib/update.mjs", "utf8")));
+  const cf = path.join(h, "opencode.jsonc");
+  fs.writeFileSync(cf, '{ "providers": { "9router": { "settings": { "apiKey": "{env:NINEROUTER_API_KEY}" } } },\r\n  "compaction": { "auto": true, "buffer": "20%" } }\r\n');
+  const changed = CM12.migrateConfigFile(cf), after = fs.readFileSync(cf, "utf8");
+  ok("migrasi: \"20%\" → 20000, env key lama → LUMI_KEY_9ROUTER, CRLF dipertahankan, idempoten", changed && after.includes('"buffer": 20000') && after.includes("{env:LUMI_KEY_9ROUTER}") && after.includes("\r\n") && !CM12.migrateConfigFile(cf));
+  ok("migrasi: file tidak ada → aman", CM12.migrateConfigFile(path.join(h, "tidak-ada.jsonc")) === false);
+  fs.rmSync(h, { recursive: true, force: true }); fs.rmSync(h2, { recursive: true, force: true });
 }
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

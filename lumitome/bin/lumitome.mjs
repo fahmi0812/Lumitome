@@ -18,7 +18,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
 const REPO = path.resolve(ROOT, "..");                 // repo Swanwright
-const VERSION = "0.3.11";
+const VERSION = "0.3.12";
 const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
 const env = { ...process.env };
 const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process.exit(code); };
@@ -29,6 +29,9 @@ const ISO_HOME = env.LUMI_HOME || path.join(os.homedir(), ".lumitome");
 const isoEnv = () => ({ ...env, XDG_CONFIG_HOME: path.join(ISO_HOME, "xdg-config"), XDG_DATA_HOME: env.LUMI_XDG_DATA || path.join(ISO_HOME, "data"),
   XDG_STATE_HOME: path.join(ISO_HOME, "state"), XDG_CACHE_HOME: path.join(ISO_HOME, "cache"), OPENCODE_DISABLE_AUTOUPDATE: "1" });
 const sub = argv[0] && !argv[0].startsWith("-") ? argv[0] : "";
+// v0.3.12: migrasi salinan config lama ("buffer": "20%", {env:NINEROUTER_API_KEY}) — juga terpanggil oleh cek pasca-update
+try { const CM0 = await import(pathToFileURL(path.join(ROOT, "lib", "config-migrate.mjs")).href);
+  CM0.migrateConfigFile(path.join(ISO_HOME, "config", "opencode.jsonc")); } catch {}
 if (argv[0] === "--version" || argv[0] === "-v") {
   let oc = "?"; try { oc = execFileSync(ocBin(), ["--version"], { encoding: "utf8", env: isoEnv() }).trim(); } catch {}
   console.log(`lumitome ${VERSION} (${oc})`); process.exit(0);
@@ -87,7 +90,7 @@ if (sub === "connect" || (sub === "models" && argv.includes("--refresh")) || (su
   process.exit(await PV.cli({ argv: argv.slice(1), home: ISO_HOME, sub }));
 }
 const FRAG = PV.opencodeFragment(ISO_HOME, env);
-const HAS_9R_ENV = !!env.NINEROUTER_API_KEY;
+const HAS_9R_ENV = !!FRAG.env.LUMI_KEY_9ROUTER;
 const HAS_PROVIDER = HAS_9R_ENV || Object.keys(FRAG.providers).length > 0;
 function chooseModel() {
   if (env.LUMI_MODEL) return env.LUMI_MODEL;
@@ -222,6 +225,7 @@ for (const [n, src] of Object.entries(CFG_SRC)) {
   let cur = null; try { cur = fs.readlinkSync(dst); } catch {}
   if (cur !== src) linkInto(src, dst);
 }
+{ const CMG = await import(pathToFileURL(path.join(ROOT, "lib", "config-migrate.mjs")).href); try { CMG.migrateConfigFile(path.join(CFG_DIR, "opencode.jsonc")); } catch {} }
 // Windows: symlink butuh hak admin/Developer Mode → direktori pakai junction, file disalin
 function linkInto(src, dst) {
   try { fs.rmSync(dst, { force: true, recursive: !fs.lstatSync(dst).isSymbolicLink() && fs.lstatSync(dst).isDirectory() }); } catch {}

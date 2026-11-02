@@ -9,6 +9,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
+import { pathToFileURL } from "node:url";
 
 const DEFAULT_URL = "https://github.com/fahmi0812/Lumitome.git";
 const semver = (v) => (String(v).match(/^v?(\d+)\.(\d+)\.(\d+)$/) || []).slice(1).map(Number);
@@ -81,6 +82,9 @@ export async function update({ argv, version, repo, home, log = console.log, err
     fs.renameSync(repo, `${bak}.failed`); fs.renameSync(bak, repo); fs.rmSync(`${bak}.failed`, { recursive: true, force: true });
     err(`update: cek pasca-pasang gagal (${(chk.stdout + chk.stderr).trim().slice(0, 200) || "inject"}) → ROLLBACK ke v${version}`); return 1;
   }
+  // migrasi config lama di LUMI_HOME (mis. "buffer": "20%" → integer); pakai modul rilis baru bila ada
+  try { const mf = path.join(repo, "lumitome", "lib", "config-migrate.mjs");
+    if (fs.existsSync(mf)) { const M = await import(pathToFileURL(mf).href); if (M.migrateConfigFile(path.join(home, "config", "opencode.jsonc"))) log("config: opencode.jsonc dimigrasi"); } } catch {}
   // simpan 2 backup terbaru
   const olds = fs.readdirSync(bdir).filter((d) => d.startsWith("src-v")).sort(); for (const d of olds.slice(0, Math.max(0, olds.length - 2))) fs.rmSync(path.join(bdir, d), { recursive: true, force: true });
   const ocPin = (fs.readFileSync(path.join(repo, "install.sh"), "utf8").match(/^OC_VERSION=([\d.]+)/m) || [])[1];
