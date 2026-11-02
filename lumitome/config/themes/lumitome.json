@@ -1,0 +1,234 @@
+{
+  "$schema": "https://opencode.ai/theme.json",
+  "defs": {
+    "cornsilk": "#FFF8DC",
+    "ivory": "#FFF4C8",
+    "glow": "#FFF6D5",
+    "champagne": "#F3D27A",
+    "gold": "#E8C266",
+    "goldSoft": "#E6C77E",
+    "goldRule": "#D4AF5A",
+    "goldDeep": "#C9962E",
+    "bronze": "#B8892A",
+    "bronzeDeep": "#A97A1E",
+    "umber": "#9C6F17",
+    "ink": "#7A5A1A",
+    "inkMuted": "#8C7346",
+    "paper": "#FFFDF7",
+    "paper2": "#F8EED8",
+    "paper3": "#EEDDB6",
+    "night": "#0E0C08",
+    "night2": "#17140D",
+    "night3": "#221D12",
+    "nightBorder": "#3A3020",
+    "nightMuted": "#A8957A",
+    "red": "#E5735C",
+    "redLight": "#B23A26",
+    "green": "#B9C97A",
+    "greenLight": "#5F7A1E",
+    "blue": "#9FB8D6",
+    "blueLight": "#3F6187"
+  },
+  "theme": {
+    "primary": {
+      "dark": "champagne",
+      "light": "umber"
+    },
+    "secondary": {
+      "dark": "goldSoft",
+      "light": "bronze"
+    },
+    "accent": {
+      "dark": "gold",
+      "light": "bronzeDeep"
+    },
+    "error": {
+      "dark": "red",
+      "light": "redLight"
+    },
+    "warning": {
+      "dark": "gold",
+      "light": "bronzeDeep"
+    },
+    "success": {
+      "dark": "green",
+      "light": "greenLight"
+    },
+    "info": {
+      "dark": "blue",
+      "light": "blueLight"
+    },
+    "text": {
+      "dark": "cornsilk",
+      "light": "ink"
+    },
+    "textMuted": {
+      "dark": "goldDeep",
+      "light": "inkMuted"
+    },
+    "background": {
+      "dark": "night",
+      "light": "paper"
+    },
+    "backgroundPanel": {
+      "dark": "night2",
+      "light": "paper2"
+    },
+    "backgroundElement": {
+      "dark": "night3",
+      "light": "paper3"
+    },
+    "border": {
+      "dark": "nightBorder",
+      "light": "paper3"
+    },
+    "borderActive": {
+      "dark": "goldRule",
+      "light": "bronze"
+    },
+    "borderSubtle": {
+      "dark": "night3",
+      "light": "paper2"
+    },
+    "diffAdded": {
+      "dark": "green",
+      "light": "greenLight"
+    },
+    "diffRemoved": {
+      "dark": "red",
+      "light": "redLight"
+    },
+    "diffContext": {
+      "dark": "nightMuted",
+      "light": "inkMuted"
+    },
+    "diffHunkHeader": {
+      "dark": "goldDeep",
+      "light": "umber"
+    },
+    "diffHighlightAdded": {
+      "dark": "green",
+      "light": "greenLight"
+    },
+    "diffHighlightRemoved": {
+      "dark": "red",
+      "light": "redLight"
+    },
+    "diffAddedBg": {
+      "dark": "#1F2412",
+      "light": "#EEF2DC"
+    },
+    "diffRemovedBg": {
+      "dark": "#2A1610",
+      "light": "#F8E2DA"
+    },
+    "diffContextBg": {
+      "dark": "night2",
+      "light": "paper2"
+    },
+    "diffLineNumber": {
+      "dark": "nightMuted",
+      "light": "inkMuted"
+    },
+    "diffAddedLineNumberBg": {
+      "dark": "#1A1F10",
+      "light": "#E4EBCB"
+    },
+    "diffRemovedLineNumberBg": {
+      "dark": "#24130E",
+      "light": "#F1D5CB"
+    },
+    "markdownText": {
+      "dark": "cornsilk",
+      "light": "ink"
+    },
+    "markdownHeading": {
+      "dark": "champagne",
+      "light": "umber"
+    },
+    "markdownLink": {
+      "dark": "gold",
+      "light": "bronzeDeep"
+    },
+    "markdownLinkText": {
+      "dark": "champagne",
+      "light": "umber"
+    },
+    "markdownCode": {
+      "dark": "goldSoft",
+      "light": "bronze"
+    },
+    "markdownBlockQuote": {
+      "dark": "nightMuted",
+      "light": "inkMuted"
+    },
+    "markdownEmph": {
+      "dark": "ivory",
+      "light": "bronzeDeep"
+    },
+    "markdownStrong": {
+      "dark": "champagne",
+      "light": "umber"
+    },
+    "markdownHorizontalRule": {
+      "dark": "goldRule",
+      "light": "goldRule"
+    },
+    "markdownListItem": {
+      "dark": "gold",
+      "light": "bronze"
+    },
+    "markdownListEnumeration": {
+      "dark": "goldDeep",
+      "light": "bronze"
+    },
+    "markdownImage": {
+      "dark": "gold",
+      "light": "bronzeDeep"
+    },
+    "markdownImageText": {
+      "dark": "champagne",
+      "light": "umber"
+    },
+    "markdownCodeBlock": {
+      "dark": "cornsilk",
+      "light": "ink"
+    },
+    "syntaxComment": {
+      "dark": "nightMuted",
+      "light": "inkMuted"
+    },
+    "syntaxKeyword": {
+      "dark": "champagne",
+      "light": "umber"
+    },
+    "syntaxFunction": {
+      "dark": "gold",
+      "light": "bronzeDeep"
+    },
+    "syntaxVariable": {
+      "dark": "cornsilk",
+      "light": "ink"
+    },
+    "syntaxString": {
+      "dark": "green",
+      "light": "greenLight"
+    },
+    "syntaxNumber": {
+      "dark": "goldSoft",
+      "light": "bronze"
+    },
+    "syntaxType": {
+      "dark": "blue",
+      "light": "blueLight"
+    },
+    "syntaxOperator": {
+      "dark": "goldRule",
+      "light": "umber"
+    },
+    "syntaxPunctuation": {
+      "dark": "nightMuted",
+      "light": "inkMuted"
+    }
+  }
+}

@@ -2,6 +2,14 @@
 
 ## Belum dirilis
 
+## 0.3.7 — Branding Lumitome (white-gold / champagne)
+
+- BARU theme OpenCode `lumitome` (`lumitome/config/themes/lumitome.json`, varian dark & light) dari palet brand kit `assets/brand` (#FFF8DC → #F3D27A → #E8C266 → #C9962E → #9C6F17). Jadi default lewat `cli.json` terisolasi di `$LUMI_HOME/config`; theme yang dipilih user (`<leader>t`) dihormati. Logo layar awal ikut berwarna emas.
+- Judul jendela/tab terminal = `Lumitome` (OSC 0; `terminal.title: false` agar engine tidak menimpanya dengan "OpenCode"). Linux, macOS, Windows Terminal/PowerShell.
+- Banner `Lumitome` gradasi white-gold → champagne saat TUI dibuka (truecolor, fallback 256 warna, polos bila `NO_COLOR`/non-TTY/`TERM=dumb`). Matikan semua branding: `LUMI_NO_BRAND=1`.
+- Batasan: tulisan blok "opencode" di layar awal di-hardcode di engine v2.2.4 (`packages/tui/src/logo.ts`, tanpa config/slot plugin). Binary engine tetap terpin SHA256 & tidak dipatch.
+
+
 - BARU skill `drawio-diagram` (sektor penulisan): diagram draw.io/diagrams.net (.drawio, .drawio.svg), berbasis [DayuanJiang/next-ai-draw-io](https://github.com/DayuanJiang/next-ai-draw-io) @ `c9dc5f5` (Apache-2.0). Alias id/en ("diagram draw.io", "diagrams.net", "aws diagram", …). Skill aktif: 87.
 - BARU MCP opsional `drawio` (`@next-ai-drawio/mcp-server@0.4.11`, terpin): mati default, tidak ikut `LUMI_MCP=all`; nyalakan dengan menyebutnya, mis. `LUMI_MCP=codemem,skills-coding,skills-riset,skills-penulisan,skills-security,drawio`. Tool `drawio_*` hanya untuk sektor penulisan.
 

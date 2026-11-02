@@ -18,7 +18,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
 const REPO = path.resolve(ROOT, "..");                 // repo Swanwright
-const VERSION = "0.3.6";
+const VERSION = "0.3.7";
 const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
 const env = { ...process.env };
 const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process.exit(code); };
@@ -208,7 +208,7 @@ if (sub === "run" && (env.LUMI_SKILLS ?? "auto") === "auto" && fs.existsSync(pat
 const CFG_DIR = path.join(HOME, "config");
 fs.mkdirSync(CFG_DIR, { recursive: true, mode: 0o700 });
 // sumber asli (bukan symlink repo lumitome/config/* — symlink hilang di paket npm & checkout Windows)
-const CFG_SRC = { "opencode.jsonc": path.join(ROOT, "config", "opencode.jsonc"), plugins: path.join(ROOT, "config", "plugins"),
+const CFG_SRC = { "opencode.jsonc": path.join(ROOT, "config", "opencode.jsonc"), plugins: path.join(ROOT, "config", "plugins"), themes: path.join(ROOT, "config", "themes"),
   skills: path.join(REPO, ".opencode", "skills"), rules: path.join(ROOT, "rules"), agents: path.join(REPO, ".opencode", "agents"), commands: path.join(REPO, ".opencode", "commands") };
 for (const [n, src] of Object.entries(CFG_SRC)) {
   if (!fs.existsSync(src)) continue;
@@ -259,6 +259,22 @@ else { env.OPENCODE_DISABLE_PROJECT_CONFIG = "1"; }
 env.SW_9ROUTER_URL ||= env.LUMI_9ROUTER_URL; env.SW_9ROUTER_KEY ||= env.NINEROUTER_API_KEY; // config proyek Swanwright
 delete env.OPENCODE_CONFIG;
 
+// ---------- branding (tanpa patch engine) ----------
+// theme "lumitome" (lumitome/config/themes) + terminal.title:false di cli.json TERISOLASI (LUMI_HOME/config) — kunci milik user dihormati
+{
+  const BR = await import(pathToFileURL(path.join(ROOT, "lib", "brand.mjs")).href);
+  // engine v2.2.4: OPENCODE_CONFIG_DIR juga menjadi lokasi cli.json (terverifikasi; XDG_CONFIG_HOME/opencode/cli.json diabaikan saat CONFIG_DIR di-set)
+  const cliFile = path.join(CFG_DIR, "cli.json");
+  try {
+    let cur = {}; try { cur = JSON.parse(fs.readFileSync(cliFile, "utf8")); } catch {}
+    const r = BR.seedCliConfig(cur);
+    if (r.changed && env.LUMI_NO_BRAND !== "1") { fs.mkdirSync(path.dirname(cliFile), { recursive: true }); fs.writeFileSync(cliFile, JSON.stringify(r.config, null, 2) + "\n", { mode: 0o600 }); }
+  } catch (e) { if (env.LUMI_DEBUG) process.stderr.write(`lumitome: cli.json branding dilewati (${e.message})\n`); }
+  if (sub === "" && process.stderr.isTTY && env.LUMI_NO_BRAND !== "1") {
+    let ver = ""; try { ver = fs.readFileSync(path.join(REPO, "VERSION"), "utf8").trim(); } catch {}
+    process.stderr.write(BR.titleSeq() + BR.banner({ version: ver }));
+  }
+}
 env.LUMI_WRAPPER_PID = String(process.pid);
 // serve/web: password dibuat wrapper, disimpan 0600, TIDAK dicetak ke stdout
 let SERVE_PW = null;

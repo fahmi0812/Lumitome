@@ -422,7 +422,20 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("salinan cermin pack (impeccable-2.., design-2) tidak diindeks; foldernya tetap ada", !SDB.collectSkills(".").some((x) => /^impeccable-\d+$|^design-2$/.test(x.name)) && fs.existsSync("packs/design-extra/skills/impeccable-2/SKILL.md"));
   const Wd = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8"), oc = fs.readFileSync("opencode.jsonc", "utf8");
   ok("drawio: skill aktif terpin SHA + MCP opsional (mati default, versi npx terpin, tidak ikut 'all')", fs.existsSync(".opencode/skills/drawio-diagram/SKILL.md") && /c9dc5f5cc62e7e5a327a62b39027d80033e1548c/.test(fs.readFileSync(".opencode/skills/drawio-diagram/SKILL.md", "utf8")) && /if \(wantMcp\.includes\("drawio"\)\)/.test(Wd) && /"@next-ai-drawio\/mcp-server@0\.4\.11"\s*\],\s*"disabled": true/.test(oc));
-  ok("versi 0.3.6 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.6") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.6" && /VERSION = "0\.3\.6"/.test(W) && /SW_VERSION=0\.3\.6/.test(inst));
+  const BR = await import("../lumitome/lib/brand.mjs");
+  const brandSvg = fs.readFileSync("assets/brand/logo.svg", "utf8") + fs.readFileSync("assets/brand/generate.py", "utf8");
+  ok("brand: palet banner = hex brand kit assets/brand", BR.PALETTE.every((h) => brandSvg.includes(h)));
+  ok("brand: NO_COLOR / non-TTY / TERM=dumb → polos tanpa ANSI", BR.colorMode({ NO_COLOR: "1", COLORTERM: "truecolor" }, true) === "none" && BR.colorMode({}, false) === "none" && BR.colorMode({ TERM: "dumb" }, true) === "none" && !/\x1b/.test(BR.banner({ mode: "none" })));
+  ok("brand: truecolor (COLORTERM/WT_SESSION) & fallback 256", BR.colorMode({ COLORTERM: "truecolor" }, true) === "truecolor" && BR.colorMode({ WT_SESSION: "x" }, true) === "truecolor" && (process.platform === "win32" || BR.colorMode({ TERM: "xterm-256color" }, true) === "256") && /38;2;255;248;220/.test(BR.banner({ mode: "truecolor" })) && /38;5;\d+m/.test(BR.banner({ mode: "256" })) && !/38;2/.test(BR.banner({ mode: "256" })));
+  ok("brand: banner tanpa warna background (aman terang/gelap)", !/\x1b\[(48|4\d)[;m]/.test(BR.banner({ mode: "truecolor" }) + BR.banner({ mode: "256" })));
+  ok("brand: judul OSC 0 'Lumitome', karakter kontrol dibuang", BR.titleSeq() === "\x1b]0;Lumitome\x07" && BR.titleSeq("a\x07b") === "\x1b]0;ab\x07");
+  const s1 = BR.seedCliConfig({}), s2 = BR.seedCliConfig({ theme: { name: "aura" }, terminal: { title: true }, x: 1 });
+  ok("brand: cli.json di-seed theme lumitome + terminal.title:false; pilihan user dihormati", s1.changed && s1.config.theme.name === "lumitome" && s1.config.terminal.title === false && !s2.changed && s2.config.theme.name === "aura" && s2.config.terminal.title === true);
+  const TH = JSON.parse(fs.readFileSync("lumitome/config/themes/lumitome.json", "utf8"));
+  const thKeys = ["primary", "text", "textMuted", "background", "border", "syntaxKeyword", "markdownHeading", "diffAdded"];
+  ok("theme lumitome: varian dark+light, refs valid, emas brand", thKeys.every((k) => TH.theme[k]?.dark && TH.theme[k]?.light) && Object.values(TH.theme).every((v) => [v.dark, v.light].every((c) => /^#[0-9A-Fa-f]{6}$/.test(c) || c in TH.defs)) && TH.defs.champagne === "#F3D27A" && TH.defs.cornsilk === "#FFF8DC");
+  ok("wrapper: themes ditautkan ke OPENCODE_CONFIG_DIR, cli.json di CFG_DIR (bukan ~/.config user), binary engine tidak disentuh", /themes: path\.join\(ROOT, "config", "themes"\)/.test(W) && /cliFile = path\.join\(CFG_DIR, "cli\.json"\)/.test(W) && !/writeFileSync\([^)]*ocBin/.test(W));
+  ok("versi 0.3.7 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.7") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.7" && /VERSION = "0\.3\.7"/.test(W) && /SW_VERSION=0\.3\.7/.test(inst));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

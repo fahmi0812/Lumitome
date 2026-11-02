@@ -1,6 +1,6 @@
 {
   "name": "lumitome",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "type": "module",
   "description": "Lumitome — CLI AI coding aman di atas OpenCode v2 (engine terpin) + harness Swanwright",
   "engines": {
