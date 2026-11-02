@@ -92,11 +92,12 @@ export async function cli({ argv, home, sub, log = console.log, err = (m) => pro
   let type = val("--type"), name = val("--name"), baseURL = val("--base-url"), key;
   if (val("--key-env")) key = process.env[val("--key-env")];
   if (flag("--key-stdin")) key = fs.readFileSync(0, "utf8").trim();
+  argv = argv.filter((a) => a !== "--text");
   const interactive = !(type && name && baseURL && key);
   if (interactive) {
     if (!process.stdin.isTTY) { err("connect: non-interaktif butuh --type openai|anthropic --name <n> --base-url <url> (--key-env VAR | --key-stdin)"); return 2; }
     const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
-    err("Tambah provider Lumitome\n  1) Custom OpenAI-compatible (9router, OpenRouter, vLLM, LM Studio, Ollama /v1, …)\n  2) Custom Anthropic-compatible\n  (menu layar penuh: lumitome provider · provider bawaan OpenCode: di TUI ketik /connect)");
+    err("Tambah provider Lumitome\n  1) Custom OpenAI-compatible (9router, OpenRouter, vLLM, LM Studio, Ollama /v1, …)\n  2) Custom Anthropic-compatible\n  (menu layar penuh: lumitome connect / lumitome provider · provider bawaan OpenCode: di TUI ketik /connect)");
     if (!type) { const t = (await ask(rl, "Pilih [1/2]: ")).trim(); type = t === "2" ? "anthropic" : "openai"; }
     if (!name) name = (await ask(rl, "Nama (mis. 9router): ")).trim().toLowerCase();
     if (!baseURL) baseURL = (await ask(rl, type === "anthropic" ? "Base URL (mis. https://api.example.com): " : "Base URL (mis. http://127.0.0.1:20128/v1): ")).trim();

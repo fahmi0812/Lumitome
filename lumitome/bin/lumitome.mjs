@@ -18,7 +18,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
 const REPO = path.resolve(ROOT, "..");                 // repo Swanwright
-const VERSION = "0.3.9";
+const VERSION = "0.3.10";
 const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
 const env = { ...process.env };
 const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process.exit(code); };
@@ -80,6 +80,9 @@ async function providerMenu() {
   return UI.run({ home: ISO_HOME, PV });
 }
 if (sub === "provider") { await providerMenu(); process.exit(0); }
+// `lumitome connect` tanpa flag di terminal → layar provider yang sama; teks hanya untuk non-TTY, --text, atau flag lengkap/--list/--remove
+if (sub === "connect" && process.stdin.isTTY && process.stdout.isTTY && !argv.includes("--text")
+  && !["--list", "--remove", "--type", "--name", "--base-url", "--key-env", "--key-stdin"].some((f) => argv.includes(f))) { await providerMenu(); process.exit(0); }
 if (sub === "connect" || (sub === "models" && argv.includes("--refresh")) || (sub === "models" && argv.includes("--lumitome"))) {
   process.exit(await PV.cli({ argv: argv.slice(1), home: ISO_HOME, sub }));
 }
@@ -255,7 +258,8 @@ Object.assign(env, {
   ...FRAG.env,
 });
 // Windows: tidak ada bwrap → sandbox OS mati, tapi guard (deny rules, .env, anti-spin, push main) tetap aktif
-if (process.platform === "win32" && !env.LUMI_SANDBOX) { env.LUMI_SANDBOX = "off"; if (sub !== "run" || env.LUMI_DEBUG) process.stderr.write("lumitome: Windows — tanpa sandbox bwrap; guard Lumitome tetap aktif (perintah berbahaya & file rahasia diblok)\n"); }
+// Windows: tanpa bwrap; guard tetap aktif. Pesan hanya dengan LUMI_DEBUG (layar TUI tidak diawali teks tambahan)
+if (process.platform === "win32" && !env.LUMI_SANDBOX) { env.LUMI_SANDBOX = "off"; if (env.LUMI_DEBUG) process.stderr.write("lumitome: Windows, tanpa sandbox; guard aktif\n"); }
 if (TRUST) process.stderr.write("lumitome: PERINGATAN — LUMI_TRUST_PROJECT=1: config, plugin, agent & MCP proyek di workspace ini DIMUAT dan dapat menjalankan kode. Pakai hanya untuk repo tepercaya.\n");
 else { env.OPENCODE_DISABLE_PROJECT_CONFIG = "1"; }
 env.SW_9ROUTER_URL ||= env.LUMI_9ROUTER_URL; env.SW_9ROUTER_KEY ||= env.NINEROUTER_API_KEY; // config proyek Swanwright
@@ -274,10 +278,8 @@ delete env.OPENCODE_CONFIG;
     if (r.changed && env.LUMI_NO_BRAND !== "1") { fs.mkdirSync(path.dirname(cliFile), { recursive: true }); fs.writeFileSync(cliFile, JSON.stringify(r.config, null, 2) + "\n", { mode: 0o600 }); }
     if (env.LUMI_NO_BRAND !== "1" && !fs.existsSync(mark)) { fs.mkdirSync(CFG_DIR, { recursive: true }); fs.writeFileSync(mark, ""); }
   } catch (e) { if (env.LUMI_DEBUG) process.stderr.write(`lumitome: cli.json branding dilewati (${e.message})\n`); }
-  if (sub === "" && process.stderr.isTTY && env.LUMI_NO_BRAND !== "1") {
-    let ver = ""; try { ver = fs.readFileSync(path.join(REPO, "VERSION"), "utf8").trim(); } catch {}
-    process.stderr.write(BR.titleSeq() + BR.banner({ version: ver }));
-  }
+  // v0.3.10: tanpa banner wrapper sebelum TUI — wordmark LUMITOME engine sudah cukup; hanya judul jendela
+  if (sub === "" && process.stderr.isTTY && env.LUMI_NO_BRAND !== "1") process.stderr.write(BR.titleSeq());
 }
 env.LUMI_WRAPPER_PID = String(process.pid);
 // serve/web: password dibuat wrapper, disimpan 0600, TIDAK dicetak ke stdout

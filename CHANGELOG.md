@@ -2,6 +2,12 @@
 
 ## Belum dirilis
 
+## 0.3.10 — `lumitome connect` membuka layar provider; logo tidak dobel
+
+- `lumitome connect` di terminal sekarang membuka layar provider yang sama dengan `lumitome provider`. Mode teks lama hanya untuk non-TTY, `lumitome connect --text`, atau bila flag (`--type/--name/--base-url/--key-env/--key-stdin/--list/--remove`) dipakai.
+- Banner wrapper ("The book of light…") tidak lagi dicetak sebelum TUI; wordmark LUMITOME dari engine cukup. Judul jendela tetap `Lumitome`. Pesan Windows soal sandbox hanya muncul dengan `LUMI_DEBUG=1`.
+- Konsol Windows yang bukan UTF-8 (codepage ≠ 65001, di luar Windows Terminal) memakai simbol ASCII di layar provider: `*` untuk key, `x` untuk hapus, logo teks. Paksa dengan `LUMI_ASCII=1` / `LUMI_ASCII=0`.
+
 ## 0.3.9 — Layar provider; API key tampil sebagai •
 
 - BARU layar provider (`lumitome/lib/provider-ui.mjs`, Node murni): logo LUMITOME emas, daftar provider tersimpan (`nama  N model  ×`, Del → konfirmasi y), form Tipe (OpenAI · Anthropic compatible) / Nama / Base URL / API Key, status `✓ Terhubung · N model terdeteksi`. Muncul otomatis saat `lumitome` dibuka tanpa provider; buka lagi dengan `lumitome provider`. Penyimpanan sama dengan `lumitome connect` (providers.json + credentials.json 0600, key lewat env ke engine).

@@ -9,6 +9,20 @@ export const LOGO = {
   left: ["█    █  █ █▀▄▀█ ▀█▀", "█    █  █ █   █  █ ", "▀▀▀▀ ▀▀▀▀ ▀   ▀ ▀▀▀"],
   right: ["▀█▀ █▀▀█ █▀▄▀█ █▀▀▀", " █  █  █ █   █ █▀▀ ", " ▀  ▀▀▀▀ ▀   ▀ ▀▀▀▀"],
 };
+// glyph: Unicode (default) atau ASCII bila konsol Windows bukan UTF-8 (codepage ≠ 65001, bukan Windows Terminal) / LUMI_ASCII=1
+export const UNI = { bullet: "•", x: "×", arrow: "›", rule: "─", ok: "✓", bad: "✗", dot: "·", cur: "█", ell: "…", logo: true };
+export const ASCII = { bullet: "*", x: "x", arrow: ">", rule: "-", ok: "OK", bad: "X", dot: "|", cur: "_", ell: "...", logo: false };
+export function pickGlyphs(env = process.env, platform = process.platform, codepage = null) {
+  if (env.LUMI_ASCII === "1") return ASCII;
+  if (env.LUMI_ASCII === "0" || platform !== "win32") return UNI;
+  if (env.WT_SESSION || env.TERM_PROGRAM) return UNI;
+  return codepage === null || codepage === 65001 ? UNI : ASCII;
+}
+/** Codepage konsol Windows (chcp); null bila tidak bisa dibaca. */
+export async function windowsCodepage() {
+  if (process.platform !== "win32") return null;
+  try { const { execFileSync } = await import("node:child_process"); const o = execFileSync("chcp.com", { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 3000, windowsHide: true }); const m = /(\d{3,5})/.exec(o); return m ? Number(m[1]) : null; } catch { return null; }
+}
 export const FIELDS = ["type", "name", "baseURL", "key"];
 export const TYPES = [["openai", "OpenAI"], ["anthropic", "Anthropic (compatible)"]];
 
@@ -48,7 +62,7 @@ export function parseKeys(chunk, st = { paste: null }) {
   return out;
 }
 export const cleanPaste = (v) => String(v).replace(/\r\n?|\n/g, "").replace(/[\x00-\x1f\x7f]/g, "").trim();
-export const mask = (v) => "•".repeat([...String(v || "")].length);
+export const mask = (v, G = UNI) => G.bullet.repeat([...String(v || "")].length);
 
 export function initState(providers = {}) {
   const list = Object.entries(providers).map(([name, p]) => ({ name, models: (p.models || []).length }));
@@ -95,34 +109,35 @@ const BG = "\x1b[48;2;0;0;0m", RST = "\x1b[0m", DIM = "\x1b[2m", BOLD = "\x1b[1m
 const vlen = (s) => [...s.replace(/\x1b\[[0-9;]*m/g, "")].length;
 
 /** Bingkai layar (string ANSI). Tanpa kotak/border; terpusat; latar hitam; hanya logo emas. */
-export function render(st, cols = 80, rows = 24) {
+export function render(st, cols = 80, rows = 24, G = UNI) {
   const L = [];
   const W = Math.min(64, cols - 4);
-  LOGO.left.forEach((l, i) => L.push(`${fgc(GOLD.left)}${l} ${BOLD}${fgc(GOLD.right)}${LOGO.right[i]}${RST}${BG}`));
+  if (G.logo) LOGO.left.forEach((l, i) => L.push(`${fgc(GOLD.left)}${l} ${BOLD}${fgc(GOLD.right)}${LOGO.right[i]}${RST}${BG}`));
+  else L.push(`${BOLD}${fgc(GOLD.left)}L U M I ${fgc(GOLD.right)}T O M E${RST}${BG}`);
   L.push("");
   L.push(`${DIM}Provider tersimpan${RST}${BG}`);
   if (!st.list.length) L.push(`${DIM}  (belum ada)${RST}${BG}`);
   st.list.forEach((p, i) => {
     const on = st.focus === `list:${i}`;
-    const txt = `${p.name.padEnd(20)} ${String(p.models).padStart(4)} model   ×`;
-    L.push(on ? `${REV}› ${txt}${RST}${BG}` : `  ${txt}`);
+    const txt = `${p.name.padEnd(20)} ${String(p.models).padStart(4)} model   ${G.x}`;
+    L.push(on ? `${REV}${G.arrow} ${txt}${RST}${BG}` : `  ${txt}`);
   });
   if (st.confirm) L.push(`  Hapus '${st.confirm}'? y = ya, tombol lain = batal`);
-  L.push(`${DIM}${"─".repeat(W)}${RST}${BG}`);
+  L.push(`${DIM}${G.rule.repeat(W)}${RST}${BG}`);
   L.push(`${DIM}Tambah provider${RST}${BG}`);
   const field = (f, label, val) => {
     const on = st.focus === `form:${f}`;
-    return `${on ? "›" : " "} ${label.padEnd(9)} › ${val}${on && f !== "type" ? "█" : ""}`;
+    return `${on ? G.arrow : " "} ${label.padEnd(9)} ${G.arrow} ${val}${on && f !== "type" ? G.cur : ""}`;
   };
-  L.push(field("type", "Tipe", TYPES.map(([, n], i) => (i === st.type ? `${BOLD}${n}${RST}${BG}` : `${DIM}${n}${RST}${BG}`)).join(" · ")));
+  L.push(field("type", "Tipe", TYPES.map(([, n], i) => (i === st.type ? `${BOLD}${n}${RST}${BG}` : `${DIM}${n}${RST}${BG}`)).join(` ${G.dot} `)));
   L.push(field("name", "Nama", st.name));
   L.push(field("baseURL", "Base URL", st.baseURL || (st.focus === "form:baseURL" ? "" : `${DIM}${TYPES[st.type][0] === "anthropic" ? "https://api.example.com" : "http://127.0.0.1:20128/v1"}${RST}${BG}`)));
-  const km = mask(st.key); const kshow = vlen(km) > W - 16 ? "…" + km.slice(-(W - 17)) : km;
+  const km = mask(st.key, G); const kshow = vlen(km) > W - 16 ? G.ell + km.slice(-(W - 17)) : km;
   L.push(field("key", "API Key", kshow));
   L.push("");
-  L.push(st.busy ? `${DIM}… menghubungi server${RST}${BG}` : st.status || "");
+  L.push(st.busy ? `${DIM}${G.ell} menghubungi server${RST}${BG}` : (st.status || "").replace(/^✓/, G.ok).replace(/^✗/, G.bad));
   L.push("");
-  L.push(`${DIM}Tab pindah · Enter simpan · Del hapus · Esc lewati${RST}${BG}`);
+  L.push(`${DIM}${["Tab pindah", "Enter simpan", "Del hapus", "Esc lewati"].join(` ${G.dot} `)}${RST}${BG}`);
   const top = Math.max(0, Math.floor((rows - L.length) / 2));
   const left = Math.max(0, Math.floor((cols - Math.max(...L.map(vlen))) / 2));
   const lines = [];
@@ -135,10 +150,11 @@ export function render(st, cols = 80, rows = 24) {
 }
 
 /** Jalankan menu interaktif. deps: {load, add, remove} dari providers.mjs. Mengembalikan jumlah provider saat keluar. */
-export async function run({ home, PV, input = process.stdin, output = process.stdout }) {
+export async function run({ home, PV, input = process.stdin, output = process.stdout, glyphs }) {
   const st = initState(PV.load(home));
+  const G = glyphs || pickGlyphs(process.env, process.platform, await windowsCodepage());
   const size = () => [output.columns || 80, output.rows || 24];
-  const draw = () => output.write(render(st, ...size()));
+  const draw = () => output.write(render(st, ...size(), G));
   const raw = !!input.isTTY;
   output.write("\x1b[?1049h\x1b[?25l\x1b[?2004h\x1b[2J");
   if (raw) input.setRawMode(true);
@@ -182,7 +198,8 @@ export async function run({ home, PV, input = process.stdin, output = process.st
 }
 
 /** Input baris tersamar (•) untuk `lumitome connect` non-menu. Backspace Windows (\b) & Linux (\x7f), paste, CRLF. */
-export function askMasked(q, { input = process.stdin, output = process.stderr } = {}) {
+export async function askMasked(q, { input = process.stdin, output = process.stderr, glyphs } = {}) {
+  const G = glyphs || pickGlyphs(process.env, process.platform, await windowsCodepage());
   return new Promise((resolve) => {
     output.write(q + "\x1b[?2004h"); let buf = ""; const ps = { paste: null };
     const raw = !!input.isTTY; if (raw) input.setRawMode(true); input.setEncoding("utf8"); input.resume();
@@ -192,7 +209,7 @@ export function askMasked(q, { input = process.stdin, output = process.stderr } 
         const r = maskedStep(buf, k);
         if (r.abort) { output.write("\x1b[?2004l\n"); process.exit(130); }
         if (r.done) return finish(r.buf);
-        if (r.buf !== buf) { const a = [...buf].length, b = [...r.buf].length; output.write(b < a ? "\b \b".repeat(a - b) : mask(r.buf.slice(buf.length))); buf = r.buf; }
+        if (r.buf !== buf) { const a = [...buf].length, b = [...r.buf].length; output.write(b < a ? "\b \b".repeat(a - b) : mask(r.buf.slice(buf.length), G)); buf = r.buf; }
       }
     };
     input.on("data", on);

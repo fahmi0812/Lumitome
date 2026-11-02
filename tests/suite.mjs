@@ -441,7 +441,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const thKeys = ["primary", "text", "textMuted", "background", "border", "syntaxKeyword", "markdownHeading", "diffAdded"];
   ok("theme lumitome: varian dark+light, refs valid, emas brand", thKeys.every((k) => TH.theme[k]?.dark && TH.theme[k]?.light) && Object.values(TH.theme).every((v) => [v.dark, v.light].every((c) => /^#[0-9A-Fa-f]{6}$/.test(c) || c in TH.defs)) && TH.defs.champagne === "#F3D27A" && TH.defs.cornsilk === "#FFF8DC");
   ok("wrapper: themes ditautkan ke OPENCODE_CONFIG_DIR, cli.json di CFG_DIR (bukan ~/.config user), binary engine tidak disentuh", /themes: path\.join\(ROOT, "config", "themes"\)/.test(W) && /cliFile = path\.join\(CFG_DIR, "cli\.json"\)/.test(W) && !/writeFileSync\([^)]*ocBin/.test(W));
-  ok("versi 0.3.9 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.9") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.9" && /VERSION = "0\.3\.9"/.test(W) && /SW_VERSION=0\.3\.9/.test(inst));
+  ok("versi 0.3.10 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.10") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.10" && /VERSION = "0\.3\.10"/.test(W) && /SW_VERSION=0\.3\.10/.test(inst));
 }
 
 {
@@ -471,6 +471,19 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("ui/render: logo LUMITOME emas, latar hitam, daftar 'N model ×', footer", f0.includes("38;2;201;150;46") && f0.includes("38;2;243;210;122") && f0.includes("48;2;0;0;0") && /a\s+2 model\s+×/.test(f0) && f0.includes("Tab pindah · Enter simpan · Del hapus · Esc lewati") && !/[┌┐└┘│]/.test(f0));
   const W = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
   ok("ui/wrapper: `lumitome provider` + menu otomatis saat belum ada provider", W.includes('sub === "provider"') && /if \(!HAS_PROVIDER\)[\s\S]{0,400}providerMenu\(\)/.test(W));
+}
+{
+  // v0.3.10: connect = layar provider; tanpa banner ganda; fallback ASCII untuk konsol Windows non-UTF-8
+  const UI = await import("../lumitome/lib/provider-ui.mjs");
+  const W = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
+  ok("connect: di terminal membuka layar provider; --text / non-TTY / flag → mode teks", /sub === "connect" && process\.stdin\.isTTY && process\.stdout\.isTTY && !argv\.includes\("--text"\)[\s\S]{0,200}providerMenu\(\)/.test(W));
+  ok("brand: tidak ada banner wrapper sebelum TUI (hanya judul jendela); pesan Windows hanya LUMI_DEBUG", !W.includes("BR.banner(") && W.includes("process.stderr.write(BR.titleSeq())") && /win32" && !env\.LUMI_SANDBOX\) \{ env\.LUMI_SANDBOX = "off"; if \(env\.LUMI_DEBUG\)/.test(W));
+  ok("ui/glyph: Windows codepage 437/850 tanpa Windows Terminal → ASCII; 65001 / WT / Linux → Unicode", UI.pickGlyphs({}, "win32", 437) === UI.ASCII && UI.pickGlyphs({}, "win32", 850) === UI.ASCII && UI.pickGlyphs({}, "win32", 65001) === UI.UNI && UI.pickGlyphs({ WT_SESSION: "1" }, "win32", 437) === UI.UNI && UI.pickGlyphs({}, "linux", 437) === UI.UNI && UI.pickGlyphs({ LUMI_ASCII: "1" }, "linux") === UI.ASCII);
+  const st = UI.initState({ a: { models: ["m"] } }); st.key = "abc"; st.focus = "form:key";
+  const fa = UI.render(st, 100, 30, UI.ASCII);
+  ok("ui/glyph: mode ASCII → key '***', hapus 'x', tanpa karakter non-ASCII", fa.includes("***") && /1 model\s+x/.test(fa) && !/[^\x00-\x7f]/.test(fa));
+  const C = fs.readFileSync("lumitome/bin/cli.mjs", "utf8");
+  ok("npm/win: cli.mjs menjalankan wrapper dengan stdio inherit (TTY + raw mode tersedia untuk layar provider)", /spawn\(process\.execPath, \[[^\]]*lumitome\.mjs[^\]]*\], \{ stdio: "inherit"/.test(C));
 }
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

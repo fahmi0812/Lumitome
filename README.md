@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.9-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.10-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -36,7 +36,7 @@ This puts everything in `~/.lumitome` and adds a `lumitome` command in `~/.local
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.9.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.10.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
@@ -59,8 +59,10 @@ lumitome
 Then connect an AI provider. The first time you run `lumitome` with no provider, a provider screen opens by itself. To open it again later, run:
 
 ```bash
-lumitome provider
+lumitome connect
 ```
+
+(`lumitome provider` does the same.)
 
 Choose OpenAI or Anthropic (compatible), then fill in a name, the base URL, and your API key. The key shows as dots (•) while you type or paste it. Press Enter to save. Lumitome looks up the provider's models and tells you how many it found. Pick one with `/model`. To remove a saved provider, move to it and press Del, then `y`. Esc closes the screen.
 
@@ -68,7 +70,8 @@ Any service that works like the OpenAI API or the Anthropic API will do.
 
 Other provider commands:
 
-- `lumitome connect` asks the same questions as plain text prompts.
+- `lumitome connect --text` asks the same questions as plain text prompts.
+- If symbols look broken in an old Windows console, run with `LUMI_ASCII=1`.
 
 - `lumitome connect --list` shows your providers.
 - `lumitome connect --remove <name>` removes one.
