@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Swanwright doctor — cek pemasangan nyata terhadap OpenCode v2 (via opencode serve + HTTP API proyek).
 # Wajib (FAIL→exit 1): opencode v2.2.4, node>=22.6, indeks skill FRESH, policy, skill proyek = 86,
-#   MCP context7 + codemem + skills-* connected, plugin swanwright active, agents, skill_search waras.
+#   MCP context7 + codemem + skills connected, plugin swanwright active, agents, skill_search waras.
 # Info/WARN: playwright, chromedev, markitdown, 9router.  Pakai: bash scripts/doctor.sh [dir-proyek]
 set -uo pipefail
 DIR="$(cd "${1:-.}" && pwd)"; cd "$DIR"
@@ -36,7 +36,7 @@ const proj=sk.filter(s=>s.path.startsWith(D+"/.opencode/skills/"));
 out("FAIL",proj.length===86,`skill proyek terlihat OpenCode = ${proj.length} (target 86; total ${sk.length} termasuk builtin)`)||0; if(proj.length!==86)f++;
 const bad=proj.filter(s=>/^(api-security|llm-security)$/.test(s.id)); if(bad.length){f++;out("FAIL",false,"api-security/llm-security aktif!");} else out("FAIL",true,"api-security/llm-security tidak aktif");
 const st=Object.fromEntries(mcp.map(m=>[m.name,m.status.status]));
-const req=["context7","codemem","skills-coding","skills-media","skills-riset","skills-penulisan","skills-security","skills-finance"];
+const req=["context7","codemem","skills"];
 for(const n of req){const ok=st[n]==="connected"; if(!ok)f++; out("FAIL",ok,`MCP ${n}: ${st[n]||"tidak ada"}`);}
 for(const n of ["playwright","chromedev","markitdown"]){const ok=st[n]==="connected"; if(!ok)w++; out("WARN",ok,`MCP ${n}: ${st[n]||"tidak ada"} (opsional)`);}
 const dis=Object.entries(st).filter(([,v])=>v==="disabled").map(([k])=>k); console.log(`[INFO] MCP disabled (default): ${dis.join(", ")}`);

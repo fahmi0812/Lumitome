@@ -174,89 +174,14 @@
         },
         "disabled": true
       },
-      "skills-coding": {
+      "skills": {
         "type": "local",
         "command": [
           "node",
           "--no-warnings",
           "router/skill-search-mcp.mjs",
-          "--sector",
-          "coding"
-        ],
-        "timeout": {
-          "startup": 30000,
-          "catalog": 30000,
-          "execution": 30000
-        }
-      },
-      "skills-media": {
-        "type": "local",
-        "command": [
-          "node",
-          "--no-warnings",
-          "router/skill-search-mcp.mjs",
-          "--sector",
-          "media"
-        ],
-        "timeout": {
-          "startup": 30000,
-          "catalog": 30000,
-          "execution": 30000
-        }
-      },
-      "skills-riset": {
-        "type": "local",
-        "command": [
-          "node",
-          "--no-warnings",
-          "router/skill-search-mcp.mjs",
-          "--sector",
-          "riset"
-        ],
-        "timeout": {
-          "startup": 30000,
-          "catalog": 30000,
-          "execution": 30000
-        }
-      },
-      "skills-penulisan": {
-        "type": "local",
-        "command": [
-          "node",
-          "--no-warnings",
-          "router/skill-search-mcp.mjs",
-          "--sector",
-          "penulisan"
-        ],
-        "timeout": {
-          "startup": 30000,
-          "catalog": 30000,
-          "execution": 30000
-        }
-      },
-      "skills-security": {
-        "type": "local",
-        "command": [
-          "node",
-          "--no-warnings",
-          "router/skill-search-mcp.mjs",
-          "--sector",
-          "security"
-        ],
-        "timeout": {
-          "startup": 30000,
-          "catalog": 30000,
-          "execution": 30000
-        }
-      },
-      "skills-finance": {
-        "type": "local",
-        "command": [
-          "node",
-          "--no-warnings",
-          "router/skill-search-mcp.mjs",
-          "--sector",
-          "finance"
+          "--sectors",
+          "all"
         ],
         "timeout": {
           "startup": 30000,

@@ -9,21 +9,28 @@ import path from "node:path";
 import fs from "node:fs";
 import { openDb, searchSkills, SECTORS, DEFAULT_DB } from "./skill-db.mjs";
 
-const i = process.argv.indexOf("--sector");
-const sector = i >= 0 ? process.argv[i + 1] : process.env.SW_SECTOR;
-if (!SECTORS.includes(sector)) { process.stderr.write(`sektor tidak valid: ${sector}\n`); process.exit(2); }
-const ri = process.argv.indexOf("--root");
-const root = ri >= 0 ? process.argv[ri + 1] : process.env.SW_ROOT || process.cwd();
+// --sector <s> : mode lama, satu tool `skill_search` (server skills-<s>)
+// --sectors a,b|all : satu proses untuk banyak sektor (server `skills`), tool `<sektor>_skill_search` per sektor
+const arg = (f) => { const k = process.argv.indexOf(f); return k >= 0 ? process.argv[k + 1] : undefined; };
+const multiArg = arg("--sectors");
+const multi = multiArg !== undefined;
+const sectors = multi ? (multiArg === "all" ? [...SECTORS] : multiArg.split(",").map((x) => x.trim()).filter(Boolean)) : [arg("--sector") ?? process.env.SW_SECTOR];
+const bad = sectors.filter((x) => !SECTORS.includes(x));
+if (!sectors.length || bad.length) { process.stderr.write(`sektor tidak valid: ${bad.join(",") || "(kosong)"}\n`); process.exit(2); }
+const sector = sectors[0];
+const root = arg("--root") || process.env.SW_ROOT || process.cwd();
 const dbFile = path.join(root, DEFAULT_DB);
 const VERSION = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
 
-const TOOL = {
-  name: "skill_search",
-  title: `Cari skill sektor ${sector}`,
-  description: `Cari skill Swanwright (read-only) HANYA di allowlist sektor ${sector}. Kembalikan nama + deskripsi singkat; muat skill lewat tool skill({name}).`,
+const toolFor = (sec) => ({
+  name: multi ? `${sec}_skill_search` : "skill_search",
+  title: `Cari skill sektor ${sec}`,
+  description: `Cari skill Swanwright (read-only) HANYA di allowlist sektor ${sec}. Kembalikan nama + deskripsi singkat; muat skill lewat tool skill({name}).`,
   inputSchema: { type: "object", properties: { query: { type: "string", minLength: 2, maxLength: 500 }, k: { type: "integer", minimum: 1, maximum: 10, default: 5 } }, required: ["query"], additionalProperties: false },
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
-};
+});
+const TOOLS = sectors.map(toolFor);
+const TOOL_SECTOR = new Map(TOOLS.map((t, k) => [t.name, sectors[k]]));
 
 let db = null;
 function getDb() {
@@ -34,7 +41,8 @@ function getDb() {
 }
 
 async function call(name, args) {
-  if (name !== "skill_search") throw Object.assign(new Error(`tool tidak dikenal: ${name}`), { code: -32602 });
+  const sector = TOOL_SECTOR.get(name);
+  if (!sector) throw Object.assign(new Error(`tool tidak dikenal: ${name}`), { code: -32602 });
   const q = String(args?.query || "").slice(0, 500);
   const k = Math.min(10, Math.max(1, Number(args?.k) || 5));
   if (q.trim().length < 2) return { content: [{ type: "text", text: "query terlalu pendek" }], isError: true };
@@ -52,9 +60,9 @@ rl.on("line", async (line) => {
   if (id === undefined || id === null) return; // notifikasi
   try {
     let result;
-    if (method === "initialize") result = { protocolVersion: params?.protocolVersion || "2025-06-18", capabilities: { tools: { listChanged: false } }, serverInfo: { name: `swanwright-skills-${sector}`, version: VERSION }, instructions: `Pakai skill_search bila butuh skill sektor ${sector} yang belum diberikan orchestrator. Hanya membaca indeks.` };
+    if (method === "initialize") result = { protocolVersion: params?.protocolVersion || "2025-06-18", capabilities: { tools: { listChanged: false } }, serverInfo: { name: multi ? "swanwright-skills" : `swanwright-skills-${sector}`, version: VERSION }, instructions: multi ? `Pakai <sektor>_skill_search (sektor: ${sectors.join(", ")}) bila butuh skill yang belum diberikan orchestrator. Hanya membaca indeks.` : `Pakai skill_search bila butuh skill sektor ${sector} yang belum diberikan orchestrator. Hanya membaca indeks.` };
     else if (method === "ping") result = {};
-    else if (method === "tools/list") result = { tools: [TOOL] };
+    else if (method === "tools/list") result = { tools: TOOLS };
     else if (method === "tools/call") result = await call(params?.name, params?.arguments);
     else if (method === "resources/list") result = { resources: [] };
     else if (method === "prompts/list") result = { prompts: [] };

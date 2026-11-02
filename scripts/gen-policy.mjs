@@ -13,12 +13,14 @@ const rule = (a, r, e) => `  - { action: ${q(a)}, resource: ${q(r)}, effect: ${e
 
 export function mcpRules(servers, sector) {
   const out = [rule("*_*", "*", "deny"), rule("external_directory", "*", "ask")];
-  const own = [...servers, ...(sector ? [`skills-${sector}`, `gw-${sector}`] : [])];
+  const own = [...servers, ...(sector ? [`gw-${sector}`] : [])];
   for (const s of own) {
     out.push(rule(`${s}_*`, "*", "allow"));
     out.push(rule("opencode_list_mcp_resources", s, "allow"));
     for (const a of M.servers[s]?.ask || []) out.push(rule(`${s}_${a}`, "*", "ask"));
   }
+  // v0.3.13: satu server `skills` (semua sektor); sektor hanya boleh tool-nya sendiri: skills_<sektor>_skill_search
+  if (sector) out.push(rule(`skills_${sector}_*`, "*", "allow"), rule("opencode_list_mcp_resources", "skills", "allow"));
   return out;
 }
 export function skillRules(names) {

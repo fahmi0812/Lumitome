@@ -32,7 +32,8 @@ Skill: harness memakai skill & DB router miliknya sendiri (`config/skills` → `
 | `LUMI_MODEL` | `9router/ag/gemini-3.8-flash-high` | model `run` (bila tanpa `-m`) |
 | `LUMI_AGENT` | `orchestrator` (TUI) / `build` (`run`) | agent default |
 | `LUMI_TRUST_PROJECT` | `0` | `1` = muat config/plugin/agent/MCP proyek (berbahaya untuk repo asing) |
-| `LUMI_MCP` | `codemem,skills-coding,skills-riset,skills-penulisan,skills-security` | MCP aktif; `all` = tambah skills-finance & skills-media |
+| `LUMI_MCP` | `codemem,skills` | MCP aktif. `skills` = satu proses untuk semua sektor (tool `<sektor>_skill_search`). Nama lama `skills-coding` dst. masih diterima dan hanya menyalakan sektor itu |
+| `LUMI_CODEMEM` | – | `0` = codemem mati; `1` = aktif juga di luar repo git (default: hanya di repo git) |
 | `LUMI_AUTO_INDEX` | `1` | `0` = jangan indeks folder proyek otomatis |
 | `LUMI_SKILLS` | `auto` | `auto` = scoping router; `all` = semua skill terlihat |
 | `LUMI_KEY_<NAMA>` | – | override API key provider hasil `lumitome connect` (nama huruf besar, non-alnum → `_`); 9router juga `NINEROUTER_API_KEY` |

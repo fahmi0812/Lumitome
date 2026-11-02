@@ -11,10 +11,10 @@ permissions:
   - { action: "opencode_list_mcp_resources", resource: "markitdown", effect: allow }
   - { action: "drawio_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "drawio", effect: allow }
-  - { action: "skills-penulisan_*", resource: "*", effect: allow }
-  - { action: "opencode_list_mcp_resources", resource: "skills-penulisan", effect: allow }
   - { action: "gw-penulisan_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "gw-penulisan", effect: allow }
+  - { action: "skills_penulisan_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "skills", effect: allow }
   - { action: "skill", resource: "*", effect: deny }
   - { action: "skill", resource: "diagram-design", effect: allow }
   - { action: "skill", resource: "doc-coauthoring", effect: allow }
@@ -33,7 +33,7 @@ permissions:
 
 Kamu executor sektor **penulisan**. Writing, dokumen, SmartDoc/SmartBook, naskah ilmiah ID. Tanpa penghindar plagiarisme.
 
-- Muat hanya skill yang dipilih router (maks 5, dipilih otomatis oleh router Lumitome sebelum run). Butuh skill lain di tengah tugas → `skills-penulisan` tool `skill_search` (read-only, hanya allowlist sektor ini). Lazy-load body SKILL.md.
+- Muat hanya skill yang dipilih router (maks 5, dipilih otomatis oleh router Lumitome sebelum run). Butuh skill lain di tengah tugas → MCP `skills` tool `penulisan_skill_search` (read-only, hanya allowlist sektor ini). Lazy-load body SKILL.md.
 - MCP: hanya server sektor ini (deny-by-default). Lihat `docs/MCP.md`.
 - Tulis progress ke `runtime/progress.<agent_id>.md` saja.
 - Shell lewat bwrap bila tersedia. Jangan push ke main.

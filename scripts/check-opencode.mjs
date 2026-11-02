@@ -151,8 +151,8 @@ export function checkMcpPolicy(file = "opencode.jsonc", mapFile = "router/mcp-se
   }
   for (const n of ["figma", "github", "drawio"]) if (sv[n] && sv[n].disabled !== true) e.push(`mcp.servers.${n}: wajib disabled default`);
   for (const n of Object.keys(sv)) if (n.startsWith("gw-") && sv[n].disabled !== true) e.push(`mcp.servers.${n}: gateway wajib disabled default`);
-  for (const n of ["context7", "codemem"]) if (!sv[n] || sv[n].disabled) e.push(`mcp.servers.${n}: wajib ada & enabled`);
-  for (const [sec, list] of Object.entries(M.sectors)) for (const n of [...list, `skills-${sec}`, `gw-${sec}`]) if (!sv[n]) e.push(`mapping ${sec}: server ${n} tidak ada di config`);
+  for (const n of ["context7", "codemem", "skills"]) if (!sv[n] || sv[n].disabled) e.push(`mcp.servers.${n}: wajib ada & enabled`);
+  for (const [sec, list] of Object.entries(M.sectors)) for (const n of [...list, `gw-${sec}`]) if (!sv[n]) e.push(`mapping ${sec}: server ${n} tidak ada di config`);
   const perms = cfg.permissions || [];
   const di = perms.findIndex((p) => p.action === "*_*" && p.effect === "deny");
   if (di < 0) e.push(`${file}: wajib deny-by-default MCP ("*_*" deny)`);

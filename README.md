@@ -88,7 +88,7 @@ lumitome run "fix the failing tests"
 ### What is turned on for you
 
 - **A main helper that hands work to specialists.** When you open `lumitome`, you talk to a coordinator. It passes each job to the right specialist (coding, research, writing, or security) and checks the result. `lumitome run` uses the plain worker, which is the safest choice when nobody is watching. To pick a different one, set `LUMI_AGENT`, for example `LUMI_AGENT=build lumitome`.
-- **Five tool sets.** Code memory, plus skill libraries for coding, research, writing, and security. Finance and media are off by default. Turn everything on with `LUMI_MCP=all`, or name the ones you want: `LUMI_MCP=codemem,skills-media`.
+- **Two tool servers.** Code memory (`codemem`, only inside a git repo) and one `skills` server that covers every sector: coding, research, writing, security, finance, and media. Each sector agent can only search its own sector. Pick servers with `LUMI_MCP`, for example `LUMI_MCP=skills`.
 - **Code memory.** Lumitome remembers how your project fits together, so it finds the right files faster. The first time you open Lumitome in a project folder, it reads the project quietly in the background. You can keep working while it does. It skips your home folder, system folders, and folders that do not look like a project. To turn this off: `LUMI_AUTO_INDEX=0`.
 
 ## Updating
@@ -112,6 +112,35 @@ Lumitome does not update itself. It only updates when you run `lumitome update`.
 Lumitome runs OpenCode 2.2.4. The only change we made is the logo on the start screen: it says LUMITOME in gold instead of "opencode". Everything else, including the colors, is plain OpenCode 2.2.4.
 
 We built it from the official 2.2.4 source with OpenCode's own build script. The change is in [`engine/patches/logo.patch`](engine/patches/logo.patch), and the files are on the [engine-2.2.4-lumi.1](https://github.com/fahmi0812/Lumitome/releases/tag/engine-2.2.4-lumi.1) release page with their SHA256 hashes. If you want the unchanged official OpenCode instead, set `LUMI_ENGINE=upstream` before you install or run Lumitome.
+
+### Background service
+
+The first time you open `lumitome`, it starts a background service. Later windows and other folders reuse it, so they open faster. It restarts by itself when your config, provider keys, or Lumitome version change.
+
+```bash
+lumitome service status   # is it running?
+lumitome service stop     # stop it (it starts again next time you open lumitome)
+```
+
+This only touches Lumitome's own service. An OpenCode service you run yourself is left alone.
+
+### Model list
+
+Models from a provider are saved when you add it with `lumitome connect`. If the provider adds new models, refresh the list:
+
+```bash
+lumitome models --refresh
+```
+
+### Windows: optional Defender exclusion
+
+Windows Defender scans programs each time they start, which can add a few seconds when Lumitome opens. If you trust this install, you can exclude its folder (run PowerShell as administrator):
+
+```powershell
+Add-MpPreference -ExclusionPath "$env:USERPROFILE\.lumitome\bin"
+```
+
+This is optional. Skip it if you are not sure.
 
 ## What it does differently
 

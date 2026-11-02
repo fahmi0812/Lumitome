@@ -3,6 +3,7 @@
  * TIDAK PERNAH menjalankan `codebase-memory-mcp install` (itu menulis config klien lain).
  */
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -26,9 +27,24 @@ export function cbmAsset(platform = process.platform, arch = process.arch) {
   return { key, name: pin[0], sha256: pin[1], url: `https://github.com/DeusData/codebase-memory-mcp/releases/download/v${CBM_VERSION}/${pin[0]}` };
 }
 /** Definisi MCP codemem (mode MCP = tanpa argumen, stdio) atau null bila binary tidak ada. */
-export function codememServer(home, exists = fs.existsSync) {
+export const SHIM = fileURLToPath(new URL("./codemem-mcp-shim.mjs", import.meta.url));
+/** Batas start MCP codemem (ms). Binary siap < 2 s; 60 s lama membuat folder menunggu bila binary macet. */
+export const CODEMEM_STARTUP_MS = 15000;
+/**
+ * Definisi MCP codemem. Dijalankan lewat shim Node: engine memulai MCP dengan cwd = folder sesi, dan shim hanya
+ * menjalankan binary di dalam repo git. Di luar git shim menjawab MCP tanpa tool (cepat, tanpa binary 330 MB).
+ */
+export function codememServer(home, exists = fs.existsSync, nodeExec = process.execPath) {
   const bin = cbmBin(home); if (!exists(bin)) return null;
-  return { type: "local", command: [bin], timeout: { startup: 60000, catalog: 60000, execution: 600000 } };
+  return { type: "local", command: [nodeExec, "--no-warnings", SHIM, bin], timeout: { startup: CODEMEM_STARTUP_MS, catalog: 60000, execution: 600000 } };
+}
+/** Root repo git terdekat (folder berisi .git, file atau dir) atau null. Path Windows & POSIX. */
+export function gitRoot(dir, { exists = fs.existsSync, p = path } = {}) {
+  let d = p.resolve(dir);
+  for (;;) {
+    if (exists(p.join(d, ".git"))) return d;
+    const up = p.dirname(d); if (up === d) return null; d = up;
+  }
 }
 export function cbmVersion(bin) {
   try { return execFileSync(bin, ["--version"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 30000 }).trim().replace(/^.*?(\d+\.\d+\.\d+).*$/s, "$1"); } catch { return null; }
@@ -86,6 +102,7 @@ export function writeIndexState(home, dir, rec) {
 export function maybeAutoIndex({ home, dir, env = process.env, nodeExec = process.execPath, runner }) {
   const bin = cbmBin(home); if (!fs.existsSync(bin)) return "no-binary";
   const why = autoIndexSkip(dir, { env }); if (why) return `skip:${why}`;
+  if (!gitRoot(dir)) return "skip:bukan repo git";
   const st = readIndexState(home)[dir];
   if (st?.status === "indexed") return "already";
   if (st?.status === "running" && Date.now() - (st.started || 0) < 30 * 60000) return "running";

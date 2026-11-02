@@ -11,15 +11,21 @@ import { pathToFileURL } from "node:url";
 const SHELL = new Set(["shell", "bash"]);
 const FILE = new Set(["read", "edit", "write", "glob", "grep", "list", "patch", "multiedit", "apply_patch"]);
 const env = process.env;
-const WS = env.LUMI_WORKSPACE || process.cwd();
+const WS0 = env.LUMI_WORKSPACE || process.cwd();
 const JOURNAL = env.LUMI_JOURNAL || "";
 const jot = (row: Record<string, unknown>) => { if (JOURNAL) try { fs.appendFileSync(JOURNAL, JSON.stringify({ t: Date.now(), ...row }) + "\n"); } catch { /* jurnal opsional */ } };
 
 export default {
   id: "lumitome-guard",
   async setup(ctx: any) {
+    // service dipakai ulang lintas folder (v0.3.13): workspace = folder lokasi sesi ini, bukan folder wrapper pertama
+    const WS = (() => { const d = ctx?.location?.directory; if (!d) return WS0; try { return fs.realpathSync(d); } catch { return String(d); } })();
     let g: any = null; let closed = "";
-    try { g = await import(env.LUMI_HARNESS ? pathToFileURL(env.LUMI_HARNESS).href : "../../../harness/lumi-guard.mjs"); }
+    // Spesifier dibangun saat runtime (bukan literal): pemindai dependensi plugin engine membaca import literal relatif.
+    // Dari salinan di LUMI_HOME/config/plugins, folder harness tiga tingkat di atas tidak ada → engine memantau folder induk terdekat
+    // yang ada (mis. /home atau C:\Users) secara rekursif tiap folder dibuka.
+    const fallback = ["..", "..", "..", "harness", "lumi-guard.mjs"].join("/");
+    try { g = await import(env.LUMI_HARNESS ? pathToFileURL(env.LUMI_HARNESS).href : new URL(fallback, import.meta.url).href); }
     catch (e) { closed = `LUMI_GUARD_CLOSED: modul guard gagal dimuat (${String(e)}) — shell & tool tulis ditolak`; }
     const sandbox = env.LUMI_SANDBOX || "bwrap";
     if (g && sandbox === "bwrap" && !g.bwrapAvailable()) closed = "SANDBOX_CLOSED: bwrap tidak tersedia/tidak bisa membuat namespace. Shell ditolak (fail-closed). Pasang bubblewrap (apt install bubblewrap) atau set LUMI_SANDBOX=off secara sadar.";

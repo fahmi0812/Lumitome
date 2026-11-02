@@ -18,7 +18,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
 const REPO = path.resolve(ROOT, "..");                 // repo Swanwright
-const VERSION = "0.3.12";
+const VERSION = "0.3.13";
 const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
 const env = { ...process.env };
 const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process.exit(code); };
@@ -83,6 +83,13 @@ async function providerMenu() {
   return UI.run({ home: ISO_HOME, PV });
 }
 if (sub === "provider") { await providerMenu(); process.exit(0); }
+// service engine milik LUMI_HOME ini: status / stop (service OpenCode milik user tidak disentuh)
+if (sub === "service" && (argv[1] === "stop" || argv[1] === "status")) {
+  const SC = await import(pathToFileURL(path.join(ROOT, "lib", "service-ctl.mjs")).href);
+  const st = SC.status(ISO_HOME);
+  if (argv[1] === "status") { console.log(st.running ? `service Lumitome: jalan (pid ${st.pid}${st.url ? `, ${st.url}` : ""})` : "service Lumitome: tidak jalan"); process.exit(0); }
+  console.log(SC.stop(ISO_HOME) ? `service Lumitome dihentikan (pid ${st.pid})` : "service Lumitome: tidak jalan"); process.exit(0);
+}
 // `lumitome connect` tanpa flag di terminal → layar provider yang sama; teks hanya untuk non-TTY, --text, atau flag lengkap/--list/--remove
 if (sub === "connect" && process.stdin.isTTY && process.stdout.isTTY && !argv.includes("--text")
   && !["--list", "--remove", "--type", "--name", "--base-url", "--key-env", "--key-stdin"].some((f) => argv.includes(f))) { await providerMenu(); process.exit(0); }
@@ -134,7 +141,8 @@ function projectMcp() {
   return {};
 }
 // default: codemem + 4 sektor inti; finance/media hanya via LUMI_MCP=all atau daftar eksplisit
-const DEFAULT_MCP = "codemem,skills-coding,skills-riset,skills-penulisan,skills-security";
+// v0.3.13: satu proses `skills` untuk semua sektor (dulu 4 proses skills-<sektor>); codemem hanya aktif di repo git (shim)
+const DEFAULT_MCP = "codemem,skills";
 const wantMcp = (env.LUMI_MCP ?? DEFAULT_MCP).split(",").map((s) => s.trim()).filter(Boolean);
 const mcpOverride = {};
 for (const [name, def] of Object.entries(projectMcp())) {
@@ -142,10 +150,10 @@ for (const [name, def] of Object.entries(projectMcp())) {
   if (!on) mcpOverride[name] = { ...def, disabled: true };
 }
 // MCP skill_search milik Lumitome (path absolut instalasi) → tersedia di proyek mana pun tanpa config proyek
-for (const sec of ["coding", "security", "riset", "penulisan", "finance", "media"]) {
-  const n = `skills-${sec}`; if (!(wantMcp.includes("all") || wantMcp.includes(n))) continue;
-  mcpOverride[n] = { type: "local", command: [process.execPath, "--no-warnings", path.join(REPO, "router", "skill-search-mcp.mjs"), "--sector", sec, "--root", REPO], timeout: { startup: 30000, catalog: 30000, execution: 30000 } };
-}
+// tool per sektor: skills_<sektor>_skill_search (agent sektor hanya diizinkan tool sektornya). Nama lama skills-<sektor> di LUMI_MCP tetap diterima.
+const ALL_SECTORS = ["coding", "security", "riset", "penulisan", "finance", "media"];
+const skillSectors = wantMcp.includes("all") || wantMcp.includes("skills") ? ALL_SECTORS : ALL_SECTORS.filter((sec) => wantMcp.includes(`skills-${sec}`));
+if (skillSectors.length) mcpOverride.skills = { type: "local", command: [process.execPath, "--no-warnings", path.join(REPO, "router", "skill-search-mcp.mjs"), "--sectors", skillSectors.join(","), "--root", REPO], timeout: { startup: 30000, catalog: 30000, execution: 30000 } };
 // drawio (next-ai-draw-io, terpin) — opsional, mati default; hanya bila disebut eksplisit di LUMI_MCP (tidak ikut "all")
 if (wantMcp.includes("drawio")) mcpOverride.drawio = { type: "local", command: ["npx", "-y", "@next-ai-drawio/mcp-server@0.4.11"], environment: { BROWSER: env.BROWSER || "" }, timeout: { startup: 120000, catalog: 120000, execution: 120000 } };
 // codemem global: binary absolut di LUMI_HOME/bin (bukan PATH, bukan config proyek). Tidak pernah `install`.
@@ -269,6 +277,12 @@ if (TRUST) process.stderr.write("lumitome: PERINGATAN — LUMI_TRUST_PROJECT=1: 
 else { env.OPENCODE_DISABLE_PROJECT_CONFIG = "1"; }
 env.SW_9ROUTER_URL ||= env.LUMI_9ROUTER_URL; env.SW_9ROUTER_KEY ||= env.NINEROUTER_API_KEY; // config proyek Swanwright
 delete env.OPENCODE_CONFIG;
+// service dipakai ulang hanya bila config/key/versi sama; beda → service lama milik LUMI_HOME dihentikan dulu
+if (sub === "" || sub === "service") {
+  const SCX = await import(pathToFileURL(path.join(ROOT, "lib", "service-ctl.mjs")).href);
+  const fp = SCX.fingerprint([VERSION, env.OPENCODE_CONFIG_CONTENT, FRAG.env, env.LUMI_SANDBOX || "", env.LUMI_9ROUTER_URL || "", TRUST]);
+  try { const r = SCX.ensureFresh(HOME, fp); if (env.LUMI_DEBUG) process.stderr.write(`lumitome: service ${r}\n`); } catch (e) { if (env.LUMI_DEBUG) process.stderr.write(`lumitome: cek service gagal (${e.message})\n`); }
+}
 
 // ---------- branding (tanpa patch engine) ----------
 // theme bawaan OpenCode (hanya logo emas, dari engine Lumitome) + terminal.title:false di cli.json TERISOLASI (LUMI_HOME/config) — kunci milik user dihormati
@@ -300,16 +314,20 @@ const redact = (t) => { let o = t.replace(/(server password\s*[:=]?\s*)\S+/gi, "
 // reaper: proses milik wrapper lumitome lain yang sudah mati (mis. kena kill -9) dibersihkan saat start
 const HAS_PROC = fs.existsSync("/proc/self/environ");
 function reapOrphans() {
-  let n = 0; if (!HAS_PROC) return 0;
+  let n = 0, keep = null; if (!HAS_PROC) return 0;
   for (const d of fs.readdirSync("/proc")) {
     if (!/^\d+$/.test(d)) continue;
     let e; try { e = fs.readFileSync(`/proc/${d}/environ`, "latin1"); } catch { continue; }
     const m = e.match(/(?:^|\0)LUMI_WRAPPER_PID=(\d+)/); if (!m || m[1] === String(process.pid)) continue;
     if (fs.existsSync(`/proc/${m[1]}`)) continue;
+    if ((keep ??= keepPids()).has(Number(d))) continue;
     try { process.kill(Number(d), "SIGKILL"); n++; } catch {}
   }
   return n;
 }
+// service engine milik LUMI_HOME (beserta MCP-nya) dipakai ulang lintas jalan: jangan ikut dibersihkan
+const SC = await import(pathToFileURL(path.join(ROOT, "lib", "service-ctl.mjs")).href);
+const keepPids = () => { try { return SC.protectedPids(HOME); } catch { return new Set(); } };
 const reaped = reapOrphans();
 if (reaped && env.LUMI_DEBUG) process.stderr.write(`lumitome: reaper membersihkan ${reaped} proses yatim\n`);
 // ---------- argumen ----------
@@ -330,8 +348,9 @@ if (sub === "run") {
 // ---------- jalankan + cleanup ----------
 function descendantsByRunId() {
   const out = []; if (!HAS_PROC) return out;
+  const keep = sub === "run" ? new Set() : keepPids();
   for (const d of fs.readdirSync("/proc")) {
-    if (!/^\d+$/.test(d) || Number(d) === process.pid) continue;
+    if (!/^\d+$/.test(d) || Number(d) === process.pid || keep.has(Number(d))) continue;
     try { if (fs.readFileSync(`/proc/${d}/environ`, "latin1").includes(`LUMI_RUN_ID=${RUN_ID}`)) out.push(Number(d)); } catch {}
   }
   return out;
@@ -408,7 +427,7 @@ for (let attempt = 0; ; attempt++) {
   if (deadlineHit || stallHit) break;
   if (sub === "run" && res.code !== 0 && TIMEOUT_RE.test(res.tail) && !worked && attempt < retries) {
     const wait = 2000 * 2 ** attempt;
-    process.stderr.write(`lumitome: provider timeout (idle ${idle} ms) — retry ${attempt + 1}/${retries} dalam ${wait} ms\n`);
+    process.stderr.write(`lumitome: provider timeout (idle ${TIMEOUTS.chunkTimeout} ms) — retry ${attempt + 1}/${retries} dalam ${wait} ms\n`);
     await new Promise((r) => setTimeout(r, wait)); continue;
   }
   break;
@@ -421,7 +440,7 @@ if (sub === "run") {
   const guard = j.find((r) => r.kind === "guard");
   if (deadlineHit) { process.stderr.write(`lumitome: GAGAL — melewati LUMI_DEADLINE_MS; proses dihentikan\n`); code = 124; }
   else if (stallHit) { process.stderr.write(`lumitome: GAGAL — provider diam: tak ada respons dalam LUMI_FIRST_OUTPUT_MS; proses dihentikan\n`); code = 124; }
-  else if (code !== 0 && TIMEOUT_RE.test(res.tail)) { process.stderr.write(`lumitome: GAGAL — provider timeout (header/idle ${idle} ms, ${retries} retry habis)\n`); code = 124; }
+  else if (code !== 0 && TIMEOUT_RE.test(res.tail)) { process.stderr.write(`lumitome: GAGAL — provider timeout (header ${TIMEOUTS.headerTimeout} / idle ${TIMEOUTS.chunkTimeout} ms, ${retries} retry habis)\n`); code = 124; }
   else if (code === 0 && guard?.status === "closed") { process.stderr.write(`lumitome: ${guard.reason}\n`); code = 5; }
   else if (code === 0 && !guard) { process.stderr.write("lumitome: LUMI_GUARD_MISSING — plugin guard tidak termuat; hasil tidak tepercaya\n"); code = 5; }
   else if (code === 0 && env.LUMI_DONE_GATE !== "off") {

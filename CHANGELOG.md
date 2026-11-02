@@ -2,6 +2,16 @@
 
 ## Belum dirilis
 
+## 0.3.13 — Lumitome terbuka lebih cepat; model langsung tampil
+
+- Penyebab terbesar: plugin guard memuat modul harness dengan import relatif literal. Dari salinan di `~/.lumitome/config/plugins`, path itu tidak ada, sehingga engine memantau folder induk terdekat secara rekursif (mis. `C:\Users` atau `/home`) setiap folder dibuka. Import sekarang dibangun saat runtime. Tidak ada `.git` yang dibuat di folder user, dan engine tidak diubah.
+- Service latar milik Lumitome tidak lagi dimatikan saat keluar (Linux), dan dipakai ulang lintas folder. Service dimulai ulang otomatis bila config, key provider, atau versi berubah. Perintah baru: `lumitome service status`, `lumitome service stop`. Service OpenCode milik user tidak disentuh.
+- Guard memakai folder sesi yang sedang dibuka sebagai workspace (sebelumnya folder pertama yang membuka service).
+- Empat MCP `skills-<sektor>` digabung jadi satu proses `skills` untuk semua sektor. Tool menjadi `<sektor>_skill_search`; agent sektor hanya boleh tool sektornya. Skill offensive tetap `ask`.
+- codemem hanya berjalan di repo git (lewat shim kecil; di luar git MCP-nya kosong). Auto-index juga hanya di repo git. Batas start 60 s → 15 s. stderr codemem ditulis ke `~/.lumitome/logs/codemem.err`.
+- Perbaikan: pesan timeout `lumitome run` memakai variabel `idle` yang terhapus di 0.3.11.
+- Diukur di Linux (box): waktu sampai model tampil 12,2 s → 1,7 s (folder non-git pertama), 12,8 s → 1,4 s (folder non-git lain), 3,5 s → 1,4 s (git).
+
 ## 0.3.12 — 401 "Invalid/Missing API key" di server latar; compaction.buffer valid
 
 - Config dasar memakai `{env:NINEROUTER_API_KEY}`, padahal wrapper hanya mengisi `LUMI_KEY_9ROUTER` dari `credentials.json`. Server engine yang berjalan tanpa variabel itu mengirim key kosong ke 9router. Sekarang config dasar memakai `{env:LUMI_KEY_9ROUTER}`, dan wrapper selalu mengisi `LUMI_KEY_9ROUTER` dan `NINEROUTER_API_KEY` (dari env atau `credentials.json`) untuk semua perintah, termasuk `lumitome serve --service`.

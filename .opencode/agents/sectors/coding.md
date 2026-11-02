@@ -30,10 +30,10 @@ permissions:
   - { action: "opencode_list_mcp_resources", resource: "playwright", effect: allow }
   - { action: "chromedev_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "chromedev", effect: allow }
-  - { action: "skills-coding_*", resource: "*", effect: allow }
-  - { action: "opencode_list_mcp_resources", resource: "skills-coding", effect: allow }
   - { action: "gw-coding_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "gw-coding", effect: allow }
+  - { action: "skills_coding_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "skills", effect: allow }
   - { action: "skill", resource: "*", effect: deny }
   - { action: "skill", resource: "anti-spin-circuit-breaker", effect: allow }
   - { action: "skill", resource: "audit", effect: allow }
@@ -96,7 +96,7 @@ Kamu executor sektor **coding**. Coding, devops, quality, skill-design UI. Gamed
 
 - Wajib patuhi `.opencode/rules/06-coding-karpathy.md` (minimal, bedah, asumsi=JUDGMENT, done-gate).
 - Wajib patuhi `.opencode/rules/00-doc-code-drift.md`: kode/tes > dokumen basi; drift → FACT di bagian Doc-Code Drift.
-- Muat hanya skill yang dipilih router (maks 5, dipilih otomatis oleh router Lumitome sebelum run). Butuh skill lain di tengah tugas → `skills-coding` tool `skill_search` (read-only, hanya allowlist sektor ini). Lazy-load body SKILL.md.
+- Muat hanya skill yang dipilih router (maks 5, dipilih otomatis oleh router Lumitome sebelum run). Butuh skill lain di tengah tugas → MCP `skills` tool `coding_skill_search` (read-only, hanya allowlist sektor ini). Lazy-load body SKILL.md.
 - MCP: hanya server sektor ini (deny-by-default). Lihat `docs/MCP.md`.
 - Tulis progress ke `runtime/progress.<agent_id>.md` saja.
 - Shell lewat bwrap bila tersedia. Jangan push ke main.

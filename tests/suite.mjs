@@ -241,7 +241,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const badMcp = checkMcpPolicy("tests/fixtures/opencode/bad-mcp.jsonc");
   ok("fixture MCP buruk: token literal + github enabled + @latest + kali → FAIL", ["token literal", "github: wajib disabled", "@latest", "terlarang"].every((k) => badMcp.some((e) => e.includes(k))));
   const cfgT = JSON.parse(fs.readFileSync("opencode.jsonc", "utf8").replace(/^\s*\/\/.*$/gm, ""));
-  ok("MCP enabled: context7, codemem, skills-*; disabled: figma, github, gw-*", ["context7", "codemem", "skills-coding"].every((n) => !cfgT.mcp.servers[n].disabled) && ["figma", "github", "gw-coding", "gw-finance"].every((n) => cfgT.mcp.servers[n].disabled === true));
+  ok("MCP enabled: context7, codemem, skills; disabled: figma, github, gw-*", ["context7", "codemem", "skills"].every((n) => !cfgT.mcp.servers[n].disabled) && ["figma", "github", "gw-coding", "gw-finance"].every((n) => cfgT.mcp.servers[n].disabled === true));
   const cod = fs.readFileSync(".opencode/agents/sectors/coding.md", "utf8");
   const fin = fs.readFileSync(".opencode/agents/sectors/finance.md", "utf8");
   ok("agent coding: deny *_* lalu allow codemem, delete_project=ask", cod.indexOf('"*_*"') < cod.indexOf('"codemem_*"') && /codemem_delete_project", resource: "\*", effect: ask/.test(cod));
@@ -407,14 +407,14 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("cbm: pin 6 platform + SHA256, versi sama dengan install.sh", keys.every((k) => /^[0-9a-f]{64}$/.test(CM.CBM_PINS[k][1])) && inst.includes(`CBM_VERSION=${CM.CBM_VERSION}`) && ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64"].every((k) => inst.includes(CM.CBM_PINS[k][1])) && CM.cbmAsset("win32", "x64").name.endsWith("windows-amd64.zip"));
   let bad = ""; await CM.installCbm({ home: fs.mkdtempSync(path.join(osm.tmpdir(), "lumicbm-")), log: () => {}, fetchImpl: async () => ({ ok: true, arrayBuffer: async () => new TextEncoder().encode("x").buffer }) }).catch((e) => { bad = e.message; });
   ok("cbm: SHA256 salah ditolak", /SHA256 tidak cocok/.test(bad));
-  ok("cbm: MCP codemem = path absolut tanpa argumen; null bila binary tidak ada", CM.codememServer("/h", () => true).command.join(" ") === "/h/bin/codebase-memory-mcp" && CM.codememServer("/h", () => false) === null);
+  ok("cbm: MCP codemem = node + shim + path absolut binary; startup 15 s; null bila binary tidak ada", (() => { const d = CM.codememServer("/h", () => true, "/n/node"); return d.command[0] === "/n/node" && d.command[2].endsWith("codemem-mcp-shim.mjs") && d.command[3] === path.join("/h", "bin", process.platform === "win32" ? "codebase-memory-mcp.exe" : "codebase-memory-mcp") && d.timeout.startup === 15000; })() && CM.codememServer("/h", () => false) === null);
   const ex = (set) => (f) => set.some((m) => f.endsWith(m));
   const o = { home: "/home/u", platform: "linux", env: {} };
   ok("auto-index: lewati home/root/sistem/tanpa marker/LUMI_AUTO_INDEX=0", CM.autoIndexSkip("/home/u", { ...o, exists: () => true }) && CM.autoIndexSkip("/", { ...o, exists: () => true }) && CM.autoIndexSkip("/usr/lib", { ...o, exists: () => true }) && CM.autoIndexSkip("/home/u/x", { ...o, exists: () => false }) && CM.autoIndexSkip("/home/u/p", { ...o, env: { LUMI_AUTO_INDEX: "0" }, exists: () => true }));
   ok("auto-index: proyek dengan .git / package.json / go.mod → jalan", ["/.git", "/package.json", "/go.mod", "/Cargo.toml", "/pyproject.toml"].every((m) => CM.autoIndexSkip("/home/u/p", { ...o, exists: ex([m]) }) === null));
   ok("auto-index win: C:\\Windows & home dilewati", !!CM.autoIndexSkip("C:\\Windows\\System32", { home: "C:\\Users\\F", platform: "win32", env: {}, exists: () => true }) && !!CM.autoIndexSkip("c:\\users\\f", { home: "C:\\Users\\F", platform: "win32", env: {}, exists: () => true }));
   const W = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
-  ok("default MCP = codemem + skills coding/riset/penulisan/security (finance/media hanya all/daftar)", /DEFAULT_MCP = "codemem,skills-coding,skills-riset,skills-penulisan,skills-security"/.test(W));
+  ok("default MCP = codemem + skills (satu proses, semua sektor)", /DEFAULT_MCP = "codemem,skills"/.test(W));
   ok("default agent = orchestrator (TUI), build (run headless); LUMI_AGENT menimpa", /default_agent: env\.LUMI_AGENT/.test(W) && /RUN_AGENT = "build"/.test(W) && /: "orchestrator" }/.test(W) && /"default_agent": "orchestrator"/.test(fs.readFileSync("lumitome/config/opencode.jsonc", "utf8")));
   ok("tidak pernah menjalankan `codebase-memory-mcp install`", !/\["install"/.test(fs.readFileSync("lumitome/lib/codemem.mjs", "utf8") + W));
   const orch = fs.readFileSync(".opencode/agents/orchestrator.md", "utf8");
@@ -441,7 +441,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const thKeys = ["primary", "text", "textMuted", "background", "border", "syntaxKeyword", "markdownHeading", "diffAdded"];
   ok("theme lumitome: varian dark+light, refs valid, emas brand", thKeys.every((k) => TH.theme[k]?.dark && TH.theme[k]?.light) && Object.values(TH.theme).every((v) => [v.dark, v.light].every((c) => /^#[0-9A-Fa-f]{6}$/.test(c) || c in TH.defs)) && TH.defs.champagne === "#F3D27A" && TH.defs.cornsilk === "#FFF8DC");
   ok("wrapper: themes ditautkan ke OPENCODE_CONFIG_DIR, cli.json di CFG_DIR (bukan ~/.config user), binary engine tidak disentuh", /themes: path\.join\(ROOT, "config", "themes"\)/.test(W) && /cliFile = path\.join\(CFG_DIR, "cli\.json"\)/.test(W) && !/writeFileSync\([^)]*ocBin/.test(W));
-  ok("versi 0.3.12 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.12") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.12" && /VERSION = "0\.3\.12"/.test(W) && /SW_VERSION=0\.3\.12/.test(inst));
+  ok("versi 0.3.13 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.13") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.13" && /VERSION = "0\.3\.13"/.test(W) && /SW_VERSION=0\.3\.13/.test(inst));
 }
 
 {
@@ -523,6 +523,56 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("migrasi: \"20%\" → 20000, env key lama → LUMI_KEY_9ROUTER, CRLF dipertahankan, idempoten", changed && after.includes('"buffer": 20000') && after.includes("{env:LUMI_KEY_9ROUTER}") && after.includes("\r\n") && !CM12.migrateConfigFile(cf));
   ok("migrasi: file tidak ada → aman", CM12.migrateConfigFile(path.join(h, "tidak-ada.jsonc")) === false);
   fs.rmSync(h, { recursive: true, force: true }); fs.rmSync(h2, { recursive: true, force: true });
+}
+{
+  // v0.3.13: latensi start — plugin tanpa import relatif literal, satu MCP skills, codemem via shim (git saja), service dipakai ulang
+  const osm = await import("node:os"); const cp = await import("node:child_process"); const SD = await import("../router/skill-db.mjs");
+  const G = fs.readFileSync("lumitome/config/plugins/lumitome-guard.ts", "utf8");
+  ok("plugin guard: tanpa import relatif literal (engine tidak memantau folder induk rekursif); workspace = lokasi sesi", !/import\(\s*["'`]\.\.?\//.test(G) && !/["']\.\.\/\.\.\/\.\.\/harness/.test(G) && /ctx\?\.location\?\.directory/.test(G));
+  const reqs = [{ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18" } }, { jsonrpc: "2.0", id: 2, method: "tools/list" },
+    { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "penulisan_skill_search", arguments: { query: "laporan magang", k: 3 } } },
+    { jsonrpc: "2.0", id: 4, method: "tools/call", params: { name: "skill_search", arguments: { query: "laporan magang" } } }];
+  const o = cp.execFileSync(process.execPath, ["--no-warnings", "router/skill-search-mcp.mjs", "--sectors", "all"], { input: reqs.map((x) => JSON.stringify(x)).join("\n") + "\n" }).toString().trim().split("\n").map((l) => JSON.parse(l));
+  const names = o.find((m) => m.id === 2).result.tools.map((t) => t.name);
+  const pen = new Set(SD.sectorAllowlist(SD.collectSkills().filter((x) => x.status === "active")).penulisan);
+  const r3 = o.find((m) => m.id === 3).result.structuredContent;
+  ok("MCP skills (satu proses): 6 tool <sektor>_skill_search, read-only", names.sort().join() === ["coding", "finance", "media", "penulisan", "riset", "security"].map((x) => `${x}_skill_search`).sort().join() && o.find((m) => m.id === 2).result.tools.every((t) => t.annotations.readOnlyHint));
+  ok("MCP skills: filter sektor tetap (penulisan → allowlist penulisan saja); nama tool lama ditolak di mode gabungan", r3.sector === "penulisan" && r3.results.length && r3.results.every((x) => pen.has(x.name)) && !!o.find((m) => m.id === 4).error);
+  const sec = fs.readFileSync(".opencode/agents/sectors/security.md", "utf8");
+  ok("policy agent sektor: allow skills_<sektor>_* saja; tanpa skills-<sektor>; offensive tetap ask", /"skills_security_\*", resource: "\*", effect: allow/.test(sec) && !/skills-security_/.test(sec) && /"skill", resource: "\*offensive\*", effect: ask/.test(sec) && !/skills_coding_/.test(sec));
+  const W13 = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
+  ok("wrapper: MCP skills --sectors; nama lama skills-<sektor> di LUMI_MCP diterima", /mcpOverride\.skills = \{[^}]*"--sectors"/.test(W13) && /wantMcp\.includes\(`skills-\$\{sec\}`\)/.test(W13));
+  const CM13 = await import("../lumitome/lib/codemem.mjs");
+  const ex = (set) => (f) => set.has(f);
+  ok("gitRoot: POSIX naik ke induk berisi .git; tanpa .git → null", CM13.gitRoot("/home/u/repo/src/a", { exists: ex(new Set(["/home/u/repo/.git"])), p: path.posix }) === "/home/u/repo" && CM13.gitRoot("/home/u/x", { exists: () => false, p: path.posix }) === null);
+  ok("gitRoot: path Windows (spasi, drive)", CM13.gitRoot("C:\\Users\\F\\LAB GITHUB\\p\\1", { exists: ex(new Set(["C:\\Users\\F\\LAB GITHUB\\p\\.git"])), p: path.win32 }) === "C:\\Users\\F\\LAB GITHUB\\p" && CM13.gitRoot("C:\\Users\\F\\x", { exists: () => false, p: path.win32 }) === null);
+  const h = fs.mkdtempSync(path.join(osm.tmpdir(), "lumi13-")); fs.mkdirSync(path.join(h, "bin")); fs.writeFileSync(CM13.cbmBin(h), "");
+  const ng = path.join(h, "proj"); fs.mkdirSync(ng); fs.writeFileSync(path.join(ng, "package.json"), "{}");
+  ok("auto-index: proyek tanpa git dilewati", CM13.maybeAutoIndex({ home: h, dir: ng, env: {}, runner: "/x" }) === "skip:bukan repo git");
+  const shimIn = [{ jsonrpc: "2.0", id: 1, method: "initialize", params: {} }, { jsonrpc: "2.0", id: 2, method: "tools/list" }].map((x) => JSON.stringify(x)).join("\n") + "\n";
+  const t0 = Date.now();
+  const so = cp.execFileSync(process.execPath, ["--no-warnings", CM13.SHIM, CM13.cbmBin(h)], { cwd: ng, input: shimIn, env: { ...process.env, LUMI_HOME: h } }).toString().trim().split("\n").map((l) => JSON.parse(l));
+  ok("shim codemem: di luar git → MCP tanpa tool, cepat, binary tidak dijalankan", so.find((m) => m.id === 2).result.tools.length === 0 && Date.now() - t0 < 3000);
+  if (process.platform !== "win32") {
+    const fake = path.join(h, "bin", "fake-cbm"); fs.writeFileSync(fake, "#!/bin/sh\nread l\necho '{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"serverInfo\":{\"name\":\"fake-cbm\"}}}'\n"); fs.chmodSync(fake, 0o755);
+    const gd = path.join(h, "repo", "sub"); fs.mkdirSync(path.join(h, "repo", ".git"), { recursive: true }); fs.mkdirSync(gd);
+    const go = cp.execFileSync(process.execPath, ["--no-warnings", CM13.SHIM, fake], { cwd: gd, input: shimIn, env: { ...process.env, LUMI_HOME: h } }).toString();
+    ok("shim codemem: di dalam repo git → binary dijalankan (stdio diteruskan)", go.includes("fake-cbm"));
+  }
+  const SC = await import("../lumitome/lib/service-ctl.mjs");
+  ok("service-ctl: tanpa registrasi → tidak jalan; stop aman", !SC.status(h).running && SC.stop(h) === false);
+  const svc = cp.spawn(process.execPath, ["-e", "require('child_process').spawn(process.execPath,['-e','setInterval(()=>{},1e3)'],{stdio:'ignore'});setInterval(()=>{},1e3)"], { stdio: "ignore" });
+  await new Promise((r) => setTimeout(r, 400));
+  fs.mkdirSync(path.join(h, "state", "opencode"), { recursive: true }); fs.writeFileSync(SC.regFile(h), JSON.stringify({ pid: svc.pid, url: "http://127.0.0.1:50001" }));
+  const prot = SC.protectedPids(h);
+  ok("service-ctl: status dari registrasi LUMI_HOME; PID service (+ turunan di Linux) dilindungi dari cleanup", SC.status(h).running && SC.status(h).pid === svc.pid && prot.has(svc.pid) && (process.platform !== "linux" || prot.size >= 2));
+  fs.writeFileSync(SC.fpFile(h), JSON.stringify({ fp: "a" }));
+  const r1 = SC.ensureFresh(h, "a"), r2 = SC.ensureFresh(h, "b");
+  await new Promise((r) => setTimeout(r, 300));
+  ok("service-ctl: ensureFresh reuse lalu restart; proses service mati", r1 === "reuse" && r2 === "restart" && !SC.alive(svc.pid) && [...prot].every((p) => !SC.alive(p)));
+  ok("wrapper: cleanup & reaper melewati PID service; `service stop|status`; sidik config sebelum TUI", /keep\.has\(Number\(d\)\)/.test(W13) && /\(keep \?\?= keepPids\(\)\)\.has/.test(W13) && /argv\[1\] === "stop" \|\| argv\[1\] === "status"/.test(W13) && /ensureFresh\(HOME, fp\)/.test(W13));
+  ok("wrapper: pesan timeout tidak memakai variabel `idle` yang sudah dihapus", !/\$\{idle\}/.test(W13));
+  fs.rmSync(h, { recursive: true, force: true });
 }
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

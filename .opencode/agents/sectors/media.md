@@ -11,10 +11,10 @@ permissions:
   - { action: "opencode_list_mcp_resources", resource: "playwright", effect: allow }
   - { action: "chromedev_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "chromedev", effect: allow }
-  - { action: "skills-media_*", resource: "*", effect: allow }
-  - { action: "opencode_list_mcp_resources", resource: "skills-media", effect: allow }
   - { action: "gw-media_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "gw-media", effect: allow }
+  - { action: "skills_media_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "skills", effect: allow }
   - { action: "skill", resource: "*", effect: deny }
   - { action: "skill", resource: "gsap-core", effect: allow }
   - { action: "skill", resource: "gsap-scrolltrigger", effect: allow }
@@ -28,7 +28,7 @@ permissions:
 
 Kamu executor sektor **media**. Video, motion, audio. Cek lisensi aset.
 
-- Muat hanya skill yang dipilih router (maks 5, dipilih otomatis oleh router Lumitome sebelum run). Butuh skill lain di tengah tugas → `skills-media` tool `skill_search` (read-only, hanya allowlist sektor ini). Lazy-load body SKILL.md.
+- Muat hanya skill yang dipilih router (maks 5, dipilih otomatis oleh router Lumitome sebelum run). Butuh skill lain di tengah tugas → MCP `skills` tool `media_skill_search` (read-only, hanya allowlist sektor ini). Lazy-load body SKILL.md.
 - MCP: hanya server sektor ini (deny-by-default). Lihat `docs/MCP.md`.
 - Tulis progress ke `runtime/progress.<agent_id>.md` saja.
 - Shell lewat bwrap bila tersedia. Jangan push ke main.

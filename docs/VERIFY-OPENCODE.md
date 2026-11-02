@@ -49,12 +49,7 @@ gen-policy: OK
 [PASS] api-security/llm-security tidak aktif
 [PASS] MCP context7: connected
 [PASS] MCP codemem: connected
-[PASS] MCP skills-coding: connected
-[PASS] MCP skills-media: connected
-[PASS] MCP skills-riset: connected
-[PASS] MCP skills-penulisan: connected
-[PASS] MCP skills-security: connected
-[PASS] MCP skills-finance: connected
+[PASS] MCP skills: connected
 [PASS] MCP playwright: connected (opsional)
 [PASS] MCP chromedev: connected (opsional)
 [PASS] MCP markitdown: connected (opsional)
