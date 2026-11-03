@@ -123,14 +123,115 @@ export function classifyShell(command, { workspace = process.cwd(), headless = f
   return ask || { effect: "allow" };
 }
 
+
+// ---------- akar proyek & daftar path sandbox (v0.3.15) ----------
+export const ROOT_MARKERS = [".git", "MEMORY.md", "AGENTS.md", path.join(".lumitome", "workspace")];
+const samePath = (a, b) => path.resolve(a) === path.resolve(b);
+const within = (base, p) => { const r = path.relative(base, p); return r === "" || !r.startsWith("..") && !path.isAbsolute(r); };
+/**
+ * Cari akar proyek: naik dari cwd sampai ketemu penanda. Tidak pernah melewati $HOME,
+ * dan / atau $HOME sendiri tidak pernah jadi akar. Tanpa penanda → akar = cwd.
+ */
+export function findProjectRoot(cwd, { home = os.homedir(), exists = fs.existsSync } = {}) {
+  const start = path.resolve(cwd); const h = path.resolve(home);
+  const fsRoot = path.parse(start).root;
+  if (!within(h, start)) {
+    // di luar $HOME (mis. /workspace, /srv): naik tapi tidak sampai '/'
+    let d = start;
+    while (d !== fsRoot) { if (ROOT_MARKERS.some((m) => exists(path.join(d, m)))) return d; const up = path.dirname(d); if (up === fsRoot) break; d = up; }
+    return start;
+  }
+  let d = start;
+  while (!samePath(d, h) && d !== fsRoot) {
+    if (ROOT_MARKERS.some((m) => exists(path.join(d, m)))) return d;
+    d = path.dirname(d);
+  }
+  return start;
+}
+function expandPath(p, base, home) {
+  let s = String(p);
+  if (s === "~") s = home; else if (s.startsWith("~/") || s.startsWith("~\\")) s = path.join(home, s.slice(2));
+  return path.resolve(base, s);
+}
+/** Baca .lumitome/sandbox.json {"read":[...],"write":[...]}. Path relatif terhadap akar proyek; ~ = $HOME. */
+export function parseSandboxConfig(text, { root, home = os.homedir() }) {
+  const out = { read: [], write: [], errors: [] };
+  let j; try { j = JSON.parse(text); } catch (e) { out.errors.push(`sandbox.json bukan JSON valid: ${e.message}`); return out; }
+  if (!j || typeof j !== "object" || Array.isArray(j)) { out.errors.push("sandbox.json harus objek {\"read\":[],\"write\":[]}"); return out; }
+  for (const k of ["read", "write"]) {
+    const v = j[k]; if (v === undefined) continue;
+    if (!Array.isArray(v) || v.some((x) => typeof x !== "string" || !x.trim())) { out.errors.push(`sandbox.json: '${k}' harus array string`); continue; }
+    for (const raw of v) {
+      const abs = expandPath(raw, root, home);
+      if (abs === path.parse(abs).root) { out.errors.push(`sandbox.json: '${raw}' (/) ditolak`); continue; }
+      if (k === "write" && samePath(abs, home)) { out.errors.push(`sandbox.json: write ke $HOME ('${raw}') ditolak`); continue; }
+      out[k].push(abs);
+    }
+  }
+  return out;
+}
+/** Daftar path sandbox untuk satu workspace: write = cwd (+config), read = akar proyek (+config). */
+export function sandboxPaths(workspace, { home = os.homedir(), exists = fs.existsSync, readFile = (f) => fs.readFileSync(f, "utf8") } = {}) {
+  const cwd = path.resolve(workspace);
+  const root = findProjectRoot(cwd, { home, exists });
+  const cfgFile = [path.join(cwd, ".lumitome", "sandbox.json"), path.join(root, ".lumitome", "sandbox.json")].find((f) => exists(f));
+  let cfg = { read: [], write: [], errors: [] };
+  if (cfgFile) { try { cfg = parseSandboxConfig(readFile(cfgFile), { root, home }); } catch (e) { cfg.errors.push(String(e)); } }
+  const write = [cwd, ...cfg.write.filter((p) => !samePath(p, cwd))];
+  const read = [...new Set([root, ...cfg.read])].filter((p) => !write.some((w) => within(w, p)));
+  return { cwd, root, read, write, config: cfgFile || null, errors: cfg.errors };
+}
+/** Status sebuah path terhadap daftar sandbox: "write" | "read" | "outside". */
+export function pathAccess(abs, sp) {
+  const p = path.resolve(abs);
+  if (sp.write.some((w) => within(w, p))) return "write";
+  if (sp.read.some((r) => within(r, p))) return "read";
+  return "outside";
+}
+export function outsideMessage(p, sp, kind) {
+  return `LUMI_SANDBOX_OUTSIDE: '${p}' ${kind === "write" ? "hanya bisa dibaca / di luar folder tulis" : "di luar sandbox"}. ` +
+    `Baca: ${sp.read.concat(sp.write).join(", ")}. Tulis: ${sp.write.join(", ")}. ` +
+    `Untuk mengizinkan, tambahkan path ke ${path.join(sp.root, ".lumitome", "sandbox.json")} ` +
+    `({"read":["<path>"]} atau {"write":["<path>"]}), lalu ulangi.`;
+}
+
+/** Path di perintah shell yang jelas menunjuk ke luar sandbox (~/…, ../…, atau absolut di bawah $HOME). */
+export function shellOutsidePaths(command, sp, { home = os.homedir() } = {}) {
+  const out = [];
+  for (const seg of segments(command)) for (const w of words(seg)) {
+    for (const t of String(w).split(/[=,:]/)) {
+      if (!/^(~|\.\.|\/)/.test(t) || /[*?$`]/.test(t)) continue;
+      const abs = expandPath(t, sp.cwd, home);
+      if (t.startsWith("/") && !within(path.resolve(home), abs)) continue;
+      if (pathAccess(abs, sp) === "outside") out.push(t);
+    }
+  }
+  return [...new Set(out)];
+}
+
 /** Keputusan untuk tool file (read/edit/write/glob/grep/list/patch). */
-export function classifyFileTool(tool, input, { workspace = process.cwd() } = {}) {
+export function classifyFileTool(tool, input, { workspace = process.cwd(), sandbox = null, extraRead = [] } = {}) {
   const vals = [];
   for (const k of ["path", "filePath", "file", "pattern", "include", "glob", "directory"]) if (input && typeof input[k] === "string") vals.push(input[k]);
   if (input && Array.isArray(input.paths)) vals.push(...input.paths.map(String));
   // glob/list hanya mengembalikan nama file → boleh; read/grep/edit/write/patch tetap ditolak
   if (/^(glob|list|ls)$/.test(tool)) return { effect: "allow" };
   for (const v of vals) if (isSecretPath(v) || isSecretPath(path.basename(v))) return { effect: "deny", rule: "secret", reason: `LUMI_DENY secret: ${tool} ke '${v}' dilarang` };
+  // v0.3.15: daftar path yang sama dengan bwrap (juga dipakai di Windows, tanpa bwrap)
+  if (sandbox) {
+    const pv = [];
+    for (const k of ["path", "filePath", "file", "directory"]) if (input && typeof input[k] === "string" && input[k]) pv.push(input[k]);
+    if (input && Array.isArray(input.paths)) pv.push(...input.paths.map(String));
+    if (typeof input?.patchText === "string") for (const m of input.patchText.matchAll(/^\*\*\* (?:Add|Update|Delete) File: (.+)$/gm)) pv.push(m[1].trim());
+    const isWrite = /^(edit|write|patch|multiedit|apply_patch)$/.test(tool);
+    const extra = (extraRead || []).map((d) => path.resolve(d));
+    for (const v of pv) {
+      const abs = expandPath(v, sandbox.cwd, os.homedir());
+      const acc = pathAccess(abs, sandbox);
+      if (isWrite && acc !== "write") return { effect: "deny", rule: "sandbox-write", reason: outsideMessage(v, sandbox, "write") };
+      if (!isWrite && acc === "outside" && !extra.some((d) => within(d, abs))) return { effect: "deny", rule: "sandbox-read", reason: outsideMessage(v, sandbox, "read") };
+    }
+  }
   return { effect: "allow" };
 }
 
@@ -153,15 +254,21 @@ function findSecrets(ws, depth = 5) {
 }
 const q = (v) => `'${String(v).replace(/'/g, `'\\''`)}'`;
 /** Bungkus perintah agar hanya workspace yang bisa ditulis; FS lain read-only/tidak terlihat; env dibersihkan; rahasia di-mask. */
-export function bwrapArgs(command, { workspace, toolDirs = [], env = process.env } = {}) {
+export function bwrapArgs(command, { workspace, toolDirs = [], env = process.env, sandbox = null } = {}) {
   const ws = path.resolve(workspace);
   const a = ["--die-with-parent", "--new-session", "--unshare-pid", "--unshare-ipc", "--unshare-uts", "--clearenv"];
   for (const d of ["/usr", "/bin", "/lib", "/lib64", "/lib32", "/sbin", "/opt", "/etc/alternatives", "/etc/ssl", "/etc/ca-certificates", "/etc/pki"]) if (fs.existsSync(d)) a.push("--ro-bind", d, d);
   for (const f of ["/etc/resolv.conf", "/etc/hosts", "/etc/passwd", "/etc/group", "/etc/nsswitch.conf", "/etc/localtime", "/etc/gitconfig"]) if (fs.existsSync(f)) a.push("--ro-bind", f, f);
   a.push("--proc", "/proc", "--dev", "/dev", "--tmpfs", "/tmp", "--dir", "/tmp/home");
   for (const d of toolDirs) if (d && fs.existsSync(d) && !inside(ws, d) && d !== ws) a.push("--ro-bind", d, d);
-  a.push("--bind", ws, ws);
-  for (const s of findSecrets(ws)) a.push("--ro-bind", "/dev/null", s);
+  // v0.3.15: akar proyek + read config read-only, lalu cwd + write config read-write (bind belakangan menimpa)
+  const sp = sandbox || sandboxPaths(ws);
+  const ro = sp.read.filter((d) => fs.existsSync(d)), rw = sp.write.filter((d) => fs.existsSync(d));
+  for (const d of ro) a.push("--ro-bind", d, d);
+  for (const d of rw) a.push("--bind", d, d);
+  if (!rw.some((d) => d === ws)) a.push("--bind", ws, ws);
+  const masked = new Set();
+  for (const d of [...ro, ...rw]) for (const s of findSecrets(d)) if (!masked.has(s)) { masked.add(s); a.push("--ro-bind", "/dev/null", s); }
   for (const d of toolDirs) { const s = path.join(d, "secrets.env"); if (fs.existsSync(s)) a.push("--ro-bind", "/dev/null", s); }
   const keep = { PATH: env.PATH || "/usr/bin:/bin", HOME: "/tmp/home", LANG: env.LANG || "C.UTF-8", TERM: env.TERM || "dumb", TZ: env.TZ || "", LUMI_SANDBOX: "bwrap",
     GIT_AUTHOR_NAME: env.GIT_AUTHOR_NAME || "", GIT_AUTHOR_EMAIL: env.GIT_AUTHOR_EMAIL || "", GIT_COMMITTER_NAME: env.GIT_COMMITTER_NAME || "", GIT_COMMITTER_EMAIL: env.GIT_COMMITTER_EMAIL || "", NODE_OPTIONS: "", CI: env.CI || "" };

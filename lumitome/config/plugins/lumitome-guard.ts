@@ -32,6 +32,10 @@ export default {
     const spin = g ? new g.RuntimeSpin({ maxFail: Number(env.LUMI_SPIN_MAX_FAIL || 3), maxRepeat: Number(env.LUMI_SPIN_MAX_REPEAT || 4) }) : null;
     const toolDirs = (env.LUMI_TOOLDIRS || "").split(path.delimiter).filter(Boolean);
     const headless = env.LUMI_HEADLESS === "1";
+    // v0.3.15: satu daftar path untuk bwrap dan tool file host (juga Windows tanpa bwrap)
+    let SP: any = null;
+    if (g?.sandboxPaths) { try { SP = g.sandboxPaths(WS); } catch (e) { closed ||= `LUMI_GUARD_CLOSED: daftar path sandbox gagal dibuat (${String(e)})`; } }
+    if (SP?.errors?.length) jot({ kind: "sandbox-config", errors: SP.errors, file: SP.config });
     jot({ kind: "guard", status: closed ? "closed" : "ok", sandbox, ws: WS, reason: closed || undefined });
 
     await ctx.tool.hook("execute.before", (e: any) => {
@@ -41,14 +45,15 @@ export default {
       const s = spin!.before(tool, SHELL.has(tool) ? { command: String(e.input?.command ?? "") } : e.input);
       if (s.effect === "deny") { jot({ kind: "spin", tool, reason: s.reason }); throw new Error(s.reason); }
       if (FILE.has(tool)) {
-        const d = g.classifyFileTool(tool, e.input || {}, { workspace: WS });
+        const d = g.classifyFileTool(tool, e.input || {}, { workspace: WS, sandbox: SP, extraRead: [...toolDirs, env.LUMI_HOME || ""].filter(Boolean) });
         if (d.effect === "deny") { jot({ kind: "deny", tool, rule: d.rule }); throw new Error(d.reason); }
         return;
       }
       const command = String(e.input?.command ?? "");
       const d = g.classifyShell(command, { workspace: WS, headless });
       if (d.effect === "deny") { jot({ kind: "deny", tool, rule: d.rule, command }); throw new Error(d.reason); }
-      if (sandbox === "bwrap") e.input = { ...e.input, command: g.bwrapCommand(command, { workspace: WS, toolDirs, argsDir: env.LUMI_SBX_DIR }) };
+      if (SP) { const outside = g.shellOutsidePaths(command, SP); if (outside.length) { jot({ kind: "deny", tool, rule: "sandbox-outside", command }); throw new Error(g.outsideMessage(outside[0], SP, "read")); } }
+      if (sandbox === "bwrap") e.input = { ...e.input, command: g.bwrapCommand(command, { workspace: WS, toolDirs, argsDir: env.LUMI_SBX_DIR, sandbox: SP }) };
       jot({ kind: "shell-start", command, effect: d.effect });
     });
 

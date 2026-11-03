@@ -441,7 +441,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const thKeys = ["primary", "text", "textMuted", "background", "border", "syntaxKeyword", "markdownHeading", "diffAdded"];
   ok("theme lumitome: varian dark+light, refs valid, emas brand", thKeys.every((k) => TH.theme[k]?.dark && TH.theme[k]?.light) && Object.values(TH.theme).every((v) => [v.dark, v.light].every((c) => /^#[0-9A-Fa-f]{6}$/.test(c) || c in TH.defs)) && TH.defs.champagne === "#F3D27A" && TH.defs.cornsilk === "#FFF8DC");
   ok("wrapper: themes ditautkan ke OPENCODE_CONFIG_DIR, cli.json di CFG_DIR (bukan ~/.config user), binary engine tidak disentuh", /themes: path\.join\(ROOT, "config", "themes"\)/.test(W) && /cliFile = path\.join\(CFG_DIR, "cli\.json"\)/.test(W) && !/writeFileSync\([^)]*ocBin/.test(W));
-  ok("versi 0.3.14 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.14") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.14" && /VERSION = "0\.3\.14"/.test(W) && /SW_VERSION=0\.3\.14/.test(inst));
+  ok("versi 0.3.15 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.15") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.15" && /VERSION = "0\.3\.15"/.test(W) && /SW_VERSION=0\.3\.15/.test(inst));
 }
 
 {
@@ -610,6 +610,47 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const UPD = fs.readFileSync("lumitome/lib/update.mjs", "utf8");
   ok("update: setelah pasang → migrasi config + stop service LUMI_HOME; engine tidak disentuh", /migrateConfigFile/.test(UPD) && /S\.stop\(home\)/.test(UPD) && !/bin[\\/"', ]+opencode/.test(UPD.replace(/^\s*\*.*$/gm, "")));
   fs.rmSync(home, { recursive: true, force: true });
+}
+
+// ---------- v0.3.15: sandbox akar proyek (ro) + cwd (rw) + .lumitome/sandbox.json ----------
+{
+  const G = await import("../harness/lumi-guard.mjs");
+  const os = await import("node:os");
+  const H = "/home/u"; const mk = (set) => (p) => set.has(p);
+  const root = G.findProjectRoot("/home/u/K/S5/ML/P9/Latihan", { home: H, exists: mk(new Set(["/home/u/K/S5/ML/MEMORY.md"])) });
+  ok("sandbox: akar proyek = folder induk ber-MEMORY.md", root === "/home/u/K/S5/ML");
+  ok("sandbox: penanda .git / AGENTS.md / .lumitome/workspace dikenali", [".git", "AGENTS.md", ".lumitome/workspace"].every((m) => G.findProjectRoot("/home/u/a/b", { home: H, exists: mk(new Set(["/home/u/a/" + m])) }) === "/home/u/a"));
+  ok("sandbox: penanda di $HOME tidak membuat $HOME jadi akar; tidak naik melewati $HOME", G.findProjectRoot("/home/u/a/b", { home: H, exists: mk(new Set(["/home/u/.git", "/home/.git", "/.git"])) }) === "/home/u/a/b");
+  ok("sandbox: di luar $HOME, '/' tidak pernah jadi akar", G.findProjectRoot("/srv/x/y", { home: H, exists: mk(new Set(["/.git"])) }) === "/srv/x/y" && G.findProjectRoot("/srv/x/y", { home: H, exists: mk(new Set(["/srv/x/.git"])) }) === "/srv/x");
+  const pc = G.parseSandboxConfig(JSON.stringify({ read: ["~/Shared", "../lib"], write: ["out", "/", "~"] }), { root: "/home/u/p", home: H });
+  ok("sandbox.json: ~ dan path relatif di-resolve; write '/' dan $HOME ditolak", pc.read.join() === "/home/u/Shared,/home/u/lib" && pc.write.join() === "/home/u/p/out" && pc.errors.length === 2);
+  ok("sandbox.json: JSON rusak / tipe salah → error, tanpa path", G.parseSandboxConfig("{x", { root: "/r", home: H }).errors.length === 1 && G.parseSandboxConfig('{"read":"a"}', { root: "/r", home: H }).read.length === 0);
+  const files = new Set(["/home/u/c/MEMORY.md", "/home/u/c/.lumitome/sandbox.json"]);
+  const sp = G.sandboxPaths("/home/u/c/P9/L", { home: H, exists: mk(files), readFile: () => '{"read":["~/T"],"write":["../out"]}' });
+  ok("sandboxPaths: read = akar + config, write = cwd + config", sp.root === "/home/u/c" && sp.read.join() === "/home/u/c,/home/u/T" && sp.write.join() === "/home/u/c/P9/L,/home/u/out");
+  ok("pathAccess: cwd write, induk read, lain outside", G.pathAccess("/home/u/c/P9/L/a.py", sp) === "write" && G.pathAccess("/home/u/c/Template.docx", sp) === "read" && G.pathAccess("/home/u/x", sp) === "outside");
+  const fd = (t, i) => G.classifyFileTool(t, i, { workspace: sp.cwd, sandbox: sp });
+  ok("file tool: baca template induk boleh; tulis induk / baca luar → deny + pesan cara mengizinkan", fd("read", { filePath: "../../Template.docx" }).effect === "allow" && fd("write", { filePath: "../../Template.docx" }).effect === "deny" && /LUMI_SANDBOX_OUTSIDE.*sandbox\.json/.test(fd("read", { filePath: "/home/u/x/a" }).reason) && fd("edit", { filePath: "a.py" }).effect === "allow" && fd("glob", { path: "/home/u/x" }).effect === "allow");
+  ok("shell: path ~/… atau ../.. di luar sandbox terdeteksi; di dalam akar tidak", G.shellOutsidePaths("cat ../../Template.docx > x", sp, { home: H }).length === 0 && G.shellOutsidePaths("cat ~/x/a /usr/bin/b", sp, { home: H }).join() === "~/x/a");
+  const ba = G.bwrapArgs("true", { workspace: sp.cwd, sandbox: { ...sp, read: ["/"], write: [process.cwd()] } });
+  ok("bwrap: akar --ro-bind sebelum cwd --bind", (() => { const j = ba.join(" "); const r = j.indexOf(`--ro-bind / /`); const w = j.indexOf(`--bind ${process.cwd()} ${process.cwd()}`); return r >= 0 && w > r; })());
+  // e2e Linux: python di dalam bwrap membuka template induk (ro), gagal menulisnya, bisa menulis di cwd
+  if (process.platform === "linux" && G.bwrapAvailable() && fs.existsSync("/usr/bin/python3")) {
+    const { execFileSync } = await import("node:child_process");
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-e2e-"));
+    const course = path.join(base, "Kuliyah", "ML IOT"); const cwd = path.join(course, "P9", "Latihan");
+    fs.mkdirSync(cwd, { recursive: true }); fs.writeFileSync(path.join(course, "MEMORY.md"), "#"); fs.writeFileSync(path.join(course, "Template.docx"), "TEMPLATE");
+    const spE = G.sandboxPaths(cwd, { home: base });
+    const py = "import os\nprint('READ', open('../../Template.docx').read())\ntry:\n  open('../../Template.docx','a').write('x'); print('WRITE_PARENT ok')\nexcept OSError as e: print('WRITE_PARENT', type(e).__name__, e.errno)\nopen('hasil.txt','w').write('ok'); print('WRITE_CWD ok')";
+    fs.writeFileSync(path.join(cwd, "t.py"), py);
+    const cmd = G.bwrapCommand("python3 t.py", { workspace: cwd, sandbox: spE, argsDir: path.join(base, "sbx") });
+    let out = ""; try { out = execFileSync("bash", ["-c", cmd], { encoding: "utf8" }); } catch (e) { out = String(e.stdout || "") + String(e.stderr || ""); }
+    console.log("  e2e:", out.trim().replace(/\n/g, " | "));
+    ok("e2e bwrap: root=folder kuliah; python baca Template.docx induk", spE.root === course && /READ TEMPLATE/.test(out));
+    ok("e2e bwrap: tulis Template.docx induk → gagal (read-only), file utuh", /WRITE_PARENT OSError 30/.test(out) && fs.readFileSync(path.join(course, "Template.docx"), "utf8") === "TEMPLATE");
+    ok("e2e bwrap: tulis di cwd berhasil", /WRITE_CWD ok/.test(out) && fs.readFileSync(path.join(cwd, "hasil.txt"), "utf8") === "ok");
+    fs.rmSync(base, { recursive: true, force: true });
+  } else console.log("  (e2e bwrap dilewati: bukan Linux/bwrap/python3)");
 }
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

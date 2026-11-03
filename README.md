@@ -145,6 +145,7 @@ This is optional. Skip it if you are not sure.
 - **It checks its work before saying "done".** It looks at the real result of the last test run. If the tests failed, the task is not done.
 - **It leaves your own OpenCode alone.** Lumitome keeps its own copy of OpenCode in `~/.lumitome`. It does not read or change your OpenCode settings, sessions, or saved logins.
 - **It does not trust a project's own settings by default.** Plugins and settings that come with a cloned project are ignored unless you turn them on with `LUMI_TRUST_PROJECT=1`.
+- **Commands can read the whole project, but only write in the current folder.** Lumitome looks upward from the current folder for `.git`, `MEMORY.md`, `AGENTS.md` or `.lumitome/workspace` (never above your home folder) and treats that folder as the project root. The root is readable inside the sandbox; only the current folder is writable. To allow more, add `.lumitome/sandbox.json` in the project root, for example `{"read": ["~/Shared"], "write": ["../output"]}`. Writing to `/` or your whole home folder is refused.
 
 ## Uninstall
 

@@ -2,6 +2,15 @@
 
 ## Belum dirilis
 
+## 0.3.15 — Sandbox bisa membaca folder induk proyek
+
+- Masalah: sandbox bwrap hanya memasang folder kerja. Tool cari/baca melihat file di folder induk (mis. `../../Template Laporan.docx`), tapi `python` di shell mendapat `FileNotFoundError`.
+- Lumitome sekarang mencari akar proyek: naik dari folder kerja sampai menemukan `.git`, `MEMORY.md`, `AGENTS.md` atau `.lumitome/workspace`. Tidak pernah melewati `$HOME`, dan `/` atau `$HOME` tidak pernah jadi akar. Tanpa penanda, akar = folder kerja.
+- Di bwrap, akar proyek dipasang read-only, folder kerja tetap bisa ditulis. File rahasia di akar tetap disamarkan.
+- Config opsional `.lumitome/sandbox.json`: `{"read":[...],"write":[...]}`. `~` dan path relatif (terhadap akar) didukung. `/` ditolak, write ke `$HOME` ditolak.
+- Tool file host (read/grep/edit/write/patch) memakai daftar path yang sama. Tulis di luar folder kerja, atau baca di luar akar, ditolak dengan pesan `LUMI_SANDBOX_OUTSIDE` yang menyebut cara mengizinkannya. Shell yang menyebut path `~/...` atau `../...` di luar sandbox juga ditolak dengan pesan yang sama. Aturan ini juga berlaku di Windows (tanpa bwrap) untuk tool file.
+- Belum ada dialog izin (sekali / selalu / tolak); plugin guard hanya bisa menolak. Izin permanen lewat `sandbox.json`.
+
 ## 0.3.14 — `lumitome update` yang sederhana
 
 - Tampilan baru: logo LUMITOME emas, satu baris status dengan spinner (Memeriksa, Mengunduh, Memasang, Merapikan), lalu satu baris hasil `Selesai — vX.Y.Z`. Kalau sudah terbaru: satu baris `Sudah versi terbaru`. `--check` juga satu baris.
