@@ -2,6 +2,14 @@
 
 ## Belum dirilis
 
+## 0.3.16 — Sandbox seperti Codex: baca $HOME, tulis folder kerja
+
+- Default baru, aktif tanpa config: seluruh `$HOME` dan path sistem bisa dibaca (read-only), hanya folder kerja yang bisa ditulis (plus `/tmp` sementara). Proyek di `~/Documents` bisa membaca file di `~/Downloads`, tapi tidak bisa menulis ke sana.
+- Dihapus: deteksi akar proyek (`.git`, `MEMORY.md`, `AGENTS.md`, `.lumitome/workspace`) dan `.lumitome/sandbox.json`. File `sandbox.json` yang sudah ada diabaikan.
+- Folder rahasia di `$HOME` disamarkan di bwrap dan ditolak di tool file host dan perintah shell: `~/.ssh`, `~/.gnupg`, `~/.aws`, `~/.azure`, `~/.kube`, `~/.config/gcloud`, `~/.docker/config.json`, keyring, profil/cookie browser (Chrome, Chromium, Brave, Edge, Firefox), `~/.lumitome/credentials.json`, `.netrc`, `.npmrc`, `.git-credentials`. File `.env` di bawah `$HOME` juga di-mask (pencarian dibatasi kedalaman 4).
+- Tool file host dan cek path shell memakai aturan yang sama. Tulis di luar folder kerja (redirect, `tee`, `cp`, `mv`, `touch`, edit/patch) ditolak dengan `LUMI_SANDBOX_OUTSIDE`. Windows memakai aturan yang sama dengan `%USERPROFILE%`.
+- Di dalam bwrap `HOME` sekarang `$HOME` asli (read-only); cache diarahkan ke `/tmp/.cache`.
+
 ## 0.3.15 — Sandbox bisa membaca folder induk proyek
 
 - Masalah: sandbox bwrap hanya memasang folder kerja. Tool cari/baca melihat file di folder induk (mis. `../../Template Laporan.docx`), tapi `python` di shell mendapat `FileNotFoundError`.

@@ -441,7 +441,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const thKeys = ["primary", "text", "textMuted", "background", "border", "syntaxKeyword", "markdownHeading", "diffAdded"];
   ok("theme lumitome: varian dark+light, refs valid, emas brand", thKeys.every((k) => TH.theme[k]?.dark && TH.theme[k]?.light) && Object.values(TH.theme).every((v) => [v.dark, v.light].every((c) => /^#[0-9A-Fa-f]{6}$/.test(c) || c in TH.defs)) && TH.defs.champagne === "#F3D27A" && TH.defs.cornsilk === "#FFF8DC");
   ok("wrapper: themes ditautkan ke OPENCODE_CONFIG_DIR, cli.json di CFG_DIR (bukan ~/.config user), binary engine tidak disentuh", /themes: path\.join\(ROOT, "config", "themes"\)/.test(W) && /cliFile = path\.join\(CFG_DIR, "cli\.json"\)/.test(W) && !/writeFileSync\([^)]*ocBin/.test(W));
-  ok("versi 0.3.15 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.15") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.15" && /VERSION = "0\.3\.15"/.test(W) && /SW_VERSION=0\.3\.15/.test(inst));
+  ok("versi 0.3.16 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.16") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.16" && /VERSION = "0\.3\.16"/.test(W) && /SW_VERSION=0\.3\.16/.test(inst));
 }
 
 {
@@ -612,44 +612,60 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   fs.rmSync(home, { recursive: true, force: true });
 }
 
-// ---------- v0.3.15: sandbox akar proyek (ro) + cwd (rw) + .lumitome/sandbox.json ----------
+// ---------- v0.3.16: sandbox gaya Codex: baca $HOME (ro), tulis cwd; rahasia di-mask ----------
 {
   const G = await import("../harness/lumi-guard.mjs");
   const os = await import("node:os");
-  const H = "/home/u"; const mk = (set) => (p) => set.has(p);
-  const root = G.findProjectRoot("/home/u/K/S5/ML/P9/Latihan", { home: H, exists: mk(new Set(["/home/u/K/S5/ML/MEMORY.md"])) });
-  ok("sandbox: akar proyek = folder induk ber-MEMORY.md", root === "/home/u/K/S5/ML");
-  ok("sandbox: penanda .git / AGENTS.md / .lumitome/workspace dikenali", [".git", "AGENTS.md", ".lumitome/workspace"].every((m) => G.findProjectRoot("/home/u/a/b", { home: H, exists: mk(new Set(["/home/u/a/" + m])) }) === "/home/u/a"));
-  ok("sandbox: penanda di $HOME tidak membuat $HOME jadi akar; tidak naik melewati $HOME", G.findProjectRoot("/home/u/a/b", { home: H, exists: mk(new Set(["/home/u/.git", "/home/.git", "/.git"])) }) === "/home/u/a/b");
-  ok("sandbox: di luar $HOME, '/' tidak pernah jadi akar", G.findProjectRoot("/srv/x/y", { home: H, exists: mk(new Set(["/.git"])) }) === "/srv/x/y" && G.findProjectRoot("/srv/x/y", { home: H, exists: mk(new Set(["/srv/x/.git"])) }) === "/srv/x");
-  const pc = G.parseSandboxConfig(JSON.stringify({ read: ["~/Shared", "../lib"], write: ["out", "/", "~"] }), { root: "/home/u/p", home: H });
-  ok("sandbox.json: ~ dan path relatif di-resolve; write '/' dan $HOME ditolak", pc.read.join() === "/home/u/Shared,/home/u/lib" && pc.write.join() === "/home/u/p/out" && pc.errors.length === 2);
-  ok("sandbox.json: JSON rusak / tipe salah → error, tanpa path", G.parseSandboxConfig("{x", { root: "/r", home: H }).errors.length === 1 && G.parseSandboxConfig('{"read":"a"}', { root: "/r", home: H }).read.length === 0);
-  const files = new Set(["/home/u/c/MEMORY.md", "/home/u/c/.lumitome/sandbox.json"]);
-  const sp = G.sandboxPaths("/home/u/c/P9/L", { home: H, exists: mk(files), readFile: () => '{"read":["~/T"],"write":["../out"]}' });
-  ok("sandboxPaths: read = akar + config, write = cwd + config", sp.root === "/home/u/c" && sp.read.join() === "/home/u/c,/home/u/T" && sp.write.join() === "/home/u/c/P9/L,/home/u/out");
-  ok("pathAccess: cwd write, induk read, lain outside", G.pathAccess("/home/u/c/P9/L/a.py", sp) === "write" && G.pathAccess("/home/u/c/Template.docx", sp) === "read" && G.pathAccess("/home/u/x", sp) === "outside");
+  const H = "/home/u";
+  ok("v0.3.16: deteksi akar proyek & sandbox.json dihapus", G.findProjectRoot === undefined && G.parseSandboxConfig === undefined && G.ROOT_MARKERS === undefined && !fs.readFileSync("harness/lumi-guard.mjs", "utf8").includes("sandbox.json") && !fs.readFileSync("lumitome/config/plugins/lumitome-guard.ts", "utf8").includes("sandbox.json") && !fs.readFileSync("README.md", "utf8").includes("sandbox.json"));
+  const sp = G.sandboxPaths("/home/u/Documents/projA", { home: H });
+  ok("sandboxPaths: read = $HOME + sistem, write = cwd saja", sp.read[0] === H && sp.read.includes("/usr") && sp.write.join() === "/home/u/Documents/projA" && sp.masked.includes("/home/u/.ssh"));
+  ok("sandboxPaths: .lumitome/sandbox.json lama diabaikan (tanpa opsi config)", !("config" in sp) && !("errors" in sp));
+  ok("pathAccess: cwd write, $HOME read, rahasia masked, luar outside", G.pathAccess("/home/u/Documents/projA/a.py", sp) === "write" && G.pathAccess("/home/u/Downloads/projB/x.txt", sp) === "read" && G.pathAccess("/home/u/.ssh/id_ed25519", sp) === "masked" && G.pathAccess("/home/u/.gnupg/x", sp) === "masked" && G.pathAccess("/home/u/.config/google-chrome/Default/Cookies", sp) === "masked" && G.pathAccess("/srv/x", sp) === "outside" && G.pathAccess("/usr/bin/python3", sp) === "read");
   const fd = (t, i) => G.classifyFileTool(t, i, { workspace: sp.cwd, sandbox: sp });
-  ok("file tool: baca template induk boleh; tulis induk / baca luar → deny + pesan cara mengizinkan", fd("read", { filePath: "../../Template.docx" }).effect === "allow" && fd("write", { filePath: "../../Template.docx" }).effect === "deny" && /LUMI_SANDBOX_OUTSIDE.*sandbox\.json/.test(fd("read", { filePath: "/home/u/x/a" }).reason) && fd("edit", { filePath: "a.py" }).effect === "allow" && fd("glob", { path: "/home/u/x" }).effect === "allow");
-  ok("shell: path ~/… atau ../.. di luar sandbox terdeteksi; di dalam akar tidak", G.shellOutsidePaths("cat ../../Template.docx > x", sp, { home: H }).length === 0 && G.shellOutsidePaths("cat ~/x/a /usr/bin/b", sp, { home: H }).join() === "~/x/a");
-  const ba = G.bwrapArgs("true", { workspace: sp.cwd, sandbox: { ...sp, read: ["/"], write: [process.cwd()] } });
-  ok("bwrap: akar --ro-bind sebelum cwd --bind", (() => { const j = ba.join(" "); const r = j.indexOf(`--ro-bind / /`); const w = j.indexOf(`--bind ${process.cwd()} ${process.cwd()}`); return r >= 0 && w > r; })());
-  // e2e Linux: python di dalam bwrap membuka template induk (ro), gagal menulisnya, bisa menulis di cwd
+  ok("file tool: baca projB boleh; tulis projB → LUMI_SANDBOX_OUTSIDE; tulis cwd boleh", fd("read", { filePath: "/home/u/Downloads/projB/x.txt" }).effect === "allow" && fd("grep", { path: "~/Downloads" }).effect === "allow" && /LUMI_SANDBOX_OUTSIDE: tulis/.test(fd("write", { filePath: "/home/u/Downloads/projB/x.txt" }).reason) && fd("edit", { filePath: "a.py" }).effect === "allow" && fd("write", { filePath: "../x" }).effect === "deny");
+  ok("file tool: rahasia $HOME (ssh/gnupg/aws/browser/kredensial) → deny secret", ["~/.ssh/id_rsa", "/home/u/.aws/config", "~/.gnupg/pubring.kbx", "~/.mozilla/firefox/p/cookies.sqlite", "~/.lumitome/credentials.json", "~/.local/share/keyrings/login.keyring", "/home/u/Downloads/projB/.env"].every((p) => fd("read", { filePath: p }).rule === "secret"));
+  ok("file tool: apply_patch ke luar cwd → deny", fd("apply_patch", { patchText: "*** Begin Patch\n*** Add File: /home/u/Downloads/projB/n.py\n+x\n*** End Patch" }).effect === "deny");
+  ok("file tool: di luar $HOME → deny baca; glob/list nama saja tetap boleh", fd("read", { filePath: "/srv/data/a" }).rule === "sandbox-read" && fd("glob", { path: "/srv" }).effect === "allow");
+  const so = (c) => G.shellOutsidePaths(c, sp, { home: H });
+  ok("shell: tulis ke luar cwd (redirect/tee/cp/mv/touch) → write; baca $HOME → tidak", so("cat ~/Downloads/projB/x > out.txt").length === 0 && so("echo a > ~/Downloads/projB/y")[0]?.kind === "write" && so("cp a.txt ~/Downloads/projB/").length === 1 && so("ls | tee ../log").length === 1 && so("touch ~/x").length === 1 && so("echo x > /dev/null; echo y >/tmp/z; cmd 2>&1").length === 0);
+  ok("shell: rahasia $HOME via host (cat/python) → deny secret; ls nama boleh", ["cat ~/.ssh/id_ed25519", "python3 -c \"open('/home/u/.aws/credentials')\"", "cp ~/.gnupg/secring.gpg .", "sqlite3 ~/.config/google-chrome/Default/Cookies"].every((x) => G.classifyShell(x, { workspace: sp.cwd }).rule === "secret") && G.classifyShell("ls ~/.ssh", { workspace: sp.cwd }).effect === "allow" && G.classifyShell("chromium --version", { workspace: sp.cwd }).effect === "allow");
+  ok("pesan LUMI_SANDBOX_OUTSIDE tulis menyebut folder kerja, tanpa sandbox.json", /LUMI_SANDBOX_OUTSIDE.*\/home\/u\/Documents\/projA/.test(G.outsideMessage("~/x", sp, "write")) && !/sandbox\.json/.test(G.outsideMessage("~/x", sp, "write")));
+  const PG = fs.readFileSync("lumitome/config/plugins/lumitome-guard.ts", "utf8");
+  ok("plugin: kebijakan dibuat tanpa config; gagal → LUMI_GUARD_CLOSED (fail-closed); shell pakai kind write/read", /g\.sandboxPaths\(WS\)/.test(PG) && /LUMI_GUARD_CLOSED: kebijakan sandbox/.test(PG) && /outside\[0\]\.kind/.test(PG));
+  // e2e Linux: HOME sementara, projA (~/Documents) dan projB (~/Downloads)
   if (process.platform === "linux" && G.bwrapAvailable() && fs.existsSync("/usr/bin/python3")) {
     const { execFileSync } = await import("node:child_process");
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-e2e-"));
-    const course = path.join(base, "Kuliyah", "ML IOT"); const cwd = path.join(course, "P9", "Latihan");
-    fs.mkdirSync(cwd, { recursive: true }); fs.writeFileSync(path.join(course, "MEMORY.md"), "#"); fs.writeFileSync(path.join(course, "Template.docx"), "TEMPLATE");
-    const spE = G.sandboxPaths(cwd, { home: base });
-    const py = "import os\nprint('READ', open('../../Template.docx').read())\ntry:\n  open('../../Template.docx','a').write('x'); print('WRITE_PARENT ok')\nexcept OSError as e: print('WRITE_PARENT', type(e).__name__, e.errno)\nopen('hasil.txt','w').write('ok'); print('WRITE_CWD ok')";
-    fs.writeFileSync(path.join(cwd, "t.py"), py);
-    const cmd = G.bwrapCommand("python3 t.py", { workspace: cwd, sandbox: spE, argsDir: path.join(base, "sbx") });
-    let out = ""; try { out = execFileSync("bash", ["-c", cmd], { encoding: "utf8" }); } catch (e) { out = String(e.stdout || "") + String(e.stderr || ""); }
+    const run = (cmd) => { try { return execFileSync("bash", ["-c", cmd], { encoding: "utf8" }); } catch (e) { return String(e.stdout || "") + String(e.stderr || ""); } };
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-e2e-home-"));
+    const A = path.join(home, "Documents", "projA"), B = path.join(home, "Downloads", "projB");
+    fs.mkdirSync(A, { recursive: true }); fs.mkdirSync(B, { recursive: true }); fs.mkdirSync(path.join(home, ".ssh"));
+    fs.writeFileSync(path.join(B, "data.txt"), "DATA_B"); fs.writeFileSync(path.join(B, ".env"), "TOKEN=SECRET_B"); fs.writeFileSync(path.join(home, ".ssh", "id_ed25519"), "SECRET_KEY");
+    const py = `import os
+print('READ_B', open(os.path.expanduser('~/Downloads/projB/data.txt')).read())
+try:
+  open(os.path.expanduser('~/Downloads/projB/new.txt'),'w').write('x'); print('WRITE_B ok')
+except OSError as e: print('WRITE_B', type(e).__name__, e.errno)
+open('hasil.txt','w').write('ok'); print('WRITE_A ok')
+for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
+  try: d = open(os.path.expanduser(f)).read(); print('SECRET', f, 'LEAK' if 'SECRET' in d else 'masked-empty')
+  except OSError as e: print('SECRET', f, type(e).__name__, e.errno)`;
+    fs.writeFileSync(path.join(A, "t.py"), py);
+    const spE = G.sandboxPaths(A, { home });
+    const out = run(G.bwrapCommand("python3 t.py", { workspace: A, sandbox: spE, argsDir: path.join(os.tmpdir(), "lumi-sbx-e2e") }));
     console.log("  e2e:", out.trim().replace(/\n/g, " | "));
-    ok("e2e bwrap: root=folder kuliah; python baca Template.docx induk", spE.root === course && /READ TEMPLATE/.test(out));
-    ok("e2e bwrap: tulis Template.docx induk → gagal (read-only), file utuh", /WRITE_PARENT OSError 30/.test(out) && fs.readFileSync(path.join(course, "Template.docx"), "utf8") === "TEMPLATE");
-    ok("e2e bwrap: tulis di cwd berhasil", /WRITE_CWD ok/.test(out) && fs.readFileSync(path.join(cwd, "hasil.txt"), "utf8") === "ok");
-    fs.rmSync(base, { recursive: true, force: true });
+    ok("e2e bwrap: python dari projA membaca projB", /READ_B DATA_B/.test(out));
+    ok("e2e bwrap: tulis projB → OSError 30 (read-only), tidak ada file", /WRITE_B OSError 30/.test(out) && !fs.existsSync(path.join(B, "new.txt")));
+    ok("e2e bwrap: tulis projA berhasil", /WRITE_A ok/.test(out) && fs.readFileSync(path.join(A, "hasil.txt"), "utf8") === "ok");
+    ok("e2e bwrap: ~/.ssh dan projB/.env tidak bocor", /SECRET ~\/\.ssh\/id_ed25519 (FileNotFoundError|PermissionError)/.test(out) && /SECRET ~\/Downloads\/projB\/\.env (masked-empty|PermissionError|FileNotFoundError)/.test(out) && !/LEAK/.test(out));
+    // skenario template di folder induk (laporan kuliah): baca ../../Template.docx, tidak bisa menimpanya
+    const course = path.join(home, "Kuliyah", "ML IOT"), cwd = path.join(course, "P9", "Latihan");
+    fs.mkdirSync(cwd, { recursive: true }); fs.writeFileSync(path.join(course, "Template.docx"), "TEMPLATE");
+    fs.writeFileSync(path.join(cwd, "t.py"), "print('READ', open('../../Template.docx').read())\ntry:\n  open('../../Template.docx','a').write('x'); print('WRITE_PARENT ok')\nexcept OSError as e: print('WRITE_PARENT', type(e).__name__, e.errno)\nopen('hasil.txt','w').write('ok'); print('WRITE_CWD ok')");
+    const out2 = run(G.bwrapCommand("python3 t.py", { workspace: cwd, sandbox: G.sandboxPaths(cwd, { home }), argsDir: path.join(os.tmpdir(), "lumi-sbx-e2e") }));
+    console.log("  e2e template:", out2.trim().replace(/\n/g, " | "));
+    ok("e2e template induk: baca ok, tulis induk errno 30, tulis cwd ok", /READ TEMPLATE/.test(out2) && /WRITE_PARENT OSError 30/.test(out2) && /WRITE_CWD ok/.test(out2) && fs.readFileSync(path.join(course, "Template.docx"), "utf8") === "TEMPLATE");
+    fs.rmSync(home, { recursive: true, force: true });
   } else console.log("  (e2e bwrap dilewati: bukan Linux/bwrap/python3)");
 }
 console.log(`\n${pass} passed, ${fail} failed`);

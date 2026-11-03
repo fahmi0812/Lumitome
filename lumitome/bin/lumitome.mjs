@@ -18,7 +18,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
 const REPO = path.resolve(ROOT, "..");                 // repo Swanwright
-const VERSION = "0.3.15";
+const VERSION = "0.3.16";
 const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
 const env = { ...process.env };
 const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process.exit(code); };

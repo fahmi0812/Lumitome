@@ -32,10 +32,10 @@ export default {
     const spin = g ? new g.RuntimeSpin({ maxFail: Number(env.LUMI_SPIN_MAX_FAIL || 3), maxRepeat: Number(env.LUMI_SPIN_MAX_REPEAT || 4) }) : null;
     const toolDirs = (env.LUMI_TOOLDIRS || "").split(path.delimiter).filter(Boolean);
     const headless = env.LUMI_HEADLESS === "1";
-    // v0.3.15: satu daftar path untuk bwrap dan tool file host (juga Windows tanpa bwrap)
+    // v0.3.16: satu kebijakan untuk bwrap, tool file host, dan cek path shell (Linux & Windows):
+    // baca di bawah $HOME/%USERPROFILE% (kecuali folder rahasia), tulis hanya di folder kerja.
     let SP: any = null;
-    if (g?.sandboxPaths) { try { SP = g.sandboxPaths(WS); } catch (e) { closed ||= `LUMI_GUARD_CLOSED: daftar path sandbox gagal dibuat (${String(e)})`; } }
-    if (SP?.errors?.length) jot({ kind: "sandbox-config", errors: SP.errors, file: SP.config });
+    if (g) { try { SP = g.sandboxPaths(WS); } catch (e) { closed ||= `LUMI_GUARD_CLOSED: kebijakan sandbox gagal dibuat (${String(e)}) — shell & tool tulis ditolak`; } }
     jot({ kind: "guard", status: closed ? "closed" : "ok", sandbox, ws: WS, reason: closed || undefined });
 
     await ctx.tool.hook("execute.before", (e: any) => {
@@ -52,7 +52,8 @@ export default {
       const command = String(e.input?.command ?? "");
       const d = g.classifyShell(command, { workspace: WS, headless });
       if (d.effect === "deny") { jot({ kind: "deny", tool, rule: d.rule, command }); throw new Error(d.reason); }
-      if (SP) { const outside = g.shellOutsidePaths(command, SP); if (outside.length) { jot({ kind: "deny", tool, rule: "sandbox-outside", command }); throw new Error(g.outsideMessage(outside[0], SP, "read")); } }
+      const outside = g.shellOutsidePaths(command, SP);
+      if (outside.length) { jot({ kind: "deny", tool, rule: "sandbox-outside", command }); throw new Error(g.outsideMessage(outside[0].path, SP, outside[0].kind)); }
       if (sandbox === "bwrap") e.input = { ...e.input, command: g.bwrapCommand(command, { workspace: WS, toolDirs, argsDir: env.LUMI_SBX_DIR, sandbox: SP }) };
       jot({ kind: "shell-start", command, effect: d.effect });
     });
