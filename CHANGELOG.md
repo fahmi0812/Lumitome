@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.21 — versi single-source + indeks digenerate
+
+- Versi single-source: file `VERSION` satu-satunya tempat versi ditulis; `lumitome/bin/lumitome.mjs` + `install.sh` membacanya saat jalan (tidak ada lagi `const VERSION` / `SW_VERSION` hardcode — kelas bug yang merusak rilis v0.3.17 mati). `node scripts/bump-version.mjs <x.y.z> ["judul"]` menyinkronkan `package.json`/lockfile/README/CHANGELOG + verifikasi sendiri; rilis ini dibuat dengan script itu.
+- Indeks skill digenerate: `router/skills-index.md` kini ditulis `scripts/gen-registry.mjs` dari registry (per sektor, alfabetis, deskripsi dipotong ~80 karakter) — bukan lagi dirawat manual; `--check` memverifikasi kesegarannya. Header basi "Finance: belum ada skill." hilang. Skills-index 2070 → 2115 tok (ambang 2500).
+- Tes konsistensi versi jadi version-agnostic: membaca `VERSION`, membandingkan `package.json`/README, menjalankan `--version` asli, dan menegaskan tidak ada hardcode versi di wrapper/installer.
+- Validate OK (warns 0), test 239/0, metrics golden 154 / L0-mismatch 0.
+
 ## 0.3.20 — skill external-tools + integrasi Figcraft MCP
 
 - Skill baru `external-tools` (108 aktif): satu prosedur untuk pasang aplikasi eksternal dan hubungkan ke agent — triage permukaan integrasi (MCP stdio/remote, CLI, HTTP API, file saja, GUI saja), install per OS tanpa sudo, daftarkan MCP ke Lumitome, verifikasi. Figcraft jadi contoh kerja (grounded di `docs/mcp.md` upstream).
