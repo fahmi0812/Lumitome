@@ -441,7 +441,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const thKeys = ["primary", "text", "textMuted", "background", "border", "syntaxKeyword", "markdownHeading", "diffAdded"];
   ok("theme lumitome: varian dark+light, refs valid, emas brand", thKeys.every((k) => TH.theme[k]?.dark && TH.theme[k]?.light) && Object.values(TH.theme).every((v) => [v.dark, v.light].every((c) => /^#[0-9A-Fa-f]{6}$/.test(c) || c in TH.defs)) && TH.defs.champagne === "#F3D27A" && TH.defs.cornsilk === "#FFF8DC");
   ok("wrapper: themes ditautkan ke OPENCODE_CONFIG_DIR, cli.json di CFG_DIR (bukan ~/.config user), binary engine tidak disentuh", /themes: path\.join\(ROOT, "config", "themes"\)/.test(W) && /cliFile = path\.join\(CFG_DIR, "cli\.json"\)/.test(W) && !/writeFileSync\([^)]*ocBin/.test(W));
-  ok("versi 0.3.19 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.19") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.19" && /VERSION = "0.3.19"/.test(W) && /SW_VERSION=0.3.19/.test(inst));
+  ok("versi 0.3.20 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.20") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.20" && /VERSION = "0.3.20"/.test(W) && /SW_VERSION=0.3.20/.test(inst));
 }
 
 {

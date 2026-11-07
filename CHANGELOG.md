@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.20 — skill external-tools + integrasi Figcraft MCP
+
+- Skill baru `external-tools` (108 aktif): satu prosedur untuk pasang aplikasi eksternal dan hubungkan ke agent — triage permukaan integrasi (MCP stdio/remote, CLI, HTTP API, file saja, GUI saja), install per OS tanpa sudo, daftarkan MCP ke Lumitome, verifikasi. Figcraft jadi contoh kerja (grounded di `docs/mcp.md` upstream).
+- Figcraft terdaftar sebagai MCP opsional (sektor media, mati default, pin v0.16.0): `router/mcp-sectors.json` + `opencode.jsonc` (disabled) + blok opt-in di `lumitome.mjs` (`LUMI_MCP=<default>,figcraft`, tidak ikut `all`), dengan confinement `--automation-read-root/write-root` = folder sesi. Nyalakan setelah `figcraft-cli` terpasang (AppImage: `FigCraft.AppImage cli mcp`).
+- Efisiensi (sesuai permintaan): skill hanya Markdown 118 baris, tanpa script/dependensi/proses baru; Figcraft mati default (nol biaya RAM/CPU saat tidak dipakai); skills-index 1993 → 2070 tok (ambang 2500). Validate OK, test 239/0 (1 tes baru: wiring Figcraft), metrics golden 154 / L0-mismatch 0; routing "pasang figcraft" → #1 external-tools.
+
 ## 0.3.19 — tier sandbox + SSH deploy
 
 - Sandbox jadi tiga tier kepercayaan (`lumitome trust [strict|standard|trusted]`): `strict` = perilaku lama (tulis folder kerja + bwrap, fail-closed bila bubblewrap tidak ada); `standard` = default baru (aturan tulis sama, guard saja, tanpa bwrap — tidak ada lagi fail-closed karena bwrap tidak terpasang); `trusted` = tulis selebar akar proyek (terdeteksi dari `.git`/`opencode.jsonc`/`MEMORY.md`/`.lumitome`, maks 5 tingkat ke atas, tidak melewati `$HOME`).
