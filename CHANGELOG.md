@@ -2,6 +2,14 @@
 
 ## Belum dirilis
 
+## 0.3.17 — 18 skill aktif + pack motion (107 aktif)
+
+- Skill aktif 89 → 107: `speckit-code-review`, `logo-design`, 6 skill `antislop-*`, `stack-diagram`, `floorplan`, 8 skill `effective-html-*`.
+- Skill baru: `docs-pack` (interview → 12 dokumen proyek) + slash `/docs-pack`, dan `stitch-ui` (gambar referensi → design.md + Stitch prompt + index.html) + slash `/stitch-ui`. Stitch/Gems/Vcraft adalah tool eksternal — skill hanya menghasilkan artefak.
+- Pack motion baru (dorman, 51 skill): `video-shotcraft`, `motionmaxxing`, `animate-video`, `motion-designer`, `openshorts`, `lemo-opuscar`, `directing-stickman-videos`, 9 skill `papercut-*`, 35 skill `reelmimic-*`.
+- Perbaikan rilis: versi di `VERSION`, `package.json`, `lumitome.mjs`, dan `install.sh` sempat tertinggal di 0.3.16 sehingga `lumitome update` ke v0.3.17 gagal di verifikasi rilis; sekarang konsisten 0.3.17 (cek di `tests/suite.mjs`).
+- Aturan repo diluruskan: push ke `main` boleh untuk perubahan skill lokal yang sudah terverifikasi; PR tetap untuk arsitektur/harness. Ambang token indeks skill naik ke 2500 (terukur 1993 tok).
+
 ## 0.3.16 — Sandbox seperti Codex: baca $HOME, tulis folder kerja
 
 - Default baru, aktif tanpa config: seluruh `$HOME` dan path sistem bisa dibaca (read-only), hanya folder kerja yang bisa ditulis (plus `/tmp` sementara). Proyek di `~/Documents` bisa membaca file di `~/Downloads`, tapi tidak bisa menulis ke sana.

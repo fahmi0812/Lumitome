@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.10-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.17-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -17,6 +17,8 @@
 Lumitome is a coding assistant that runs in your terminal. It is built on OpenCode, locked to version 2.2.4, and it runs separately from any OpenCode you already have installed.
 
 You give it a task, such as "fix the failing tests". It reads your code, edits files, and runs commands to get it done.
+
+107 active skills across coding, writing, research, security, finance, and media — plus 51 more in the dormant motion pack (`npm run enable-pack -- motion`). Run `/docs-pack` to scaffold a project's 12 living docs, or `/stitch-ui` to build UI from a reference image.
 
 ## Install
 
@@ -36,7 +38,7 @@ This puts everything in `~/.lumitome` and adds a `lumitome` command in `~/.local
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.10.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.17.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
