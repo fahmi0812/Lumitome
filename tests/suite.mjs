@@ -638,6 +638,36 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   fs.rmSync(h2, { recursive: true, force: true });
 }
 {
+  // v0.3.25: startup bersih — banner sandbox diam (LUMI_VERBOSE=1 untuk tampil), baris status service engine disaring dari stderr TUI
+  const QS = await import("../lumitome/lib/quiet-stderr.mjs");
+  ok("quiet-stderr: baris service engine dibuang, baris lain lolos", (() => {
+    const a = QS.filterStderr("Starting background server...\nengine hello\n", "");
+    const b = QS.filterStderr("Restarting background server (version mismatch)...\n", "");
+    return a.out === "engine hello\n" && a.rest === "" && b.out === "" && b.rest === "";
+  })());
+  ok("quiet-stderr: chunk terbelah di tengah baris tetap dibuang; baris tak lengkap ditahan", (() => {
+    const a = QS.filterStderr("Starting back", "");
+    const b = QS.filterStderr("ground server...\nlanjut\npar", a.rest);
+    return a.out === "" && a.rest === "Starting back" && b.out === "lanjut\n" && b.rest === "par";
+  })());
+  ok("quiet-stderr: baris yang hanya mengandung teks (bukan sama persis) tetap lolos", QS.filterStderr("x Starting background server...\n", "").out === "x Starting background server...\n");
+  const W25 = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
+  ok("wrapper: banner sandbox hanya bila LUMI_VERBOSE=1; stderr TUI dipipe + disaring bila bukan verbose", /process\.stderr\.isTTY && env\.LUMI_VERBOSE === "1"\)/.test(W25) && /filterErr = sub === "" && env\.LUMI_VERBOSE !== "1"/.test(W25) && /filterErr \? \["inherit", "inherit", "pipe"\]/.test(W25) && /filterStderr\(redact\(b\.toString\(\)\), errBuf\)/.test(W25));
+  // smoke test: engine tiruan mencetak baris service → default hilang, verbose muncul
+  const osm = await import("node:os");
+  const h25 = fs.mkdtempSync(path.join(osm.tmpdir(), "lumiquiet-"));
+  const stub = path.join(h25, "fake-opencode");
+  fs.writeFileSync(stub, "#!/usr/bin/env node\nprocess.stderr.write('Starting background server...\\n');\nprocess.stderr.write('Restarting background server (version mismatch)...\\n');\nprocess.stderr.write('engine hello\\n');\n");
+  fs.chmodSync(stub, 0o755);
+  const run25 = (extra) => cp.spawnSync(process.execPath, [path.resolve("lumitome/bin/lumitome.mjs")], { encoding: "utf8", timeout: 60000, cwd: h25,
+    env: { ...process.env, HOME: h25, LUMI_HOME: h25, LUMI_OPENCODE: stub, LUMI_WORKSPACE: h25, LUMI_AUTO_INDEX: "0", NINEROUTER_API_KEY: "fake", ...extra } });
+  const q1 = run25({});
+  ok("quiet TUI: baris service engine hilang, output engine lain lolos (default)", q1.status === 0 && !/Starting background server/.test(q1.stderr) && !/Restarting background server/.test(q1.stderr) && /engine hello/.test(q1.stderr));
+  const q2 = run25({ LUMI_VERBOSE: "1" });
+  ok("quiet TUI: verbose → baris service engine muncul lagi (filter mati)", q2.status === 0 && /Starting background server/.test(q2.stderr));
+  fs.rmSync(h25, { recursive: true, force: true });
+}
+{
   // v0.3.14: tampilan update sederhana (spinner satu baris), non-TTY polos, ASCII, error singkat, mode npm
   const osm = await import("node:os");
   const UI = await import("../lumitome/lib/update-ui.mjs");

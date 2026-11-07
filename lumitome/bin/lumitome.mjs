@@ -223,8 +223,10 @@ if (sub === "" || sub === "service") {
   try { const r = SCX.ensureFresh(HOME, fp); if (env.LUMI_DEBUG) process.stderr.write(`lumitome: service ${r}\n`); } catch (e) { if (env.LUMI_DEBUG) process.stderr.write(`lumitome: cek service gagal (${e.message})\n`); }
 }
 
-// v0.3.19: tampilkan tier sandbox efektif saat sesi dimulai (plugin yang menegakkan per sesi)
-if ((sub === "" || sub === "run") && process.stderr.isTTY) {
+// v0.3.19: tier sandbox efektif saat sesi dimulai (plugin yang menegakkan per sesi).
+// v0.3.25: diam secara default — baris ini rame di depan TUI (v0.3.10 sudah menghapus banner wrapper);
+// tier tetap bisa dilihat lewat `lumitome trust` + jurnal. LUMI_VERBOSE=1 untuk menampilkan.
+if ((sub === "" || sub === "run") && process.stderr.isTTY && env.LUMI_VERBOSE === "1") {
   try {
     const G = await import(pathToFileURL(path.join(REPO, "harness", "lumi-guard.mjs")).href);
     const s = G.buildSandboxScope(WS, { home: os.homedir(), lumiHome: ISO_HOME, env });
@@ -312,18 +314,31 @@ function cleanup() {
 }
 const PIPED = new Set(["run", "serve", "web"]);
 const HAS_SETPRIV = process.platform === "linux" && (() => { try { execFileSync("setpriv", ["--pdeathsig", "SIGTERM", "--", "true"], { stdio: "ignore" }); return true; } catch { return false; } })();
+// v0.3.25: filter baris status service engine di stderr TUI (lib/quiet-stderr.mjs)
+const { QUIET_ENGINE_LINES, filterStderr } = await import(pathToFileURL(path.join(ROOT, "lib", "quiet-stderr.mjs")).href);
 function runOnce(a) {
   return new Promise((resolve) => {
     // setpriv --pdeathsig: opencode ikut mati bila wrapper kena SIGKILL (sisa MCP lalu dibersihkan reaper)
     const pd = HAS_SETPRIV ? ["setpriv", ["--pdeathsig", "SIGTERM", "--", ocBin(), ...a]] : [ocBin(), a];
     // TUI & subperintah interaktif: stdio diwariskan (TTY asli); run/serve: pipe (deteksi timeout / redaksi password)
     const piped = PIPED.has(sub);
-    const child = spawn(pd[0], pd[1], { cwd: WS, env, stdio: piped ? ["inherit", "pipe", "pipe"] : "inherit" });
+    // v0.3.25: TUI & bukan verbose — stderr engine dipipe agar baris status service ("Starting background
+    // server...") bisa disaring; stdin/stdout tetap TTY asli, jadi TUI tidak terganggu.
+    const filterErr = sub === "" && env.LUMI_VERBOSE !== "1";
+    const child = spawn(pd[0], pd[1], { cwd: WS, env, stdio: piped ? ["inherit", "pipe", "pipe"] : filterErr ? ["inherit", "inherit", "pipe"] : "inherit" });
     let tail = "", out = "";
     const keep = (b) => { tail = (tail + b.toString()).slice(-8000); };
     if (piped) {
       child.stdout.on("data", (b) => { const t = redact(b.toString()); process.stdout.write(t); keep(t); out = (out + t).slice(-4000); });
       child.stderr.on("data", (b) => { const t = redact(b.toString()); process.stderr.write(t); keep(t); });
+    }
+    let errBuf = "";
+    if (filterErr) {
+      child.stderr.on("data", (b) => {
+        const r = filterStderr(redact(b.toString()), errBuf);
+        errBuf = r.rest;
+        if (r.out) process.stderr.write(r.out);
+      });
     }
     const left = DEADLINE - Date.now();
     // stop(): SIGTERM → 5 s → SIGKILL child + semua proses ber-LUMI_RUN_ID (opencode bisa menggantung saat tool berjalan)
@@ -341,7 +356,10 @@ function runOnce(a) {
       if (real.length || acted()) { clearInterval(wd); return; }
       if (Date.now() - t0 > firstMs) { clearInterval(wd); stallHit = true; stop(); }
     }, 1000) : null;
-    child.on("exit", (code, sig) => { if (timer) clearTimeout(timer); if (wd) clearInterval(wd); for (const [s, h] of Object.entries(handlers)) process.off(s, h); resolve({ code: code ?? (sig ? 128 + 1 : 1), tail }); });
+    child.on("exit", (code, sig) => {
+      if (filterErr && errBuf && !QUIET_ENGINE_LINES.has(errBuf)) process.stderr.write(errBuf);
+      if (timer) clearTimeout(timer); if (wd) clearInterval(wd); for (const [s, h] of Object.entries(handlers)) process.off(s, h); resolve({ code: code ?? (sig ? 128 + 1 : 1), tail });
+    });
   });
 }
 const readJournal = () => { try { return fs.readFileSync(JOURNAL, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l)); } catch { return []; } };

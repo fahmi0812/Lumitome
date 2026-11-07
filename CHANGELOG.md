@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.25 — v0.3.25 — Startup bersih
+
+- Startup `lumitome` (TUI) kini diam: banner sandbox (`lumitome: sandbox standard · tulis: … · guard saja`) hanya tampil bila `LUMI_VERBOSE=1` — tier tetap bisa dilihat lewat `lumitome trust` + jurnal (ARCHITECTURE.md §6 diperbarui).
+- Baris status service engine ("Starting background server..." / "Restarting background server (version mismatch)...") disaring dari stderr TUI: engine mencetaknya langsung (console.log), bukan lewat logger — `--log-level none` tidak mematikannya (terverifikasi vs engine 2.2.4-lumi.1). Filter baru `lumitome/lib/quiet-stderr.mjs` (berbasis baris, tahan chunk terbelah; hanya dua baris eksak itu yang dibuang, error tetap lolos); wrapper mem-pipe stderr TUI (stdin/stdout tetap TTY asli) bila bukan verbose.
+- Validate OK (warns 0), test 257/0 (6 tes baru: unit filter + source-grep + smoke test engine tiruan default/verbose), metrics golden 154 / L0-mismatch 0. Verifikasi manual: PTY (banner hilang default, muncul verbose) + engine asli (service jalan di port wrapper, baris difilter default, muncul verbose).
+
 ## 0.3.24 — v0.3.24 — Perbarui diagram arsitektur
 
 - `docs/diagrams/arsitektur-final.mmd` + `.png` diperbarui ke keadaan v0.3.23 (sebelumnya masih 82 skill, sebelum sandbox tiers / evaluateTool / buildFinalConfig): 5 lapisan — ① Entry (lumitome.mjs 406 baris + buildFinalConfig, VERSION single-source, `lumitome update` E2E), ② Engine OpenCode 2.2.4 terpin (orchestrator → 6 sub-agen sektor → Elephant/Goldfish/Synthesizer), ③ Skill Query Layer (Layer-0 golden 154, FTS5 BM25 + RRF, Layer-1 ≤5 skill, 108 aktif / 580 dorman, indeks 2115 tok), ④ MCP deny-by-default (skills read-only, codemem/context7/playwright/chromedev/markitdown, figcraft v0.16.0 + drawio MATI, gateway MATI), ⑤ Pagar & bukti (evaluateTool, sandbox tiers, done-gate + anti-spin exit 3/4/5, scan-gate) — model hanya 9router.
