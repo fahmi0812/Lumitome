@@ -7,7 +7,7 @@
 #   atau: bash install.sh [--doctor] [--dry-run] [--uninstall] [--no-node] [--no-cbm] [--no-uv] [--skip-npm] [--with-browsers] [--project DIR]
 set -euo pipefail
 
-SW_VERSION=0.3.17
+SW_VERSION=0.3.18
 OC_VERSION=2.2.4
 CBM_VERSION=0.12.1
 UV_VERSION=0.13.6

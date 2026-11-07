@@ -1,6 +1,10 @@
 # Changelog
 
-## Belum dirilis
+## 0.3.18 — validate + test hijau
+
+- Perbaikan kegagalan lama (sudah ada sejak clone bersih): `npm run validate` FAILED 12 dan `npm test` 221/3 — akar masalahnya devDependencies belum terpasang (`ajv` + `yaml` hilang karena `node_modules` kosong; tanpa `yaml`, parser frontmatter cadangan membaca `permissions` sebagai string, bukan array) dan deskripsi `packs/misc/skills/claude-api` 1027 karakter melewati batas 1024. Sekarang: validate OK (warns 0), test 224/0; deskripsi claude-api dipotong jadi 1005 karakter.
+- Catatan: perbaikan ini tidak mengubah skill — hanya lingkungan (`npm install`) + satu baris deskripsi.
+
 
 ## 0.3.17 — 18 skill aktif + pack motion (107 aktif)
 
