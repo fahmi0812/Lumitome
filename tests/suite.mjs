@@ -325,6 +325,18 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("done-gate v3: exit ditimpa perintah sesudah tes (; | & loop) → FAIL; && / redirect → tetap", ["node --test a.mjs > /dev/null; echo x", "npm test | tee o", "npm test &", "for i in 1 2; do npm test; done"].every((c) => G.doneGateFromJournal([{ kind: "shell", command: c, exit: 0 }]).last.exit !== 0) && ["npm test 2>&1", "npm test >o.txt 2>&1 && echo ok", "cd app && npm test"].every((c) => G.doneGateFromJournal([{ kind: "shell", command: c, exit: 0 }]).last.exit === 0));
   ok("router v3: permintaan trading → tidak ada skill; fallbackPick ≤3", SD.TRADING_RE.test("backtest strategi trading saham") && !SD.TRADING_RE.test("analisis laporan keuangan") && SD.fallbackPick([1, 2, 3, 4, 5].map((i) => ({ name: "s" + i, score: 1 / i }))).length === 3);
   ok("layer0: backend/API → coding, keuangan → finance, audit Express tidak dibajak coding", layer0("buat REST API express dengan test").sektor === "coding" && layer0("analisis laporan keuangan").sektor === "finance" && layer0("tolong audit keamanan kode Express").sektor !== "coding");
+
+  // --- v0.3.23: evaluateTool — urutan penegakan tinggal di guard, bisa diuji tanpa engine ---
+  const evSp = G.sandboxPaths(W, { home: "/home/u" });
+  const ev = (tool, input, o = {}) => G.evaluateTool(tool, input, { workspace: W, sandbox: evSp, tier: "standard", headless: true, ...o });
+  ok("evaluateTool: tool di luar SHELL/FILE → allow tanpa urutan", ev("webfetch", { url: "https://x" }).effect === "allow");
+  ok("evaluateTool: shell rahasia → deny secret; file .env → deny secret", ev("shell", { command: "cat .env" }).rule === "secret" && ev("read", { path: ".env" }).rule === "secret");
+  ok("evaluateTool: closed → tulis deny, baca allow", ev("shell", { command: "ls" }, { closed: "LUMI_GUARD_CLOSED: x" }).effect === "deny" && ev("read", { path: "a.md" }, { closed: "LUMI_GUARD_CLOSED: x" }).effect === "allow");
+  ok("evaluateTool: push branch non-headless → ask diteruskan", G.evaluateTool("shell", { command: "git push origin feat/a" }, { workspace: W, sandbox: evSp, tier: "standard", headless: false }).effect === "ask");
+  ok("evaluateTool: tulis di luar sandbox → deny sandbox-outside", ev("shell", { command: "echo x > /etc/passwd" }).rule === "sandbox-outside");
+  const evTmp = (await import("node:os")).tmpdir() + "/lumi-sbx-test";
+  ok("evaluateTool: mode bwrap → rewrite, bukan deny", (() => { const r = G.evaluateTool("shell", { command: "echo hi" }, { workspace: process.cwd(), sandbox: G.sandboxPaths(process.cwd(), { home: "/home/u" }), sandboxMode: "bwrap", argsDir: evTmp }); return r.effect === "allow" && /^bwrap --args 3 /.test(r.rewrite.command); })());
+  ok("evaluateTool: spin trip lewat urutan (identik >4x → deny spin)", (() => { const s = new G.RuntimeSpin({ maxFail: 3, maxRepeat: 4 }); let r; for (let i = 0; i < 5; i++) r = G.evaluateTool("shell", { command: "echo hi" }, { workspace: W, sandbox: evSp, spin: s }); return r.rule === "spin"; })());
 }
 
 {
@@ -335,7 +347,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok(`rules inti: ${files.length} file, ${bytes} B (budget ≤ 6000 B ≈ 1.5k token)`, files.length >= 2 && bytes <= 6000 && fs.readFileSync(path.join(rdir, "00-core.md"), "utf8").includes("LUMI-CORE-"));
   ok("config dir Lumitome membawa rules/agents/commands", ["rules", "agents", "commands"].every((n) => fs.existsSync(path.join("lumitome/config", n))) && fs.existsSync("lumitome/config/agents/orchestrator.md"));
   const W = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
-  ok("wrapper menyetel instructions dari config dir (bukan proyek)", /finalCfg\.instructions = .*CFG_DIR, "rules"/.test(W));
+  ok("buildFinalConfig menyetel instructions dari config dir (bukan proyek)", /finalCfg\.instructions = .*CFG_DIR, "rules"/.test(fs.readFileSync("lumitome/lib/build-config.mjs", "utf8")));
   const U = await import("../lumitome/lib/update.mjs");
   ok("update: cmpVer semver", U.cmpVer("v0.3.10", "0.3.2") > 0 && U.cmpVer("0.3.2", "v0.3.2") === 0 && U.cmpVer("0.2.9", "0.3.0") < 0);
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "updtag-")), g = (...a) => cp.execFileSync("git", a, { cwd: tmp, stdio: "pipe" }).toString().trim();
@@ -424,7 +436,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
   ok("npm: package publishable (tidak private), bin lumitome → cli.mjs (node, tanpa bash), postinstall", !pkg.private && pkg.bin.lumitome === "lumitome/bin/cli.mjs" && /postinstall\.mjs/.test(pkg.scripts.postinstall) && fs.readFileSync(pkg.bin.lumitome, "utf8").startsWith("#!/usr/bin/env node"));
   const Wsrc = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
-  ok("win: wrapper tanpa /proc wajib, tanpa `sleep`/setpriv di Windows, sandbox off + guard tetap", Wsrc.includes("HAS_PROC") && !Wsrc.includes('execFileSync("sleep"') && Wsrc.includes('process.platform === "linux" && (() =>') && Wsrc.includes('env.LUMI_SANDBOX = "off"'));
+  ok("win: wrapper tanpa /proc wajib, tanpa `sleep`/setpriv di Windows, sandbox off + guard tetap", Wsrc.includes("HAS_PROC") && !Wsrc.includes('execFileSync("sleep"') && Wsrc.includes('process.platform === "linux" && (() =>') && fs.readFileSync("lumitome/lib/build-config.mjs", "utf8").includes('env.LUMI_SANDBOX = "off"'));
 }
 
 {
@@ -443,8 +455,9 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("auto-index: proyek dengan .git / package.json / go.mod → jalan", ["/.git", "/package.json", "/go.mod", "/Cargo.toml", "/pyproject.toml"].every((m) => CM.autoIndexSkip("/home/u/p", { ...o, exists: ex([m]) }) === null));
   ok("auto-index win: C:\\Windows & home dilewati", !!CM.autoIndexSkip("C:\\Windows\\System32", { home: "C:\\Users\\F", platform: "win32", env: {}, exists: () => true }) && !!CM.autoIndexSkip("c:\\users\\f", { home: "C:\\Users\\F", platform: "win32", env: {}, exists: () => true }));
   const W = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
-  ok("default MCP = codemem + skills (satu proses, semua sektor)", /DEFAULT_MCP = "codemem,skills"/.test(W));
-  ok("default agent = orchestrator (TUI), build (run headless); LUMI_AGENT menimpa", /default_agent: env\.LUMI_AGENT/.test(W) && /RUN_AGENT = "build"/.test(W) && /: "orchestrator" }/.test(W) && /"default_agent": "orchestrator"/.test(fs.readFileSync("lumitome/config/opencode.jsonc", "utf8")));
+  const BC = fs.readFileSync("lumitome/lib/build-config.mjs", "utf8");
+  ok("default MCP = codemem + skills (satu proses, semua sektor)", /DEFAULT_MCP = "codemem,skills"/.test(BC));
+  ok("default agent = orchestrator (TUI), build (run headless); LUMI_AGENT menimpa", /default_agent: env\.LUMI_AGENT/.test(BC) && /RUN_AGENT = "build"/.test(BC) && /: "orchestrator" }/.test(BC) && /"default_agent": "orchestrator"/.test(fs.readFileSync("lumitome/config/opencode.jsonc", "utf8")));
   ok("tidak pernah menjalankan `codebase-memory-mcp install`", !/\["install"/.test(fs.readFileSync("lumitome/lib/codemem.mjs", "utf8") + W));
   const orch = fs.readFileSync(".opencode/agents/orchestrator.md", "utf8");
   ok("orchestrator: subagent allow (delegasi di auto mode); deskripsi agent tanpa 'Swanwright'", /action: subagent, resource: "\*", effect: allow/.test(orch) && !fs.readdirSync(".opencode/agents", { recursive: true }).filter((f) => f.endsWith(".md")).some((f) => /^description:.*Swanwright/m.test(fs.readFileSync(path.join(".opencode/agents", f), "utf8"))));
@@ -454,7 +467,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const SDB = await import("../router/skill-db.mjs");
   ok("salinan cermin pack (impeccable-2.., design-2) tidak diindeks; foldernya tetap ada", !SDB.collectSkills(".").some((x) => /^impeccable-\d+$|^design-2$/.test(x.name)) && fs.existsSync("packs/design-extra/skills/impeccable-2/SKILL.md"));
   const Wd = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8"), oc = fs.readFileSync("opencode.jsonc", "utf8");
-  ok("drawio: skill aktif terpin SHA + MCP opsional (mati default, versi npx terpin, tidak ikut 'all')", fs.existsSync(".opencode/skills/drawio-diagram/SKILL.md") && /c9dc5f5cc62e7e5a327a62b39027d80033e1548c/.test(fs.readFileSync(".opencode/skills/drawio-diagram/SKILL.md", "utf8")) && /if \(wantMcp\.includes\("drawio"\)\)/.test(Wd) && /"@next-ai-drawio\/mcp-server@0\.4\.11"\s*\],\s*"disabled": true/.test(oc));
+  ok("drawio: skill aktif terpin SHA + MCP opsional (mati default, versi npx terpin, tidak ikut 'all')", fs.existsSync(".opencode/skills/drawio-diagram/SKILL.md") && /c9dc5f5cc62e7e5a327a62b39027d80033e1548c/.test(fs.readFileSync(".opencode/skills/drawio-diagram/SKILL.md", "utf8")) && /if \(wantMcp\.includes\("drawio"\)\)/.test(fs.readFileSync("lumitome/lib/build-config.mjs", "utf8")) && /"@next-ai-drawio\/mcp-server@0\.4\.11"\s*\],\s*"disabled": true/.test(oc));
   const BR = await import("../lumitome/lib/brand.mjs");
   const brandSvg = fs.readFileSync("assets/brand/logo.svg", "utf8") + fs.readFileSync("assets/brand/generate.py", "utf8");
   ok("brand: palet banner = hex brand kit assets/brand", BR.PALETTE.every((h) => brandSvg.includes(h)));
@@ -506,7 +519,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const UI = await import("../lumitome/lib/provider-ui.mjs");
   const W = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
   ok("connect: di terminal membuka layar provider; --text / non-TTY / flag → mode teks", /sub === "connect" && process\.stdin\.isTTY && process\.stdout\.isTTY && !argv\.includes\("--text"\)[\s\S]{0,200}providerMenu\(\)/.test(W));
-  ok("brand: tidak ada banner wrapper sebelum TUI (hanya judul jendela); pesan Windows hanya LUMI_DEBUG", !W.includes("BR.banner(") && W.includes("process.stderr.write(BR.titleSeq())") && /win32" && !env\.LUMI_SANDBOX\) \{ env\.LUMI_SANDBOX = "off"; if \(env\.LUMI_DEBUG\)/.test(W));
+  ok("brand: tidak ada banner wrapper sebelum TUI (hanya judul jendela); pesan Windows hanya LUMI_DEBUG", !W.includes("BR.banner(") && W.includes("process.stderr.write(BR.titleSeq())") && /win32" && !env\.LUMI_SANDBOX\) \{ env\.LUMI_SANDBOX = "off"; if \(env\.LUMI_DEBUG\)/.test(fs.readFileSync("lumitome/lib/build-config.mjs", "utf8")));
   ok("ui/glyph: Windows codepage 437/850 tanpa Windows Terminal → ASCII; 65001 / WT / Linux → Unicode", UI.pickGlyphs({}, "win32", 437) === UI.ASCII && UI.pickGlyphs({}, "win32", 850) === UI.ASCII && UI.pickGlyphs({}, "win32", 65001) === UI.UNI && UI.pickGlyphs({ WT_SESSION: "1" }, "win32", 437) === UI.UNI && UI.pickGlyphs({}, "linux", 437) === UI.UNI && UI.pickGlyphs({ LUMI_ASCII: "1" }, "linux") === UI.ASCII);
   const st = UI.initState({ a: { models: ["m"] } }); st.key = "abc"; st.focus = "form:key";
   const fa = UI.render(st, 100, 30, UI.ASCII);
@@ -524,7 +537,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const b = PVT.providerTimeouts({ LUMI_HEADER_TIMEOUT_MS: "0", LUMI_IDLE_TIMEOUT_MS: "false", LUMI_TOTAL_TIMEOUT_MS: "-5" });
   ok("timeout: env tidak valid → default (bilangan bulat positif saja)", b.headerTimeout === 300000 && b.chunkTimeout === 900000 && b.timeout === 3600000);
   const WT = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
-  ok("timeout: 9router + semua provider custom memakai providerTimeouts, tanpa default 60000 lama", /"9router": \{ settings: \{ \.\.\.TIMEOUTS \} \}/.test(WT) && /\.\.\.p\.settings, \.\.\.TIMEOUTS/.test(WT) && !/LUMI_IDLE_TIMEOUT_MS \|\| 60000/.test(WT));
+  ok("timeout: 9router + semua provider custom memakai providerTimeouts, tanpa default 60000 lama", /"9router": \{ settings: \{ \.\.\.TIMEOUTS \} \}/.test(fs.readFileSync("lumitome/lib/build-config.mjs", "utf8")) && /\.\.\.p\.settings, \.\.\.TIMEOUTS/.test(fs.readFileSync("lumitome/lib/build-config.mjs", "utf8")) && !/LUMI_IDLE_TIMEOUT_MS \|\| 60000/.test(WT));
 }
 {
   // v0.3.12: key 9router untuk semua jalur engine (termasuk serve --service) + compaction.buffer + migrasi
@@ -545,7 +558,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const buf = (base.match(/"buffer"\s*:\s*([^,}\s]+)/) || [])[1];
   ok("config dasar: compaction.buffer integer sesuai schema 2.2.4; apiKey 9router = {env:LUMI_KEY_9ROUTER}", sch.type === "integer" && /^\d+$/.test(buf) && Number.isSafeInteger(Number(buf)) && base.includes('"apiKey": "{env:LUMI_KEY_9ROUTER}"') && !base.includes("NINEROUTER_API_KEY"));
   const W12 = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
-  ok("wrapper: env key dari FRAG di-inject untuk semua sub-perintah (serve juga)", /\.\.\.FRAG\.env,/.test(W12) && /migrateConfigFile/.test(W12) && /migrateConfigFile/.test(fs.readFileSync("lumitome/lib/update.mjs", "utf8")));
+  ok("wrapper: env key dari FRAG di-inject untuk semua sub-perintah (serve juga)", /\.\.\.FRAG\.env,/.test(fs.readFileSync("lumitome/lib/build-config.mjs", "utf8")) && /migrateConfigFile/.test(W12) && /migrateConfigFile/.test(fs.readFileSync("lumitome/lib/update.mjs", "utf8")));
   const cf = path.join(h, "opencode.jsonc");
   fs.writeFileSync(cf, '{ "providers": { "9router": { "settings": { "apiKey": "{env:NINEROUTER_API_KEY}" } } },\r\n  "compaction": { "auto": true, "buffer": "20%" } }\r\n');
   const changed = CM12.migrateConfigFile(cf), after = fs.readFileSync(cf, "utf8");
@@ -570,8 +583,9 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const sec = fs.readFileSync(".opencode/agents/sectors/security.md", "utf8");
   ok("policy agent sektor: allow skills_<sektor>_* saja; tanpa skills-<sektor>; offensive tetap ask", /"skills_security_\*", resource: "\*", effect: allow/.test(sec) && !/skills-security_/.test(sec) && /"skill", resource: "\*offensive\*", effect: ask/.test(sec) && !/skills_coding_/.test(sec));
   const W13 = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
-  ok("wrapper: MCP skills --sectors; nama lama skills-<sektor> di LUMI_MCP diterima", /mcpOverride\.skills = \{[^}]*"--sectors"/.test(W13) && /wantMcp\.includes\(`skills-\$\{sec\}`\)/.test(W13));
-  ok("figcraft: terdaftar disabled + pin v0.16.0 (sektor media), opt-in eksplisit, bukan all, confinement = WS", (() => { const M = JSON.parse(fs.readFileSync("router/mcp-sectors.json", "utf8")); const OC = fs.readFileSync("opencode.jsonc", "utf8"); return M.servers.figcraft?.default === "disabled" && M.servers.figcraft?.pin === "v0.16.0" && M.sectors.media.includes("figcraft") && /"figcraft": \{\s*[^}]*"disabled": true/.test(OC) && /wantMcp\.includes\("figcraft"\)/.test(W13) && !/wantMcp\.includes\("all"\)[^;]*figcraft/.test(W13) && /--automation-read-root", WS, "--automation-write-root", WS/.test(W13); })());
+  const BC13 = fs.readFileSync("lumitome/lib/build-config.mjs", "utf8");
+  ok("wrapper: MCP skills --sectors; nama lama skills-<sektor> di LUMI_MCP diterima", /mcpOverride\.skills = \{[^}]*"--sectors"/.test(BC13) && /wantMcp\.includes\(`skills-\$\{sec\}`\)/.test(BC13));
+  ok("figcraft: terdaftar disabled + pin v0.16.0 (sektor media), opt-in eksplisit, bukan all, confinement = WS", (() => { const M = JSON.parse(fs.readFileSync("router/mcp-sectors.json", "utf8")); const OC = fs.readFileSync("opencode.jsonc", "utf8"); return M.servers.figcraft?.default === "disabled" && M.servers.figcraft?.pin === "v0.16.0" && M.sectors.media.includes("figcraft") && /"figcraft": \{\s*[^}]*"disabled": true/.test(OC) && /wantMcp\.includes\("figcraft"\)/.test(BC13) && !/wantMcp\.includes\("all"\)[^;]*figcraft/.test(BC13) && /--automation-read-root", WS, "--automation-write-root", WS/.test(BC13); })());
   const CM13 = await import("../lumitome/lib/codemem.mjs");
   const ex = (set) => (f) => set.has(f);
   ok("gitRoot: POSIX naik ke induk berisi .git; tanpa .git → null", CM13.gitRoot("/home/u/repo/src/a", { exists: ex(new Set(["/home/u/repo/.git"])), p: path.posix }) === "/home/u/repo" && CM13.gitRoot("/home/u/x", { exists: () => false, p: path.posix }) === null);
@@ -603,6 +617,25 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("wrapper: cleanup & reaper melewati PID service; `service stop|status`; sidik config sebelum TUI", /keep\.has\(Number\(d\)\)/.test(W13) && /\(keep \?\?= keepPids\(\)\)\.has/.test(W13) && /argv\[1\] === "stop" \|\| argv\[1\] === "status"/.test(W13) && /ensureFresh\(HOME, fp\)/.test(W13));
   ok("wrapper: pesan timeout tidak memakai variabel `idle` yang sudah dihapus", !/\$\{idle\}/.test(W13));
   fs.rmSync(h, { recursive: true, force: true });
+}
+
+{
+  // v0.3.23: buildFinalConfig — rakitan config bisa diuji tanpa engine
+  const BC = await import("../lumitome/lib/build-config.mjs");
+  const osm = await import("node:os");
+  const mk = () => { const h = fs.mkdtempSync(path.join(osm.tmpdir(), "lumibcfg-")); const c = path.join(h, "config"); fs.mkdirSync(c, { recursive: true }); return { h, c }; };
+  const base = { REPO: process.cwd(), ROOT: path.join(process.cwd(), "lumitome"), WS: process.cwd(), FRAG: { providers: {}, env: {} }, MODEL: null, HAS_9R_ENV: false, TIMEOUTS: { headerTimeout: 1, chunkTimeout: 2, timeout: 3 }, TRUST: false, argv: [], prompt: "" };
+  const { h, c } = mk();
+  const env = { LUMI_MCP: "skills", LUMI_ROUTER_L1: "0" };
+  const r = await BC.buildFinalConfig({ env, ...base, HOME: h, CFG_DIR: c, JOURNAL: path.join(h, "j.jsonl"), RUN_ID: "t1", sub: "models" });
+  ok("buildFinalConfig: update disable, orchestrator, 9router dimatikan tanpa provider, MCP skills saja, deny sudo/push/.env, env terisi", r.finalCfg.update === "disable" && r.finalCfg.default_agent === "orchestrator" && r.finalCfg.disabled_providers?.includes("9router") && r.finalCfg.mcp.servers.skills && !r.finalCfg.mcp.servers.codemem && r.finalCfg.permissions.some((p) => p.resource === "*sudo *") && r.finalCfg.permissions.some((p) => p.action === "read" && p.resource === "*.env") && JSON.parse(env.OPENCODE_CONFIG_CONTENT).update === "disable" && env.OPENCODE_DISABLE_PROJECT_CONFIG === "1" && env.LUMI_WORKSPACE === process.cwd() && r.skillNote === "");
+  fs.rmSync(h, { recursive: true, force: true });
+  // jalur run: router L0 (L1 mati) membatasi skill yang terlihat + skillNote terisi
+  const { h: h2, c: c2 } = mk();
+  const env2 = { LUMI_MCP: "skills", LUMI_ROUTER_L1: "0" };
+  const r2 = await BC.buildFinalConfig({ env: env2, ...base, HOME: h2, CFG_DIR: c2, JOURNAL: path.join(h2, "j.jsonl"), RUN_ID: "t2", sub: "run", prompt: "buat REST API" });
+  ok("buildFinalConfig run: skill router membatasi skill yang terlihat", r2.skillNote.startsWith("skills=") && r2.finalCfg.default_agent === "build" && r2.finalCfg.permissions.some((p) => p.action === "skill" && p.resource === "*" && p.effect === "deny") && r2.finalCfg.permissions.some((p) => p.action === "skill" && p.effect === "allow"));
+  fs.rmSync(h2, { recursive: true, force: true });
 }
 {
   // v0.3.14: tampilan update sederhana (spinner satu baris), non-TTY polos, ASCII, error singkat, mode npm
@@ -662,7 +695,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("shell: rahasia $HOME via host (cat/python) → deny secret; ls nama boleh", ["cat ~/.ssh/id_ed25519", "python3 -c \"open('/home/u/.aws/credentials')\"", "cp ~/.gnupg/secring.gpg .", "sqlite3 ~/.config/google-chrome/Default/Cookies"].every((x) => G.classifyShell(x, { workspace: sp.cwd }).rule === "secret") && G.classifyShell("ls ~/.ssh", { workspace: sp.cwd }).effect === "allow" && G.classifyShell("chromium --version", { workspace: sp.cwd }).effect === "allow");
   ok("pesan LUMI_SANDBOX_OUTSIDE tulis menyebut folder kerja, tanpa sandbox.json", /LUMI_SANDBOX_OUTSIDE.*\/home\/u\/Documents\/projA/.test(G.outsideMessage("~/x", sp, "write")) && !/sandbox\.json/.test(G.outsideMessage("~/x", sp, "write")));
   const PG = fs.readFileSync("lumitome/config/plugins/lumitome-guard.ts", "utf8");
-  ok("plugin: kebijakan dari buildSandboxScope (tier per sesi); gagal → LUMI_GUARD_CLOSED; shell pakai kind write/read", /buildSandboxScope\(WS/.test(PG) && /LUMI_GUARD_CLOSED: kebijakan sandbox/.test(PG) && /outside\[0\]\.kind/.test(PG) && /tier: TIER/.test(PG));
+  ok("plugin: kebijakan dari buildSandboxScope (tier per sesi); gagal → LUMI_GUARD_CLOSED; urutan di guard.evaluateTool", /buildSandboxScope\(WS/.test(PG) && /LUMI_GUARD_CLOSED: kebijakan sandbox/.test(PG) && /evaluateTool\(tool, e\.input/.test(PG) && /tier: TIER/.test(PG) && /outside\[0\]\.kind/.test(fs.readFileSync("harness/lumi-guard.mjs", "utf8")));
   // v0.3.19: tier sandbox + akar proyek + SSH deploy
   {
     const cp = await import("node:child_process");

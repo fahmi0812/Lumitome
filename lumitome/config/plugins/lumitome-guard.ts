@@ -43,21 +43,20 @@ export default {
     await ctx.tool.hook("execute.before", (e: any) => {
       const tool = String(e.tool);
       if (!SHELL.has(tool) && !FILE.has(tool)) return;
-      if (closed && (SHELL.has(tool) || tool !== "read" && tool !== "glob" && tool !== "grep" && tool !== "list")) { jot({ kind: "deny", tool, rule: "closed" }); throw new Error(closed); }
-      const s = spin!.before(tool, SHELL.has(tool) ? { command: String(e.input?.command ?? "") } : e.input);
-      if (s.effect === "deny") { jot({ kind: "spin", tool, reason: s.reason }); throw new Error(s.reason); }
-      if (FILE.has(tool)) {
-        const d = g.classifyFileTool(tool, e.input || {}, { workspace: WS, sandbox: SP, extraRead: [...toolDirs, env.LUMI_HOME || ""].filter(Boolean) });
-        if (d.effect === "deny") { jot({ kind: "deny", tool, rule: d.rule }); throw new Error(d.reason); }
+      if (!g) {
+        // Guard gagal dimuat: fail-closed untuk tulis, baca tetap jalan (urutan ada di g.evaluateTool).
+        if (SHELL.has(tool) || (tool !== "read" && tool !== "glob" && tool !== "grep" && tool !== "list")) { jot({ kind: "deny", tool, rule: "closed" }); throw new Error(closed); }
         return;
       }
-      const command = String(e.input?.command ?? "");
-      const d = g.classifyShell(command, { workspace: WS, headless, tier: TIER });
-      if (d.effect === "deny") { jot({ kind: "deny", tool, rule: d.rule, command }); throw new Error(d.reason); }
-      const outside = g.shellOutsidePaths(command, SP);
-      if (outside.length) { jot({ kind: "deny", tool, rule: "sandbox-outside", command }); throw new Error(g.outsideMessage(outside[0].path, SP, outside[0].kind)); }
-      if (sandbox === "bwrap") e.input = { ...e.input, command: g.bwrapCommand(command, { workspace: WS, toolDirs, argsDir: env.LUMI_SBX_DIR, sandbox: SP }) };
-      jot({ kind: "shell-start", command, effect: d.effect });
+      // Urutan penegakan tinggal di guard (harness/lumi-guard.mjs: evaluateTool); plugin hanya wiring.
+      const command = SHELL.has(tool) ? String(e.input?.command ?? "") : "";
+      const r = g.evaluateTool(tool, e.input || {}, { workspace: WS, sandbox: SP, tier: TIER, headless, toolDirs, argsDir: env.LUMI_SBX_DIR, sandboxMode: sandbox, spin, closed, lumiHome: env.LUMI_HOME || "" });
+      if (r.effect === "deny") {
+        jot(r.rule === "spin" ? { kind: "spin", tool, reason: r.reason } : { kind: "deny", tool, rule: r.rule, ...(r.command ? { command: r.command } : {}) });
+        throw new Error(r.reason);
+      }
+      if (r.rewrite) e.input = { ...e.input, command: r.rewrite.command };
+      if (SHELL.has(tool)) jot({ kind: "shell-start", command, effect: r.effect });
     });
 
     await ctx.tool.hook("execute.after", (e: any) => {

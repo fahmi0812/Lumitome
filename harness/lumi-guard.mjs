@@ -347,6 +347,55 @@ export function classifyFileTool(tool, input, { workspace = process.cwd(), sandb
   return { effect: "allow" };
 }
 
+// ---------- urutan penegakan (v0.3.23) ----------
+// Nama tool yang dijaga. Cerminan di lumitome/config/plugins/lumitome-guard.ts — plugin harus
+// memfilter hook bahkan saat modul guard gagal dimuat, jadi daftar ini ada di dua tempat.
+export const SHELL_TOOLS = new Set(["shell", "bash"]);
+export const FILE_TOOLS = new Set(["read", "edit", "write", "glob", "grep", "list", "patch", "multiedit", "apply_patch"]);
+
+/**
+ * Satu titik penegakan untuk hook tool.execute.before: urutan kebijakan tinggal di guard,
+ * plugin hanya wiring (panggil ini, lempar bila deny, terapkan rewrite, jurnal).
+ * Urutan (sama persis dengan yang dulu tinggal di plugin): fail-closed → anti-spin →
+ * file: classifyFileTool → shell: classifyShell → shellOutsidePaths → bwrap rewrite.
+ * Kembali: { effect: "allow" | "ask" | "deny", rule?, reason?, rewrite? }.
+ * - deny: plugin melempar reason (jurnal: kind "spin" bila rule spin, selain itu "deny").
+ * - allow/ask: lanjut; rewrite.command (bila ada) menggantikan input.command (mode bwrap).
+ * - "ask" (mis. push branch non-headless) diteruskan apa adanya — lapisan izin OpenCode yang menangani.
+ */
+export function evaluateTool(tool, input, ctx = {}) {
+  const t = String(tool);
+  if (!SHELL_TOOLS.has(t) && !FILE_TOOLS.has(t)) return { effect: "allow" };
+  const { workspace = process.cwd(), sandbox = null, tier = "standard", headless = false, toolDirs = [], argsDir, sandboxMode = "off", spin = null, closed = "", lumiHome = "" } = ctx;
+  // 1) fail-closed: guard/sandbox gagal dibangun → tulis ditolak, baca tetap jalan
+  if (closed && (SHELL_TOOLS.has(t) || (t !== "read" && t !== "glob" && t !== "grep" && t !== "list"))) {
+    return { effect: "deny", rule: "closed", reason: closed };
+  }
+  // 2) anti-spin (per-signature; instance dibuat sekali di setup plugin, dilewat ctx)
+  if (spin) {
+    const s = spin.before(t, SHELL_TOOLS.has(t) ? { command: String(input?.command ?? "") } : input);
+    if (s.effect === "deny") return { effect: "deny", rule: "spin", reason: s.reason };
+  }
+  // 3) tool file: satu klasifikasi, lalu selesai
+  if (FILE_TOOLS.has(t)) {
+    const d = classifyFileTool(t, input || {}, { workspace, sandbox, extraRead: [...toolDirs, lumiHome].filter(Boolean) });
+    if (d.effect === "deny") return { effect: "deny", rule: d.rule, reason: d.reason };
+    return { effect: "allow" };
+  }
+  // 4) shell: klasifikasi perintah
+  const command = String(input?.command ?? "");
+  const d = classifyShell(command, { workspace, headless, tier });
+  if (d.effect === "deny") return { effect: "deny", rule: d.rule, reason: d.reason, command };
+  // 5) shell: path di luar kebijakan sandbox
+  const outside = shellOutsidePaths(command, sandbox);
+  if (outside.length) return { effect: "deny", rule: "sandbox-outside", reason: outsideMessage(outside[0].path, sandbox, outside[0].kind), command };
+  // 6) bwrap: bungkus perintah (rewrite), bukan tolak
+  if (sandboxMode === "bwrap") {
+    return { effect: d.effect, rewrite: { command: bwrapCommand(command, { workspace, toolDirs, argsDir, sandbox }) } };
+  }
+  return { effect: d.effect };
+}
+
 // ---------- bwrap ----------
 export function bwrapAvailable() {
   try { execFileSync("bwrap", ["--ro-bind", "/", "/", "--unshare-pid", "--proc", "/proc", "--dev", "/dev", "true"], { stdio: "ignore", timeout: 5000 }); return true; }

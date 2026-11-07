@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.23 — v0.3.23 — Dalamkan seam
+
+- Urutan penegakan guard pindah ke guard: `harness/lumi-guard.mjs: evaluateTool(tool, input, ctx)` → `{effect, reason, rewrite}` — fail-closed → anti-spin → classifyFileTool → classifyShell → shellOutsidePaths → bwrap rewrite; plugin `lumitome-guard.ts` tinggal wiring (panggil, lempar bila deny, terapkan rewrite, jurnal) + cabang fail-closed bila guard gagal dimuat. Urutan kini bisa diuji tanpa engine (7 tes baru). `SHELL/FILE_TOOLS` dicerminkan di dua tempat (plugin harus memfilter hook saat guard gagal dimuat).
+- Seam config: `lumitome/lib/build-config.mjs: buildFinalConfig(env)` — rakitan config final (mcpOverride, finalCfg + deny list, skill routing, env) keluar dari `lumitome/bin/lumitome.mjs` (512 → 406 baris); entry tinggal dispatch (subcommand, service, branding, spawn/cleanup). Auto-index + setup config dir tetap di entry (manajemen proses & persiapan filesystem, bukan rakitan config). 2 tes baru (jalur models + run dengan router L0). Smoke test: `lumitome run` tanpa pesan mencapai validasi argumen lewat buildFinalConfig (exit 2, "run butuh pesan").
+- Validate OK (warns 0), test 251/0, metrics golden 154 / L0-mismatch 0.
+
 ## 0.3.22 — v0.3.22 — Bersihkan duplikasi
 
 - Hapus 4 module harness mati (`harness/anti-spin.ts`, `quality-loop.ts`, `root-cause-gate.ts`, `post-push.ts`) — nol pemanggil (wrapper, plugin, tes); header `post-push.ts` ("The plugin reads it") ternyata tidak benar. `QualityObligation` di `io-schema/types.ts` dibiarkan (nilai skema, bukan import).
