@@ -1,25 +1,26 @@
 ---
 config:
-  layout: elk
   flowchart:
     padding: 18
 ---
 flowchart TB
   U["Pengguna (Fahmi)<br/>laptop: Linux / macOS / WSL2"]
 
-  subgraph INST["① Pemasangan — install.sh (idempoten, tanpa ~/.config/opencode)"]
+  subgraph ENTRY["① Entry — lumitome.mjs (406 baris) + buildFinalConfig"]
     direction LR
-    I1["OpenCode v2.2.4<br/>tarball rilis + SHA256SUMS"]
-    I2["Node 22.23.4<br/>node:sqlite + FTS5"]
-    I3["codebase-memory-mcp v0.12.1<br/>checksum · tanpa 'install'"]
-    I4["uv/uvx 0.13.6<br/>markitdown-mcp"]
-    I5["doctor<br/>skill=82 · MCP · plugin"]
+    E1["lumitome.mjs<br/>CLI · run / update / trust / connect"]
+    E2["buildFinalConfig<br/>mcpOverride · finalCfg · deny list"]
+    E3["VERSION single-source<br/>v0.3.21 · bump-version.mjs"]
+    E4["Provider<br/>9router 127.0.0.1:20128 + custom"]
+    E3 --> E2
+    E4 --> E2
+    E1 -. "lumitome update<br/>VERSION == tag · E2E" .-> E2
   end
 
-  subgraph OC["② OpenCode v2.2.4 + lapisan .opencode/ (Code Mode aktif)"]
+  subgraph ENG["② Engine — OpenCode v2.2.4 terpin (SHA256) · ~/.lumitome"]
     direction TB
     ORC["Orchestrator (primary)<br/>restate → routing → tahan DONE"]
-    SEK["Sub-agen sektor (depth=1)<br/>coding · media · riset · penulisan · security · finance"]
+    SEK["Sub-agen sektor (depth=1)<br/>coding · security · riset · penulisan · media · finance"]
     AUX["Elephant (spec) · Goldfish (review)<br/>Synthesizer (gabung)"]
     ORC -- "≤5 skill + sektor" --> SEK
     ORC -. "tugas kompleks" .-> AUX
@@ -27,47 +28,46 @@ flowchart TB
   end
 
   subgraph SQL["③ Skill Query Layer — runtime/skills.db"]
-    direction TB
-    REG["skills-registry + SKILL.md<br/>82 aktif · pack · disabled"]
-    IDX["skill-index.mjs<br/>rebuild bila hash berubah"]
-    DB["skill · skill_fts (BM25)<br/>skill_vec (opsional) · allowed_skill<br/>skill_edge · route_log"]
-    REG --> IDX --> DB
+    direction LR
+    L0["Layer-0 regex<br/>golden 154 · 0 mismatch"]
+    DB["skill · skill_fts (BM25)<br/>RRF · top-24 · route_log"]
+    L1["Layer-1 pilih-saja<br/>1 panggilan · skills ≤5"]
+    REG["108 skill aktif<br/>580 dorman (pack) · indeks 2115 tok"]
+    L0 --> DB --> L1
+    REG --> DB
   end
 
-  subgraph MCP["④ MCP per sektor — deny-by-default"]
+  subgraph MCP["④ MCP — deny-by-default"]
     direction LR
-    M1["context7 · codemem<br/>(aktif)"]
-    M2["playwright · chromedev<br/>markitdown (aktif)"]
-    M3["skills (satu server)<br/>skill_search read-only"]
-    M4["figma (OAuth) · github (token)<br/>default MATI"]
-    M5["Gateway opsional gw-&lt;sektor&gt;<br/>Docker MCP / ContextForge · MATI"]
+    M1["skills (satu server)<br/>skill_search read-only"]
+    M2["codemem · context7<br/>playwright · chromedev · markitdown"]
+    M3["figcraft v0.16.0 · drawio<br/>default MATI · opt-in LUMI_MCP"]
+    M4["Gateway gw-&lt;sektor&gt;<br/>Docker MCP / ContextForge · MATI"]
   end
 
-  subgraph GATE["⑤ Pagar & bukti"]
+  subgraph GATE["⑤ Pagar & bukti — guard + jurnal"]
     direction LR
-    DG["Done-gate<br/>FACT / JUDGMENT"]
+    EV["evaluateTool (v0.3.23)<br/>fail-closed → anti-spin → classify → outside → bwrap"]
+    SB["Sandbox tiers<br/>strict · standard · trusted · trust.json"]
+    DG["Done-gate + anti-spin<br/>jurnal JSONL · exit 3 / 4 / 5"]
     SG["Scan-gate<br/>osv-scanner + gitleaks"]
-    BW["Sandbox bwrap"]
-    PG["Plugin: blok push main<br/>+ blok cbm install"]
+    EV --> SB
+    EV --> DG
+    DG --> SG
   end
 
-  R9["9router 127.0.0.1:20128<br/>satu-satunya model"]
+  R9["9router 127.0.0.1:20128/v1<br/>satu-satunya model"]
+  OUT["Hasil → Fahmi<br/>lolos done-gate"]
 
-  U --> INST
-  INST --> OC
   U -- "tugas" --> ORC
+  ENTRY --> ENG
   ORC -- "Layer-0 + SQL + RRF" --> DB
   ORC -- "1 panggilan pilih-saja" --> R9
   SEK -- "inferensi" --> R9
   SEK --> M1
   SEK --> M2
   SEK -. "butuh skill lain" .-> M3
-  M3 -. "baca" .-> DB
   SEK -.-> M4
-  SEK -.-> M5
+  SEK -. "shell / file" .-> EV
   AUX --> DG
-  DG --> SG
-  SEK -. "shell" .-> BW
-  SEK -.-> PG
-  DG -- "lolos → hasil" --> U
-  DG -- "route_log" --> DB
+  DG -- "lolos → hasil" --> OUT

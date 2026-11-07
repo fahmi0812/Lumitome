@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.24 — v0.3.24 — Perbarui diagram arsitektur
+
+- `docs/diagrams/arsitektur-final.mmd` + `.png` diperbarui ke keadaan v0.3.23 (sebelumnya masih 82 skill, sebelum sandbox tiers / evaluateTool / buildFinalConfig): 5 lapisan — ① Entry (lumitome.mjs 406 baris + buildFinalConfig, VERSION single-source, `lumitome update` E2E), ② Engine OpenCode 2.2.4 terpin (orchestrator → 6 sub-agen sektor → Elephant/Goldfish/Synthesizer), ③ Skill Query Layer (Layer-0 golden 154, FTS5 BM25 + RRF, Layer-1 ≤5 skill, 108 aktif / 580 dorman, indeks 2115 tok), ④ MCP deny-by-default (skills read-only, codemem/context7/playwright/chromedev/markitdown, figcraft v0.16.0 + drawio MATI, gateway MATI), ⑤ Pagar & bukti (evaluateTool, sandbox tiers, done-gate + anti-spin exit 3/4/5, scan-gate) — model hanya 9router.
+- Validate OK (warns 0), test 251/0, metrics golden 154 / L0-mismatch 0.
+
 ## 0.3.23 — v0.3.23 — Dalamkan seam
 
 - Urutan penegakan guard pindah ke guard: `harness/lumi-guard.mjs: evaluateTool(tool, input, ctx)` → `{effect, reason, rewrite}` — fail-closed → anti-spin → classifyFileTool → classifyShell → shellOutsidePaths → bwrap rewrite; plugin `lumitome-guard.ts` tinggal wiring (panggil, lempar bila deny, terapkan rewrite, jurnal) + cabang fail-closed bila guard gagal dimuat. Urutan kini bisa diuji tanpa engine (7 tes baru). `SHELL/FILE_TOOLS` dicerminkan di dua tempat (plugin harus memfilter hook saat guard gagal dimuat).
