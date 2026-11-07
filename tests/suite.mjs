@@ -133,7 +133,7 @@ ok("perubahan fitur biasa -> tanpa WARN drift", checkRewriteToDocs({ changedFile
 
 // --- v0.1.3: kompatibilitas OpenCode ---
 const act = checkSkillsDir(".opencode/skills");
-ok("107 skill aktif valid (nama=folder, regex, deskripsi)", act.errors.length === 0 && act.names.length === 107);
+ok("108 skill aktif valid (nama=folder, regex, deskripsi)", act.errors.length === 0 && act.names.length === 108);
 ok("semua pack skill valid", fs.readdirSync("packs").every((p) => checkSkillsDir(`packs/${p}/skills`).errors.length === 0));
 const bad = checkSkillsDir("tests/fixtures/opencode/bad-skills");
 ok("fixture: folder foo__bar / name beda -> FAIL", bad.errors.some((e) => e.includes("foo__bar")) && !bad.errors.some((e) => e.includes("good-one")));
@@ -169,7 +169,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const { checkMcpPolicy } = await import("../scripts/check-opencode.mjs");
   delete process.env.SW_EMBED; delete process.env.SW_EMBED_MODEL;
   const built = await SD.buildIndex({ quiet: true });
-  ok("indeks: 107 aktif, api/llm-security disabled", built.counts.active === 107 && built.counts.disabled > 0);
+  ok("indeks: 108 aktif, api/llm-security disabled", built.counts.active === 108 && built.counts.disabled > 0);
   const db = SD.openDb("runtime/skills.db", { readOnly: true });
   const st = Object.fromEntries(db.prepare("SELECT name,status FROM skill WHERE name IN ('api-security','llm-security')").all().map((r) => [r.name, r.status]));
   ok("api-security & llm-security status=disabled di indeks", st["api-security"] === "disabled" && st["llm-security"] === "disabled");
@@ -200,7 +200,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
     // v0.3.1: enrichment, trigram, gating L1, timeout keras, cache rute
     const d = SD.openDb("runtime/skills.db");
     const en = d.prepare("SELECT json FROM skill_enrich").all().map((r) => JSON.parse(r.json));
-    ok(`enrich: ${en.length} skill aktif, masing2 3–5 contoh + alias`, en.length === 107 && en.every((e) => e.examples.length >= 3 && e.examples.length <= 5 && e.aliases_en.length > 0));
+    ok(`enrich: ${en.length} skill aktif, masing2 3–5 contoh + alias`, en.length === 108 && en.every((e) => e.examples.length >= 3 && e.examples.length <= 5 && e.aliases_en.length > 0));
     const L = await import("../router/l0.mjs");
     const r1 = L.searchL0(d, "deploi ke vercle"); d.close();
     ok("L0 trigram: typo 'deploi ke vercle' → vercel-ops top1", r1.candidates[0]?.name === "vercel-ops");
@@ -542,6 +542,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("policy agent sektor: allow skills_<sektor>_* saja; tanpa skills-<sektor>; offensive tetap ask", /"skills_security_\*", resource: "\*", effect: allow/.test(sec) && !/skills-security_/.test(sec) && /"skill", resource: "\*offensive\*", effect: ask/.test(sec) && !/skills_coding_/.test(sec));
   const W13 = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
   ok("wrapper: MCP skills --sectors; nama lama skills-<sektor> di LUMI_MCP diterima", /mcpOverride\.skills = \{[^}]*"--sectors"/.test(W13) && /wantMcp\.includes\(`skills-\$\{sec\}`\)/.test(W13));
+  ok("figcraft: terdaftar disabled + pin v0.16.0 (sektor media), opt-in eksplisit, bukan all, confinement = WS", (() => { const M = JSON.parse(fs.readFileSync("router/mcp-sectors.json", "utf8")); const OC = fs.readFileSync("opencode.jsonc", "utf8"); return M.servers.figcraft?.default === "disabled" && M.servers.figcraft?.pin === "v0.16.0" && M.sectors.media.includes("figcraft") && /"figcraft": \{\s*[^}]*"disabled": true/.test(OC) && /wantMcp\.includes\("figcraft"\)/.test(W13) && !/wantMcp\.includes\("all"\)[^;]*figcraft/.test(W13) && /--automation-read-root", WS, "--automation-write-root", WS/.test(W13); })());
   const CM13 = await import("../lumitome/lib/codemem.mjs");
   const ex = (set) => (f) => set.has(f);
   ok("gitRoot: POSIX naik ke induk berisi .git; tanpa .git → null", CM13.gitRoot("/home/u/repo/src/a", { exists: ex(new Set(["/home/u/repo/.git"])), p: path.posix }) === "/home/u/repo" && CM13.gitRoot("/home/u/x", { exists: () => false, p: path.posix }) === null);

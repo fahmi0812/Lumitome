@@ -790,6 +790,23 @@
       "original_name": "executing-plans"
     },
     {
+      "id": "external-tools",
+      "name": "external-tools",
+      "sektor": "coding",
+      "description": "Pasang aplikasi eksternal dan hubungkan ke agent: triage MCP/CLI/API, install per OS (Linux/Windows/macOS) tanpa sudo, daftarkan MCP ke Lumitome, verifikasi. Use for pasang/install external tools, hubungkan aplikasi ke agent, tambah MCP server, integrasi Figcraft atau tool eksternal lain.",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/Lumitome",
+      "sha": "7bb93b989d5f965e60db2f7c4ef8a9988f43f81a",
+      "license": "MIT",
+      "original_id": "lumitome__external-tools",
+      "original_name": "external-tools"
+    },
+    {
       "id": "figure-it-out",
       "name": "figure-it-out",
       "sektor": "riset",

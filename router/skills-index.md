@@ -74,6 +74,7 @@ Pack: `npm run enable-pack -- <nama>`. Karpathy via rules/06. Finance: belum ada
 - design-artifact: artefak desain HTML: prinsip + creative direction
 - big-pics-little-words: jelaskan topik dalam HTML: visual besar, teks minimal
 - one-pager: one-pager HTML: bagikan ide ke tim lebih awal
+- external-tools: Pasang aplikasi eksternal dan hubungkan ke agent: triage MCP/CLI/API, install per OS (Linux/Windows/macOS) tanpa sudo, daftarkan MCP ke Lumitome, verifikasi. Use for pasang/install external tools, hubungkan aplikasi ke agent, tambah MCP server, integrasi Figcraft atau tool eksternal lain.
 
 ## security
 - security-audit: security-audit: review kerentanan kode, API, layanan, CLI, library

@@ -66,6 +66,7 @@ permissions:
   - { action: "skill", resource: "emil-design-eng", effect: allow }
   - { action: "skill", resource: "eval-harness", effect: allow }
   - { action: "skill", resource: "executing-plans", effect: allow }
+  - { action: "skill", resource: "external-tools", effect: allow }
   - { action: "skill", resource: "finishing-a-development-branch", effect: allow }
   - { action: "skill", resource: "floorplan", effect: allow }
   - { action: "skill", resource: "gh-axi", effect: allow }

@@ -120,6 +120,19 @@
           "execution": 120000
         }
       },
+      "figcraft": {
+        "type": "local",
+        "command": [
+          "figcraft-cli",
+          "mcp"
+        ],
+        "disabled": true,
+        "timeout": {
+          "startup": 30000,
+          "catalog": 30000,
+          "execution": 300000
+        }
+      },
       "playwright": {
         "type": "local",
         "command": [

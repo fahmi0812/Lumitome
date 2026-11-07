@@ -11,6 +11,8 @@ permissions:
   - { action: "opencode_list_mcp_resources", resource: "playwright", effect: allow }
   - { action: "chromedev_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "chromedev", effect: allow }
+  - { action: "figcraft_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "figcraft", effect: allow }
   - { action: "gw-media_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "gw-media", effect: allow }
   - { action: "skills_media_*", resource: "*", effect: allow }

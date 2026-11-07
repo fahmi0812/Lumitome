@@ -67,7 +67,7 @@ const mcpErr = checkMcpPolicy(); mcpErr.forEach(fail); if (!mcpErr.length) pass(
   try { execFileSync(process.execPath, ["scripts/gen-policy.mjs", "--check"], { stdio: "pipe" }); pass("permissions agent = hasil gen-policy (skill+MCP per sektor)"); }
   catch (e) { fail(`permissions agent basi: ${String(e.stdout || e.message).trim()} → npm run policy`); }
   const act = fs.readdirSync(".opencode/skills").filter((d) => fs.existsSync(`.opencode/skills/${d}/SKILL.md`));
-  if (act.length !== 107) fail(`skill aktif ${act.length} != 107`); else pass("skill aktif = 107");
+  if (act.length !== 108) fail(`skill aktif ${act.length} != 108`); else pass("skill aktif = 108");
   for (const n of ["api-security", "llm-security"]) if (act.includes(n)) fail(`${n} tidak boleh aktif`);
 }
 const g = JSON.parse(fs.readFileSync("tests/golden-routing.json", "utf8"));
