@@ -53,3 +53,12 @@ Rincian, pin versi, dan alasan: `docs/MCP.md`. Gateway: `docs/MCP-GATEWAY.md`.
 - Frontmatter agent = keluaran `gen-policy` (tidak boleh basi).
 - Plugin v2 `export default {id, setup}`; push main/master & cbm install diblok.
 - Scan-gate: osv-scanner + gitleaks PASS.
+
+## 6. Sandbox: tier kepercayaan (v0.3.19)
+Kebijakan dirakit per sesi oleh `buildSandboxScope` (`harness/lumi-guard.mjs`), ditegakkan plugin `lumitome/config/plugins/lumitome-guard.ts` (hook `tool.execute.before`, fail-closed bila guard gagal dimuat).
+- **Tier** (dipilih manusia, bukan agent): `strict` = tulis folder kerja + bwrap, fail-closed bila bubblewrap tidak ada; `standard` = default, aturan tulis sama, guard saja tanpa bwrap; `trusted` = tulis selebar akar proyek, guard saja. Sumber tier: env `LUMI_TRUST_TIER` (menang) lalu `~/.lumitome/trust.json` (kunci = akar proyek, bentuk `{"projects": {"<root>": "trusted"}}` atau `{"tier": ..., "write": [...]}`); tanpa keduanya → `standard`. File trust hidup di luar workspace dan di-mask dari agent — agent tidak bisa membaca/mengubah tier-nya sendiri. `lumitome trust` menampilkan tier + cakupan tulis + aturan SSH; `lumitome trust <tier>` mengaturnya untuk proyek ini.
+- **Akar proyek**: jalan ke atas maks 5 tingkat dari folder sesi untuk `.git`, `opencode.jsonc`, `MEMORY.md`, `.lumitome`; tidak melewati `$HOME`; marker di `$HOME` sendiri diabaikan. Perhitungan path murni, tidak membaca config — v0.3.16 menghapus deteksi akar + `sandbox.json` karena config-nya hidup di dalam workspace; v0.3.19 mengembalikan deteksi saja, trust disimpan di luar workspace.
+- **MEMORY.md ancestor**: file `MEMORY.md` di folder induk (maks 5 tingkat) bisa ditulis sebagai file, tanpa membuka seluruh folder induk.
+- **Kinerja**: pemindaian file rahasia (`findSecrets`) di-cache per proses (TTL 5 menit) — perintah shell pertama membayar jalan kaki penuh, berikutnya ~0,6 ms (diukur: 4,2 detik → 0,6 ms/perintah di VM build; sebelumnya ~866 ms per perintah).
+- **SSH deploy**: tier standard/strict mengizinkan `ssh`/`scp`/`sftp` hanya dengan `-i` kunci deploy di bawah `~/.lumitome/` (dibuat via `lumitome trust --deploy-key [nama]`, bukan `id_*`, bukan `~/.ssh/`); tier trusted membebaskan ssh; `ForwardAgent` hanya di trusted. `sudo` lokal ditolak di semua tier; `sudo` di VPS tidak diatur sandbox (berjalan di server).
+- **Transparansi**: wrapper mencetak tier + cakupan tulis saat sesi dimulai; plugin mencatat tier/root/write ke jurnal.

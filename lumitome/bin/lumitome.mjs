@@ -44,6 +44,49 @@ if (sub === "update") {
   const { update } = await import(pathToFileURL(path.join(ROOT, "lib", "update.mjs")).href);
   process.exit(await update({ argv: argv.slice(1), version: VERSION, repo: REPO, home: ISO_HOME }));
 }
+// ---------- trust tier sandbox: lihat/atur tingkat kepercayaan proyek + kunci deploy ----------
+if (sub === "trust") {
+  const G = await import(pathToFileURL(path.join(REPO, "harness", "lumi-guard.mjs")).href);
+  const home = os.homedir();
+  const cwd = process.cwd();
+  const root = G.detectProjectRoot(cwd, { home });
+  const targs = argv.slice(1);
+  const showScope = () => {
+    const s = G.buildSandboxScope(cwd, { home, lumiHome: ISO_HOME, env });
+    console.log(`proyek: ${s.root}\ntier: ${s.tier}\ntulis: ${s.write.join(", ")}\nsandbox: ${s.tier === "strict" ? "bwrap (wajib; gagal bila bubblewrap tidak ada)" : "off (guard saja)"}\nssh: ${s.tier === "trusted" ? "bebas (tier trusted)" : "hanya -i kunci deploy (~/.lumitome/<nama>)"}\ntrust file: ${s.trustFile}`);
+  };
+  // --deploy-key [nama]: buat keypair ed25519 khusus deploy di LUMI_HOME (bukan ~/.ssh, bukan id_*)
+  if (targs.includes("--deploy-key")) {
+    const di = targs.indexOf("--deploy-key");
+    const name = targs[di + 1] && !targs[di + 1].startsWith("-") ? targs[di + 1] : "deploy-vps";
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(name) || name.startsWith("id_") || /secret|\.env/i.test(name))
+      die(2, "nama kunci tidak valid: huruf/angka/-/_/. saja, jangan diawali id_ (itu pola rahasia)");
+    const keyPath = path.join(ISO_HOME, name);
+    fs.mkdirSync(ISO_HOME, { recursive: true });
+    if (!fs.existsSync(keyPath)) {
+      try { execFileSync("ssh-keygen", ["-t", "ed25519", "-f", keyPath, "-N", "", "-C", `lumitome-deploy@${os.hostname()}`], { stdio: "ignore" }); }
+      catch { die(1, `ssh-keygen tidak ditemukan — pasang openssh-client, atau buat manual: ssh-keygen -t ed25519 -f ${keyPath}`); }
+      try { fs.chmodSync(keyPath, 0o600); } catch {}
+      console.log(`kunci deploy dibuat: ${keyPath} (0600)`);
+    } else console.log(`kunci sudah ada: ${keyPath}`);
+    const pub = fs.readFileSync(keyPath + ".pub", "utf8").trim();
+    console.log(`public key — tambahkan ke VPS (~/.ssh/authorized_keys user deploy):\n${pub}\n\nDi VPS, batasi sudo user deploy, contoh /etc/sudoers.d/deploy:\ndeploy ALL=(ALL) NOPASSWD: /bin/systemctl restart <aplikasi>\nPakai di agent: ssh -i ${keyPath} <user>@<vps>`);
+    process.exit(0);
+  }
+  if (targs.length === 0) { showScope(); process.exit(0); }
+  const tier = targs[0];
+  if (!G.TRUST_TIERS.includes(tier)) die(2, "pakai: lumitome trust [strict|standard|trusted] [--deploy-key [nama]] — tanpa argumen: lihat tier proyek ini");
+  const tf = G.trustFilePath(ISO_HOME);
+  const data = G.readTrustFile(ISO_HOME);
+  const prev = G.normalizeTrustEntry(data.projects[root]);
+  data.projects[root] = { tier, write: prev.write };
+  fs.mkdirSync(ISO_HOME, { recursive: true });
+  fs.writeFileSync(tf, JSON.stringify(data, null, 2) + "\n", { mode: 0o600 });
+  try { fs.chmodSync(tf, 0o600); } catch {}
+  console.log(`tier proyek ${root} → ${tier}`);
+  showScope();
+  process.exit(0);
+}
 // ---------- engine terpin: hanya diganti lewat perintah eksplisit ----------
 if (sub === "engine" || sub === "upgrade-engine") {
   const EN = await import(pathToFileURL(path.join(ROOT, "lib", "engine.mjs")).href);
@@ -278,6 +321,15 @@ if (sub === "" || sub === "service") {
   const SCX = await import(pathToFileURL(path.join(ROOT, "lib", "service-ctl.mjs")).href);
   const fp = SCX.fingerprint([VERSION, env.OPENCODE_CONFIG_CONTENT, FRAG.env, env.LUMI_SANDBOX || "", env.LUMI_9ROUTER_URL || "", TRUST]);
   try { const r = SCX.ensureFresh(HOME, fp); if (env.LUMI_DEBUG) process.stderr.write(`lumitome: service ${r}\n`); } catch (e) { if (env.LUMI_DEBUG) process.stderr.write(`lumitome: cek service gagal (${e.message})\n`); }
+}
+
+// v0.3.19: tampilkan tier sandbox efektif saat sesi dimulai (plugin yang menegakkan per sesi)
+if ((sub === "" || sub === "run") && process.stderr.isTTY) {
+  try {
+    const G = await import(pathToFileURL(path.join(REPO, "harness", "lumi-guard.mjs")).href);
+    const s = G.buildSandboxScope(WS, { home: os.homedir(), lumiHome: ISO_HOME, env });
+    process.stderr.write(`lumitome: sandbox ${s.tier} · tulis: ${s.write.join(", ")} · ${s.tier === "strict" ? "bwrap" : "guard saja"}\n`);
+  } catch {}
 }
 
 // ---------- branding (tanpa patch engine) ----------

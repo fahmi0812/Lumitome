@@ -74,8 +74,26 @@ function nameOnly(cmd) {
 
 const PROTECTED = /^(?:refs\/heads\/)?(main|master)$/;
 
+/** Ambil path kunci dari -i <path> / -o IdentityFile=<path> / -oIdentityFile=<path>. */
+function sshKeyArg(args) {
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "-i" && args[i + 1]) return args[i + 1];
+    if (args[i] === "-o" && args[i + 1]) { const m = args[i + 1].match(/^IdentityFile=(.+)$/); if (m) return m[1]; }
+    const m2 = args[i].match(/^-oIdentityFile=(.+)$/); if (m2) return m2[1];
+  }
+  return "";
+}
+/** Kunci deploy: di bawah ~/.lumitome (LUMI_HOME) atau workspace, dan bukan path rahasia. */
+function isDeployKeyPath(key, ws, home, lumiHome) {
+  let s = String(key || "");
+  if (s === "~") s = home; else if (s.startsWith("~/")) s = path.join(home, s.slice(2));
+  const abs = path.resolve(ws, s);
+  if (isSecretPath(abs) || isHomeSecret(abs)) return false;
+  return within(lumiHome, abs) || within(ws, abs);
+}
+
 /** Keputusan untuk satu perintah shell. effect: allow | ask | deny. */
-export function classifyShell(command, { workspace = process.cwd(), headless = false, branch } = {}) {
+export function classifyShell(command, { workspace = process.cwd(), headless = false, branch, tier = "standard", home = os.homedir(), lumiHome = path.join(os.homedir(), ".lumitome") } = {}) {
   const cmd = String(command ?? "");
   const ws = path.resolve(workspace);
   if (!cmd.trim()) return { effect: "allow" };
@@ -90,6 +108,17 @@ export function classifyShell(command, { workspace = process.cwd(), headless = f
     if (i >= w.length && w.some((x) => x === "env")) return { effect: "deny", rule: "env-dump", reason: "LUMI_DENY env-dump: menampilkan environment (berisi key) dilarang" };
     const bin = path.basename(w[i] || "");
     const args = w.slice(i + 1);
+    // 2b) SSH: kunci deploy khusus, atau tier trusted. Tanpa itu, kunci utama user (~/.ssh) tidak boleh dipakai agent.
+    // (Kunci pola rahasia — id_*, ~/.ssh/ — sudah ditolak aturan secret di atas; di sini yang dicek hanya lokasinya.)
+    if (bin === "ssh" || bin === "scp" || bin === "sftp" || (bin === "rsync" && args.some((a) => /^[^/\s]+:/.test(a) && !/^[A-Za-z]:[\\/]/.test(a)))) {
+      if (tier !== "trusted") {
+        if (args.includes("-A") || args.some((a, j) => a === "-o" && /ForwardAgent\s*=\s*yes/i.test(args[j + 1] || "")) || args.some((a) => /^-oForwardAgent\s*=\s*yes/i.test(a)))
+          return { effect: "deny", rule: "ssh-agent-forward", reason: "LUMI_DENY ssh: ForwardAgent hanya di tier trusted" };
+        const key = sshKeyArg(args);
+        if (!key || !isDeployKeyPath(key, ws, home, lumiHome))
+          return { effect: "deny", rule: "ssh-key", reason: "LUMI_DENY ssh: pakai -i kunci deploy (~/.lumitome/<nama>, bukan id_*) atau naikkan tier: lumitome trust trusted" };
+      }
+    }
     if (ENV_DUMP.test(" " + seg) && /^(printenv|env|set|declare|export)$/.test(bin) && args.every((a) => a.startsWith("-") || a === "")) return { effect: "deny", rule: "env-dump", reason: "LUMI_DENY env-dump: menampilkan environment (berisi key) dilarang" };
     // 2) rm rekursif/force di luar workspace
     if (bin === "rm" || bin === "rmdir" || (bin === "find" && args.includes("-delete"))) {
@@ -124,8 +153,9 @@ export function classifyShell(command, { workspace = process.cwd(), headless = f
 }
 
 
-// ---------- kebijakan sandbox (v0.3.16, gaya Codex workspace-write) ----------
-// Baca: seluruh $HOME (+ path sistem), read-only. Tulis: hanya cwd (+ temp/cache). Rahasia di $HOME disamarkan.
+// ---------- kebijakan sandbox (v0.3.19, gaya Codex workspace-write + tier kepercayaan) ----------
+// Baca: seluruh $HOME (+ path sistem), read-only. Tulis: hanya cwd (+ temp/cache), kecuali tier trusted
+// (tulis selebar akar proyek) dan file extraWrite. Rahasia di $HOME disamarkan.
 const WIN = process.platform === "win32";
 const norm = (p) => (WIN ? path.resolve(p).toLowerCase() : path.resolve(p));
 const within = (base, p) => { const r = path.relative(norm(base), norm(p)); return r === "" || !r.startsWith("..") && !path.isAbsolute(r); };
@@ -144,13 +174,13 @@ const HOME_SECRET_RE = new RegExp("(?:^|[\\\\/\\s'\"`=~])(?:" + [
 ].join("|") + ")(?=$|[\\\\/\\s'\"`;|&)<>,])", "i");
 export function isHomeSecret(s) { return HOME_SECRET_RE.test(" " + String(s || "") + " "); }
 
-/** Daftar path sandbox untuk satu workspace. Tanpa file config: kebijakan tetap. */
-export function sandboxPaths(workspace, { home = os.homedir(), extraRead = [], extraWrite = [] } = {}) {
+/** Daftar path sandbox untuk satu workspace. writeRoots: ganti [cwd] sebagai akar tulis (tier trusted). */
+export function sandboxPaths(workspace, { home = os.homedir(), extraRead = [], extraWrite = [], extraMasked = [], writeRoots = null } = {}) {
   const cwd = path.resolve(workspace); const h = path.resolve(home);
   if (h === path.parse(h).root) throw new Error(`$HOME tidak valid ('${h}')`);
-  const write = [cwd, ...extraWrite.map((p) => path.resolve(p))];
+  const write = [...(writeRoots ? writeRoots.map((p) => path.resolve(p)) : [cwd]), ...extraWrite.map((p) => path.resolve(p))];
   const read = [h, ...(WIN ? [] : SYSTEM_READ), ...extraRead.map((p) => path.resolve(p))];
-  const masked = HOME_SECRETS.map((r) => path.join(h, r));
+  const masked = [...HOME_SECRETS.map((r) => path.join(h, r)), ...extraMasked.map((p) => path.resolve(p))];
   return { cwd, home: h, read, write, masked };
 }
 export function isMasked(abs, sp) { return sp.masked.some((m) => within(m, abs)) || isSecretPath(abs) || isHomeSecret(abs); }
@@ -164,8 +194,94 @@ export function pathAccess(abs, sp) {
 }
 export function outsideMessage(p, sp, kind) {
   return kind === "write"
-    ? `LUMI_SANDBOX_OUTSIDE: tulis ke '${p}' ditolak. Hanya folder kerja yang bisa ditulis: ${sp.write[0]}. Jalankan lumitome dari folder tujuan bila perlu menulis di sana.`
+    ? `LUMI_SANDBOX_OUTSIDE: tulis ke '${p}' ditolak. Hanya folder kerja yang bisa ditulis: ${sp.write[0]}. Jalankan lumitome dari folder tujuan, atau buka akses lewat: lumitome trust trusted`
     : `LUMI_SANDBOX_OUTSIDE: '${p}' di luar area baca (${sp.home} dan path sistem).`;
+}
+
+/** Marker akar proyek (v0.3.19). Bukan config — hanya penanda path untuk deteksi root. */
+export const PROJECT_ROOT_MARKERS = [".git", "opencode.jsonc", "MEMORY.md", ".lumitome"];
+/** Akar proyek: jalan ke atas dari start sampai maks 5 tingkat; berhenti di $HOME (marker di $HOME sendiri diabaikan). */
+export function detectProjectRoot(start, { home = os.homedir(), maxDepth = 5 } = {}) {
+  const h = path.resolve(home);
+  let d; try { d = fs.realpathSync(start); } catch { d = path.resolve(start); }
+  for (let i = 0; i <= maxDepth; i++) {
+    if (d !== h && PROJECT_ROOT_MARKERS.some((m) => { try { return fs.existsSync(path.join(d, m)); } catch { return false; } })) return d;
+    if (d === h) break;
+    const up = path.dirname(d);
+    if (up === d) break;
+    d = up;
+  }
+  return path.resolve(start);
+}
+/** File MEMORY.md di ancestor (start ke atas, maks 5 tingkat, tanpa $HOME) — untuk extraWrite file saja. */
+export function findAncestorMemoryFiles(start, { home = os.homedir(), maxDepth = 5 } = {}) {
+  const h = path.resolve(home);
+  const out = [];
+  let d; try { d = fs.realpathSync(start); } catch { d = path.resolve(start); }
+  for (let i = 0; i <= maxDepth; i++) {
+    if (d !== h) { const f = path.join(d, "MEMORY.md"); try { if (fs.existsSync(f) && fs.statSync(f).isFile()) out.push(f); } catch {} }
+    if (d === h) break;
+    const up = path.dirname(d);
+    if (up === d) break;
+    d = up;
+  }
+  return out;
+}
+
+/** Tingkat kepercayaan sandbox (v0.3.19): strict = workspace-write + bwrap; standard = sama tanpa bwrap;
+ * trusted = tulis selebar akar proyek, tanpa bwrap. Default: standard. */
+export const TRUST_TIERS = ["strict", "standard", "trusted"];
+/** File trust milik user — WAJIB di luar workspace (LUMI_HOME), supaya agent tidak bisa mengubah tier-nya sendiri. */
+export function trustFilePath(lumiHome) { return path.join(lumiHome, "trust.json"); }
+/** Baca file trust. Rusak/hilang → {}. Tidak pernah throw. */
+export function readTrustFile(lumiHome) {
+  try {
+    const raw = JSON.parse(fs.readFileSync(trustFilePath(lumiHome), "utf8"));
+    if (raw && typeof raw === "object" && raw.projects && typeof raw.projects === "object") return raw;
+  } catch {}
+  return { projects: {} };
+}
+/** Normalisasi satu entri proyek: string tier, atau { tier, write: [...] }. */
+export function normalizeTrustEntry(entry) {
+  if (typeof entry === "string") return { tier: entry, write: [] };
+  if (entry && typeof entry === "object") return { tier: entry.tier, write: Array.isArray(entry.write) ? entry.write : [] };
+  return { tier: undefined, write: [] };
+}
+/** Tier efektif: env LUMI_TRUST_TIER menang, lalu file trust (kunci = akar proyek), lalu default standard. */
+export function resolveTrustTier(workspace, { home = os.homedir(), lumiHome = path.join(home, ".lumitome"), env = process.env } = {}) {
+  const fromEnv = String(env.LUMI_TRUST_TIER || "").trim();
+  if (TRUST_TIERS.includes(fromEnv)) return fromEnv;
+  const root = detectProjectRoot(workspace, { home });
+  const entry = normalizeTrustEntry(readTrustFile(lumiHome).projects[root]);
+  return TRUST_TIERS.includes(entry.tier) ? entry.tier : "standard";
+}
+/** Entri tulis eksplisit dari trust file untuk proyek ini (relatif ke root, absolut, atau ~). */
+export function resolveTrustWrite(workspace, { home = os.homedir(), lumiHome = path.join(home, ".lumitome") } = {}) {
+  const root = detectProjectRoot(workspace, { home });
+  return normalizeTrustEntry(readTrustFile(lumiHome).projects[root]).write;
+}
+function resolveTrustWritePath(p, root, home) {
+  let s = String(p || "").trim();
+  if (!s) return null;
+  if (s === "~") s = home; else if (s.startsWith("~/")) s = path.join(home, s.slice(2));
+  const abs = path.resolve(root, s);
+  if (!within(home, abs)) return null; // wajib di dalam $HOME
+  if (isSecretPath(abs) || isHomeSecret(abs)) return null; // bukan rahasia
+  return abs;
+}
+/** Satu titik rakit kebijakan sandbox per sesi: tier + root + file memori + trust file ter-mask. */
+export function buildSandboxScope(workspace, { home = os.homedir(), lumiHome = path.join(home, ".lumitome"), env = process.env } = {}) {
+  const ws = path.resolve(workspace);
+  const root = detectProjectRoot(ws, { home });
+  const tier = resolveTrustTier(ws, { home, lumiHome, env });
+  const trustFile = trustFilePath(lumiHome);
+  const memoryFiles = findAncestorMemoryFiles(ws, { home });
+  const explicit = resolveTrustWrite(ws, { home, lumiHome }).map((p) => resolveTrustWritePath(p, root, home)).filter(Boolean);
+  const writeRoots = tier === "trusted" ? [root] : [ws];
+  const covered = (f) => writeRoots.some((w) => within(w, f));
+  const extraWrite = [...new Set([...explicit, ...memoryFiles].filter((f) => !covered(f)))];
+  const sp = sandboxPaths(ws, { home, extraWrite, extraMasked: [trustFile], writeRoots: tier === "trusted" ? [root] : null });
+  return { sp, tier, root, workspace: ws, memoryFiles, trustFile, write: sp.write };
 }
 
 function expandPath(p, base, home) {
@@ -238,6 +354,21 @@ export function bwrapAvailable() {
 }
 const SECRET_FILE = (n) => /^\.env(\..+)?$/.test(n) && !/^\.env\.(example|sample|template)$/.test(n) || /^(secrets\.env|\.netrc|\.git-credentials|\.npmrc|\.pypirc|id_(rsa|dsa|ed25519|ecdsa))$/.test(n);
 const SKIP_DIRS = new Set(["node_modules", ".git", ".venv", "venv", "dist", "build", ".next", "target", ".cache", ".npm", ".rustup", ".cargo", ".local", "snap", ".vscode-server", ".lumitome", "__pycache__", ".gradle", ".m2"]);
+// ---------- cache pemindaian rahasia (v0.3.19) ----------
+// findSecrets jalan kaki di $HOME + workspace; tanpa cache, tiap perintah shell membayar ~866 ms
+// (diukur, 5 sampel). Isi pohon nyaris tidak berubah dalam satu sesi → cache 5 menit per proses.
+const _secretScanCache = new Map();
+const SECRET_SCAN_TTL_MS = 5 * 60 * 1000;
+export function clearSecretScanCache() { _secretScanCache.clear(); }
+function cachedFindSecrets(d, opts = {}) {
+  const depth = opts.depth ?? 5, limit = opts.limit ?? 20000;
+  const key = `${d}|${depth}|${limit}`;
+  const hit = _secretScanCache.get(key);
+  if (hit && Date.now() - hit.at < SECRET_SCAN_TTL_MS) return hit.out;
+  const out = findSecrets(d, { depth, limit });
+  _secretScanCache.set(key, { at: Date.now(), out });
+  return out;
+}
 /** Cari file rahasia (.env, secrets.env, id_*) di bawah d. Dibatasi kedalaman & jumlah entri. */
 function findSecrets(d0, { depth = 5, limit = 20000 } = {}) {
   const out = []; let seen = 0;
@@ -279,7 +410,7 @@ export function bwrapArgs(command, { workspace, toolDirs = [], env = process.env
     else maskFile(m);
   }
   const roots = [ws, ...(fs.existsSync(h) && !within(ws, h) ? [h] : [])];
-  for (const r of roots) for (const s of findSecrets(r, r === h ? { depth: 4 } : {})) if (!sp.masked.some((m) => within(m, s))) maskFile(s);
+  for (const r of roots) for (const s of cachedFindSecrets(r, r === h ? { depth: 4 } : {})) if (!sp.masked.some((m) => within(m, s))) maskFile(s);
   for (const d of toolDirs) { const s = path.join(d, "secrets.env"); if (fs.existsSync(s)) maskFile(s); }
   const keep = { PATH: env.PATH || "/usr/bin:/bin", HOME: fs.existsSync(h) ? h : "/tmp", LANG: env.LANG || "C.UTF-8", TERM: env.TERM || "dumb", TZ: env.TZ || "", LUMI_SANDBOX: "bwrap",
     XDG_CACHE_HOME: "/tmp/.cache", PIP_CACHE_DIR: "/tmp/.cache/pip", npm_config_cache: "/tmp/.cache/npm", PYTHONDONTWRITEBYTECODE: "1",

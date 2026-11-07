@@ -617,7 +617,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const G = await import("../harness/lumi-guard.mjs");
   const os = await import("node:os");
   const H = "/home/u";
-  ok("v0.3.16: deteksi akar proyek & sandbox.json dihapus", G.findProjectRoot === undefined && G.parseSandboxConfig === undefined && G.ROOT_MARKERS === undefined && !fs.readFileSync("harness/lumi-guard.mjs", "utf8").includes("sandbox.json") && !fs.readFileSync("lumitome/config/plugins/lumitome-guard.ts", "utf8").includes("sandbox.json") && !fs.readFileSync("README.md", "utf8").includes("sandbox.json"));
+  ok("v0.3.19: tidak ada sandbox.json di workspace; trust hidup di luar workspace", G.findProjectRoot === undefined && G.parseSandboxConfig === undefined && G.ROOT_MARKERS === undefined && !fs.readFileSync("harness/lumi-guard.mjs", "utf8").includes("sandbox.json") && !fs.readFileSync("lumitome/config/plugins/lumitome-guard.ts", "utf8").includes("sandbox.json") && !fs.readFileSync("README.md", "utf8").includes("sandbox.json") && G.trustFilePath("/home/u/.lumitome") === "/home/u/.lumitome/trust.json");
   const sp = G.sandboxPaths("/home/u/Documents/projA", { home: H });
   ok("sandboxPaths: read = $HOME + sistem, write = cwd saja", sp.read[0] === H && sp.read.includes("/usr") && sp.write.join() === "/home/u/Documents/projA" && sp.masked.includes("/home/u/.ssh"));
   ok("sandboxPaths: .lumitome/sandbox.json lama diabaikan (tanpa opsi config)", !("config" in sp) && !("errors" in sp));
@@ -632,7 +632,53 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("shell: rahasia $HOME via host (cat/python) → deny secret; ls nama boleh", ["cat ~/.ssh/id_ed25519", "python3 -c \"open('/home/u/.aws/credentials')\"", "cp ~/.gnupg/secring.gpg .", "sqlite3 ~/.config/google-chrome/Default/Cookies"].every((x) => G.classifyShell(x, { workspace: sp.cwd }).rule === "secret") && G.classifyShell("ls ~/.ssh", { workspace: sp.cwd }).effect === "allow" && G.classifyShell("chromium --version", { workspace: sp.cwd }).effect === "allow");
   ok("pesan LUMI_SANDBOX_OUTSIDE tulis menyebut folder kerja, tanpa sandbox.json", /LUMI_SANDBOX_OUTSIDE.*\/home\/u\/Documents\/projA/.test(G.outsideMessage("~/x", sp, "write")) && !/sandbox\.json/.test(G.outsideMessage("~/x", sp, "write")));
   const PG = fs.readFileSync("lumitome/config/plugins/lumitome-guard.ts", "utf8");
-  ok("plugin: kebijakan dibuat tanpa config; gagal → LUMI_GUARD_CLOSED (fail-closed); shell pakai kind write/read", /g\.sandboxPaths\(WS\)/.test(PG) && /LUMI_GUARD_CLOSED: kebijakan sandbox/.test(PG) && /outside\[0\]\.kind/.test(PG));
+  ok("plugin: kebijakan dari buildSandboxScope (tier per sesi); gagal → LUMI_GUARD_CLOSED; shell pakai kind write/read", /buildSandboxScope\(WS/.test(PG) && /LUMI_GUARD_CLOSED: kebijakan sandbox/.test(PG) && /outside\[0\]\.kind/.test(PG) && /tier: TIER/.test(PG));
+  // v0.3.19: tier sandbox + akar proyek + SSH deploy
+  {
+    const cp = await import("node:child_process");
+    const th = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "lumi-tier-home-")));
+    const tp = path.join(th, "Bindo", "P13", "Latihan");
+    fs.mkdirSync(tp, { recursive: true });
+    fs.writeFileSync(path.join(th, "Bindo", "MEMORY.md"), "# memori\n");
+    const lh = path.join(th, ".lumitome");
+    const o = { home: th, lumiHome: lh, env: {} };
+    ok("tier: root terdeteksi dari MEMORY.md 2 tingkat di atas; marker di $HOME diabaikan", G.detectProjectRoot(tp, { home: th }) === path.join(th, "Bindo") && G.detectProjectRoot(path.join(th, "x"), { home: th }) === path.join(th, "x"));
+    ok("tier: default standard tanpa file trust; env LUMI_TRUST_TIER menang; tier tak valid → standard", G.resolveTrustTier(tp, o) === "standard" && G.resolveTrustTier(tp, { ...o, env: { LUMI_TRUST_TIER: "strict" } }) === "strict" && G.resolveTrustTier(tp, { ...o, env: { LUMI_TRUST_TIER: "ngawur" } }) === "standard");
+    const trust = (args, cwd) => cp.spawnSync(process.execPath, [path.resolve("lumitome/bin/lumitome.mjs"), "trust", ...args], { encoding: "utf8", cwd, env: { ...process.env, LUMI_HOME: lh } });
+    const r1 = trust([], tp);
+    ok("cli trust: tanpa argumen tampilkan tier + tulis + ssh", r1.status === 0 && r1.stdout.includes("tier: standard") && r1.stdout.includes("MEMORY.md"));
+    const r2 = trust(["trusted"], tp);
+    const tf = JSON.parse(fs.readFileSync(path.join(lh, "trust.json"), "utf8"));
+    ok("cli trust: set tier menulis trust.json 0600", r2.status === 0 && tf.projects[path.join(th, "Bindo")].tier === "trusted" && (fs.statSync(path.join(lh, "trust.json")).mode & 0o777) === 0o600);
+    ok("tier: file trust mengangkat tier proyek", G.resolveTrustTier(tp, o) === "trusted");
+    const sTru = G.buildSandboxScope(tp, o);
+    ok("tier trusted: tulis selebar akar proyek; trust file ter-mask dari agent", sTru.tier === "trusted" && sTru.sp.write[0] === path.join(th, "Bindo") && G.isMasked(path.join(lh, "trust.json"), sTru.sp) && G.classifyFileTool("read", { filePath: path.join(lh, "trust.json") }, { workspace: tp, sandbox: sTru.sp }).effect === "deny" && G.classifyFileTool("write", { filePath: path.join(lh, "trust.json") }, { workspace: tp, sandbox: sTru.sp }).effect === "deny");
+    const sStd = G.buildSandboxScope(tp, { ...o, env: { LUMI_TRUST_TIER: "standard" } });
+    ok("tier standard: tulis = ws + file MEMORY.md ancestor; file lain di parent tetap tidak", sStd.tier === "standard" && sStd.sp.write.includes(path.join(th, "Bindo", "MEMORY.md")) && sStd.sp.write.includes(tp) && G.pathAccess(path.join(th, "Bindo", "MEMORY.md"), sStd.sp) === "write" && G.pathAccess(path.join(th, "Bindo", "lain.txt"), sStd.sp) === "read");
+    const fd2 = (t, i) => G.classifyFileTool(t, i, { workspace: tp, sandbox: sStd.sp });
+    ok("tier standard: tulis MEMORY.md ancestor boleh; tulis file parent lain → deny", fd2("write", { filePath: path.join(th, "Bindo", "MEMORY.md") }).effect === "allow" && fd2("write", { filePath: path.join(th, "Bindo", "lain.txt") }).effect === "deny");
+    const cs = (cmd, tier) => G.classifyShell(cmd, { workspace: tp, tier, home: th, lumiHome: lh });
+    ok("ssh: standard tanpa -i → deny; -i kunci deploy → allow; trusted bebas; -A hanya trusted", cs("ssh deploy@vps", "standard").rule === "ssh-key" && cs("ssh -i ~/.lumitome/deploy-vps deploy@vps", "standard").effect === "allow" && cs("ssh deploy@vps", "trusted").effect === "allow" && cs("ssh -A deploy@vps", "standard").rule === "ssh-agent-forward" && cs("ssh -A deploy@vps", "trusted").effect === "allow");
+    ok("ssh: kunci pola rahasia (id_*, ~/.ssh) tetap deny secret di semua tier", cs("ssh -i ~/.ssh/id_ed25519 deploy@vps", "trusted").rule === "secret" && cs("ssh -i ~/.lumitome/id_ed25519 deploy@vps", "trusted").rule === "secret");
+    ok("sudo: tetap deny di semua tier (lokal); remote tidak diatur guard", cs("sudo systemctl restart app", "trusted").rule === "sudo" && cs("sudo -i", "standard").rule === "sudo");
+    fs.writeFileSync(path.join(lh, "trust.json"), JSON.stringify({ projects: { [path.join(th, "Bindo")]: { tier: "trusted", write: ["../lain.txt", "/etc/passwd"] } } }));
+    const sEx = G.buildSandboxScope(tp, o);
+    ok("tier: entri write eksplisit di trust file dipakai (relatif root), di luar $HOME dibuang", sEx.sp.write.includes(path.join(th, "lain.txt")) && !sEx.sp.write.includes("/etc/passwd"));
+    // cache pemindaian rahasia: hasil pertama dipakai ulang walau file dihapus; clear → hasil baru
+    const cw = path.join(th, "ws"); fs.mkdirSync(cw, { recursive: true });
+    fs.writeFileSync(path.join(cw, ".env"), "K=1\n");
+    G.clearSecretScanCache();
+    const hasMask = (args) => args.some((a, i) => a === "--ro-bind" && args[i + 1] === "/dev/null" && args[i + 2] === path.join(cw, ".env"));
+    const a1 = G.bwrapArgs("echo hi", { workspace: cw, home: th, toolDirs: [] });
+    fs.rmSync(path.join(cw, ".env"));
+    const a2 = G.bwrapArgs("echo hi", { workspace: cw, home: th, toolDirs: [] });
+    G.clearSecretScanCache();
+    const a3 = G.bwrapArgs("echo hi", { workspace: cw, home: th, toolDirs: [] });
+    ok("cache scan: mask .env bertahan setelah file dihapus (cache), hilang setelah clear", hasMask(a1) && hasMask(a2) && !hasMask(a3));
+    const r3 = trust(["ngawur"], tp);
+    ok("cli trust: tier tak valid → exit 2", r3.status === 2);
+    fs.rmSync(th, { recursive: true, force: true });
+  }
   // e2e Linux: HOME sementara, projA (~/Documents) dan projB (~/Downloads)
   if (process.platform === "linux" && G.bwrapAvailable() && fs.existsSync("/usr/bin/python3")) {
     const { execFileSync } = await import("node:child_process");

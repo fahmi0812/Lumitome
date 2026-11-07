@@ -6,6 +6,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import { pathToFileURL } from "node:url";
 
 const SHELL = new Set(["shell", "bash"]);
@@ -27,16 +28,17 @@ export default {
     const fallback = ["..", "..", "..", "harness", "lumi-guard.mjs"].join("/");
     try { g = await import(env.LUMI_HARNESS ? pathToFileURL(env.LUMI_HARNESS).href : new URL(fallback, import.meta.url).href); }
     catch (e) { closed = `LUMI_GUARD_CLOSED: modul guard gagal dimuat (${String(e)}) — shell & tool tulis ditolak`; }
-    const sandbox = env.LUMI_SANDBOX || "bwrap";
-    if (g && sandbox === "bwrap" && !g.bwrapAvailable()) closed = "SANDBOX_CLOSED: bwrap tidak tersedia/tidak bisa membuat namespace. Shell ditolak (fail-closed). Pasang bubblewrap (apt install bubblewrap) atau set LUMI_SANDBOX=off secara sadar.";
     const spin = g ? new g.RuntimeSpin({ maxFail: Number(env.LUMI_SPIN_MAX_FAIL || 3), maxRepeat: Number(env.LUMI_SPIN_MAX_REPEAT || 4) }) : null;
     const toolDirs = (env.LUMI_TOOLDIRS || "").split(path.delimiter).filter(Boolean);
     const headless = env.LUMI_HEADLESS === "1";
-    // v0.3.16: satu kebijakan untuk bwrap, tool file host, dan cek path shell (Linux & Windows):
-    // baca di bawah $HOME/%USERPROFILE% (kecuali folder rahasia), tulis hanya di folder kerja.
-    let SP: any = null;
-    if (g) { try { SP = g.sandboxPaths(WS); } catch (e) { closed ||= `LUMI_GUARD_CLOSED: kebijakan sandbox gagal dibuat (${String(e)}) — shell & tool tulis ditolak`; } }
-    jot({ kind: "guard", status: closed ? "closed" : "ok", sandbox, ws: WS, reason: closed || undefined });
+    // v0.3.19: tier kepercayaan per proyek (strict/standard/trusted) + akar proyek + file memori ancestor.
+    // Tier dibaca dari file trust milik user di luar workspace (tidak bisa diubah agent) atau env LUMI_TRUST_TIER.
+    // Default standard: kebijakan tulis sama, tanpa bwrap. strict: bwrap wajib (fail-closed bila tidak ada).
+    let SP: any = null; let TIER = "standard"; let SCOPE: any = null;
+    if (g) { try { SCOPE = g.buildSandboxScope(WS, { home: env.HOME || os.homedir(), lumiHome: env.LUMI_HOME || path.join(env.HOME || os.homedir(), ".lumitome"), env }); SP = SCOPE.sp; TIER = SCOPE.tier; } catch (e) { closed ||= `LUMI_GUARD_CLOSED: kebijakan sandbox gagal dibuat (${String(e)}) — shell & tool tulis ditolak`; } }
+    const sandbox = env.LUMI_SANDBOX || (TIER === "strict" ? "bwrap" : "off");
+    if (g && sandbox === "bwrap" && !g.bwrapAvailable()) closed = "SANDBOX_CLOSED: bwrap tidak tersedia/tidak bisa membuat namespace. Shell ditolak (fail-closed). Pasang bubblewrap (apt install bubblewrap), turunkan tier (lumitome trust standard), atau set LUMI_SANDBOX=off secara sadar.";
+    jot({ kind: "guard", status: closed ? "closed" : "ok", sandbox, tier: TIER, ws: WS, root: SCOPE?.root, write: SP?.write, reason: closed || undefined });
 
     await ctx.tool.hook("execute.before", (e: any) => {
       const tool = String(e.tool);
@@ -50,7 +52,7 @@ export default {
         return;
       }
       const command = String(e.input?.command ?? "");
-      const d = g.classifyShell(command, { workspace: WS, headless });
+      const d = g.classifyShell(command, { workspace: WS, headless, tier: TIER });
       if (d.effect === "deny") { jot({ kind: "deny", tool, rule: d.rule, command }); throw new Error(d.reason); }
       const outside = g.shellOutsidePaths(command, SP);
       if (outside.length) { jot({ kind: "deny", tool, rule: "sandbox-outside", command }); throw new Error(g.outsideMessage(outside[0].path, SP, outside[0].kind)); }
