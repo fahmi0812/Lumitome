@@ -74,7 +74,7 @@ const idx = fs.readFileSync("router/skills-index.md", "utf8");
 ok("karpathy-guidelines di pack (packs/coding-extra/registry.json, bukan registry aktif), champion false, tidak di indeks, tetap vendored",
   ks && ks.pack === "coding-extra" && ks.champion === false && !idx.includes("karpathy-guidelines") &&
   fs.existsSync(`packs/coding-extra/skills/${ks.id}/SKILL.md`));
-ok("indeks aktif <= ~1.5k tok", Math.ceil(idx.length / 4) <= 1600);
+ok("indeks aktif <= ~1.7k tok", Math.ceil(idx.length / 4) <= 1700);
 
 // --- v0.1.1: scan gate (fixture/mock, tanpa jaringan) ---
 const fx = (n) => JSON.parse(fs.readFileSync(`tests/fixtures/scan/${n}`, "utf8"));
@@ -133,7 +133,7 @@ ok("perubahan fitur biasa -> tanpa WARN drift", checkRewriteToDocs({ changedFile
 
 // --- v0.1.3: kompatibilitas OpenCode ---
 const act = checkSkillsDir(".opencode/skills");
-ok("87 skill aktif valid (nama=folder, regex, deskripsi)", act.errors.length === 0 && act.names.length === 87);
+ok("89 skill aktif valid (nama=folder, regex, deskripsi)", act.errors.length === 0 && act.names.length === 89);
 ok("semua pack skill valid", fs.readdirSync("packs").every((p) => checkSkillsDir(`packs/${p}/skills`).errors.length === 0));
 const bad = checkSkillsDir("tests/fixtures/opencode/bad-skills");
 ok("fixture: folder foo__bar / name beda -> FAIL", bad.errors.some((e) => e.includes("foo__bar")) && !bad.errors.some((e) => e.includes("good-one")));
@@ -169,7 +169,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const { checkMcpPolicy } = await import("../scripts/check-opencode.mjs");
   delete process.env.SW_EMBED; delete process.env.SW_EMBED_MODEL;
   const built = await SD.buildIndex({ quiet: true });
-  ok("indeks: 87 aktif, api/llm-security disabled", built.counts.active === 87 && built.counts.disabled > 0);
+  ok("indeks: 89 aktif, api/llm-security disabled", built.counts.active === 89 && built.counts.disabled > 0);
   const db = SD.openDb("runtime/skills.db", { readOnly: true });
   const st = Object.fromEntries(db.prepare("SELECT name,status FROM skill WHERE name IN ('api-security','llm-security')").all().map((r) => [r.name, r.status]));
   ok("api-security & llm-security status=disabled di indeks", st["api-security"] === "disabled" && st["llm-security"] === "disabled");
@@ -200,7 +200,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
     // v0.3.1: enrichment, trigram, gating L1, timeout keras, cache rute
     const d = SD.openDb("runtime/skills.db");
     const en = d.prepare("SELECT json FROM skill_enrich").all().map((r) => JSON.parse(r.json));
-    ok(`enrich: ${en.length} skill aktif, masing2 3–5 contoh + alias`, en.length === 87 && en.every((e) => e.examples.length >= 3 && e.examples.length <= 5 && e.aliases_en.length > 0));
+    ok(`enrich: ${en.length} skill aktif, masing2 3–5 contoh + alias`, en.length === 89 && en.every((e) => e.examples.length >= 3 && e.examples.length <= 5 && e.aliases_en.length > 0));
     const L = await import("../router/l0.mjs");
     const r1 = L.searchL0(d, "deploi ke vercle"); d.close();
     ok("L0 trigram: typo 'deploi ke vercle' → vercel-ops top1", r1.candidates[0]?.name === "vercel-ops");

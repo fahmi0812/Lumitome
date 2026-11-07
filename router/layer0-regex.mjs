@@ -10,11 +10,16 @@ export const SLASH = {
   "/correct": { path: "correct" },
   "/poteto-mode": { skills: ["poteto-mode"] },
   "/in-your-own-words": { skills: ["in-your-own-words"] },
+  "/docs-pack": { sektor: "penulisan", skills: ["docs-pack"] },
+  "/stitch-ui": { sektor: "coding", skills: ["stitch-ui"] },
 };
 
 export const KEYWORD_RULES = [
   { re: /\b(tdd|unit test|failing test)\b/i, sektor: "coding", skillsHint: ["tdd", "test-driven"] },
   { re: /\b(karpathy|surgical change|perubahan bedah|kode minimal|overengineer\w*)\b/i, sektor: "coding", skillsHint: ["karpathy"], rules: ["06-coding-karpathy"] },
+  // v0.3.17 — skill lokal baru (spesifik dulu, sebelum rule umum; "buat PRD" TIDAK masuk sini: golden coding-05/10/15/20 mengharap sektor coding)
+  { re: /\b(docs?[- ]?pack|init docs|dokumentasi proyek|paket dokumen|product requirements document)\b/i, sektor: "penulisan", skillsHint: ["docs-pack"] },
+  { re: /\b(stitch|design\.md|prompt ui|ui dari gambar|desain dari (gambar|screenshot))\b/i, sektor: "coding", skillsHint: ["stitch-ui", "design-taste-frontend", "impeccable"] },
   // v0.1.4 — skill yang diaktifkan kembali (spesifik dulu, sebelum rule umum)
   { re: /\b(sound design|sfx|cue sheet)\b/i, sektor: "media", skillsHint: ["sound-design"] },
   { re: /\b(video demo|demo video|rekam demo)\b/i, sektor: "media", skillsHint: ["video-demo"] },

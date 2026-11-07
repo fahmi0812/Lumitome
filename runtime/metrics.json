@@ -5,16 +5,16 @@
   "cases_with_gold": 96,
   "embed": "none",
   "dim": 0,
-  "vec": "v0.1.9",
-  "top1_accuracy": 0.7813,
+  "vec": null,
+  "top1_accuracy": 0.7396,
   "selected_recall_at5_any": 0.9167,
   "selected_recall_at5_frac": 0.8264,
   "candidate_recall_at16": 0.9167,
   "candidate_recall_at32": 0.9167,
-  "mrr_at32": 0.842,
+  "mrr_at32": 0.8142,
   "zero_load_rate": 0,
-  "retrieval_ms_p50": 0.33,
-  "retrieval_ms_p95": 0.72,
+  "retrieval_ms_p50": 0.53,
+  "retrieval_ms_p95": 1.41,
   "misses_at5": 8,
   "miss_examples": [
     {
@@ -23,9 +23,9 @@
         "security-audit"
       ],
       "top": [
-        "smartdoc",
         "unified-done-gate",
-        "humanizer-indonesia"
+        "humanizer-indonesia",
+        "smartdoc"
       ]
     },
     {
@@ -34,9 +34,9 @@
         "security-audit"
       ],
       "top": [
-        "smartdoc",
         "unified-done-gate",
-        "humanizer-indonesia"
+        "humanizer-indonesia",
+        "smartdoc"
       ]
     },
     {
@@ -45,9 +45,9 @@
         "security-audit"
       ],
       "top": [
-        "smartdoc",
         "unified-done-gate",
-        "humanizer-indonesia"
+        "humanizer-indonesia",
+        "smartdoc"
       ]
     },
     {
@@ -56,9 +56,9 @@
         "security-audit"
       ],
       "top": [
-        "smartdoc",
         "unified-done-gate",
-        "humanizer-indonesia"
+        "humanizer-indonesia",
+        "smartdoc"
       ]
     },
     {

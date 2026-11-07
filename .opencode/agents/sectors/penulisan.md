@@ -18,6 +18,7 @@ permissions:
   - { action: "skill", resource: "*", effect: deny }
   - { action: "skill", resource: "diagram-design", effect: allow }
   - { action: "skill", resource: "doc-coauthoring", effect: allow }
+  - { action: "skill", resource: "docs-pack", effect: allow }
   - { action: "skill", resource: "drawio-diagram", effect: allow }
   - { action: "skill", resource: "humanizer", effect: allow }
   - { action: "skill", resource: "humanizer-indonesia", effect: allow }

@@ -419,6 +419,23 @@
       "from_pack": "misc"
     },
     {
+      "id": "docs-pack",
+      "name": "docs-pack",
+      "sektor": "penulisan",
+      "description": "Bootstrap a 12-file living documentation pack for a project (PRD, architecture, data model, design system, security, testing, code style, API spec, AGENTS.md, changelog, roadmap, decision log). Interview the user one question at a time (max 10), then write the files in the project root.",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/Lumitome",
+      "sha": "c544afabb5eb88a0e9b5e050353a06bbb0ccc769",
+      "license": "MIT",
+      "original_id": "lumitome__docs-pack",
+      "original_name": "docs-pack"
+    },
+    {
       "id": "drawio-diagram",
       "name": "drawio-diagram",
       "sektor": "penulisan",
@@ -1561,6 +1578,23 @@
       "original_name": "sound-design",
       "activated_in": "0.1.4",
       "from_pack": "motion"
+    },
+    {
+      "id": "stitch-ui",
+      "name": "stitch-ui",
+      "sektor": "coding",
+      "description": "Buat UI dari gambar referensi: audit screenshot jadi design.md + Stitch prompt + index.html, lalu prompting modular di Google Stitch. Use for Stitch UI generation, design.md extraction, UI prototype from a screenshot. Stitch/Gems/Vcraft are external tools — this skill only produces the artifacts.",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/Lumitome",
+      "sha": "c544afabb5eb88a0e9b5e050353a06bbb0ccc769",
+      "license": "MIT",
+      "original_id": "lumitome__stitch-ui",
+      "original_name": "stitch-ui"
     },
     {
       "id": "subagent-driven-development",

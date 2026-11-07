@@ -1,6 +1,10 @@
 # NOTICE — atribusi pihak ketiga
 Kode Lumitome (wrapper `lumitome/`, harness `harness/`) dan basis Swanwright (fahmi0812/Swanwright @ da868bd): MIT (lihat LICENSE).
 
+## Skill lokal (sintesis, bukan vendor)
+- `docs-pack`: struktur 12 dokumen + alur interview disintesis dari "The Claude Code Docs Pack", panduan gratis oleh Sam Butler (@SAMBUTLERAI); ditulis ulang dengan kata sendiri, contoh Shiplog tidak disalin. MIT.
+- `stitch-ui`: alur 6 langkah disintesis dari "Panduan Lengkap Perancangan UI dengan Stitch dan AI", rangkuman tutorial video berbahasa Indonesia (materi pengguna); ditulis ulang dengan kata sendiri. MIT.
+
 ## Rules inti (`lumitome/rules/`)
 Sintesis/parafrase (bukan salinan) dari: multica-ai/andrej-karpathy-skills @2c60614 (MIT), obra/superpowers @2ce8aa1 (MIT), poteto/noodle @82d2921 (MIT), unicodef1wn/grokbot-field-notes @02780c0 (MIT), qkal/Canny @f2c5e53 (MIT), affaan-m/ECC @b38be6a (MIT), alvinunreal/oh-my-opencode-slim @5c6655f (MIT), google/elephant-goldfish-model @403d888 (Apache-2.0). Tabel lengkap: docs/RULES.md.
 

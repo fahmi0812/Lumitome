@@ -80,6 +80,7 @@ permissions:
   - { action: "skill", resource: "root-cause-gate", effect: allow }
   - { action: "skill", resource: "skill-creator", effect: allow }
   - { action: "skill", resource: "slides", effect: allow }
+  - { action: "skill", resource: "stitch-ui", effect: allow }
   - { action: "skill", resource: "subagent-driven-development", effect: allow }
   - { action: "skill", resource: "supabase-ops", effect: allow }
   - { action: "skill", resource: "systematic-debugging", effect: allow }

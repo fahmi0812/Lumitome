@@ -56,6 +56,7 @@ Pack: `npm run enable-pack -- <nama>`. Karpathy via rules/06. Finance: belum ada
 - magic-ui: komponen Magic UI di React/Next.js (shadcn registry)
 - gsap-core: GSAP core: tween, easing, stagger, matchMedia
 - gsap-scrolltrigger: GSAP ScrollTrigger: animasi scroll, pin, scrub, parallax
+- stitch-ui: UI dari gambar referensi: audit screenshot → design.md + Stitch prompt + index.html
 
 ## security
 - security-audit: security-audit: review kerentanan kode, API, layanan, CLI, library
@@ -86,6 +87,7 @@ Pack: `npm run enable-pack -- <nama>`. Karpathy via rules/06. Finance: belum ada
 - laporan-generator: dokumen akademik Indonesia → PDF/DOCX: skripsi, laporan PKL, makalah
 - internal-comms: komunikasi internal: update status, newsletter, laporan tim
 - technical-writer: dokumentasi developer: SDK, library, getting started, referensi API
+- docs-pack: paket 12 dokumen proyek (PRD, arsitektur, AGENTS.md, …): interview max 10 pertanyaan
 
 ## media
 - motion-design: aturan rasa motion graphics Remotion: timing, easing, tipografi

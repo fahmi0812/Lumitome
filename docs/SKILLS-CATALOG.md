@@ -1,6 +1,6 @@
 # Katalog Skill Swanwright
 
-Total skill di-vendor: 615. Aktif: 86. Pack: 529. Pointer: 7.
+Total skill di-vendor: 617. Aktif: 89. Pack: 529. Pointer: 7.
 
 v0.1.1: 35 skill dipindah ke pack (24 duplikat `impeccable-N`, 6 duplikat `ui-ux-pro-max *-2` → `design-extra`; `karpathy-guidelines`, `ink`, `agent-dx-cli-scale`, `hackathon-winner-thinking`, `honey` → `coding-extra`). Inti Karpathy kini rule `.opencode/rules/06-coding-karpathy.md`.
 
@@ -621,6 +621,8 @@ v0.1.1: 35 skill dipindah ke pack (24 duplikat `impeccable-N`, 6 duplikat `ui-ux
 | `penulis-ilmiah` | fahmi0812/SuperQuantumAGI | `2b97a157f488` | MIT | penulisan | active | — | `swanwright__penulis-ilmiah` |
 | `full-audit-keamanan` | fahmi0812/SuperQuantumAGI | `2b97a157f488` | MIT | security | active | — | `swanwright__full-audit-keamanan` |
 | `chrome-devtools-axi` | fahmi0812/SuperQuantumAGI | `2b97a157f488` | MIT | coding | active | — | `swanwright__chrome-devtools-axi` |
+| `docs-pack` | fahmi0812/Lumitome (lokal, sintesis) | `c544afabb5eb` | MIT | penulisan | active | — | `lumitome__docs-pack` |
+| `stitch-ui` | fahmi0812/Lumitome (lokal, sintesis) | `c544afabb5eb` | MIT | coding | active | — | `lumitome__stitch-ui` |
 | `davidhdev-canvas-ui` (pointer) | DavidHDev_canvas-ui | `a04a99b23529` | Commons-Clause | — | pointer | — |
 | `davidhdev-react-bits` (pointer) | DavidHDev_react-bits | `e12c22192ac7` | Commons-Clause | — | pointer | — |
 | `vectifyai-pageindex` (pointer) | VectifyAI_PageIndex | `2e0f4dd35aa6` | MIT-tool | — | pointer | — |
