@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.19 — tier sandbox + SSH deploy
+
+- Sandbox jadi tiga tier kepercayaan (`lumitome trust [strict|standard|trusted]`): `strict` = perilaku lama (tulis folder kerja + bwrap, fail-closed bila bubblewrap tidak ada); `standard` = default baru (aturan tulis sama, guard saja, tanpa bwrap — tidak ada lagi fail-closed karena bwrap tidak terpasang); `trusted` = tulis selebar akar proyek (terdeteksi dari `.git`/`opencode.jsonc`/`MEMORY.md`/`.lumitome`, maks 5 tingkat ke atas, tidak melewati `$HOME`).
+- Tier disimpan di `~/.lumitome/trust.json` (di luar workspace, kunci = akar proyek) dan di-mask dari agent — agent tidak bisa membaca/mengubah tier-nya sendiri. Env `LUMI_TRUST_TIER` menang atas file. Perintah `lumitome trust` menampilkan tier + cakupan tulis + aturan SSH proyek ini.
+- Perbaikan kasus Bindo: `MEMORY.md` di folder induk (sampai 5 tingkat ke atas) kini bisa ditulis sebagai file, tanpa membuka seluruh folder induk.
+- Kinerja: pemindaian file rahasia kini di-cache per proses (TTL 5 menit) — perintah shell pertama membayar jalan kaki penuh (~4,2 detik di VM build), perintah berikutnya ~0,6 ms (sebelumnya ~866 ms per perintah).
+- SSH deploy: di tier standard/strict, `ssh`/`scp`/`sftp` hanya boleh dengan `-i` kunci deploy di `~/.lumitome/` (dibuat via `lumitome trust --deploy-key`, bukan `id_*`, bukan `~/.ssh/`); tier trusted membebaskan ssh; `ForwardAgent` hanya di trusted. `sudo` lokal tetap ditolak di semua tier; `sudo` di VPS tidak diatur sandbox (berjalan di server).
+- Catatan: v0.3.16 menghapus deteksi akar proyek + `sandbox.json` karena config-nya hidup di dalam workspace (agent bisa melonggarkan kurungannya sendiri). v0.3.19 mengembalikan deteksi akar saja (perhitungan path murni, tidak membaca config) dan menyimpan trust di luar workspace — bukan mengembalikan `sandbox.json`.
+- Tes: 224 → 238 (14 tes baru: tier, root, MEMORY.md, cache, SSH, sudo, trust ter-mask, CLI trust). Validate OK, metrics golden 154 / L0-mismatch 0.
+
 ## 0.3.18 — validate + test hijau
 
 - Perbaikan kegagalan lama (sudah ada sejak clone bersih): `npm run validate` FAILED 12 dan `npm test` 221/3 — akar masalahnya devDependencies belum terpasang (`ajv` + `yaml` hilang karena `node_modules` kosong; tanpa `yaml`, parser frontmatter cadangan membaca `permissions` sebagai string, bukan array) dan deskripsi `packs/misc/skills/claude-api` 1027 karakter melewati batas 1024. Sekarang: validate OK (warns 0), test 224/0; deskripsi claude-api dipotong jadi 1005 karakter.
