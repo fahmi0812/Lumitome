@@ -16,6 +16,7 @@ permissions:
   - { action: "skills_penulisan_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "skills", effect: allow }
   - { action: "skill", resource: "*", effect: deny }
+  - { action: "skill", resource: "antislop-copywriting", effect: allow }
   - { action: "skill", resource: "diagram-design", effect: allow }
   - { action: "skill", resource: "doc-coauthoring", effect: allow }
   - { action: "skill", resource: "docs-pack", effect: allow }

@@ -58,10 +58,25 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - Lisensi: MIT
 - Jumlah skill: 1
 
+## caru-ini/stack-diagram
+- SHA: `1ed53e3e9525364ae5d82e0430f2bb3f7ef4c838`
+- Lisensi: MIT (font bundel SIL OFL 1.1, lihat `assets/fonts/`)
+- Jumlah skill: 1
+
+## 0xS4N4TG/papercut-explainer
+- SHA: `ff8223abc8136cc09e8d7e9b62ecb5d080c389e1`
+- Lisensi: MIT
+- Jumlah skill: 9 (pack motion)
+
 ## cathrynlavery/diagram-design
 - SHA: `0cf73c3fcc56667ad91a9a04c439ac6ccfabc9d1`
 - Lisensi: MIT
 - Jumlah skill: 1
+
+## cth9191/animate
+- SHA: `7e5eb56feb2dd573f890e1b7b34748af43d58263`
+- Lisensi: MIT
+- Jumlah skill: 1 (pack motion, sebagai `animate-video`; `animate` sudah dipakai packs/design-extra)
 
 ## cloudflare/security-audit-skill
 - SHA: `c1c8a8c1471069fb0e188eeaff69b8e8db6564a8`
@@ -72,6 +87,11 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - SHA: `4dd1d05818d19792e7cd6e818f1667f95f7e1dbe`
 - Lisensi: MIT
 - Jumlah skill: 58
+
+## edenfunf/reelmimic
+- SHA: `311d835b623e1b6790d8823298dc0d5553661fe2`
+- Lisensi: MIT
+- Jumlah skill: 35 (pack motion; `frontend-design` tidak di-vendor — duplikat packs/misc/frontend-design)
 
 ## earthtojake/text-to-cad
 - SHA: `e4e6e8375d0e8fe7180c275082a9f260e436543e`
@@ -98,6 +118,11 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - Lisensi: Apache-2.0
 - Jumlah skill: 78
 
+## github/spec-kit
+- SHA: `c43849408ac0de2ca6a52f14eaae71449776057b`
+- Lisensi: MIT
+- Jumlah skill: 1 (`speckit-code-review`; `add-community-extension` tidak di-vendor — skill internal maintainer repo spec-kit)
+
 ## google-labs-code/design.md
 - SHA: `6e5da5382f41edbba9d73b2c62f33f32e9971f15`
 - Lisensi: Apache-2.0
@@ -112,6 +137,26 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - SHA: `aed9cfd3277740755f6bfc1155c7aa645403b760`
 - Lisensi: MIT
 - Jumlah skill: 8
+
+## haydenschmitty/floorplan
+- SHA: `70be3f40f9c2e061290b76027f180d9ff892edd6`
+- Lisensi: MIT
+- Jumlah skill: 1
+
+## kaankiziltug/logo-design-skill
+- SHA: `bbf31e521d765eb6d53242549bbee7c2e5bbd6bc`
+- Lisensi: MIT
+- Jumlah skill: 1 (termasuk library 1.400+ logo SVG referensi di `assets/library/`)
+
+## kaomei/stickman-video-director
+- SHA: `eb4bb378c4716a617f9ad7d98a60379b9d1fa54a`
+- Lisensi: MIT
+- Jumlah skill: 1 (pack motion, sebagai `directing-stickman-videos`)
+
+## kaventro/motion-designer
+- SHA: `7d0b8bb78ddd2c91c57db9d1e83fcf711304bdb8`
+- Lisensi: MIT
+- Jumlah skill: 1 (pack motion; frontmatter upstream diperbaiki — deskripsi dikutip, YAML asli rusak)
 
 ## kunchenguid/axi
 - SHA: `4184081afe3ad7ef658a982c0c224df8fb4e97fe`
@@ -133,6 +178,16 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - Lisensi: MIT
 - Jumlah skill: 38
 
+## miqdadbadjuber/anti-slop
+- SHA: `9504989f162a92b1996853eccbb3d8a86e73df68`
+- Lisensi: MIT (referensi a11y di `antislop-human`/`antislop-ui` berlisensi MIT, Addy Osmani)
+- Jumlah skill: 6
+
+## lemomo-ai/lemo-opuscar
+- SHA: `5c05490cc55dfb54f8f4c333f0f0e79cb6500564`
+- Lisensi: MIT
+- Jumlah skill: 1 (pack motion; salinan `tools/directory` tidak di-vendor — nama duplikat, varian installer)
+
 ## morluto/rea
 - SHA: `8f920bb65b8d8ae669411501b0a3a59a62883ac3`
 - Lisensi: MIT
@@ -149,10 +204,20 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - Lisensi: MIT
 - Jumlah skill: 13
 
+## mutonby/openshorts
+- SHA: `8fa411fed239247713012069dd170a5431ebe911`
+- Lisensi: MIT
+- Jumlah skill: 1 (pack motion; `get-started` tidak di-vendor — duplikat, kemasan ChatGPT-app; butuh API key OpenShorts atau self-host)
+
 ## nilbuild/video-demo
 - SHA: `767bfb818880c9f38bb02873d3d67141a3e62250`
 - Lisensi: MIT
 - Jumlah skill: 1
+
+## Tejashmakwana/motionmaxxing
+- SHA: `8c8ec0f2a6f6c9a0da15cd24f7b1298ab298368c`
+- Lisensi: Apache-2.0
+- Jumlah skill: 1 (pack motion; SKILL.md + references/scripts/runtime/taste/library/templates — docs/contoh tidak di-vendor)
 
 ## nothinx/naskah-id
 - SHA: `e18d574c6b93f407c5339abe03d52d2cfac75992`
@@ -174,6 +239,11 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - Lisensi: Apache-2.0
 - Jumlah skill: 26
 
+## plannotator/effective-html
+- SHA: `5ce160a3e76dc1c0f9301f8a1903704ec607636a`
+- Lisensi: MIT
+- Jumlah skill: 8
+
 ## rehan-remade/universal-modder
 - SHA: `9811709d950979f1b5012dddf10b7ec122d7e95e`
 - Lisensi: MIT
@@ -183,6 +253,11 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - SHA: `92b273065ba224491ba789f9de6936d32e8a37f8`
 - Lisensi: Apache-2.0
 - Jumlah skill: 32
+
+## Vincentwei1021/video-shotcraft
+- SHA: `1266a3ec4831289c4d893d42dd5102723658039a`
+- Lisensi: Apache-2.0
+- Jumlah skill: 1 (pack motion; SKILL.md + references/template + assets/scripts + gallery API — demo/galeri/showcase tidak di-vendor)
 
 ## whaleyxbt/claude-motion
 - SHA: `e627941543d9988b155dc610bb9cc0115a5e365e`
@@ -200,6 +275,8 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - Jumlah skill: 1
 
 ## Pointer (tidak di-vendor)
+- Vincentwei1021/video-talkcraft SHA `a7c29edfb2404612dde6a5a1c8aa94232e85625b` lisensi PolyForm-Noncommercial-1.0.0: Tidak di-vendor — komersial butuh izin penulis, bukan lisensi permisif.
+- Vincentwei1021/anything2explainer SHA `735c79c8724e897e8971cd59dde7e5aa11e4d6ce` lisensi PolyForm-Noncommercial-1.0.0: Tidak di-vendor — komersial butuh izin penulis, bukan lisensi permisif.
 - DavidHDev_canvas-ui SHA `a04a99b235299ee79a123a16ccb2e6cf9da74b6b` lisensi Commons-Clause: Tidak di-vendor: Commons Clause atau 0 SKILL.md (PageIndex=tool/MCP). Lihat sync-upstream.
 - DavidHDev_react-bits SHA `e12c22192ac7b4b452c5e2feb9b586d74765d696` lisensi Commons-Clause: Tidak di-vendor: Commons Clause atau 0 SKILL.md (PageIndex=tool/MCP). Lihat sync-upstream.
 - VectifyAI_PageIndex SHA `2e0f4dd35aa6a24c2dedfcf54678b0b0ad323ce8` lisensi MIT-tool: Tidak di-vendor: Commons Clause atau 0 SKILL.md (PageIndex=tool/MCP). Lihat sync-upstream.

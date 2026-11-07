@@ -36,16 +36,23 @@ permissions:
   - { action: "opencode_list_mcp_resources", resource: "skills", effect: allow }
   - { action: "skill", resource: "*", effect: deny }
   - { action: "skill", resource: "anti-spin-circuit-breaker", effect: allow }
+  - { action: "skill", resource: "antislop", effect: allow }
+  - { action: "skill", resource: "antislop-code", effect: allow }
+  - { action: "skill", resource: "antislop-human", effect: allow }
+  - { action: "skill", resource: "antislop-layoutmobile", effect: allow }
+  - { action: "skill", resource: "antislop-ui", effect: allow }
   - { action: "skill", resource: "audit", effect: allow }
   - { action: "skill", resource: "automation-audit-ops", effect: allow }
   - { action: "skill", resource: "axi", effect: allow }
   - { action: "skill", resource: "banner-design", effect: allow }
+  - { action: "skill", resource: "big-pics-little-words", effect: allow }
   - { action: "skill", resource: "brainstorming", effect: allow }
   - { action: "skill", resource: "brand", effect: allow }
   - { action: "skill", resource: "chrome-devtools-axi", effect: allow }
   - { action: "skill", resource: "code-review", effect: allow }
   - { action: "skill", resource: "correct", effect: allow }
   - { action: "skill", resource: "design", effect: allow }
+  - { action: "skill", resource: "design-artifact", effect: allow }
   - { action: "skill", resource: "design-system", effect: allow }
   - { action: "skill", resource: "design-taste-frontend", effect: allow }
   - { action: "skill", resource: "dispatching-parallel-agents", effect: allow }
@@ -60,18 +67,26 @@ permissions:
   - { action: "skill", resource: "eval-harness", effect: allow }
   - { action: "skill", resource: "executing-plans", effect: allow }
   - { action: "skill", resource: "finishing-a-development-branch", effect: allow }
+  - { action: "skill", resource: "floorplan", effect: allow }
   - { action: "skill", resource: "gh-axi", effect: allow }
   - { action: "skill", resource: "git-guardrails-claude-code", effect: allow }
   - { action: "skill", resource: "gsap-core", effect: allow }
   - { action: "skill", resource: "gsap-scrolltrigger", effect: allow }
   - { action: "skill", resource: "hallmark", effect: allow }
+  - { action: "skill", resource: "html", effect: allow }
+  - { action: "skill", resource: "html-diagram", effect: allow }
+  - { action: "skill", resource: "html-plan", effect: allow }
+  - { action: "skill", resource: "html-prototype", effect: allow }
+  - { action: "skill", resource: "html-wireframe", effect: allow }
   - { action: "skill", resource: "impeccable", effect: allow }
   - { action: "skill", resource: "improve-codebase-architecture", effect: allow }
   - { action: "skill", resource: "in-your-own-words", effect: allow }
+  - { action: "skill", resource: "logo-design", effect: allow }
   - { action: "skill", resource: "magic-ui", effect: allow }
   - { action: "skill", resource: "mcp-builder", effect: allow }
   - { action: "skill", resource: "mongodb-ops", effect: allow }
   - { action: "skill", resource: "next", effect: allow }
+  - { action: "skill", resource: "one-pager", effect: allow }
   - { action: "skill", resource: "poteto-mode", effect: allow }
   - { action: "skill", resource: "react", effect: allow }
   - { action: "skill", resource: "receiving-code-review", effect: allow }
@@ -80,6 +95,8 @@ permissions:
   - { action: "skill", resource: "root-cause-gate", effect: allow }
   - { action: "skill", resource: "skill-creator", effect: allow }
   - { action: "skill", resource: "slides", effect: allow }
+  - { action: "skill", resource: "speckit-code-review", effect: allow }
+  - { action: "skill", resource: "stack-diagram", effect: allow }
   - { action: "skill", resource: "stitch-ui", effect: allow }
   - { action: "skill", resource: "subagent-driven-development", effect: allow }
   - { action: "skill", resource: "supabase-ops", effect: allow }

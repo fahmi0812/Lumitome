@@ -57,6 +57,23 @@ Pack: `npm run enable-pack -- <nama>`. Karpathy via rules/06. Finance: belum ada
 - gsap-core: GSAP core: tween, easing, stagger, matchMedia
 - gsap-scrolltrigger: GSAP ScrollTrigger: animasi scroll, pin, scrub, parallax
 - stitch-ui: UI dari gambar referensi: audit screenshot → design.md + Stitch prompt + index.html
+- speckit-code-review: review spec-driven: konsistensi dengan design doc, cakupan tes, bukti regresi
+- logo-design: desain logo/brand mark SVG: brief, konsep, audit SVG, library 1.400+ logo
+- antislop: anti-slop inti: aturan filter AI generik untuk agen coding
+- antislop-code: anti-slop kode: bersihkan komentar generik AI, jangan sentuh kode
+- antislop-ui: anti-slop UI: warna, layout, komponen, motion, performa halaman
+- antislop-human: anti-slop aksesibilitas: kontras, keyboard, fokus (dengan contrast checker)
+- antislop-layoutmobile: anti-slop layout mobile: reflow, grid, overflow, tap target
+- stack-diagram: diagram stack cloud-style dengan logo brand asli → PNG/HTML
+- floorplan: peta codebase interaktif: node-graph subsistem, modul, route HTTP
+- html: artefak HTML single-file: laporan, landing, explainer dari brief
+- html-prototype: prototipe HTML interaktif responsif dari konteks percakapan
+- html-wireframe: wireframe HTML low-fidelity: hierarki, navigasi, alur tugas
+- html-plan: rencana HTML: hierarki, urutan, ownership, dependensi
+- html-diagram: diagram HTML self-contained: relasi, urutan, topologi, state
+- design-artifact: artefak desain HTML: prinsip + creative direction
+- big-pics-little-words: jelaskan topik dalam HTML: visual besar, teks minimal
+- one-pager: one-pager HTML: bagikan ide ke tim lebih awal
 
 ## security
 - security-audit: security-audit: review kerentanan kode, API, layanan, CLI, library
@@ -88,6 +105,7 @@ Pack: `npm run enable-pack -- <nama>`. Karpathy via rules/06. Finance: belum ada
 - internal-comms: komunikasi internal: update status, newsletter, laporan tim
 - technical-writer: dokumentasi developer: SDK, library, getting started, referensi API
 - docs-pack: paket 12 dokumen proyek (PRD, arsitektur, AGENTS.md, …): interview max 10 pertanyaan
+- antislop-copywriting: anti-slop copywriting: headline, tone, CTA, pola anti-AI
 
 ## media
 - motion-design: aturan rasa motion graphics Remotion: timing, easing, tipografi

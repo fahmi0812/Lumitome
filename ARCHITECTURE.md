@@ -1,6 +1,6 @@
 # Arsitektur Final Swanwright v0.1.6
 
-Target: **OpenCode v2.2.4** (rilis GitHub anomalyco/opencode). Model hanya via **9router**. 89 skill aktif (tidak dipotong/ditambah); `api-security` & `llm-security` tetap nonaktif (pack red-team).
+Target: **OpenCode v2.2.4** (rilis GitHub anomalyco/opencode). Model hanya via **9router**. 107 skill aktif (tidak dipotong/ditambah); `api-security` & `llm-security` tetap nonaktif (pack red-team).
 Diagram: `docs/diagrams/arsitektur-final.png` (sistem) · `docs/diagrams/orchestrator-final.png` (alur orchestrator). Sumber Mermaid di sebelahnya.
 
 ![Arsitektur final](docs/diagrams/arsitektur-final.png)
@@ -48,7 +48,7 @@ Rincian, pin versi, dan alasan: `docs/MCP.md`. Gateway: `docs/MCP-GATEWAY.md`.
 ![Orchestrator](docs/diagrams/orchestrator-final.png)
 
 ## 5. Invarian (dicek `npm test` / `npm run validate`)
-- Tepat 89 skill aktif; api-security/llm-security tidak aktif; golden 154 L0 0 mismatch.
+- Tepat 107 skill aktif; api-security/llm-security tidak aktif; golden 154 L0 0 mismatch.
 - `opencode.jsonc` lolos skema resmi (ajv 2020) + native V2 + kebijakan MCP (`checkMcpPolicy`).
 - Frontmatter agent = keluaran `gen-policy` (tidak boleh basi).
 - Plugin v2 `export default {id, setup}`; push main/master & cbm install diblok.

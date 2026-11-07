@@ -9,7 +9,7 @@ flowchart TB
   B --> C{"Layer-0 regex<br/>slash / kata kunci"}
   C -- "/pentest tanpa consent" --> X["Tolak<br/>minta consent + scope"]
   C -- "sektor + hint" --> D["Filter SQL SEBELUM ranking<br/>status=aktif · pack · sektor · izin"]
-  C -- "tidak kena" --> D2["Filter SQL<br/>semua 89 skill aktif"]
+  C -- "tidak kena" --> D2["Filter SQL<br/>semua 107 skill aktif"]
   D --> E["Query ganda<br/>q0 = tugas · q1 = hint Layer-0"]
   D2 --> E
   E --> F["FTS5 BM25<br/>(+ sqlite-vec bila ada embedding)"]

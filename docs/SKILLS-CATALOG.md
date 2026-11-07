@@ -1,6 +1,6 @@
 # Katalog Skill Swanwright
 
-Total skill di-vendor: 617. Aktif: 89. Pack: 529. Pointer: 7.
+Total skill di-vendor: 687. Aktif: 107. Pack: 580. Pointer: 7.
 
 v0.1.1: 35 skill dipindah ke pack (24 duplikat `impeccable-N`, 6 duplikat `ui-ux-pro-max *-2` → `design-extra`; `karpathy-guidelines`, `ink`, `agent-dx-cli-scale`, `hackathon-winner-thinking`, `honey` → `coding-extra`). Inti Karpathy kini rule `.opencode/rules/06-coding-karpathy.md`.
 
@@ -148,6 +148,7 @@ v0.1.1: 35 skill dipindah ke pack (24 duplikat `impeccable-N`, 6 duplikat `ui-ux
 | `discernment-nudge` | anthropics/skills | `ca45fc496a34` | PER-SKILL | coding | pack | misc | `anthropics-skills__discernment-nudge` |
 | `humanizer` | blader/humanizer | `0ef9fe5bc357` | MIT | penulisan | active | — | `blader-humanizer__humanizer` |
 | `diagram-design` | cathrynlavery/diagram-design | `0cf73c3fcc56` | MIT | penulisan | active | — | `cathrynlavery-diagram-design__diagram-design` |
+| `drawio-diagram` | DayuanJiang/next-ai-draw-io | `c9dc5f5cc62e` | Apache-2.0 | penulisan | active | — | `dayuanjiang-next-ai-draw-io__drawio-diagram` |
 | `security-audit` | cloudflare/security-audit-skill | `c1c8a8c14710` | MIT | security | active | — | `cloudflare-security-audit-skill__security-audit` |
 | `maintain-formal-verification-skill` | cursor/plugins | `4dd1d05818d1` | MIT | coding | pack | misc | `cursor-plugins__maintain-formal-verification-skill` |
 | `principle-outcome-oriented-execution` | cursor/plugins | `4dd1d05818d1` | MIT | coding | pack | misc | `cursor-plugins__principle-outcome-oriented-execution` |
@@ -623,6 +624,75 @@ v0.1.1: 35 skill dipindah ke pack (24 duplikat `impeccable-N`, 6 duplikat `ui-ux
 | `chrome-devtools-axi` | fahmi0812/SuperQuantumAGI | `2b97a157f488` | MIT | coding | active | — | `swanwright__chrome-devtools-axi` |
 | `docs-pack` | fahmi0812/Lumitome (lokal, sintesis) | `c544afabb5eb` | MIT | penulisan | active | — | `lumitome__docs-pack` |
 | `stitch-ui` | fahmi0812/Lumitome (lokal, sintesis) | `c544afabb5eb` | MIT | coding | active | — | `lumitome__stitch-ui` |
+| `video-shotcraft` | Vincentwei1021/video-shotcraft | `1266a3ec4831` | Apache-2.0 | media | pack | motion | `Vincentwei1021-video-shotcraft__video-shotcraft` |
+| `motionmaxxing` | Tejashmakwana/motionmaxxing | `8c8ec0f2a6f6` | Apache-2.0 | media | pack | motion | `Tejashmakwana-motionmaxxing__motionmaxxing` |
+| `animate-video` | cth9191/animate | `7e5eb56feb2d` | MIT | media | pack | motion | `cth9191-animate__animate` |
+| `motion-designer` | kaventro/motion-designer | `7d0b8bb78ddd` | MIT | media | pack | motion | `kaventro-motion-designer__motion-designer` |
+| `openshorts` | mutonby/openshorts | `8fa411fed239` | MIT | media | pack | motion | `mutonby-openshorts__openshorts` |
+| `lemo-opuscar` | lemomo-ai/lemo-opuscar | `5c05490cc55d` | MIT | media | pack | motion | `lemomo-ai-lemo-opuscar__lemo-opuscar` |
+| `directing-stickman-videos` | kaomei/stickman-video-director | `eb4bb378c471` | MIT | media | pack | motion | `kaomei-stickman-video-director__directing-stickman-videos` |
+| `papercut-build` | 0xS4N4TG/papercut-explainer | `ff8223abc813` | MIT | media | pack | motion | `0xS4N4TG-papercut-explainer__papercut-build` |
+| `papercut-explainer` | 0xS4N4TG/papercut-explainer | `ff8223abc813` | MIT | media | pack | motion | `0xS4N4TG-papercut-explainer__papercut-explainer` |
+| `papercut-hook` | 0xS4N4TG/papercut-explainer | `ff8223abc813` | MIT | media | pack | motion | `0xS4N4TG-papercut-explainer__papercut-hook` |
+| `papercut-qa` | 0xS4N4TG/papercut-explainer | `ff8223abc813` | MIT | media | pack | motion | `0xS4N4TG-papercut-explainer__papercut-qa` |
+| `papercut-script` | 0xS4N4TG/papercut-explainer | `ff8223abc813` | MIT | media | pack | motion | `0xS4N4TG-papercut-explainer__papercut-script` |
+| `papercut-setup` | 0xS4N4TG/papercut-explainer | `ff8223abc813` | MIT | media | pack | motion | `0xS4N4TG-papercut-explainer__papercut-setup` |
+| `papercut-storyboard` | 0xS4N4TG/papercut-explainer | `ff8223abc813` | MIT | media | pack | motion | `0xS4N4TG-papercut-explainer__papercut-storyboard` |
+| `papercut-strategy` | 0xS4N4TG/papercut-explainer | `ff8223abc813` | MIT | media | pack | motion | `0xS4N4TG-papercut-explainer__papercut-strategy` |
+| `papercut-voice` | 0xS4N4TG/papercut-explainer | `ff8223abc813` | MIT | media | pack | motion | `0xS4N4TG-papercut-explainer__papercut-voice` |
+| `anime-cel` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__anime-cel` |
+| `blender-product-film` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__blender-product-film` |
+| `captions-overlay` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__captions-overlay` |
+| `crayon-storybook` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__crayon-storybook` |
+| `cut-the-curve` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__cut-the-curve` |
+| `embedded-captions` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__embedded-captions` |
+| `faceless-explainer` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__faceless-explainer` |
+| `ffmpeg` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__ffmpeg` |
+| `figma` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__figma` |
+| `general-video` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__general-video` |
+| `hyperframes` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__hyperframes` |
+| `hyperframes-animation` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__hyperframes-animation` |
+| `hyperframes-audio` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__hyperframes-audio` |
+| `hyperframes-cli` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__hyperframes-cli` |
+| `hyperframes-core` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__hyperframes-core` |
+| `hyperframes-creative` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__hyperframes-creative` |
+| `hyperframes-keyframes` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__hyperframes-keyframes` |
+| `hyperframes-registry` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__hyperframes-registry` |
+| `hyperframes-studio` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__hyperframes-studio` |
+| `media-use` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__media-use` |
+| `motion-doctrine` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__motion-doctrine` |
+| `motion-graphics` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__motion-graphics` |
+| `music-to-video` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__music-to-video` |
+| `oversized-cursor` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__oversized-cursor` |
+| `painted-animation` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__painted-animation` |
+| `paper-cutout` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__paper-cutout` |
+| `pixel-art` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__pixel-art` |
+| `pr-to-video` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__pr-to-video` |
+| `product-launch-video` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__product-launch-video` |
+| `remotion-to-hyperframes` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__remotion-to-hyperframes` |
+| `seam-craft` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__seam-craft` |
+| `slideshow` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__slideshow` |
+| `talking-head-recut` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__talking-head-recut` |
+| `video-clone` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__video-clone` |
+| `whiteboard` | edenfunf/reelmimic | `311d835b623e` | MIT | media | pack | motion | `edenfunf-reelmimic__whiteboard` |
+| `speckit-code-review` | github/spec-kit | `c43849408ac0` | MIT | coding | active | — | `github-spec-kit__code-review` |
+| `logo-design` | kaankiziltug/logo-design-skill | `bbf31e521d76` | MIT | coding | active | — | `kaankiziltug-logo-design-skill__logo-design` |
+| `antislop` | miqdadbadjuber/anti-slop | `9504989f162a` | MIT | coding | active | — | `miqdadbadjuber-anti-slop__antislop` |
+| `antislop-code` | miqdadbadjuber/anti-slop | `9504989f162a` | MIT | coding | active | — | `miqdadbadjuber-anti-slop__antislop-code` |
+| `antislop-copywriting` | miqdadbadjuber/anti-slop | `9504989f162a` | MIT | penulisan | active | — | `miqdadbadjuber-anti-slop__antislop-copywriting` |
+| `antislop-human` | miqdadbadjuber/anti-slop | `9504989f162a` | MIT | coding | active | — | `miqdadbadjuber-anti-slop__antislop-human` |
+| `antislop-layoutmobile` | miqdadbadjuber/anti-slop | `9504989f162a` | MIT | coding | active | — | `miqdadbadjuber-anti-slop__antislop-layoutmobile` |
+| `antislop-ui` | miqdadbadjuber/anti-slop | `9504989f162a` | MIT | coding | active | — | `miqdadbadjuber-anti-slop__antislop-ui` |
+| `stack-diagram` | caru-ini/stack-diagram | `1ed53e3e9525` | MIT | coding | active | — | `caru-ini-stack-diagram__stack-diagram` |
+| `floorplan` | haydenschmitty/floorplan | `70be3f40f9c2` | MIT | coding | active | — | `haydenschmitty-floorplan__floorplan` |
+| `big-pics-little-words` | plannotator/effective-html | `5ce160a3e76d` | MIT | coding | active | — | `plannotator-effective-html__big-pics-little-words` |
+| `design-artifact` | plannotator/effective-html | `5ce160a3e76d` | MIT | coding | active | — | `plannotator-effective-html__design-artifact` |
+| `html-diagram` | plannotator/effective-html | `5ce160a3e76d` | MIT | coding | active | — | `plannotator-effective-html__html-diagram` |
+| `html-plan` | plannotator/effective-html | `5ce160a3e76d` | MIT | coding | active | — | `plannotator-effective-html__html-plan` |
+| `html-prototype` | plannotator/effective-html | `5ce160a3e76d` | MIT | coding | active | — | `plannotator-effective-html__html-prototype` |
+| `html-wireframe` | plannotator/effective-html | `5ce160a3e76d` | MIT | coding | active | — | `plannotator-effective-html__html-wireframe` |
+| `html` | plannotator/effective-html | `5ce160a3e76d` | MIT | coding | active | — | `plannotator-effective-html__html` |
+| `one-pager` | plannotator/effective-html | `5ce160a3e76d` | MIT | coding | active | — | `plannotator-effective-html__one-pager` |
 | `davidhdev-canvas-ui` (pointer) | DavidHDev_canvas-ui | `a04a99b23529` | Commons-Clause | — | pointer | — |
 | `davidhdev-react-bits` (pointer) | DavidHDev_react-bits | `e12c22192ac7` | Commons-Clause | — | pointer | — |
 | `vectifyai-pageindex` (pointer) | VectifyAI_PageIndex | `2e0f4dd35aa6` | MIT-tool | — | pointer | — |

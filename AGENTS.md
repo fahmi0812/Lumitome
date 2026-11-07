@@ -12,7 +12,7 @@ Lapisan non-invasif di atas OpenCode. Jangan patch core OpenCode. Model hanya vi
 - `npm run sync-upstream` — re-fetch skill dari SHA ter-pin
 
 ## Larangan keras
-1. Jangan `git push` ke `main` / jangan buka PR otomatis (Fahmi yang buka PR).
+1. `git push` ke `main` BOLEH untuk perubahan skill lokal yang sudah terverifikasi (registry + indeks + `validate` + test lolos); jangan buka PR otomatis. Perubahan arsitektur/harness tetap via PR (Fahmi yang buka PR).
 2. Jangan LiteLLM / proxy selain 9router.
 3. `/pentest` wajib `--pentest` + file consent + scope.
 4. Klaim DONE tanpa FACT (perintah+exit/hash) ditolak Done-Gate.
