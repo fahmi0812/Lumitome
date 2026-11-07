@@ -24,7 +24,7 @@ Alur (`route()` di `router/skill-db.mjs`):
 5. **RRF** k=60, pin `$nama`/`skill:nama`, top-N=24 (dijepit 16–32).
 6. **Layer-1 pilih-saja** (`router/layer1-select.md`): 1 panggilan 9router, JSON `{sectors, skills≤5, confidence, need_more}`, divalidasi ⊆ kandidat. Deskripsi kandidat disanitasi (≤200–300 char, tanpa URL/markup). 9router mati → fallback deterministik top-5.
 7. **route_log** (SQLite) dicatat tiap routing; dipertahankan saat indeks dibangun ulang.
-8. **skill_search** (MCP stdio, read-only, DB `readOnly`) — satu server per sektor (`skills-<sektor>`), hanya allowlist sektor itu.
+8. **skill_search** (MCP stdio, read-only, DB `readOnly`) — satu server `skills` untuk semua sektor (sejak v0.3.13), hanya allowlist sektor itu.
 9. **Rebuild**: `scripts/skill-index.mjs --if-changed` — hash = SHA-256(registry + layer0 + tiap SKILL.md + status + provider embed + versi skema).
 
 Metrik (`npm run skills:metrics`, golden 154, 96 kasus punya gold skill, tanpa L1, BM25-only, diukur di box 31 Okt 2026):
@@ -32,7 +32,7 @@ top-1 **0,7813** · recall@5 (any) **0,9167** · recall@5 (fraksi) **0,8264** ·
 Catatan jujur: golden berisi banyak prompt templat berulang ("kasus N") → angka optimistis; miss utama "cek CVE dependency" (tanpa hit Layer-0) tidak menemukan `security-audit`.
 
 ## 3. MCP per sektor
-| Sektor | Server (selain `skills-<sektor>`, `gw-<sektor>`) |
+| Sektor | Server (selain `skills`, `gw-<sektor>`) |
 |---|---|
 | coding | context7, codemem, github (mati), playwright, chromedev |
 | media (design/web) | figma (mati, OAuth), playwright, chromedev |

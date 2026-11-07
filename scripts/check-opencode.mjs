@@ -2,40 +2,9 @@
 import fs from "fs";
 import path from "path";
 import { createRequire } from "module";
+import { frontmatter, stripJsonc } from "../router/parse.mjs";
 
 export const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-
-export function stripJsonc(s) {
-  let out = "", inStr = false, esc = false;
-  for (let i = 0; i < s.length; i++) {
-    const c = s[i], n = s[i + 1];
-    if (inStr) { out += c; if (esc) esc = false; else if (c === "\\") esc = true; else if (c === '"') inStr = false; continue; }
-    if (c === '"') { inStr = true; out += c; continue; }
-    if (c === "/" && n === "/") { while (i < s.length && s[i] !== "\n") i++; out += "\n"; continue; }
-    if (c === "/" && n === "*") { i += 2; while (i < s.length && !(s[i] === "*" && s[i + 1] === "/")) i++; i++; continue; }
-    out += c;
-  }
-  return out.replace(/,(\s*[}\]])/g, "$1");
-}
-
-let YAML = null;
-try { YAML = createRequire(import.meta.url)("yaml"); } catch { /* fallback di bawah */ }
-
-/** Parse frontmatter YAML. YAML rusak → { __error } (OpenCode akan melewati skill itu). */
-export function frontmatter(text) {
-  const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (!m) return null;
-  if (YAML) {
-    try { const v = YAML.parse(m[1]); return v && typeof v === "object" ? v : { __error: "bukan map" }; }
-    catch (e) { return { __error: String(e.message).split("\n")[0] }; }
-  }
-  const fm = {};
-  for (const line of m[1].split("\n")) {
-    const k = line.match(/^([A-Za-z_][\w-]*):\s*(.*)$/);
-    if (k) fm[k[1]] = k[2].replace(/^['"]|['"]$/g, "");
-  }
-  return fm;
-}
 
 /** Validasi satu direktori skills (mis. `.opencode/skills` atau `packs/x/skills`). */
 export function checkSkillsDir(dir) {

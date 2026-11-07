@@ -14,6 +14,7 @@ import path from "node:path";
 import os from "node:os";
 import crypto from "node:crypto";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { stripJsonc } from "../../router/parse.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
@@ -168,14 +169,13 @@ fs.mkdirSync(path.join(HOME, "runs"), { recursive: true });
 const JOURNAL = path.join(HOME, "runs", `${new Date().toISOString().replace(/[:.]/g, "-")}-${RUN_ID.slice(0, 8)}.jsonl`);
 
 // ---------- override final ----------
-function stripJsonc(s) { return s.replace(/("(?:\\.|[^"\\])*")|\/\/[^\n]*|\/\*[\s\S]*?\*\//g, (m, str) => str ?? ""); }
 // Kepercayaan proyek: default config/plugin/agent proyek TIDAK dimuat (repo asing bisa membawa plugin jahat).
 const TRUST = env.LUMI_TRUST_PROJECT === "1";
 function projectMcp() {
   if (!TRUST) return {};
   for (const f of ["opencode.jsonc", "opencode.json", ".opencode/opencode.jsonc", ".opencode/opencode.json"]) {
     const p = path.join(WS, f); if (!fs.existsSync(p)) continue;
-    try { const c = JSON.parse(stripJsonc(fs.readFileSync(p, "utf8")).replace(/,(\s*[}\]])/g, "$1")); return c.mcp?.servers || {}; } catch { return {}; }
+    try { const c = JSON.parse(stripJsonc(fs.readFileSync(p, "utf8"))); return c.mcp?.servers || {}; } catch { return {}; }
   }
   return {};
 }

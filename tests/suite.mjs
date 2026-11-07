@@ -5,6 +5,7 @@ import { layer0 } from "../router/layer0-regex.mjs";
 import { evaluateDoneGate } from "../harness/done-gate.ts";
 import { detectDocCodeDrift, loadProject, checkRewriteToDocs, driftSection } from "../harness/doc-drift.ts";
 import { checkSkillsDir, checkConfig, checkAgents, checkPlugins, checkV2Config, NAME_RE } from "../scripts/check-opencode.mjs";
+import { frontmatter, frontmatterNaive, stripJsonc } from "../router/parse.mjs";
 import swanwrightPlugin, { guardPushMain } from "../.opencode/plugins/swanwright.ts";
 import { evaluateOsv, evaluateGitleaks, runScanGate, checkDiffScope, PINNED } from "../harness/scan-gate.ts";
 
@@ -142,6 +143,33 @@ ok("regex nama tolak __ dan --", !NAME_RE.test("a__b") && !NAME_RE.test("a--b") 
 ok("opencode.jsonc lolos skema resmi", checkConfig().length === 0);
 ok("config v0.1.2 (mcp.timeout/servers) gagal skema", checkConfig("tests/fixtures/opencode/v0.1.2-opencode.jsonc").length > 0);
 ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length === 0);
+
+// --- v0.3.22: satu parser frontmatter + satu stripJsonc (router/parse.mjs) ---
+// Regresi v0.3.18: fallback naif membaca `permissions:` sebagai string, bukan array —
+// 11 dari 12 kegagalan validate. Paritas diuji di SEMUA frontmatter nyata: YAML vs naif
+// harus sama di field yang dibaca pemanggil (name, description, mode, swanwright_*,
+// dan array-ness + panjang `permissions`).
+const FIELDS = ["name", "description", "mode", "swanwright_sector", "swanwright_src", "swanwright_sha", "license", "swanwright_license", "swanwright_original_id", "swanwright_original_name"];
+const parseFiles = [];
+for (const d of fs.readdirSync(".opencode/skills")) { const f = `.opencode/skills/${d}/SKILL.md`; if (fs.existsSync(f)) parseFiles.push(f); }
+for (const p of fs.readdirSync("packs")) { const sd = `packs/${p}/skills`; if (!fs.existsSync(sd)) continue; for (const d of fs.readdirSync(sd)) { const f = `${sd}/${d}/SKILL.md`; if (fs.existsSync(f)) parseFiles.push(f); } }
+const walkAgents = (dir) => { for (const e of fs.readdirSync(dir, { withFileTypes: true })) { const p = path.join(dir, e.name); if (e.isDirectory()) walkAgents(p); else if (e.name.endsWith(".md")) parseFiles.push(p); } };
+walkAgents(".opencode/agents");
+const parseBad = [];
+for (const f of parseFiles) {
+  const t = fs.readFileSync(f, "utf8");
+  const a = frontmatter(t), b = frontmatterNaive(t);
+  if (a?.__error) continue; // YAML rusak sudah ditangkap tes validate di atas
+  if ((a === null) !== (b === null)) { parseBad.push(`${f}: null mismatch`); continue; }
+  if (a === null) continue;
+  const fld = (m, k) => { const v = m?.[k] ?? m?.metadata?.[k]; return String(v ?? ""); };
+  for (const k of FIELDS) if (fld(a, k) !== fld(b, k)) { parseBad.push(`${f}: ${k} YAML=${JSON.stringify(fld(a, k))} naive=${JSON.stringify(fld(b, k))}`); break; }
+  if (Array.isArray(a.permissions) !== Array.isArray(b.permissions) || (Array.isArray(a.permissions) && a.permissions.length !== b.permissions.length)) parseBad.push(`${f}: permissions array mismatch`);
+}
+ok(`frontmatter YAML vs naive sama di ${parseFiles.length} file (${parseBad.slice(0, 3).join(" | ") || "tanpa beda"})`, parseBad.length === 0);
+ok("frontmatter: tanpa blok -> null; YAML rusak -> __error", frontmatter("tanpa frontmatter") === null && frontmatterNaive("tanpa frontmatter") === null && frontmatter("---\nname: [\n---\n").__error !== undefined);
+const sj = JSON.parse(stripJsonc(`{\n// k\n"a": "http://x", /* b */\n"b": [1, 2,],\n"c": { "d": 1, },\n}`));
+ok("stripJsonc: komentar + koma trailing + string berisi //", sj.a === "http://x" && sj.b.length === 2 && sj.c.d === 1);
 const registered = [];
 await swanwrightPlugin.setup({ tool: { hook: async (name, fn) => { registered.push([name, fn]); } } });
 const hook = registered.find(([n]) => n === "execute.before")?.[1];

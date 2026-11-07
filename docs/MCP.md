@@ -15,7 +15,7 @@ Pola tiap agent: `{"action":"*_*","effect":"deny"}` → `external_directory: ask
 | figma | remote | **OFF** | `https://mcp.figma.com/mcp` (resmi) | media | OAuth: set `disabled:false`, lalu `opencode mcp auth figma`; butuh seat Dev/Full |
 | figcraft | local AppImage/CLI | **OFF** | `figcraft-cli` v0.16.0 (storytold/figcraft) | media | headless `figcraft-cli mcp` atau attach `--attach <port>`; confinement `--automation-read-root/write-root` = folder sesi; nyalakan `LUMI_MCP=<default>,figcraft` |
 | github | remote | **OFF** | `https://api.githubcopilot.com/mcp/` | coding (devops) | `Authorization: Bearer {env:GITHUB_PERSONAL_ACCESS_TOKEN}`; tool tulis = ask |
-| skills-&lt;sektor&gt; (6) | local node | ON | `router/skill-search-mcp.mjs` | sektornya saja | `skill_search` read-only, allowlist sektor |
+| skills | local node | ON | `router/skill-search-mcp.mjs` | semua sektor | `skill_search` read-only, allowlist sektor |
 | gw-&lt;sektor&gt; (6) | remote | **OFF** | `http://127.0.0.1:8811..8816/mcp` | sektornya saja | gateway opsional, lihat `docs/MCP-GATEWAY.md` |
 
 Tidak dipasang: Kali/offensive MCP, MCP trading (alpaca/ccxt/freqtrade) — `checkMcpPolicy` menolak.

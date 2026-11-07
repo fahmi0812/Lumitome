@@ -12,6 +12,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { frontmatter } from "../router/parse.mjs";
 
 const ROOT = process.cwd();
 const REG = path.join(ROOT, "router/skills-registry.json");
@@ -19,14 +20,16 @@ const old = JSON.parse(fs.readFileSync(REG, "utf8"));
 const byId = new Map(old.skills.map((s) => [s.id, s]));
 for (const p of fs.readdirSync(path.join(ROOT, "packs"))) { const f = path.join(ROOT, "packs", p, "registry.json");
   if (fs.existsSync(f)) for (const s of JSON.parse(fs.readFileSync(f, "utf8")).skills) if (!s.mirror_of || s.sektor) { const { mirror_of, ...e } = s; if (!byId.has(s.id) && e.sektor) byId.set(s.id, e); } }
-const fmOf = (md) => { const t = fs.readFileSync(md, "utf8"); const m = t.match(/^---\n([\s\S]*?)\n---/); return m ? m[1] : ""; };
-const field = (fm, k) => { const m = fm.match(new RegExp(`^\\s*${k}:\\s*(.+)$`, "m")); return m ? m[1].trim().replace(/^['"]|['"]$/g, "") : null; };
+// field: baca satu kunci skalar dari frontmatter ter-parse (string atau null, seperti dulu).
+// swanwright_* tinggal bersarang di bawah `metadata:` (688 file) — regex lama menemukannya
+// karena mencari datar; di sini dicari di top-level dulu, lalu di metadata.
+const field = (fm, k) => { const v = fm?.[k] ?? fm?.metadata?.[k]; return v == null ? null : String(v).trim(); };
 export function isMirror(name, fm, known) {
   const orig = field(fm, "swanwright_original_name"); const m = name.match(/^(.+)-(\d+)$/);
   return !!(orig && m && m[1] === orig && known.has(orig)) ? orig : null;
 }
 function entry(dir, id, pack) {
-  const fm = fmOf(path.join(dir, "SKILL.md")); const prev = byId.get(id);
+  const fm = frontmatter(fs.readFileSync(path.join(dir, "SKILL.md"), "utf8")) || {}; const prev = byId.get(id);
   if (prev) return { ...prev, pack: pack || "" };
   return { id, name: id, sektor: field(fm, "swanwright_sector") || "misc", description: (field(fm, "description") || "").slice(0, 300), triggers: [], champion: false, fallback: null, cost: "low",
     requires_consent: false, pack: pack || "", src: field(fm, "swanwright_src") || "", sha: field(fm, "swanwright_sha") || "", license: field(fm, "license") || field(fm, "swanwright_license") || "",
@@ -40,7 +43,7 @@ for (const p of fs.readdirSync(path.join(ROOT, "packs")).sort()) {
   const sd = path.join(ROOT, "packs", p, "skills"); if (!fs.existsSync(sd)) continue;
   const names = fs.readdirSync(sd).filter((d) => fs.existsSync(path.join(sd, d, "SKILL.md"))).sort();
   const known = new Set([...active, ...names]);
-  const skills = names.flatMap((d) => { const e = byId.get(d); const mir = isMirror(d, fmOf(path.join(sd, d, "SKILL.md")), known);
+  const skills = names.flatMap((d) => { const e = byId.get(d); const mir = isMirror(d, frontmatter(fs.readFileSync(path.join(sd, d, "SKILL.md"), "utf8")), known);
     return e || mir ? [{ ...(e ? { ...e, pack: p } : { id: d }), ...(mir ? { mirror_of: mir } : {}) }] : []; });
   packs[p] = { pack: p, note: "dibangkitkan scripts/gen-registry.mjs; skill tanpa entri memakai frontmatter SKILL.md", skills };
 }

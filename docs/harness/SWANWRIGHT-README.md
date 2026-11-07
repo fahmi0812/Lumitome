@@ -117,9 +117,9 @@ Installer **idempoten**, mem-pin SHA256 + mencocokkan file checksum rilis untuk 
 | | |
 |---|---|
 | **Orchestrator tipis** | Primary agent → sub-agen sektor (depth=1) → Elephant / Goldfish / Synthesizer |
-| **86 skill aktif** | Lazy-load; `api-security` & `llm-security` tetap disabled |
+| **108 skill aktif** | Lazy-load; `api-security` & `llm-security` tetap disabled |
 | **Skill Query Layer** | SQLite FTS5 BM25 (+sqlite-vec opsional), filter SQL keras, RRF, 1 panggilan 9router pilih ≤5 |
-| **MCP per sektor** | deny-by-default `*_*` → allow server sektor sendiri; `skills-<sektor>` read-only |
+| **MCP per sektor** | deny-by-default `*_*` → allow server sektor sendiri; `skills` read-only |
 | **Plugin guard** | Blok push ke `main`/`master` + blok `codebase-memory-mcp install/update` |
 | **Done-gate berbukti** | FACT / JUDGMENT; osv-scanner + gitleaks opsional |
 | **Doctor** | `scripts/doctor.sh` — verifikasi end-to-end 0 FAIL |
@@ -142,7 +142,7 @@ Rincian: [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`docs/ROUTING.md`](../ROUTING.
 
 ## Sektor & MCP
 
-| Sektor | Server (selain `skills-<sektor>`) |
+| Sektor | Server (selain `skills`) |
 |---|---|
 | **coding** | context7 · codemem · playwright · chromedev · github *(mati)* |
 | **media** | playwright · chromedev · figma *(mati, OAuth)* |

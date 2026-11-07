@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.22 — v0.3.22 — Bersihkan duplikasi
+
+- Hapus 4 module harness mati (`harness/anti-spin.ts`, `quality-loop.ts`, `root-cause-gate.ts`, `post-push.ts`) — nol pemanggil (wrapper, plugin, tes); header `post-push.ts` ("The plugin reads it") ternyata tidak benar. `QualityObligation` di `io-schema/types.ts` dibiarkan (nilai skema, bukan import).
+- Satu parser: `router/parse.mjs` (`frontmatter` + `frontmatterNaive` + `stripJsonc`) menggantikan 3 parser frontmatter + 2 `stripJsonc`. Parser tunggal = yang sadar-YAML (satu-satunya dengan error reporting); fallback naif kini menangani urutan blok (`permissions:` → array — celah insiden v0.3.18), map bersarang satu level (`metadata:` → `swanwright_*`, 688 file), skalar terlipat, dan unquote `''` → `'`. Paritas YAML vs naif terbukti 0 beda di 698 file frontmatter nyata (tes baru di `tests/suite.mjs`).
+- Dokumen basi diperbaiki (manual, tanpa generator): `skills-<sektor>` → `skills` (ARCHITECTURE.md, docs/MCP.md, diagram arsitektur, SWANWRIGHT-README.md — plus hitungan "86 skill aktif" → 108); ROUTING.md menunjuk `layer1-select.md` (skills ≤5, bukan `layer1-prompt.md` ≤3) dan finance kini 4 skill aktif; `router/layer1-prompt.md` (file mati, 530 byte) dihapus.
+- Validate OK (warns 0), test 242/0, metrics golden 154 / L0-mismatch 0.
+
 ## 0.3.21 — versi single-source + indeks digenerate
 
 - Versi single-source: file `VERSION` satu-satunya tempat versi ditulis; `lumitome/bin/lumitome.mjs` + `install.sh` membacanya saat jalan (tidak ada lagi `const VERSION` / `SW_VERSION` hardcode — kelas bug yang merusak rilis v0.3.17 mati). `node scripts/bump-version.mjs <x.y.z> ["judul"]` menyinkronkan `package.json`/lockfile/README/CHANGELOG + verifikasi sendiri; rilis ini dibuat dengan script itu.

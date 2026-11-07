@@ -10,6 +10,7 @@ import crypto from "node:crypto";
 import { createRequire } from "node:module";
 import { layer0, KEYWORD_RULES } from "./layer0-regex.mjs";
 import { enrichSkill, loadCurated } from "./enrich.mjs";
+import { frontmatter } from "./parse.mjs";
 
 export const SCHEMA_VERSION = 4;
 export const SECTORS = ["coding", "finance", "media", "penulisan", "riset", "security"];
@@ -27,20 +28,7 @@ function sqlite() {
   return _sqlite;
 }
 
-// ---------- parsing ----------
-export function frontmatter(text) {
-  const m = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
-  if (!m) return {};
-  const out = {};
-  let key = null;
-  for (const line of m[1].split(/\r?\n/)) {
-    const kv = /^([A-Za-z0-9_\-/]+):\s*(.*)$/.exec(line);
-    if (kv) { key = kv[1]; out[key] = kv[2].replace(/^["']|["']$/g, ""); continue; }
-    if (key && /^\s+\S/.test(line) && typeof out[key] === "string") out[key] = (out[key] + " " + line.trim()).trim();
-  }
-  for (const k of Object.keys(out)) if (out[k] === ">" || out[k] === "|") out[k] = "";
-  return out;
-}
+// ---------- parsing (satu parser: ./parse.mjs) ----------
 export const sha256 = (s) => crypto.createHash("sha256").update(s).digest("hex");
 
 /** Teks skill = data tak tepercaya: buang markup/URL, potong ≤300 char (REPORT §3.4). */
@@ -151,7 +139,7 @@ export function collectSkills(root = ".") {
     const name = path.basename(dir);
     if (out.some((x) => x.name === name)) return;
     const text = fs.readFileSync(md, "utf8");
-    const fm = frontmatter(text);
+    const fm = frontmatter(text) || {};
     const r = regById.get(name) || {};
     out.push({
       name, sector: r.sektor || "misc", pack: pack || null, status,
