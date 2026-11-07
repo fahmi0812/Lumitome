@@ -45,7 +45,22 @@ for (const p of fs.readdirSync(path.join(ROOT, "packs")).sort()) {
   packs[p] = { pack: p, note: "dibangkitkan scripts/gen-registry.mjs; skill tanpa entri memakai frontmatter SKILL.md", skills };
 }
 const check = process.argv.includes("--check");
-const want = { [REG]: JSON.stringify(out, null, 2) + "\n", ...Object.fromEntries(Object.entries(packs).map(([p, v]) => [path.join(ROOT, "packs", p, "registry.json"), JSON.stringify(v, null, 2) + "\n"])) };
+const IDX = path.join(ROOT, "router/skills-index.md");
+// Indeks lazy (v0.3.21): dibangkitkan dari registry — satu sumber kebenaran, jangan edit manual.
+// Urutan seksi = yang sudah dipakai file ini (coding, security, riset, penulisan, media, finance); di dalam seksi alfabetis (ikut registry).
+// Deskripsi dipotong ~80 karakter: indeks ini pointer 1 baris (anggaran ~2,5k tok untuk 108 skill),
+// deskripsi penuh ada di registry + frontmatter SKILL.md.
+const SECTIONS = ["coding", "security", "riset", "penulisan", "media", "finance"];
+const short = (d) => d.length > 80 ? d.slice(0, 80).trimEnd() + "…" : d;
+const bySec = {};
+for (const s of out.skills) (bySec[s.sektor] ||= []).push(s);
+const blocks = ["# Skill index aktif (lazy)\nPack: `npm run enable-pack -- <nama>`. Karpathy via rules/06.\nDibangkitkan scripts/gen-registry.mjs — jangan edit manual."];
+for (const sec of [...SECTIONS, ...Object.keys(bySec).sort().filter((s) => !SECTIONS.includes(s))]) {
+  if (!bySec[sec]?.length) continue;
+  blocks.push(`## ${sec}\n` + bySec[sec].map((s) => `- ${s.id}: ${short(s.description)}`).join("\n"));
+}
+const idxMd = blocks.join("\n\n") + "\n";
+const want = { [REG]: JSON.stringify(out, null, 2) + "\n", [IDX]: idxMd, ...Object.fromEntries(Object.entries(packs).map(([p, v]) => [path.join(ROOT, "packs", p, "registry.json"), JSON.stringify(v, null, 2) + "\n"])) };
 let stale = 0;
 for (const [f, s] of Object.entries(want)) { const cur = fs.existsSync(f) ? fs.readFileSync(f, "utf8") : ""; if (cur !== s) { stale++; if (!check) fs.writeFileSync(f, s); } }
 console.log(`gen-registry: aktif=${out.skills.length} mirror=${Object.values(packs).reduce((n, v) => n + v.skills.filter((s) => s.mirror_of).length, 0)} ${check ? (stale ? `STALE (${stale} file)` : "OK") : `ditulis ${stale} file`}`);

@@ -1,5 +1,6 @@
 import path from "node:path";
 import fs from "fs";
+import cp from "node:child_process";
 import { layer0 } from "../router/layer0-regex.mjs";
 import { evaluateDoneGate } from "../harness/done-gate.ts";
 import { detectDocCodeDrift, loadProject, checkRewriteToDocs, driftSection } from "../harness/doc-drift.ts";
@@ -441,7 +442,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const thKeys = ["primary", "text", "textMuted", "background", "border", "syntaxKeyword", "markdownHeading", "diffAdded"];
   ok("theme lumitome: varian dark+light, refs valid, emas brand", thKeys.every((k) => TH.theme[k]?.dark && TH.theme[k]?.light) && Object.values(TH.theme).every((v) => [v.dark, v.light].every((c) => /^#[0-9A-Fa-f]{6}$/.test(c) || c in TH.defs)) && TH.defs.champagne === "#F3D27A" && TH.defs.cornsilk === "#FFF8DC");
   ok("wrapper: themes ditautkan ke OPENCODE_CONFIG_DIR, cli.json di CFG_DIR (bukan ~/.config user), binary engine tidak disentuh", /themes: path\.join\(ROOT, "config", "themes"\)/.test(W) && /cliFile = path\.join\(CFG_DIR, "cli\.json"\)/.test(W) && !/writeFileSync\([^)]*ocBin/.test(W));
-  ok("versi 0.3.20 konsisten", ["VERSION"].every((f) => fs.readFileSync(f, "utf8").trim() === "0.3.20") && JSON.parse(fs.readFileSync("package.json", "utf8")).version === "0.3.20" && /VERSION = "0.3.20"/.test(W) && /SW_VERSION=0.3.20/.test(inst));
+  ok("versi konsisten (single-source: VERSION)", (() => { const v = fs.readFileSync("VERSION", "utf8").trim(); const RM = fs.readFileSync("README.md", "utf8"); const vv = cp.execFileSync(process.execPath, ["lumitome/bin/lumitome.mjs", "--version"], { encoding: "utf8" }); return /^\d+\.\d+\.\d+$/.test(v) && JSON.parse(fs.readFileSync("package.json", "utf8")).version === v && vv.includes(`lumitome ${v} `) && W.includes('readFileSync(path.join(REPO, "VERSION")') && !/const VERSION = "\d+\.\d+\.\d+"/.test(W) && inst.includes('cat "$PROJECT/VERSION"') && !/SW_VERSION=\d+\.\d+\.\d+/.test(inst) && RM.includes(`version-${v}`) && RM.includes(`refs/tags/v${v}.tar.gz`); })());
 }
 
 {

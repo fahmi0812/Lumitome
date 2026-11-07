@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Lumitome 0.3.15 — installer (Linux / macOS / Windows via WSL2). Idempoten. Terisolasi dari OpenCode milik user:
+# Lumitome — installer (Linux / macOS / Windows via WSL2). Idempoten. Terisolasi dari OpenCode milik user:
 #   engine OpenCode v2.2.4 terpin (SHA256) di $LUMI_HOME/bin (default ~/.lumitome) — TIDAK ditaruh di PATH global,
 #   tidak menyentuh ~/.config/opencode, ~/.local/share/opencode (auth.json, sesi) atau `opencode` global.
 #   Satu-satunya file di luar $LUMI_HOME: launcher $LUMI_BIN_DIR/lumitome (default ~/.local/bin).
@@ -7,7 +7,6 @@
 #   atau: bash install.sh [--doctor] [--dry-run] [--uninstall] [--no-node] [--no-cbm] [--no-uv] [--skip-npm] [--with-browsers] [--project DIR]
 set -euo pipefail
 
-SW_VERSION=0.3.20
 OC_VERSION=2.2.4
 CBM_VERSION=0.12.1
 UV_VERSION=0.13.6
@@ -60,6 +59,7 @@ if [ "$UNINSTALL" = 1 ]; then
   if [ -f "$SW_HOME/.lumitome-home" ]; then rm -rf "$SW_HOME"; ok "hapus $SW_HOME"; else warn "$SW_HOME tanpa marker .lumitome-home — tidak dihapus"; fi
   exit 0
 fi
+SW_VERSION="$(cat "$PROJECT/VERSION" 2>/dev/null || echo "?")" # single-source: jangan hardcode (bump via scripts/bump-version.mjs)
 say "Lumitome $SW_VERSION · $OS-$ARCH$FLAVOR · SW_HOME=$SW_HOME · proyek=$PROJECT"
 
 if [ "$DOCTOR" = 1 ]; then exec bash "$PROJECT/scripts/doctor.sh" "$PROJECT"; fi

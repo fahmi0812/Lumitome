@@ -52,6 +52,8 @@ Rincian, pin versi, dan alasan: `docs/MCP.md`. Gateway: `docs/MCP-GATEWAY.md`.
 - `opencode.jsonc` lolos skema resmi (ajv 2020) + native V2 + kebijakan MCP (`checkMcpPolicy`).
 - Frontmatter agent = keluaran `gen-policy` (tidak boleh basi).
 - Plugin v2 `export default {id, setup}`; push main/master & cbm install diblok.
+- Versi single-source (v0.3.21): file `VERSION` satu-satunya tempat versi ditulis; `lumitome/bin/lumitome.mjs` + `install.sh` membacanya saat jalan; `node scripts/bump-version.mjs <x.y.z> ["judul"]` menyinkronkan `package.json`/lockfile/README/CHANGELOG + verifikasi. Tes konsistensi membaca `VERSION` (tanpa hardcode) dan menjalankan `--version` asli.
+- Indeks skill single-source (v0.3.21): `router/skills-index.md` dibangkitkan `scripts/gen-registry.mjs` dari registry (per sektor, alfabetis) — jangan edit manual; `--check` memverifikasi kesegarannya.
 - Scan-gate: osv-scanner + gitleaks PASS.
 
 ## 6. Sandbox: tier kepercayaan (v0.3.19)
