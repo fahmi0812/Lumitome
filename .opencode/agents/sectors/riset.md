@@ -18,6 +18,7 @@ permissions:
   - { action: "skill", resource: "*", effect: deny }
   - { action: "skill", resource: "deep-research", effect: allow }
   - { action: "skill", resource: "figure-it-out", effect: allow }
+  - { action: "skill", resource: "geo-sleuth", effect: allow }
   - { action: "skill", resource: "interrogate", effect: allow }
   - { action: "skill", resource: "research", effect: allow }
   - { action: "skill", resource: "*offensive*", effect: ask }

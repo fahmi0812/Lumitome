@@ -7,7 +7,7 @@ Slash commands dan regex di `router/layer0-regex.mjs`. Slash ditangani kode, buk
 Prompt di `router/layer1-select.md`. Output JSON: `{sectors, skills[≤5], confidence, need_more}`.
 
 ## Registry
-`router/skills-registry.json` — field: id, sektor, triggers, description 1 baris, champion/fallback, cost, requires_consent, src, sha, license.
+`router/skills-registry.json` — field: id, sektor, pack ("" = folder aktif, nama pack = skill pack), triggers, description 1 baris, champion/fallback, cost, requires_consent, src, sha, license.
 
 ## Lazy-load
 Indeks = nama + 1 baris (`router/skills-index.md`). Body `SKILL.md` dimuat oleh executor via tool `skill` OpenCode saat dipilih.

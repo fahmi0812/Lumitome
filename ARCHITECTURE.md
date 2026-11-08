@@ -1,6 +1,6 @@
 # Arsitektur Final Swanwright v0.1.6
 
-Target: **OpenCode v2.2.4** (rilis GitHub anomalyco/opencode). Model hanya via **9router**. 110 skill aktif (tidak dipotong/ditambah); `api-security` & `llm-security` tetap nonaktif (pack red-team).
+Target: **OpenCode v2.2.4** (rilis GitHub anomalyco/opencode). Model hanya via **9router**. 624 skill di satu registry (458 bisa ter-route; 166 pack red-team tetap disabled, termasuk `api-security` & `llm-security`). Trial lepas-dorman: tidak ada lagi pack nonaktif.
 Diagram: `docs/diagrams/arsitektur-final.png` (sistem) · `docs/diagrams/orchestrator-final.png` (alur orchestrator). Sumber Mermaid di sebelahnya.
 
 ![Arsitektur final](docs/diagrams/arsitektur-final.png)
@@ -18,7 +18,7 @@ Diagram: `docs/diagrams/arsitektur-final.png` (sistem) · `docs/diagrams/orchest
 ## 2. Skill Query Layer (desain v0.2, fase 1)
 Alur (`route()` di `router/skill-db.mjs`):
 1. **Layer-0 regex** (`router/layer0-regex.mjs`, tidak diubah; golden 154, 0 mismatch) → sektor + hint + consent.
-2. **Filter SQL keras sebelum ranking**: `status='active'`, `pack IS NULL` (kecuali pack diaktifkan), sektor via `allowed_skill` (allowlist agent sektor = registry.sektor + hint Layer-0 lintas sektor), kecualikan `skill_edge kind='duplicate'`.
+2. **Filter SQL keras sebelum ranking**: `status='active'` (pack red-team = `disabled`; tidak ada lagi filter pack), sektor via `allowed_skill` (allowlist agent sektor = registry.sektor + hint Layer-0 lintas sektor), kecualikan `skill_edge kind='duplicate'`.
 3. **Query ganda deterministik**: q0 = tugas, q1 = hint Layer-0 → tetap 1 panggilan LLM.
 4. **FTS5 BM25** (bobot kolom name 8 · triggers 4 · short 2 · description 1) + daftar hint + **sqlite-vec** bila embedding tersedia (`SW_EMBED_MODEL` lewat 9router `/embeddings`; `SW_EMBED=hash` = n-gram leksikal untuk uji). Tanpa embedding → **BM25-only** (default).
 5. **RRF** k=60, pin `$nama`/`skill:nama`, top-N=24 (dijepit 16–32).
@@ -27,8 +27,8 @@ Alur (`route()` di `router/skill-db.mjs`):
 8. **skill_search** (MCP stdio, read-only, DB `readOnly`) — satu server `skills` untuk semua sektor (sejak v0.3.13), hanya allowlist sektor itu.
 9. **Rebuild**: `scripts/skill-index.mjs --if-changed` — hash = SHA-256(registry + layer0 + tiap SKILL.md + status + provider embed + versi skema).
 
-Metrik (`npm run skills:metrics`, golden 154, 96 kasus punya gold skill, tanpa L1, BM25-only, diukur di box 31 Okt 2026):
-top-1 **0,7813** · recall@5 (any) **0,9167** · recall@5 (fraksi) **0,8264** · candidate-recall@16/@32 **0,9167** · MRR **0,842** · zero-load **0** · retrieval p50 **0,31 ms** / p95 **0,76 ms**. Dengan `SW_EMBED=hash`: recall@5 0,9167, cand@32 1,0, top-1 0,7292.
+Metrik (`npm run skills:metrics`, golden 154, 112 kasus punya gold skill, tanpa L1, BM25-only, TRIAL lepas-dorman 8 Nov 2026; baseline v0.3.26: 96 kasus, top-1 0,7396, recall@5 0,9167):
+top-1 **0,6696** · recall@5 (any) **0,7857** · recall@5 (fraksi) **0,6446** · candidate-recall@16/@32 **0,8214** · MRR **0,7277** · zero-load **0,0357** · retrieval p50 **1,89 ms** / p95 **6,89 ms**. Regresi vs baseline = dilusi katalog 110 → 624 skill (kasus gold lama saja: recall@5 0,8750); menaikkan kembali angka = tugas tuning, bukan trial ini.
 Catatan jujur: golden berisi banyak prompt templat berulang ("kasus N") → angka optimistis; miss utama "cek CVE dependency" (tanpa hit Layer-0) tidak menemukan `security-audit`.
 
 ## 3. MCP per sektor
@@ -50,7 +50,7 @@ Rincian, pin versi, dan alasan: `docs/MCP.md`. Gateway: `docs/MCP-GATEWAY.md`.
 Design loop (v0.3.26): tugas desain tidak selesai di kode — `/loopdesign [N]` menjalankan skill `loopdesign` (pre-mortem 3 jebakan AI-slop sebelum coding, komponen nyata dari `design-assets`) dalam loop render → `harness/design-gate.mjs` ukur (viewport 1440/768/390, kontras ≥4,5:1, tap target ≥44px) → kritikus sub-agent terpisah menyerang dari screenshot + metrik saja → Maker perbaiki; orchestrator menahan DONE sampai Design-Gate lolos, dan loop berhenti bila gate lolos, tanpa perbaikan, N habis, atau 3 iterasi gagal berturut-turut.
 
 ## 5. Invarian (dicek `npm test` / `npm run validate`)
-- Tepat 110 skill aktif; api-security/llm-security tidak aktif; golden 154 L0 0 mismatch.
+- 624 skill di satu registry (458 bisa ter-route, 166 red-team disabled); api-security/llm-security tidak aktif; golden 154 L0 0 mismatch.
 - `opencode.jsonc` lolos skema resmi (ajv 2020) + native V2 + kebijakan MCP (`checkMcpPolicy`).
 - Frontmatter agent = keluaran `gen-policy` (tidak boleh basi).
 - Plugin v2 `export default {id, setup}`; push main/master & cbm install diblok.
