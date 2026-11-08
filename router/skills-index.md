@@ -21,6 +21,7 @@ Dibangkitkan scripts/gen-registry.mjs — jangan edit manual.
 - correct: /correct: jadikan kesalahan berulang agen mustahil (arsitektur/tipe/lint/tes)
 - design: design menyeluruh: identitas brand, logo, aset
 - design-artifact: Design principles and creative direction for building HTML artifacts — pages, re…
+- design-assets: Cari komponen jadi dan aset desain dari 48 sumber web: shadcn/ui, ReUI, Watermel…
 - design-system: design-system: token, spesifikasi komponen
 - design-taste-frontend: art direction frontend anti-slop (tasteskill v2)
 - dispatching-parallel-agents: bagi ≥2 tugas independen ke subagen paralel
@@ -51,6 +52,7 @@ Dibangkitkan scripts/gen-registry.mjs — jangan edit manual.
 - improve-codebase-architecture: pindai arsitektur codebase → laporan HTML peluang perbaikan
 - in-your-own-words: /in-your-own-words: restate tujuan user sebelum kerja
 - logo-design: Professional logo and brand-mark design, from brief to production files. Guides…
+- loopdesign: Perbaiki desain berulang sampai bagus lewat loop render → gate → kritik (loopdes…
 - magic-ui: komponen Magic UI di React/Next.js (shadcn registry)
 - mcp-builder: bangun server MCP (Model Context Protocol) berkualitas untuk layanan eksternal
 - mongodb-ops: MongoDB: skema, indeks, query

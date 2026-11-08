@@ -51,7 +51,7 @@ const check = process.argv.includes("--check");
 const IDX = path.join(ROOT, "router/skills-index.md");
 // Indeks lazy (v0.3.21): dibangkitkan dari registry — satu sumber kebenaran, jangan edit manual.
 // Urutan seksi = yang sudah dipakai file ini (coding, security, riset, penulisan, media, finance); di dalam seksi alfabetis (ikut registry).
-// Deskripsi dipotong ~80 karakter: indeks ini pointer 1 baris (anggaran ~2,5k tok untuk 108 skill),
+// Deskripsi dipotong ~80 karakter: indeks ini pointer 1 baris (anggaran ~2,5k tok untuk 110 skill),
 // deskripsi penuh ada di registry + frontmatter SKILL.md.
 const SECTIONS = ["coding", "security", "riset", "penulisan", "media", "finance"];
 const short = (d) => d.length > 80 ? d.slice(0, 80).trimEnd() + "…" : d;

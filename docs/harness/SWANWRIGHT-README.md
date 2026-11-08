@@ -117,7 +117,7 @@ Installer **idempoten**, mem-pin SHA256 + mencocokkan file checksum rilis untuk 
 | | |
 |---|---|
 | **Orchestrator tipis** | Primary agent → sub-agen sektor (depth=1) → Elephant / Goldfish / Synthesizer |
-| **108 skill aktif** | Lazy-load; `api-security` & `llm-security` tetap disabled |
+| **110 skill aktif** | Lazy-load; `api-security` & `llm-security` tetap disabled |
 | **Skill Query Layer** | SQLite FTS5 BM25 (+sqlite-vec opsional), filter SQL keras, RRF, 1 panggilan 9router pilih ≤5 |
 | **MCP per sektor** | deny-by-default `*_*` → allow server sektor sendiri; `skills` read-only |
 | **Plugin guard** | Blok push ke `main`/`master` + blok `codebase-memory-mcp install/update` |

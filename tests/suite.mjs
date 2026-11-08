@@ -135,7 +135,7 @@ ok("perubahan fitur biasa -> tanpa WARN drift", checkRewriteToDocs({ changedFile
 
 // --- v0.1.3: kompatibilitas OpenCode ---
 const act = checkSkillsDir(".opencode/skills");
-ok("108 skill aktif valid (nama=folder, regex, deskripsi)", act.errors.length === 0 && act.names.length === 108);
+ok("110 skill aktif valid (nama=folder, regex, deskripsi)", act.errors.length === 0 && act.names.length === 110);
 ok("semua pack skill valid", fs.readdirSync("packs").every((p) => checkSkillsDir(`packs/${p}/skills`).errors.length === 0));
 const bad = checkSkillsDir("tests/fixtures/opencode/bad-skills");
 ok("fixture: folder foo__bar / name beda -> FAIL", bad.errors.some((e) => e.includes("foo__bar")) && !bad.errors.some((e) => e.includes("good-one")));
@@ -198,7 +198,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const { checkMcpPolicy } = await import("../scripts/check-opencode.mjs");
   delete process.env.SW_EMBED; delete process.env.SW_EMBED_MODEL;
   const built = await SD.buildIndex({ quiet: true });
-  ok("indeks: 108 aktif, api/llm-security disabled", built.counts.active === 108 && built.counts.disabled > 0);
+  ok("indeks: 110 aktif, api/llm-security disabled", built.counts.active === 110 && built.counts.disabled > 0);
   const db = SD.openDb("runtime/skills.db", { readOnly: true });
   const st = Object.fromEntries(db.prepare("SELECT name,status FROM skill WHERE name IN ('api-security','llm-security')").all().map((r) => [r.name, r.status]));
   ok("api-security & llm-security status=disabled di indeks", st["api-security"] === "disabled" && st["llm-security"] === "disabled");
@@ -229,7 +229,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
     // v0.3.1: enrichment, trigram, gating L1, timeout keras, cache rute
     const d = SD.openDb("runtime/skills.db");
     const en = d.prepare("SELECT json FROM skill_enrich").all().map((r) => JSON.parse(r.json));
-    ok(`enrich: ${en.length} skill aktif, masing2 3–5 contoh + alias`, en.length === 108 && en.every((e) => e.examples.length >= 3 && e.examples.length <= 5 && e.aliases_en.length > 0));
+    ok(`enrich: ${en.length} skill aktif, masing2 3–5 contoh + alias`, en.length === 110 && en.every((e) => e.examples.length >= 3 && e.examples.length <= 5 && e.aliases_en.length > 0));
     const L = await import("../router/l0.mjs");
     const r1 = L.searchL0(d, "deploi ke vercle"); d.close();
     ok("L0 trigram: typo 'deploi ke vercle' → vercel-ops top1", r1.candidates[0]?.name === "vercel-ops");
@@ -806,6 +806,77 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
     ok("e2e template induk: baca ok, tulis induk errno 30, tulis cwd ok", /READ TEMPLATE/.test(out2) && /WRITE_PARENT OSError 30/.test(out2) && /WRITE_CWD ok/.test(out2) && fs.readFileSync(path.join(course, "Template.docx"), "utf8") === "TEMPLATE");
     fs.rmSync(home, { recursive: true, force: true });
   } else console.log("  (e2e bwrap dilewati: bukan Linux/bwrap/python3)");
+}
+// design-gate (v0.3.26)
+{
+  const DG = await import("../harness/design-gate.mjs");
+  const DM = await import("../harness/design-measure.mjs");
+  ok("design-gate: kontras hitam/putih = 21", DG.contrastRatio("#000", "#fff") === 21);
+  ok("design-gate: kontras #767676 di putih ≈ 4.54 (batas AA)", Math.abs(DG.contrastRatio("#767676", "#ffffff") - 4.54) < 0.01);
+  ok("design-gate: parseColor #rgb/#rrggbb/rgb + tidak dikenal -> null",
+    JSON.stringify(DG.parseColor("#1a1a1a")) === "[26,26,26]" &&
+    JSON.stringify(DG.parseColor("#fff")) === "[255,255,255]" &&
+    JSON.stringify(DG.parseColor("rgb(26, 26, 26)")) === "[26,26,26]" &&
+    DG.parseColor("biru") === null && DG.parseColor("#12") === null);
+  ok("design-gate: tap target 43 gagal / 44 lolos",
+    DG.evaluateTapTargets([{ width: 100, height: 43, label: "x" }]).length === 1 &&
+    DG.evaluateTapTargets([{ width: 44, height: 44, label: "x" }]).length === 0);
+  // CATATAN: kode menoleransi overflow <= 2px (sw > cw + 2) — 1px di atas
+  // clientWidth TIDAK gagal; yang diuji di sini batas sebenarnya (+2 lolos, +3 gagal).
+  ok("design-gate: overflow +2 lolos (toleransi), +3 gagal",
+    DG.evaluateOverflow([{ width: 390, scrollWidth: 392, clientWidth: 390 }]).length === 0 &&
+    DG.evaluateOverflow([{ width: 390, scrollWidth: 393, clientWidth: 390 }]).length === 1);
+  ok("design-gate: aset tidak termuat gagal, termuat lolos",
+    DG.evaluateAssets({ images: [{ src: "x.png", loaded: false }] }).length === 1 &&
+    DG.evaluateAssets({ images: [{ src: "x.png", loaded: true }], fonts: [{ name: "F", loaded: false }] }).length === 1 &&
+    DG.evaluateAssets({ images: [{ src: "x.png", loaded: true }] }).length === 0);
+  ok("design-gate: konsistensi mismatch gagal, sama lolos",
+    DG.checkConsistency([{ label: "total", shown: 5, expected: 6 }]).length === 1 &&
+    DG.checkConsistency([{ label: "total", shown: 6, expected: 6 }]).length === 0);
+  ok("design-gate: lisensi kosong/tidak dikenal gagal (fail-closed), MIT lolos",
+    DG.checkLicenses([{ src: "a.png", license: "" }]).length === 1 &&
+    DG.checkLicenses([{ src: "a.png", license: "cc-by-nc-nd" }]).length === 1 &&
+    DG.checkLicenses([{ src: "a.png", license: "MIT" }]).length === 0);
+  ok("design-gate: teks panjang overflow tanpa truncate gagal; state tidak ter-render gagal",
+    DG.evaluateTextCases({ longText: { overflow: true, clipped: true, truncated: false } }).length === 1 &&
+    DG.evaluateTextCases({ longText: { overflow: true, clipped: true, truncated: true } }).length === 0 &&
+    DG.evaluateTextCases({ emptyState: { rendered: false } }).length === 1);
+  ok("design-gate: evaluateDesign kosong lolos, kontras jelek gagal, findings terurut",
+    DG.evaluateDesign({}).pass === true &&
+    DG.evaluateDesign({ contrast: [{ fg: "#999", bg: "#fff", kind: "text" }] }).pass === false &&
+    DG.evaluateDesign({ contrast: [{ fg: "#999", bg: "#fff", kind: "text" }], tapTargets: [{ width: 10, height: 10 }] }).findings[0].check === "contrast");
+  ok("design-gate: stressCases berisi 4 id (long-text, empty-state, loading-state, error-state)",
+    JSON.stringify(DG.stressCases().map((s) => s.id)) === JSON.stringify(["long-text", "empty-state", "loading-state", "error-state"]));
+  ok("design-gate: nextLoopAction done saat gate lolos", DG.nextLoopAction({ iteration: 1, gatePass: true }).action === "done");
+  ok("design-gate: nextLoopAction stop saat N habis", DG.nextLoopAction({ iteration: 3, maxIterations: 3 }).reason === "n-habis");
+  ok("design-gate: nextLoopAction stop saat tanpa perbaikan", DG.nextLoopAction({ iteration: 1, improved: false }).reason === "tanpa-perbaikan");
+  ok("design-gate: nextLoopAction stop saat 3 gagal berturut-turut", DG.nextLoopAction({ iteration: 1, consecutiveFailures: 3 }).reason === "anti-spin");
+  ok("design-gate: nextLoopAction fix bila masih ada iterasi + membaik", DG.nextLoopAction({ iteration: 1 }).action === "fix");
+  ok("design-gate: criticInput membuang code/claims/prompt/source, hanya screenshot + gate",
+    (() => { const ci = DG.criticInput({ screenshots: [{ width: 390, path: "a.jpg" }], gate: { pass: false, findings: [{ check: "contrast", severity: "fail", detail: "x" }] }, code: "x", claims: ["y"], prompt: "z", source: "w" });
+      return !("code" in ci) && !("claims" in ci) && !("prompt" in ci) && !("source" in ci) && ci.pass === false && ci.findings.length === 1 && ci.screenshots.length === 1; })());
+  // renderer-agnostik: input gate yang sama dari report inspect dan export Figcraft -> vonis sama
+  const repBad = JSON.parse(fs.readFileSync("tests/fixtures/design/report.json", "utf8"));
+  const repClean = JSON.parse(fs.readFileSync("tests/fixtures/design/report-clean.json", "utf8"));
+  const gInspectBad = DG.evaluateDesign(DM.fromInspectReport(repBad));
+  const gFigBad = DG.evaluateDesign(DM.fromFigcraftExport("tests/fixtures/design/figcraft-export"));
+  const gInspectClean = DG.evaluateDesign(DM.fromInspectReport(repClean));
+  const gFigClean = DG.evaluateDesign(DM.fromFigcraftExport("tests/fixtures/design/figcraft-export-clean"));
+  ok("design-gate: vonis sama inspect vs figcraft (gagal, findings identik)",
+    gInspectBad.pass === false && gFigBad.pass === false && JSON.stringify(gInspectBad.findings) === JSON.stringify(gFigBad.findings));
+  ok("design-gate: vonis sama inspect vs figcraft (bersih, keduanya lolos)",
+    gInspectClean.pass === true && gFigClean.pass === true && gInspectClean.findings.length === 0 && gFigClean.findings.length === 0);
+  // RED-TEST integrasi di browser sungguhan (skip bila Chrome tidak ada — jangan fake pass)
+  if (!DM.resolveChromePath()) {
+    console.log("[SKIP] design-gate red-test (Chrome tidak ditemukan, set CHROME_PATH)");
+  } else {
+    const slop = await DM.measureAndGate("tests/fixtures/design/slop.html");
+    const slopChecks = new Set(slop.findings.map((f) => f.check));
+    ok("design-gate red-test: slop FAIL dengan contrast + tap-target + overflow + assets",
+      slop.pass === false && ["contrast", "tap-target", "overflow", "assets"].every((c) => slopChecks.has(c)));
+    const fixed = await DM.measureAndGate("tests/fixtures/design/fixed.html");
+    ok("design-gate red-test: fixed PASS tanpa findings", fixed.pass === true && fixed.findings.length === 0);
+  }
 }
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

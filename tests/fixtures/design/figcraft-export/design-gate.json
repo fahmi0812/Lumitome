@@ -1,0 +1,1 @@
+{"assets":{"fonts":[{"loaded":false,"name":"FontX"}],"images":[{"loaded":false,"src":"missing.png"}]},"contrast":[{"bg":"#ffffff","fg":"#999999","kind":"text","where":"teks abu"}],"tapTargets":[],"viewports":[{"clientWidth":390,"culprits":["div.wide"],"scrollWidth":600,"width":390},{"clientWidth":1440,"scrollWidth":1440,"width":1440}]}

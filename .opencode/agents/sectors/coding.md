@@ -53,6 +53,7 @@ permissions:
   - { action: "skill", resource: "correct", effect: allow }
   - { action: "skill", resource: "design", effect: allow }
   - { action: "skill", resource: "design-artifact", effect: allow }
+  - { action: "skill", resource: "design-assets", effect: allow }
   - { action: "skill", resource: "design-system", effect: allow }
   - { action: "skill", resource: "design-taste-frontend", effect: allow }
   - { action: "skill", resource: "dispatching-parallel-agents", effect: allow }
@@ -83,6 +84,7 @@ permissions:
   - { action: "skill", resource: "improve-codebase-architecture", effect: allow }
   - { action: "skill", resource: "in-your-own-words", effect: allow }
   - { action: "skill", resource: "logo-design", effect: allow }
+  - { action: "skill", resource: "loopdesign", effect: allow }
   - { action: "skill", resource: "magic-ui", effect: allow }
   - { action: "skill", resource: "mcp-builder", effect: allow }
   - { action: "skill", resource: "mongodb-ops", effect: allow }

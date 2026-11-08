@@ -18,7 +18,7 @@ Lumitome is a coding assistant that runs in your terminal. It is built on OpenCo
 
 You give it a task, such as "fix the failing tests". It reads your code, edits files, and runs commands to get it done.
 
-108 active skills across coding, writing, research, security, finance, and media — plus 51 more in the dormant motion pack (`npm run enable-pack -- motion`). Run `/docs-pack` to scaffold a project's 12 living docs, `/stitch-ui` to build UI from a reference image, or `/external-tools` to install an external app and connect it to the agent.
+110 active skills across coding, writing, research, security, finance, and media — plus 51 more in the dormant motion pack (`npm run enable-pack -- motion`). Run `/docs-pack` to scaffold a project's 12 living docs, `/stitch-ui` to build UI from a reference image, or `/external-tools` to install an external app and connect it to the agent.
 
 ## Install
 
