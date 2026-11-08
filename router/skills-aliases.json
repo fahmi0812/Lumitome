@@ -86,5 +86,6 @@
   "keuangan-pribadi": {"id": ["anggaran", "budget", "dana darurat", "utang", "tabungan", "keuangan keluarga", "rumah tangga"], "en": ["personal finance", "budget", "emergency fund", "debt payoff", "savings", "credit card debt"]},
   "pajak-dasar-id": {"id": ["pajak", "spt", "npwp", "pph", "lapor pajak", "djp"], "en": ["indonesian tax", "tax return", "income tax"]},
   "akuntansi-umkm": {"id": ["pembukuan", "jurnal umum", "buku besar", "laba rugi", "neraca", "umkm", "kas usaha"], "en": ["bookkeeping", "small business accounting", "ledger", "income statement", "balance sheet"]},
-  "analisis-laporan-keuangan": {"id": ["analisis laporan keuangan", "rasio keuangan", "likuiditas", "solvabilitas", "profitabilitas", "emiten"], "en": ["financial statement analysis", "financial ratios", "liquidity", "solvency", "roe", "roa"]}
+  "analisis-laporan-keuangan": {"id": ["analisis laporan keuangan", "rasio keuangan", "likuiditas", "solvabilitas", "profitabilitas", "emiten"], "en": ["financial statement analysis", "financial ratios", "liquidity", "solvency", "roe", "roa"]},
+  "geo-sleuth": {"id": ["geolokasi foto", "cari lokasi foto", "osint foto", "foto diambil di mana"], "en": ["photo geolocation", "geolocate photo", "osint geolocation"]}
 }

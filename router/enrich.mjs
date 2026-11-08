@@ -17,6 +17,8 @@ export const SYN = {
   rasio: ["ratio"], ratio: ["rasio"], animasi: ["animation"], animation: ["animasi"], video: ["video"], suara: ["sound", "audio"],
   sound: ["suara"], presentasi: ["presentation", "slides"], presentation: ["presentasi"], diagram: ["diagram", "bagan"],
   galat: ["error", "bug"], error: ["galat", "kesalahan"], bug: ["galat", "kutu"], perbaiki: ["fix"], fix: ["perbaiki"],
+  geolokasi: ["geolocate", "geolocation"], geolocate: ["geolokasi"], geolocation: ["geolokasi"], foto: ["photo"], photo: ["foto"],
+  diagnosa: ["diagnosis"], diagnosis: ["diagnosa"],
   tulis: ["write"], write: ["tulis"], buat: ["create", "build"], create: ["buat"], tinjau: ["review"], review: ["tinjau", "ulas"],
   kerentanan: ["vulnerability"], vulnerability: ["kerentanan", "celah"], halaman: ["page"], page: ["halaman"], komponen: ["component"],
   component: ["komponen"], rencana: ["plan"], plan: ["rencana"], basis: ["database"], database: ["basis data", "db"],

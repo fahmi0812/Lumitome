@@ -35,28 +35,63 @@ permissions:
   - { action: "skills_coding_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "skills", effect: allow }
   - { action: "skill", resource: "*", effect: deny }
+  - { action: "skill", resource: "agent-dx-cli-scale", effect: allow }
+  - { action: "skill", resource: "ai-behavior-trees-utility-ai", effect: allow }
+  - { action: "skill", resource: "animate", effect: allow }
+  - { action: "skill", resource: "animate-expo", effect: allow }
+  - { action: "skill", resource: "animation-performance", effect: allow }
+  - { action: "skill", resource: "animation-vocabulary", effect: allow }
   - { action: "skill", resource: "anti-spin-circuit-breaker", effect: allow }
   - { action: "skill", resource: "antislop", effect: allow }
   - { action: "skill", resource: "antislop-code", effect: allow }
   - { action: "skill", resource: "antislop-human", effect: allow }
   - { action: "skill", resource: "antislop-layoutmobile", effect: allow }
   - { action: "skill", resource: "antislop-ui", effect: allow }
+  - { action: "skill", resource: "apple-design", effect: allow }
+  - { action: "skill", resource: "ask-sonner", effect: allow }
+  - { action: "skill", resource: "asset-pipeline", effect: allow }
+  - { action: "skill", resource: "audio-design", effect: allow }
   - { action: "skill", resource: "audit", effect: allow }
   - { action: "skill", resource: "automation-audit-ops", effect: allow }
   - { action: "skill", resource: "axi", effect: allow }
+  - { action: "skill", resource: "bambu-labs", effect: allow }
   - { action: "skill", resource: "banner-design", effect: allow }
+  - { action: "skill", resource: "bevy-ecs", effect: allow }
   - { action: "skill", resource: "big-pics-little-words", effect: allow }
+  - { action: "skill", resource: "blitz3d-decomp", effect: allow }
   - { action: "skill", resource: "brainstorming", effect: allow }
   - { action: "skill", resource: "brand", effect: allow }
+  - { action: "skill", resource: "break-ui", effect: allow }
+  - { action: "skill", resource: "cad", effect: allow }
+  - { action: "skill", resource: "camera-systems", effect: allow }
+  - { action: "skill", resource: "card-game", effect: allow }
   - { action: "skill", resource: "chrome-devtools-axi", effect: allow }
   - { action: "skill", resource: "code-review", effect: allow }
+  - { action: "skill", resource: "codegen", effect: allow }
+  - { action: "skill", resource: "core", effect: allow }
   - { action: "skill", resource: "correct", effect: allow }
+  - { action: "skill", resource: "create-game-assets", effect: allow }
+  - { action: "skill", resource: "defold-core", effect: allow }
   - { action: "skill", resource: "design", effect: allow }
   - { action: "skill", resource: "design-artifact", effect: allow }
   - { action: "skill", resource: "design-assets", effect: allow }
   - { action: "skill", resource: "design-system", effect: allow }
   - { action: "skill", resource: "design-taste-frontend", effect: allow }
+  - { action: "skill", resource: "devtools", effect: allow }
+  - { action: "skill", resource: "devtools-react", effect: allow }
+  - { action: "skill", resource: "devtools-solid", effect: allow }
+  - { action: "skill", resource: "devtools-svelte", effect: allow }
+  - { action: "skill", resource: "devtools-vue", effect: allow }
+  - { action: "skill", resource: "dfam-check", effect: allow }
+  - { action: "skill", resource: "dfm", effect: allow }
+  - { action: "skill", resource: "diagnosing-bugs", effect: allow }
+  - { action: "skill", resource: "dialogue-systems", effect: allow }
+  - { action: "skill", resource: "dimensional-drawing", effect: allow }
+  - { action: "skill", resource: "dimensional-drawing-motion", effect: allow }
+  - { action: "skill", resource: "directives", effect: allow }
   - { action: "skill", resource: "dispatching-parallel-agents", effect: allow }
+  - { action: "skill", resource: "dxf", effect: allow }
+  - { action: "skill", resource: "ebitengine-game", effect: allow }
   - { action: "skill", resource: "egm-bootstrap", effect: allow }
   - { action: "skill", resource: "egm-brainstorm", effect: allow }
   - { action: "skill", resource: "egm-draft", effect: allow }
@@ -65,51 +100,179 @@ permissions:
   - { action: "skill", resource: "egm-review", effect: allow }
   - { action: "skill", resource: "egm-review-loop", effect: allow }
   - { action: "skill", resource: "emil-design-eng", effect: allow }
+  - { action: "skill", resource: "engineering-drawing", effect: allow }
   - { action: "skill", resource: "eval-harness", effect: allow }
   - { action: "skill", resource: "executing-plans", effect: allow }
   - { action: "skill", resource: "external-tools", effect: allow }
+  - { action: "skill", resource: "fal-assets", effect: allow }
+  - { action: "skill", resource: "find-animation-opportunities", effect: allow }
   - { action: "skill", resource: "finishing-a-development-branch", effect: allow }
   - { action: "skill", resource: "floorplan", effect: allow }
+  - { action: "skill", resource: "fps-shooter", effect: allow }
+  - { action: "skill", resource: "game-ai", effect: allow }
+  - { action: "skill", resource: "game-automation", effect: allow }
+  - { action: "skill", resource: "game-feel", effect: allow }
+  - { action: "skill", resource: "game-jam", effect: allow }
+  - { action: "skill", resource: "game-recon", effect: allow }
+  - { action: "skill", resource: "game-research-websearch", effect: allow }
+  - { action: "skill", resource: "game-ui-ux", effect: allow }
+  - { action: "skill", resource: "gcode", effect: allow }
   - { action: "skill", resource: "gh-axi", effect: allow }
   - { action: "skill", resource: "git-guardrails-claude-code", effect: allow }
+  - { action: "skill", resource: "godot-2d-movement", effect: allow }
+  - { action: "skill", resource: "godot-3d-essentials", effect: allow }
+  - { action: "skill", resource: "godot-animation", effect: allow }
+  - { action: "skill", resource: "godot-audio", effect: allow }
+  - { action: "skill", resource: "godot-csharp", effect: allow }
+  - { action: "skill", resource: "godot-export", effect: allow }
+  - { action: "skill", resource: "godot-gdscript", effect: allow }
+  - { action: "skill", resource: "godot-gdscript-headless-testing", effect: allow }
+  - { action: "skill", resource: "godot-multiplayer", effect: allow }
+  - { action: "skill", resource: "godot-nodes-scenes", effect: allow }
+  - { action: "skill", resource: "godot-physics", effect: allow }
+  - { action: "skill", resource: "godot-resources", effect: allow }
+  - { action: "skill", resource: "godot-shaders", effect: allow }
+  - { action: "skill", resource: "godot-signals-groups", effect: allow }
+  - { action: "skill", resource: "godot-tilemap", effect: allow }
+  - { action: "skill", resource: "godot-ui-control", effect: allow }
   - { action: "skill", resource: "gsap-core", effect: allow }
+  - { action: "skill", resource: "gsap-frameworks", effect: allow }
+  - { action: "skill", resource: "gsap-performance", effect: allow }
+  - { action: "skill", resource: "gsap-plugins", effect: allow }
+  - { action: "skill", resource: "gsap-react", effect: allow }
   - { action: "skill", resource: "gsap-scrolltrigger", effect: allow }
+  - { action: "skill", resource: "gsap-timeline", effect: allow }
+  - { action: "skill", resource: "gsap-utils", effect: allow }
+  - { action: "skill", resource: "hackathon-winner-thinking", effect: allow }
   - { action: "skill", resource: "hallmark", effect: allow }
+  - { action: "skill", resource: "honey", effect: allow }
   - { action: "skill", resource: "html", effect: allow }
   - { action: "skill", resource: "html-diagram", effect: allow }
   - { action: "skill", resource: "html-plan", effect: allow }
   - { action: "skill", resource: "html-prototype", effect: allow }
   - { action: "skill", resource: "html-wireframe", effect: allow }
+  - { action: "skill", resource: "image", effect: allow }
   - { action: "skill", resource: "impeccable", effect: allow }
+  - { action: "skill", resource: "improve-animations", effect: allow }
   - { action: "skill", resource: "improve-codebase-architecture", effect: allow }
   - { action: "skill", resource: "in-your-own-words", effect: allow }
+  - { action: "skill", resource: "ink", effect: allow }
+  - { action: "skill", resource: "input-systems", effect: allow }
+  - { action: "skill", resource: "itch-publish", effect: allow }
+  - { action: "skill", resource: "jotai", effect: allow }
+  - { action: "skill", resource: "json-render-shadcn", effect: allow }
+  - { action: "skill", resource: "karpathy-guidelines", effect: allow }
+  - { action: "skill", resource: "level-design", effect: allow }
   - { action: "skill", resource: "logo-design", effect: allow }
   - { action: "skill", resource: "loopdesign", effect: allow }
+  - { action: "skill", resource: "love2d-core", effect: allow }
   - { action: "skill", resource: "magic-ui", effect: allow }
+  - { action: "skill", resource: "mashup-mods", effect: allow }
+  - { action: "skill", resource: "mcp", effect: allow }
   - { action: "skill", resource: "mcp-builder", effect: allow }
+  - { action: "skill", resource: "mobile-native", effect: allow }
+  - { action: "skill", resource: "mod-any-game", effect: allow }
   - { action: "skill", resource: "mongodb-ops", effect: allow }
   - { action: "skill", resource: "next", effect: allow }
   - { action: "skill", resource: "one-pager", effect: allow }
+  - { action: "skill", resource: "performance-optimization", effect: allow }
+  - { action: "skill", resource: "phaser-arcade-physics", effect: allow }
+  - { action: "skill", resource: "phaser-core", effect: allow }
+  - { action: "skill", resource: "physics-tuning", effect: allow }
+  - { action: "skill", resource: "pick-ui-library", effect: allow }
+  - { action: "skill", resource: "pixijs-rendering", effect: allow }
+  - { action: "skill", resource: "platformer", effect: allow }
+  - { action: "skill", resource: "port-a-mod", effect: allow }
   - { action: "skill", resource: "poteto-mode", effect: allow }
+  - { action: "skill", resource: "procedural-gen", effect: allow }
+  - { action: "skill", resource: "prototype", effect: allow }
+  - { action: "skill", resource: "prototype-fast", effect: allow }
+  - { action: "skill", resource: "publish-mod", effect: allow }
+  - { action: "skill", resource: "puzzle", effect: allow }
+  - { action: "skill", resource: "pygame-core", effect: allow }
   - { action: "skill", resource: "react", effect: allow }
+  - { action: "skill", resource: "react-email", effect: allow }
+  - { action: "skill", resource: "react-native", effect: allow }
+  - { action: "skill", resource: "react-pdf", effect: allow }
+  - { action: "skill", resource: "react-three-fiber", effect: allow }
   - { action: "skill", resource: "receiving-code-review", effect: allow }
+  - { action: "skill", resource: "redux", effect: allow }
   - { action: "skill", resource: "reflect", effect: allow }
+  - { action: "skill", resource: "remotion", effect: allow }
+  - { action: "skill", resource: "remotion-best-practices", effect: allow }
+  - { action: "skill", resource: "remove-animations", effect: allow }
   - { action: "skill", resource: "requesting-code-review", effect: allow }
+  - { action: "skill", resource: "reverse-engineering", effect: allow }
+  - { action: "skill", resource: "review-animations", effect: allow }
+  - { action: "skill", resource: "roblox-characters", effect: allow }
+  - { action: "skill", resource: "roblox-datastores", effect: allow }
+  - { action: "skill", resource: "roblox-luau", effect: allow }
+  - { action: "skill", resource: "roblox-networking", effect: allow }
+  - { action: "skill", resource: "roblox-physics", effect: allow }
+  - { action: "skill", resource: "roblox-simulator-economy", effect: allow }
+  - { action: "skill", resource: "roblox-studio-workflow", effect: allow }
+  - { action: "skill", resource: "roblox-ui", effect: allow }
+  - { action: "skill", resource: "roguelike", effect: allow }
   - { action: "skill", resource: "root-cause-gate", effect: allow }
+  - { action: "skill", resource: "router", effect: allow }
+  - { action: "skill", resource: "rpg", effect: allow }
+  - { action: "skill", resource: "save-systems", effect: allow }
+  - { action: "skill", resource: "scroll-world", effect: allow }
+  - { action: "skill", resource: "sdf", effect: allow }
+  - { action: "skill", resource: "sendcutsend", effect: allow }
+  - { action: "skill", resource: "shadcn-svelte", effect: allow }
+  - { action: "skill", resource: "shader-programming", effect: allow }
+  - { action: "skill", resource: "share-field-notes", effect: allow }
+  - { action: "skill", resource: "showcase-video", effect: allow }
   - { action: "skill", resource: "skill-creator", effect: allow }
   - { action: "skill", resource: "slides", effect: allow }
+  - { action: "skill", resource: "solid", effect: allow }
   - { action: "skill", resource: "speckit-code-review", effect: allow }
+  - { action: "skill", resource: "srdf", effect: allow }
   - { action: "skill", resource: "stack-diagram", effect: allow }
+  - { action: "skill", resource: "steam-publish", effect: allow }
+  - { action: "skill", resource: "step-parts", effect: allow }
   - { action: "skill", resource: "stitch-ui", effect: allow }
   - { action: "skill", resource: "subagent-driven-development", effect: allow }
   - { action: "skill", resource: "supabase-ops", effect: allow }
+  - { action: "skill", resource: "survival-crafting", effect: allow }
+  - { action: "skill", resource: "svelte", effect: allow }
   - { action: "skill", resource: "systematic-debugging", effect: allow }
+  - { action: "skill", resource: "tanstack-start", effect: allow }
+  - { action: "skill", resource: "tdd", effect: allow }
   - { action: "skill", resource: "tdd-red-green-refactor", effect: allow }
+  - { action: "skill", resource: "test-driven-development", effect: allow }
+  - { action: "skill", resource: "threejs-gltf-loading", effect: allow }
+  - { action: "skill", resource: "threejs-materials-lighting", effect: allow }
+  - { action: "skill", resource: "threejs-scene-setup", effect: allow }
+  - { action: "skill", resource: "to-spec", effect: allow }
+  - { action: "skill", resource: "tower-defense", effect: allow }
   - { action: "skill", resource: "typed-service-contracts", effect: allow }
   - { action: "skill", resource: "ui-styling", effect: allow }
   - { action: "skill", resource: "ui-ux-pro-max", effect: allow }
   - { action: "skill", resource: "unified-done-gate", effect: allow }
+  - { action: "skill", resource: "unity-animation", effect: allow }
+  - { action: "skill", resource: "unity-build-pipeline", effect: allow }
+  - { action: "skill", resource: "unity-csharp-scripting", effect: allow }
+  - { action: "skill", resource: "unity-input-system", effect: allow }
+  - { action: "skill", resource: "unity-navmesh", effect: allow }
+  - { action: "skill", resource: "unity-physics", effect: allow }
+  - { action: "skill", resource: "unity-scriptableobjects", effect: allow }
+  - { action: "skill", resource: "unity-tilemap-2d", effect: allow }
+  - { action: "skill", resource: "unreal-behavior-trees", effect: allow }
+  - { action: "skill", resource: "unreal-blueprints", effect: allow }
+  - { action: "skill", resource: "unreal-cpp-gameplay", effect: allow }
+  - { action: "skill", resource: "unreal-enhanced-input", effect: allow }
+  - { action: "skill", resource: "unreal-niagara", effect: allow }
+  - { action: "skill", resource: "unreal-packaging", effect: allow }
+  - { action: "skill", resource: "urdf", effect: allow }
   - { action: "skill", resource: "vercel-ops", effect: allow }
+  - { action: "skill", resource: "visual-novel", effect: allow }
+  - { action: "skill", resource: "vue", effect: allow }
+  - { action: "skill", resource: "write-swift", effect: allow }
+  - { action: "skill", resource: "xstate", effect: allow }
+  - { action: "skill", resource: "yaml", effect: allow }
+  - { action: "skill", resource: "zustand", effect: allow }
   - { action: "skill", resource: "*offensive*", effect: ask }
 ---
 

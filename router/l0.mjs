@@ -40,7 +40,11 @@ const fq = (ts) => ts.length ? ts.map((w) => (w.length >= 4 ? `"${w}"*` : `"${w}
 
 export function searchL0(db, prompt, { sectors = [], hints = [], n = 12 } = {}) {
   const t0 = performance.now();
-  const base = ["s.status = 'active'", "s.pack IS NULL", "s.id NOT IN (SELECT src FROM skill_edge WHERE kind='duplicate')"];
+  // TRIAL lepas-dorman: gate dorman KETIGA ada di sini — `s.pack IS NULL` dulu
+  // membuat route()/skill-query tidak pernah bisa memilih skill pack walau
+  // collectSkills sudah menandainya "active". Dihapus: yang membedakan
+  // sekarang hanya status — red-team = "disabled", sisanya "active".
+  const base = ["s.status = 'active'", "s.id NOT IN (SELECT src FROM skill_edge WHERE kind='duplicate')"];
   const run = (secs) => {
     const where = [...base], params = [];
     if (secs.length) { where.push(`s.id IN (SELECT skill_id FROM allowed_skill WHERE agent IN (${secs.map(() => "?").join(",")}) AND effect != 'deny')`); params.push(...secs.map((x) => `sectors/${x}`)); }

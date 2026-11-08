@@ -17,6 +17,8 @@ permissions:
   - { action: "opencode_list_mcp_resources", resource: "skills", effect: allow }
   - { action: "skill", resource: "*", effect: deny }
   - { action: "skill", resource: "antislop-copywriting", effect: allow }
+  - { action: "skill", resource: "brag", effect: allow }
+  - { action: "skill", resource: "brag-slim", effect: allow }
   - { action: "skill", resource: "diagram-design", effect: allow }
   - { action: "skill", resource: "doc-coauthoring", effect: allow }
   - { action: "skill", resource: "docs-pack", effect: allow }
@@ -27,6 +29,39 @@ permissions:
   - { action: "skill", resource: "laporan-generator", effect: allow }
   - { action: "skill", resource: "naskah-id", effect: allow }
   - { action: "skill", resource: "penulis-ilmiah", effect: allow }
+  - { action: "skill", resource: "seo", effect: allow }
+  - { action: "skill", resource: "seo-agentic", effect: allow }
+  - { action: "skill", resource: "seo-ahrefs", effect: allow }
+  - { action: "skill", resource: "seo-audit", effect: allow }
+  - { action: "skill", resource: "seo-backlinks", effect: allow }
+  - { action: "skill", resource: "seo-bing", effect: allow }
+  - { action: "skill", resource: "seo-cluster", effect: allow }
+  - { action: "skill", resource: "seo-competitor-pages", effect: allow }
+  - { action: "skill", resource: "seo-content", effect: allow }
+  - { action: "skill", resource: "seo-content-brief", effect: allow }
+  - { action: "skill", resource: "seo-dataforseo", effect: allow }
+  - { action: "skill", resource: "seo-drift", effect: allow }
+  - { action: "skill", resource: "seo-ecommerce", effect: allow }
+  - { action: "skill", resource: "seo-firecrawl", effect: allow }
+  - { action: "skill", resource: "seo-flow", effect: allow }
+  - { action: "skill", resource: "seo-geo", effect: allow }
+  - { action: "skill", resource: "seo-google", effect: allow }
+  - { action: "skill", resource: "seo-hreflang", effect: allow }
+  - { action: "skill", resource: "seo-image-gen", effect: allow }
+  - { action: "skill", resource: "seo-images", effect: allow }
+  - { action: "skill", resource: "seo-local", effect: allow }
+  - { action: "skill", resource: "seo-maps", effect: allow }
+  - { action: "skill", resource: "seo-matomo", effect: allow }
+  - { action: "skill", resource: "seo-page", effect: allow }
+  - { action: "skill", resource: "seo-plan", effect: allow }
+  - { action: "skill", resource: "seo-profound", effect: allow }
+  - { action: "skill", resource: "seo-programmatic", effect: allow }
+  - { action: "skill", resource: "seo-schema", effect: allow }
+  - { action: "skill", resource: "seo-seranking", effect: allow }
+  - { action: "skill", resource: "seo-sitemap", effect: allow }
+  - { action: "skill", resource: "seo-sxo", effect: allow }
+  - { action: "skill", resource: "seo-technical", effect: allow }
+  - { action: "skill", resource: "seo-unlighthouse", effect: allow }
   - { action: "skill", resource: "smartbook-ingest", effect: allow }
   - { action: "skill", resource: "smartdoc", effect: allow }
   - { action: "skill", resource: "technical-writer", effect: allow }
