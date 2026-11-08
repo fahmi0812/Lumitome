@@ -84,6 +84,7 @@ permissions:
   - { action: "skill", resource: "devtools-vue", effect: allow }
   - { action: "skill", resource: "dfam-check", effect: allow }
   - { action: "skill", resource: "dfm", effect: allow }
+  - { action: "skill", resource: "diagnosing-bugs", effect: allow }
   - { action: "skill", resource: "dialogue-systems", effect: allow }
   - { action: "skill", resource: "dimensional-drawing", effect: allow }
   - { action: "skill", resource: "dimensional-drawing-motion", effect: allow }
@@ -244,6 +245,7 @@ permissions:
   - { action: "skill", resource: "threejs-gltf-loading", effect: allow }
   - { action: "skill", resource: "threejs-materials-lighting", effect: allow }
   - { action: "skill", resource: "threejs-scene-setup", effect: allow }
+  - { action: "skill", resource: "to-spec", effect: allow }
   - { action: "skill", resource: "tower-defense", effect: allow }
   - { action: "skill", resource: "typed-service-contracts", effect: allow }
   - { action: "skill", resource: "ui-styling", effect: allow }
