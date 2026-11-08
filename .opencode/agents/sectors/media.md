@@ -27,13 +27,67 @@ permissions:
   - { action: "skills_media_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "skills", effect: allow }
   - { action: "skill", resource: "*", effect: deny }
+  - { action: "skill", resource: "animate-video", effect: allow }
+  - { action: "skill", resource: "anime-cel", effect: allow }
+  - { action: "skill", resource: "blender-product-film", effect: allow }
+  - { action: "skill", resource: "captions-overlay", effect: allow }
+  - { action: "skill", resource: "crayon-storybook", effect: allow }
+  - { action: "skill", resource: "cut-the-curve", effect: allow }
+  - { action: "skill", resource: "directing-stickman-videos", effect: allow }
+  - { action: "skill", resource: "embedded-captions", effect: allow }
+  - { action: "skill", resource: "faceless-explainer", effect: allow }
+  - { action: "skill", resource: "ffmpeg", effect: allow }
+  - { action: "skill", resource: "figma", effect: allow }
+  - { action: "skill", resource: "general-video", effect: allow }
   - { action: "skill", resource: "gsap-core", effect: allow }
+  - { action: "skill", resource: "gsap-react", effect: allow }
   - { action: "skill", resource: "gsap-scrolltrigger", effect: allow }
+  - { action: "skill", resource: "gsap-timeline", effect: allow }
+  - { action: "skill", resource: "hyperframes", effect: allow }
+  - { action: "skill", resource: "hyperframes-animation", effect: allow }
+  - { action: "skill", resource: "hyperframes-audio", effect: allow }
+  - { action: "skill", resource: "hyperframes-cli", effect: allow }
+  - { action: "skill", resource: "hyperframes-core", effect: allow }
+  - { action: "skill", resource: "hyperframes-creative", effect: allow }
+  - { action: "skill", resource: "hyperframes-keyframes", effect: allow }
+  - { action: "skill", resource: "hyperframes-registry", effect: allow }
+  - { action: "skill", resource: "hyperframes-studio", effect: allow }
+  - { action: "skill", resource: "lemo-opuscar", effect: allow }
+  - { action: "skill", resource: "media-use", effect: allow }
   - { action: "skill", resource: "motion-design", effect: allow }
+  - { action: "skill", resource: "motion-designer", effect: allow }
+  - { action: "skill", resource: "motion-doctrine", effect: allow }
+  - { action: "skill", resource: "motion-graphics", effect: allow }
+  - { action: "skill", resource: "motionmaxxing", effect: allow }
+  - { action: "skill", resource: "music-to-video", effect: allow }
+  - { action: "skill", resource: "openshorts", effect: allow }
+  - { action: "skill", resource: "oversized-cursor", effect: allow }
+  - { action: "skill", resource: "painted-animation", effect: allow }
+  - { action: "skill", resource: "paper-cutout", effect: allow }
+  - { action: "skill", resource: "papercut-build", effect: allow }
+  - { action: "skill", resource: "papercut-explainer", effect: allow }
+  - { action: "skill", resource: "papercut-hook", effect: allow }
+  - { action: "skill", resource: "papercut-qa", effect: allow }
+  - { action: "skill", resource: "papercut-script", effect: allow }
+  - { action: "skill", resource: "papercut-setup", effect: allow }
+  - { action: "skill", resource: "papercut-storyboard", effect: allow }
+  - { action: "skill", resource: "papercut-strategy", effect: allow }
+  - { action: "skill", resource: "papercut-voice", effect: allow }
+  - { action: "skill", resource: "pixel-art", effect: allow }
+  - { action: "skill", resource: "pr-to-video", effect: allow }
+  - { action: "skill", resource: "product-launch-video", effect: allow }
+  - { action: "skill", resource: "remotion-best-practices", effect: allow }
+  - { action: "skill", resource: "remotion-to-hyperframes", effect: allow }
   - { action: "skill", resource: "review-loop", effect: allow }
+  - { action: "skill", resource: "seam-craft", effect: allow }
+  - { action: "skill", resource: "slideshow", effect: allow }
   - { action: "skill", resource: "sound-design", effect: allow }
+  - { action: "skill", resource: "talking-head-recut", effect: allow }
+  - { action: "skill", resource: "video-clone", effect: allow }
   - { action: "skill", resource: "video-demo", effect: allow }
+  - { action: "skill", resource: "video-shotcraft", effect: allow }
   - { action: "skill", resource: "web-sims", effect: allow }
+  - { action: "skill", resource: "whiteboard", effect: allow }
   - { action: "skill", resource: "*offensive*", effect: ask }
 ---
 
