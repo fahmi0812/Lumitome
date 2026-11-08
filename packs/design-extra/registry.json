@@ -3,6 +3,23 @@
   "note": "dibangkitkan scripts/gen-registry.mjs; skill tanpa entri kurasi memakai frontmatter SKILL.md",
   "skills": [
     {
+      "id": "anatomy",
+      "name": "anatomy",
+      "sektor": "coding",
+      "description": "Build crafted, highly detailed, interactive isometric SVG figures that explain a technical idea as a real physical object (a test rig, a dial gauge, a cabinet of drawers, a plotter, a lock), with many small precise solid parts, four-tone shading, correct painter's order, a framed card with title, hi",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "wheresryan22/anatomy",
+      "sha": "1482e8469b0a9e0d8cc18ea2740a01423d29ae80",
+      "license": "MIT",
+      "original_id": "wheresryan22-anatomy__anatomy",
+      "original_name": "anatomy"
+    },
+    {
       "id": "animate",
       "name": "animate",
       "sektor": "coding",
@@ -136,6 +153,23 @@
     {
       "id": "design-system-2",
       "mirror_of": "design-system"
+    },
+    {
+      "id": "diagram-skill",
+      "name": "diagram-skill",
+      "sektor": "coding",
+      "description": "Generate, edit, and validate draw.io or diagrams.net diagrams as XML, then open them directly in the draw.io online editor so the user can keep editing there. Use for new diagrams, local XML edits, shape-library diagrams, and truncated XML continuation.",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "CodingFeng101/CanvasAnvil",
+      "sha": "3de19527e36ecded4338b4f4e79f6842a33d2723",
+      "license": "MIT",
+      "original_id": "CodingFeng101-CanvasAnvil__diagram-skill",
+      "original_name": "diagram-skill"
     },
     {
       "id": "dimensional-drawing",
@@ -489,6 +523,23 @@
       "original_name": "review-animations"
     },
     {
+      "id": "scroll-craft",
+      "name": "scroll-craft",
+      "sektor": "coding",
+      "description": "Build premium scroll-driven landing pages for service, product, food, and drink brands. Plan the visitor journey, page grammar, emotional peak, and bespoke signature move. Create dimensional heroes with independent visual planes, restrained motion, and separate mobile composition. Use supplied photo",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "nateherkai/scroll-craft",
+      "sha": "75d81f74e83692add18cd7a8a8e078b8a887a579",
+      "license": "MIT",
+      "original_id": "nateherkai-scroll-craft__scroll-craft",
+      "original_name": "scroll-craft"
+    },
+    {
       "id": "scroll-world",
       "name": "scroll-world",
       "sektor": "coding",
@@ -508,6 +559,23 @@
     {
       "id": "slides-2",
       "mirror_of": "slides"
+    },
+    {
+      "id": "teardown",
+      "name": "teardown",
+      "sektor": "coding",
+      "description": "Build an interactive 3D simulator of a real machine or mechanism (an engine, a landing gear, a walking linkage, a pump, a gearbox) as one offline HTML page people can take apart, with live panels driven by the same model that moves the parts, a button for every subsystem, cutaways, camera views and ",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "design-extra",
+      "src": "elvarofficial/teardown",
+      "sha": "a91262ac1109051e014662d42ecb0b7bc1f113b1",
+      "license": "MIT",
+      "original_id": "elvarofficial-teardown__teardown",
+      "original_name": "teardown"
     },
     {
       "id": "ui-styling-2",

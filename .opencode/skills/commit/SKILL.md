@@ -1,0 +1,235 @@
+---
+argument-hint:
+  "[--all] [--staged] [--natural] [--conventional] [--push] [--rebase] [--close <issue_numbers>] [--finding
+  <finding_ids>] [--squash [--base <branch>]]"
+compatibility:
+  Requires Git and ai-commit with automatic ai-coord stale-dirt baseline discovery on PATH. Squash mode also requires
+  uv.
+effort: medium
+name: commit
+description:
+  "Commit staged or intended changes: compose a Conventional Prefix or Natural Language message, then use ai-commit —
+  with --all, --staged, --close, --finding, or --push. Also squash a branch into one commit with --squash."
+license: MIT
+metadata:
+  swanwright_sector: coding
+  swanwright_src: PaulRBerg/agent-skills
+  swanwright_sha: d9d87d04cd9b932469c488a1de79b3260e7435c8
+  swanwright_original_id: PaulRBerg-agent-skills__commit
+  swanwright_original_name: commit
+---
+
+# Git Commit
+
+Compose the semantic commit message from immutable evidence. Let `ai-commit` own deterministic preparation, commit,
+index reconciliation, and push mechanics.
+
+Run every command from the target repository cwd. Do not surround `ai-commit` with extra `git status`, `git log`, or
+`git diff` calls: preparation provides the complete evidence for this workflow. Use `--porcelain` only in deterministic
+automation that explicitly parses its stable TSV records. The normal skill flow consumes the human-readable sections.
+
+## 1. Parse Arguments
+
+Arguments: `$ARGUMENTS`
+
+- `ai-commit` selects the message format from repository config. Pass `--natural` or `--conventional` only as an
+  explicit one-off override, never to reproduce repository policy.
+- `--all`: capture all worktree and index changes. This intentionally risks including another agent's work.
+- `--staged`: capture exactly the current index. Do not add session paths. It conflicts with `--all`.
+- `--natural`: force Natural Language Format for this commit.
+- `--conventional`: force Conventional Prefix Format for this commit.
+- `--push`: request a push after commit. Otherwise push only when standing instructions authorize it.
+- `--rebase`: with `--push`, let `ai-commit` rebase a behind branch onto its fetched upstream before the push. Pass it
+  with every authorized push unless the user excludes it.
+- `--close <issue_numbers>`: pass one `ai-commit commit --close <N>` per positive decimal issue number. Accept comma- or
+  space-separated input. `ai-commit` writes the `Closes #N` lines.
+- `--finding <finding_ids>`: pass one `ai-commit commit --finding <id>` per ledger finding this commit fixes. Accept
+  comma- or space-separated input. Also infer a finding from context when this session's commit fixes a specific ledger
+  finding. `ai-commit` writes the `Finding-ID: <id>` trailer and resolves the finding after the commit. Never include or
+  resolve findings the commit does not actually fix.
+- `--squash`: replace every branch commit after the merge base with one commit that carries the net branch diff. The
+  helper finds the merge base with the resolved default branch. Squash mode requires a clean tree and index and an
+  attached non-default branch. It conflicts with `--all`, `--staged`, and `--push`.
+- `--base <branch>`: override default-branch detection. Use it only with `--squash`.
+- In Conventional Prefix Format, a positional type keyword overrides the inferred type. In Natural Language Format, a
+  positional verb or category keyword overrides the inferred verb. Quoted positional text overrides the inferred
+  description or subject.
+
+If the requested operation is only to push a clean branch that is already ahead, skip preparation. Check the push
+destination below. Run `ai-commit push --rebase` only when a destination is available.
+
+### Push Destination
+
+Before requesting a push, read the current branch with `git symbolic-ref --short HEAD`. Check
+`git config --get branch.<name>.remote` and `git remote`. Config exit `1` means the branch has no configured remote.
+Other command failures are errors, not evidence that no remote exists.
+
+When no branch remote and no named remotes exist, omit `--push` and `--rebase`. Complete the local commit and report
+`Push skipped: no remote configured.` For push-only work, report the skip without invoking `ai-commit push`. Do not
+create a remote or retry. If the user requires remote publication, report the missing destination as a blocker.
+
+`ai-commit` pushes to the configured upstream: `branch.<name>.remote` and `branch.<name>.merge`. The remote can be a
+named remote or a URL, even when `git remote` is empty. Without a branch remote, `ai-commit` uses `origin`. Other
+configured remotes do not replace `origin` automatically. If the upstream branch has a different name,
+`branch.<name>.pushRemote` must equal `branch.<name>.remote`. `gh pr checkout` writes this configuration for a PR that
+lets maintainers push.
+
+When you work on an existing PR, get its head repository and branch from `gh pr view` before you commit or push. A push
+to another branch does not update the PR. If the upstream does not match the PR head, correct the branch configuration:
+
+```bash
+git config branch.<branch>.remote '<head-remote-or-url>'
+git config branch.<branch>.merge 'refs/heads/<head-branch>'
+git config branch.<branch>.pushRemote '<head-remote-or-url>'
+```
+
+Then push with `ai-commit`. Do not push manually. Do not force-push. If `ai-commit` refuses the destination, report its
+error. Before you report completion, read the PR again and verify that its head SHA matches the pushed commit.
+
+## Squash Mode
+
+Enter squash mode only when the user explicitly requests a squash. Never infer it from branch state, a merge request, or
+standing instructions. When `--squash` is present, follow [references/squash.md](references/squash.md) for the plan and
+reset steps. Then continue with steps 2 to 5 in `--staged` mode. Never pass `--push` in squash mode, even when standing
+instructions authorize a push. The squash reference adds the co-author trailers, the rollback on failure, and the squash
+report.
+
+## 2. Prepare Once
+
+Run one preparation command:
+
+```bash
+ai-commit prepare [--all | --staged] [--natural | --conventional] --diff full \
+  [--exclude-baseline '<path>=<oid>']... [-- <session-modified-paths>...]
+```
+
+- Read the full preparation output. Never pipe it through `tail`, `head`, `awk`, `grep`, or similar. It carries both the
+  printed transaction ID and the diff step 3 must analyze, and a truncating pipe discards the evidence along with the
+  ID.
+- Use `--diff summary` instead only when the full diff is too large to read in one pass (for example, a repository-wide
+  migration across hundreds of files) and this session already reviewed the content. In that case, compose the message
+  from the name-status, shortstat, and that review.
+- Before default-mode preparation, run the repository's formatter on this session's edited paths only, so a formatting
+  pre-commit hook cannot modify the content after it is pinned.
+- Build the default-mode path list from individual repository-relative files with changes attributable to this session.
+  Expand directory paths to those file paths, including new and deleted files. Never build the list by parsing
+  `git status` or `git status --porcelain` output, which can include another agent's untracked or modified files.
+  Default mode requires every path edited in this session. For a rename, include both old and new file paths, including
+  case-only file or directory renames.
+- The formatter run, the `ai-coord touched` check below, and any `gh pr view` lookup of the PR head repository and
+  branch are independent. Issue them together in one turn. The formatter must still finish before `prepare`.
+- Before default-mode preparation, run `ai-coord touched` when available and reconcile its output against the session
+  path list. For that cross-check, add missed session-edited paths. Ignore paths this session did not semantically
+  change. Touched paths are best-effort evidence, not authority. When the command is unavailable or the session is
+  unrecognized, skip this cross-check silently.
+- `--all` accepts no explicit paths and captures all tracked, untracked, modified, deleted, and staged changes.
+- `--staged` accepts neither explicit paths nor baseline exclusions and captures the shared index exactly.
+- `ai-commit prepare` automatically applies this session's ai-coord stale-dirt baselines. Auto-applied exclusions appear
+  in the preparation evidence and must be disclosed unchanged. Explicit `--exclude-baseline` remains available for
+  overrides, and `--no-auto-baseline` disables discovery for deterministic automation. Never revert unrelated changes.
+
+  If coordination re-entry records this session's completed edits as a baseline, compare its blob IDs with retained
+  session or preparation evidence. Use `--no-auto-baseline` only when every selected file's entire delta is attributable
+  to the authorized task. Preserve exclusions for mixed ownership or uncertain attribution.
+
+When preparation lists `unclaimed paths`, this session's active ai-coord claim does not cover them. Before committing,
+decide per path: if the change is this session's authorized work, acquire the missing scope with `ai-coord start`. If it
+is another agent's work, discard the transaction and prepare again without that path. Never commit a path you cannot
+attribute.
+
+Preparation pins the exact tree and delta under the printed transaction ID without changing the shared index. Keep that
+ID. The later commit reuses the transaction instead of recomputing intended content from the mutable worktree or shared
+index. It applies that immutable delta to the locked current branch and fails safely if intervening branch movement
+conflicts. If preparation fails before issuing a transaction ID, correct the evidenced argument, attribution, or input
+problem and retry preparation within the authorized scope.
+
+## 3. Analyze and Compose
+
+Analyze the single prepared full diff. Do not replace a valid preparation merely to get different evidence. Oversized
+per-file sections arrive cut with a `DIFF_TRUNCATED` disclosure. Their name-status and shortstat evidence still governs
+the message.
+
+- Use the printed message format and message-format rules. `ai-commit` is the source of those rules. Do not load a
+  separate Conventional or Natural reference.
+- Apply positional overrides, detect breaking changes, infer scope or context from the code, and include a body only
+  when it adds material rationale.
+- Collect the issue numbers from `--close` and from transcript issue references that this commit actually resolves.
+  Collect the finding IDs from `--finding` and from context. Pass them as step 4 flags. Do not write `Closes`,
+  `Finding-ID`, or `Agent-Session` lines into a `-m` value. `ai-commit` appends the `Closes` paragraph and the trailer
+  block, including the validated preparation trailer. Do not synthesize or repair a missing trailer.
+
+Compose one subject paragraph and an optional body paragraph. Pass a trailer paragraph yourself only for trailers
+`ai-commit` does not generate, such as `Co-authored-by:` in squash mode. `ai-commit` merges its trailers into that
+paragraph.
+
+`ai-commit` receives every `-m` value verbatim and rejects a literal `\\n`. Write real line breaks inside the quoted
+argument, as in the step 4 example.
+
+## 4. Commit the Transaction
+
+Run:
+
+```bash
+ai-commit commit <transaction-id> -m '<subject>' [-m '<body>'] [--close <N>]... [--finding <id>]... [--push --rebase]
+```
+
+For example, a two-item body is one `-m` argument containing a physical newline:
+
+```bash
+ai-commit commit <transaction-id> -m '<subject>' -m '- first material change
+- second material change' --close 42 --finding 873d2a01bb9722f8 [--push --rebase]
+```
+
+Append `--push --rebase` when a push is authorized and the Push Destination check passes. `ai-commit` then rebases a
+behind branch onto its fetched upstream only when no Git operation is in progress and the working tree and index are
+clean. It aborts a rebase that stops. The same command handles default, `--all`, and `--staged` transactions. Never
+stage or commit them with direct Git commands.
+
+Transactions are idempotent. After an interruption, lock race, or retryable exit, retry the same transaction ID and
+message arguments. For those retryable failures, do not prepare a replacement from newer mutable state. A replay
+recovers or returns the retained receipt without creating a duplicate commit. Never delete an index lock.
+
+For a deterministic content failure proven to precede commit creation, correct the authorized work and supersede the
+uncommitted preparation using the recovery reference. This includes `snapshot-check hook modified prepared content`. An
+immutable retry cannot repair content pinned in a failed snapshot. Existing task authority covers this recovery.
+
+Read [references/failure-recovery.md](references/failure-recovery.md) before superseding a failed preparation or adding
+`--no-verify` or `--no-gpg-sign`. Bypass flags are explicit per-attempt recovery options, not first-attempt defaults.
+
+`--finding` resolves each finding with `ai-coord finding resolve --as fixed` after the commit and any push, so no
+separate resolve command follows a `FINDING_RESOLVED` line. After `FINDING_UNRESOLVED <id>` with exit `3`, the commit
+and push stand. Replay the same command once. If it fails again, report the stderr reason and run the
+`ai-coord finding resolve` command it names.
+
+## 5. Completion and Receipt
+
+Keep the receipt compact and forward its outcome lines without decoration:
+
+- `COMMITTED <transaction-id> <commit-oid>` proves commit creation or idempotent recovery. It completes local commit
+  work when a push is unauthorized or skipped because no remote exists.
+- `HOOK_ADDED <path>` identifies content introduced by a hook outside the prepared path set. Disclose every such line.
+- `FINDING_RESOLVED <id>` proves the ledger finding is resolved with the commit OID. `FINDING_UNRESOLVED <id>` means the
+  commit stands but the ledger still shows the finding open. Follow the step 4 replay rule.
+- `REBASED <branch> <count>` discloses that `ai-commit` rebased the branch onto `<count>` upstream commits before the
+  push. In the commit workflow, an `INTEGRATED` line follows it.
+- `PUSHED <branch>` or `PUSHED_NEW <branch>` proves propagation and completes push-authorized or push-only work.
+- `PUSH_SKIPPED <branch> no-remote` means no branch remote or named remotes exist. No fetch, rebase, or push ran. The
+  local commit remains complete, and its receipt is not marked pushed. Do not retry or claim remote publication.
+- `PUSHED <transaction-id> <commit-oid>` is the retained proof returned when an already-pushed transaction is replayed.
+- `INTEGRATED <transaction-id> <head-oid>` discloses that the branch no longer contains the transaction's original
+  commit, but HEAD holds its content, for example after a rebase or an identical upstream commit. The `PUSHED` line that
+  follows still completes the work. Cite the head OID as the pushed evidence, not the `COMMITTED` OID.
+- `SUPERSEDED <transaction-id> <commit-oid>` is safe noncompletion: the branch contains neither the commit nor its
+  content, and nothing was pushed. Inspect the branch. If the change is still needed, discard the transaction and
+  prepare it again.
+- `BEHIND <branch> <count>` is safe noncompletion, never completion: `ai-commit` fetched and refused to integrate or
+  push. A preceding `COMMITTED` still proves the local commit.
+
+  Without `--rebase`, replay the same transaction command with `--push --rebase` (or run `ai-commit push --rebase` for
+  push-only work). With `--rebase`, the stderr line names why the upstream was not integrated. When another Git
+  operation is in progress or the working tree or index is not clean, stop and report that branch reconciliation is
+  required. When the rebase stopped and was aborted, report the conflicting paths and ask the user before resolving
+  them. Never autostash, and never rebase by hand.
+
+Do not report unrelated tree state, ahead/behind counts not emitted by the command, staging narration, or successful
+hook activity. Add only a required one-line bypass disclosure from the recovery reference.

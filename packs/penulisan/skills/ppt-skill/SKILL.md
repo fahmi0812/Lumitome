@@ -1,0 +1,142 @@
+---
+name: ppt-skill
+description: Generate PPT templates, full presentation slide sets, and export deliverables. Use for template-only requests, full presentation generation from idea or outline, and PPT delivery as PDF, image-based PPT, or editable PPTX.
+license: MIT
+metadata:
+  swanwright_sector: penulisan
+  swanwright_src: CodingFeng101/CanvasAnvil
+  swanwright_sha: 3de19527e36ecded4338b4f4e79f6842a33d2723
+  swanwright_original_id: CodingFeng101-CanvasAnvil__ppt-skill
+  swanwright_original_name: ppt-skill
+---
+
+
+# PPT Skill
+
+## Trigger
+
+Use when the task requires:
+
+- one or more PPT template backgrounds
+- a full presentation from idea, outline, or source documents
+- slide-image-based presentation rendering
+- export delivery as `pdf`, `image_ppt` or `editable_pptx`
+
+## First-Use Reminder
+
+On the first use of this skill in a conversation, remind the user that image generation reads
+`config/image-provider.json` in this skill folder, and that it must be filled in before any image can be produced.
+If it does not exist, they copy `config/image-provider.example.json` to it; the filled file is git-ignored and
+must not be committed.
+
+## Order
+
+1. Classify the task.
+2. Collect missing required fields for that task type.
+3. Read the required references.
+4. Produce the planning or generation prompt.
+5. Generate template backgrounds or slide images.
+6. Route into the requested export mode.
+7. Export or bundle artifacts when requested.
+
+## Task Types
+
+- `template_only`
+- `deck_from_idea`
+- `deck_from_outline`
+- `deck_from_documents`
+- `deck_edit_routing`
+- `export_only`
+
+## Required References
+
+- `references/task-types.md`
+- `references/template-contract.md`
+- `references/plan-schema.md`
+- `references/layout-hints.md`
+- `references/image-rules.md`
+- `references/export-modes.md`
+- `references/image-provider-config.md`
+- `references/editable-pptx-workflow.md` (only for `editable_pptx`)
+
+Read only the references needed for the current task type.
+
+## Plan Contract
+
+For full-presentation generation, every slide must include:
+
+- `id`
+- `title`
+- `content`
+- `description`
+- `layout`
+- `note`
+
+`description` is for visual generation, not for audience-facing copy.
+
+## Template Contract
+
+- Template generation creates text-free 16:9 background images.
+- Templates are style references, not completed slides.
+- Template output may include one or more variants when the user asks for options.
+
+## Export Contract
+
+Supported delivery modes:
+
+- `pdf`
+- `image_ppt`
+- `editable_pptx`
+
+If the user does not specify an export mode, recommend `pdf` and `image_ppt` first.
+
+`editable_pptx` rebuilds each rendered slide into editable layers (clean base,
+native shapes, generated icons, editable text). You run it yourself, following
+`references/editable-pptx-workflow.md`: you make the judgments by looking at
+the images, and `editable/editable_run.py` does the mechanical steps. It takes
+10+ minutes: say so before starting. Rework rounds per page are 3 to 10
+(default 3). Its requirements are in `references/export-modes.md`; its image
+model comes from `config/image-provider.json` like the other modes, and it
+needs no other model.
+
+## Image Contract
+
+- Image generation uses `config/image-provider.json`.
+- Template generation and slide generation use the same image config unless the user explicitly defines a split configuration.
+- Require `apiKey` and `model`.
+- Do not ask the user to paste API keys into chat.
+- If image generation is requested and config is missing or incomplete, stop and tell the user to fill the config file.
+
+## Prompts
+
+- `prompts/template.md`
+- `prompts/plan.md`
+- `prompts/slide-image.md`
+- `prompts/edit-router.md`
+
+## Scripts
+
+- `scripts/generate-ppt-template-image.mjs`
+- `scripts/generate-ppt-deck-images.mjs`
+- `scripts/export-pdf.mjs`
+- `scripts/build-image-ppt.mjs`
+- `editable/editable_run.py` -- the mechanical steps of `editable_pptx` (`init`, `base`, `analysis`, `assets`, `page`, `sheet`, `check`, `merge`); see `references/editable-pptx-workflow.md`
+
+If the user specifies an output directory or file path, write artifacts there.
+
+If the user does not specify an output location, create a new output folder automatically and write all artifacts there.
+
+Do not write generated artifacts into the skill folder.
+
+## Deliverables
+
+Preferred:
+
+- `pdf`
+- `pptx` (image-based, or editable when `editable_pptx` is asked for)
+- metadata JSON
+
+Optional on request:
+
+- slide PNG files
+- prompt text

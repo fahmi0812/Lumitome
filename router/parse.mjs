@@ -52,24 +52,64 @@ function parseNaiveBlock(block) {
     const kv = /^([A-Za-z0-9_\-/]+):\s*(.*)$/.exec(line);
     if (kv) {
       key = kv[1];
-      const val = unquote(kv[2]);
+      // Skalar blok (`>` lipat pakai spasi, `|` literal pakai newline):
+      // nilainya ada di baris berindentasi berikut, bukan di baris kunci.
+      const blockMatch = /^[>|]([-+])?$/.exec(kv[2].trim());
+      // Skalar dikutip yang tutupnya di baris berikut (`description: 'teks...`
+      // lalu baris kosong + `'` sendiri): kumpulkan sampai kutip penutup.
+      // Baris kosong di tengah → newline (lipatan YAML); spasi tidak ditambah
+      // sesudah newline agar tidak ada spasi nyasar sebelum kutip penutup.
+      const q0 = kv[2][0];
+      if (!blockMatch && (q0 === "'" || q0 === '"') && unquote(kv[2]) === kv[2]) {
+        let acc = kv[2];
+        let closed = false;
+        for (let j = i + 1; j < lines.length; j++) {
+          const lj = lines[j];
+          if (/^\s*$/.test(lj)) { acc += "\n"; i = j; continue; }
+          acc += (acc.endsWith("\n") ? "" : " ") + lj.trim();
+          i = j;
+          const t = acc.trimEnd();
+          if (t.endsWith(q0) && !t.endsWith(q0 + q0) && !(q0 === '"' && t.endsWith('\\"'))) { closed = true; break; }
+        }
+        fm[key] = closed ? unquote(acc.trim()) : acc.trim();
+        continue;
+      }
+      const val = blockMatch ? "" : unquote(kv[2]);
       if (val !== "") { fm[key] = val; continue; }
       // nilai kosong: urutan blok (`- ...`), map bersarang satu level (`metadata:`),
       // atau skalar terlipat (teks berindentasi). Hanya konstruksi ini yang ada di frontmatter repo.
       const items = [];
       const sub = {};
-      let mode = null, folded = "";
+      let mode = null, folded = "", pendingBlank = 0;
+      const blockSep = blockMatch ? (blockMatch[0][0] === "|" ? "\n" : " ") : " ";
       for (let j = i + 1; j < lines.length; j++) {
         const lj = lines[j];
-        if (/^\s*$/.test(lj)) continue;
+        if (/^\s*$/.test(lj)) { if (blockMatch) pendingBlank++; continue; }
+        // Isi skalar blok: hanya baris berindentasi; baris rata kiri = kunci berikut.
+        // Baris kosong di tengah → newline (sekali per baris kosong; `|` +1 lagi
+        // karena pemisah barisnya sendiri sudah newline).
+        if (blockMatch) {
+          if (!/^\s+\S/.test(lj)) break;
+          mode = "fold";
+          const sep = pendingBlank > 0 ? "\n".repeat(pendingBlank + (blockSep === "\n" ? 1 : 0)) : (folded ? blockSep : "");
+          folded += sep + lj.trim();
+          pendingBlank = 0; i = j; continue;
+        }
         const it = /^\s*-\s+(.*)$/.exec(lj);
-        if (it) { if (mode && mode !== "list") break; mode = "list"; items.push(it[1].trim()); i = j; continue; }
+        // Item `- ` di dalam map adalah list bersarang milik sub-kunci terakhir
+        // (mis. `permissions:` di `metadata:`) — lewati, jangan hentikan map.
+        if (it) { if (mode === "map") { i = j; continue; } if (mode && mode !== "list") break; mode = "list"; items.push(it[1].trim()); i = j; continue; }
         const skv = /^\s+([A-Za-z0-9_\-/]+):\s*(.*)$/.exec(lj);
         if (skv) { if (mode && mode !== "map") break; mode = "map"; sub[skv[1]] = unquote(skv[2]); i = j; continue; }
         if (/^\s+\S/.test(lj)) { if (mode && mode !== "fold") break; mode = "fold"; folded = folded ? folded + " " + lj.trim() : lj.trim(); i = j; continue; }
         break;
       }
-      fm[key] = mode === "list" ? items : mode === "map" ? sub : mode === "fold" ? folded : "";
+      // Skalar terlipat yang dikutip (`description:` + `"..."` di baris berikut):
+      // buang kutip luar seperti YAML. Chomping skalar blok: `|` (clip) simpan
+      // satu newline akhir, `>-` buang.
+      let v = mode === "list" ? items : mode === "map" ? sub : mode === "fold" ? unquote(folded) : "";
+      if (blockMatch && mode === "fold" && blockMatch[0][0] === "|" && (blockMatch[0][1] || "") !== "-") v += "\n";
+      fm[key] = v;
       continue;
     }
     if (key && /^\s+\S/.test(line) && typeof fm[key] === "string") fm[key] = (fm[key] + " " + line.trim()).trim();

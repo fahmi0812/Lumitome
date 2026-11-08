@@ -36,7 +36,12 @@ permissions:
   - { action: "opencode_list_mcp_resources", resource: "skills", effect: allow }
   - { action: "skill", resource: "*", effect: deny }
   - { action: "skill", resource: "agent-dx-cli-scale", effect: allow }
+  - { action: "skill", resource: "agents-brain", effect: allow }
+  - { action: "skill", resource: "agents-docs", effect: allow }
+  - { action: "skill", resource: "agents-introspection", effect: allow }
+  - { action: "skill", resource: "agents-system", effect: allow }
   - { action: "skill", resource: "ai-behavior-trees-utility-ai", effect: allow }
+  - { action: "skill", resource: "anatomy", effect: allow }
   - { action: "skill", resource: "animate", effect: allow }
   - { action: "skill", resource: "animate-expo", effect: allow }
   - { action: "skill", resource: "animation-performance", effect: allow }
@@ -48,6 +53,9 @@ permissions:
   - { action: "skill", resource: "antislop-layoutmobile", effect: allow }
   - { action: "skill", resource: "antislop-ui", effect: allow }
   - { action: "skill", resource: "apple-design", effect: allow }
+  - { action: "skill", resource: "archify", effect: allow }
+  - { action: "skill", resource: "archify-review", effect: allow }
+  - { action: "skill", resource: "archify-tuning", effect: allow }
   - { action: "skill", resource: "ask-sonner", effect: allow }
   - { action: "skill", resource: "asset-pipeline", effect: allow }
   - { action: "skill", resource: "audio-design", effect: allow }
@@ -62,12 +70,16 @@ permissions:
   - { action: "skill", resource: "brainstorming", effect: allow }
   - { action: "skill", resource: "brand", effect: allow }
   - { action: "skill", resource: "break-ui", effect: allow }
+  - { action: "skill", resource: "browser-act", effect: allow }
   - { action: "skill", resource: "cad", effect: allow }
+  - { action: "skill", resource: "cad-skill", effect: allow }
   - { action: "skill", resource: "camera-systems", effect: allow }
   - { action: "skill", resource: "card-game", effect: allow }
   - { action: "skill", resource: "chrome-devtools-axi", effect: allow }
+  - { action: "skill", resource: "code-polish", effect: allow }
   - { action: "skill", resource: "code-review", effect: allow }
   - { action: "skill", resource: "codegen", effect: allow }
+  - { action: "skill", resource: "commit", effect: allow }
   - { action: "skill", resource: "core", effect: allow }
   - { action: "skill", resource: "correct", effect: allow }
   - { action: "skill", resource: "create-game-assets", effect: allow }
@@ -85,6 +97,7 @@ permissions:
   - { action: "skill", resource: "dfam-check", effect: allow }
   - { action: "skill", resource: "dfm", effect: allow }
   - { action: "skill", resource: "diagnosing-bugs", effect: allow }
+  - { action: "skill", resource: "diagram-skill", effect: allow }
   - { action: "skill", resource: "dialogue-systems", effect: allow }
   - { action: "skill", resource: "dimensional-drawing", effect: allow }
   - { action: "skill", resource: "dimensional-drawing-motion", effect: allow }
@@ -162,6 +175,7 @@ permissions:
   - { action: "skill", resource: "jotai", effect: allow }
   - { action: "skill", resource: "json-render-shadcn", effect: allow }
   - { action: "skill", resource: "karpathy-guidelines", effect: allow }
+  - { action: "skill", resource: "large-file-refactor", effect: allow }
   - { action: "skill", resource: "level-design", effect: allow }
   - { action: "skill", resource: "logo-design", effect: allow }
   - { action: "skill", resource: "loopdesign", effect: allow }
@@ -173,6 +187,7 @@ permissions:
   - { action: "skill", resource: "mobile-native", effect: allow }
   - { action: "skill", resource: "mod-any-game", effect: allow }
   - { action: "skill", resource: "mongodb-ops", effect: allow }
+  - { action: "skill", resource: "naming-refactor", effect: allow }
   - { action: "skill", resource: "next", effect: allow }
   - { action: "skill", resource: "one-pager", effect: allow }
   - { action: "skill", resource: "performance-optimization", effect: allow }
@@ -198,6 +213,7 @@ permissions:
   - { action: "skill", resource: "receiving-code-review", effect: allow }
   - { action: "skill", resource: "redux", effect: allow }
   - { action: "skill", resource: "reflect", effect: allow }
+  - { action: "skill", resource: "release-bumper", effect: allow }
   - { action: "skill", resource: "remotion", effect: allow }
   - { action: "skill", resource: "remotion-best-practices", effect: allow }
   - { action: "skill", resource: "remove-animations", effect: allow }
@@ -217,6 +233,7 @@ permissions:
   - { action: "skill", resource: "router", effect: allow }
   - { action: "skill", resource: "rpg", effect: allow }
   - { action: "skill", resource: "save-systems", effect: allow }
+  - { action: "skill", resource: "scroll-craft", effect: allow }
   - { action: "skill", resource: "scroll-world", effect: allow }
   - { action: "skill", resource: "sdf", effect: allow }
   - { action: "skill", resource: "sendcutsend", effect: allow }
@@ -224,9 +241,28 @@ permissions:
   - { action: "skill", resource: "shader-programming", effect: allow }
   - { action: "skill", resource: "share-field-notes", effect: allow }
   - { action: "skill", resource: "showcase-video", effect: allow }
+  - { action: "skill", resource: "simplify-codebase", effect: allow }
   - { action: "skill", resource: "skill-creator", effect: allow }
+  - { action: "skill", resource: "skill-harmonization", effect: allow }
   - { action: "skill", resource: "slides", effect: allow }
   - { action: "skill", resource: "solid", effect: allow }
+  - { action: "skill", resource: "solidcraft-agent-tools", effect: allow }
+  - { action: "skill", resource: "solidcraft-checking", effect: allow }
+  - { action: "skill", resource: "solidcraft-commands", effect: allow }
+  - { action: "skill", resource: "solidcraft-crash-safety", effect: allow }
+  - { action: "skill", resource: "solidcraft-editing", effect: allow }
+  - { action: "skill", resource: "solidcraft-file-formats", effect: allow }
+  - { action: "skill", resource: "solidcraft-ground-rules", effect: allow }
+  - { action: "skill", resource: "solidcraft-layers", effect: allow }
+  - { action: "skill", resource: "solidcraft-mechanisms", effect: allow }
+  - { action: "skill", resource: "solidcraft-modeling", effect: allow }
+  - { action: "skill", resource: "solidcraft-packaging", effect: allow }
+  - { action: "skill", resource: "solidcraft-performance", effect: allow }
+  - { action: "skill", resource: "solidcraft-preferences", effect: allow }
+  - { action: "skill", resource: "solidcraft-reporting", effect: allow }
+  - { action: "skill", resource: "solidcraft-tests", effect: allow }
+  - { action: "skill", resource: "solidcraft-ui", effect: allow }
+  - { action: "skill", resource: "solidcraft-ui-text", effect: allow }
   - { action: "skill", resource: "speckit-code-review", effect: allow }
   - { action: "skill", resource: "srdf", effect: allow }
   - { action: "skill", resource: "stack-diagram", effect: allow }
@@ -239,11 +275,23 @@ permissions:
   - { action: "skill", resource: "svelte", effect: allow }
   - { action: "skill", resource: "systematic-debugging", effect: allow }
   - { action: "skill", resource: "tanstack-start", effect: allow }
+  - { action: "skill", resource: "task-handoff", effect: allow }
   - { action: "skill", resource: "tdd", effect: allow }
   - { action: "skill", resource: "tdd-red-green-refactor", effect: allow }
+  - { action: "skill", resource: "teardown", effect: allow }
   - { action: "skill", resource: "test-driven-development", effect: allow }
+  - { action: "skill", resource: "test-value", effect: allow }
+  - { action: "skill", resource: "threejs-3d-generator", effect: allow }
+  - { action: "skill", resource: "threejs-aaa-graphics-builder", effect: allow }
+  - { action: "skill", resource: "threejs-audio-generator", effect: allow }
+  - { action: "skill", resource: "threejs-debug-profiler", effect: allow }
+  - { action: "skill", resource: "threejs-game-director", effect: allow }
+  - { action: "skill", resource: "threejs-game-ui-designer", effect: allow }
+  - { action: "skill", resource: "threejs-gameplay-systems", effect: allow }
   - { action: "skill", resource: "threejs-gltf-loading", effect: allow }
+  - { action: "skill", resource: "threejs-image-generator", effect: allow }
   - { action: "skill", resource: "threejs-materials-lighting", effect: allow }
+  - { action: "skill", resource: "threejs-qa-release", effect: allow }
   - { action: "skill", resource: "threejs-scene-setup", effect: allow }
   - { action: "skill", resource: "to-spec", effect: allow }
   - { action: "skill", resource: "tower-defense", effect: allow }

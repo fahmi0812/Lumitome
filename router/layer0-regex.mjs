@@ -31,6 +31,9 @@ export const KEYWORD_RULES = [
   { re: /\b(komunikasi internal|newsletter internal|status update tim|pengumuman internal)\b/i, sektor: "penulisan", skillsHint: ["internal-comms"] },
   { re: /\b(dokumentasi (sdk|api|library|developer)|getting started docs|technical writ\w*)\b/i, sektor: "penulisan", skillsHint: ["technical-writer"] },
   { re: /\b(proposal|decision doc|spec teknis|rfc dokumen|ko-?penulisan)\b/i, sektor: "penulisan", skillsHint: ["doc-coauthoring"] },
+  // CV/resume/lamaran = kerja tulis (penulisan), bukan coding — "backend developer"
+  // di dalam prompt CV tidak boleh membelokkan sektor ke coding (v0.3.27 probe imp-28).
+  { re: /\b(cv|resume|curriculum vitae|lamaran( kerja)?|melamar( pekerjaan|kerja|posisi)?|surat lamaran)\b/i, sektor: "penulisan", skillsHint: ["resume-polisher"] },
   { re: /\b(interrogate|adversarial review|blind spots?|stress test (kode|code|rencana|ide))\b/i, sektor: "riset", skillsHint: ["interrogate"] },
   { re: /\b(figure it out|playbook (migrasi|perubahan)|migrasi besar)\b/i, sektor: "riset", skillsHint: ["figure-it-out"] },
   { re: /\b(riset|research|sumber primer)\b(?!.*\b(tulis|naskah)\b)/i, sektor: "riset", skillsHint: ["research", "deep-research"] },
@@ -47,6 +50,9 @@ export const KEYWORD_RULES = [
   { re: /\b(pentest|red team|exploit)\b/i, sektor: "security", requiresConsent: true },
   { re: /\b(backtest|trading|ccxt|freqtrade)\b/i, sektor: "finance" },
   { re: /\bremotion\b/i, sektor: "media", skillsHint: ["remotion-best-practices", "motion-design"] },
+  // Mengarahkan/mengorkestrasi produksi Blender (pipeline, koordinasi lintas
+  // disiplin) = blender-director, bukan skill spesialis Blender (v0.3.27 probe imp-01).
+  { re: /\b(direct|director|sutradara|produksi|pipeline|koordinasi)\b[\s\S]{0,60}\bblender\b|\bblender\b[\s\S]{0,60}\b(direct|director|sutradara|produksi|pipeline|koordinasi)\b/i, sektor: "media", skillsHint: ["blender-director"] },
   { re: /\b(short[s]? video|motion design)\b/i, sektor: "media", skillsHint: ["motion-design"] },
   // Membaca/mencari/merangkum paper = riset; menulis paper = penulisan (harus sebelum rule penulisan).
   { re: /\b(cari|carikan|rangkum|ringkas|survei|telaah|bandingkan)\b(\s+\S+){0,3}\s+(paper|jurnal|literatur)\b/i, sektor: "riset", skillsHint: ["deep-research", "research"] },

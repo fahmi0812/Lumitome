@@ -1,0 +1,115 @@
+# Create or Regenerate Context
+
+Use these placement and generation rules within `maintain` when missing context is warranted or regeneration is
+requested. Create README.md and AGENTS.md from repository evidence. Regenerate existing targets only with `--force` or
+an equally explicit overwrite instruction. Create other context docs only on explicit request. For agent-initiated skill
+creation, apply `references/maintain-skills.md` first. Explicit skill creation uses this skill's
+`references/create-skill.md`.
+
+Success means each selected package root has the requested human and agent context. CLAUDE.md handling matches the
+installed Claude Code. See Claude Code Compatibility in SKILL.md. Generated claims pass repository-defined validation.
+
+## Select Targets
+
+Package roots are the repository root and directories containing one of these manifests:
+
+- `package.json`
+- `Cargo.toml`
+- `pyproject.toml`
+- `setup.py`
+- `go.mod`
+- `foundry.toml`
+- `Gemfile`
+- `composer.json`
+
+Create README.md only at package roots. Create package-root AGENTS.md files there as well. Apply `path` and
+`--root-only` before analyzing targets.
+
+You may also create nested AGENTS.md files when both conditions hold:
+
+- The user explicitly requests broad context creation.
+- The subtree has a distinct command runner, generated-file boundary, ownership rule, deployment or data constraint,
+  safety requirement, or review workflow.
+
+Otherwise, report the recommendation without writing it. Never create README.md in an arbitrary leaf directory.
+
+For each selected target, classify README.md, AGENTS.md, and CLAUDE.md as missing, reusable, safely replaceable, or
+blocked. Maintain existing README.md and AGENTS.md with targeted edits under `references/maintain.md`. Regenerate them
+only with overwrite authority. A request restricted to creating missing files leaves existing files untouched.
+
+## Ground the Content
+
+Derive claims from the nearest manifests and metadata, task runners, lock files, CI and lint configuration,
+generated-file notices, and relevant source boundaries. Use a user-provided description when present. Verify any factual
+claims it adds.
+
+Do not invent project purpose, badges, links, commands, conventions, ownership, or safety rules. When evidence is
+missing, narrow the generated document instead of guessing.
+
+## Generate README.md
+
+Keep README.md human-facing:
+
+- Add a title and short factual description.
+- Add only verified documentation, homepage, demo, package, changelog, citation, funding, reference, or license links
+  that materially help readers.
+- Add a short contributing pointer to sibling AGENTS.md.
+- Include a short operator-run setup guide only for dotfiles, infrastructure, homelab, personal tooling, or an explicit
+  setup request.
+
+Do not add developer command inventories, directory trees, configuration manuals, contribution rules, marketing copy, or
+placeholders.
+
+## Generate AGENTS.md
+
+Keep AGENTS.md concise, imperative, and scoped:
+
+- Name the stack and preferred package manager only when useful for choosing commands.
+- Include commands whose runner, order, side effects, environment, or failure behavior matters.
+- Include non-obvious architecture, style, naming, generated-file, ownership, safety, external-disclosure, credential,
+  deployment, financial, recipient-scoped data-handling, and review constraints supported by evidence.
+- Exclude generic tool tutorials, long directory trees, and package-script inventories that add no preference or
+  warning.
+- Make AGENTS.md a map. Link deeper context docs instead of inlining them. Keep it short enough to load on every task.
+- State each obligation as a rule the agent can find. Keep schemas, procedures, and catalogs in linked context docs.
+- Make every skill, command, or document that a rule names reachable from where the rule loads. When the harness does
+  not list a named skill there, state how to find it.
+- Use the same section name for the same role in sibling files.
+- Keep in-band metadata only when it changes reader behavior. Omit maintainer-only identifiers and annotations, or state
+  their meaning for the reader once at the root.
+- When the user requests continuous repo-local skill maintenance, include the standing instruction from this skill's
+  `references/maintain-skills.md`, adapted to the repository's ownership and lifecycle rules.
+
+Parent files hold shared defaults. Nested files contain only local deltas.
+
+## Handle CLAUDE.md
+
+Run the version check from Claude Code Compatibility in SKILL.md. When `agents_md_native=true`, create no CLAUDE.md
+symlinks. In that case, delete any existing symlink to a sibling AGENTS.md in the selected tree. Otherwise, create a
+sibling compatibility symlink for each created AGENTS.md:
+
+```sh
+(cd "$dir" && ln -sfn AGENTS.md CLAUDE.md)
+```
+
+Write only when CLAUDE.md is missing or already a symlink. A regular CLAUDE.md blocks only that symlink target. Leave it
+untouched. Report the conflict.
+
+## Create Context Docs on Request
+
+Create a Markdown context doc outside the default set only when the user explicitly names its path and purpose. Examples
+include a conventions file, command catalog, data-format reference, workflow runbook, architecture map, plan log, or
+decision log. Ground its content in repository evidence like any other target. Keep it scoped to that purpose. When that
+improves discoverability, link it from the nearest AGENTS.md or README.md.
+
+Do not scan for missing context docs. At most, report a recommendation without writing it.
+
+## Handle CONTRIBUTING.md
+
+Never edit CONTRIBUTING.md. If it exists next to a target, put only stable, relevant contribution guidance in AGENTS.md.
+In that case, advise the user to merge any remaining useful instructions manually before deleting CONTRIBUTING.md.
+
+## Finish
+
+Return to the shared completion checks and report contract in SKILL.md. In dry-run mode, show selected paths and concise
+section-level previews or diffs. Keep all creation and regeneration within the selected maintenance scope.

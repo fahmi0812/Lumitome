@@ -54,6 +54,23 @@
       "original_name": "blender-product-film"
     },
     {
+      "id": "canopy-part-title",
+      "name": "canopy-part-title",
+      "sektor": "media",
+      "description": "Leaves sweep through the frame and part to reveal the headline. HyperFrames block, 1920×1080, 12s, 11 variables.",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "motion",
+      "src": "heygen-com/hyperframes",
+      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "license": "Apache-2.0",
+      "original_id": "heygen-com-hyperframes__canopy-part-title",
+      "original_name": "canopy-part-title"
+    },
+    {
       "id": "captions-overlay",
       "name": "captions-overlay",
       "sektor": "media",
@@ -71,6 +88,40 @@
       "original_name": "captions-overlay"
     },
     {
+      "id": "changelog-video",
+      "name": "changelog-video",
+      "sektor": "media",
+      "description": "Turn a weekly changelog .md into a finished branded changelog video (square 1080, ~45-60s, Annie VO, animated brand background, mock-UI visualizations, lowkey captions). Use when the user provides a changelog/digest markdown and wants the weekly video, or says \"changelog video\". Self-contained — fon",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "motion",
+      "src": "heygen-com/hyperframes",
+      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "license": "Apache-2.0",
+      "original_id": "heygen-com-hyperframes__changelog-video",
+      "original_name": "changelog-video"
+    },
+    {
+      "id": "code-slice-hero",
+      "name": "code-slice-hero",
+      "sektor": "media",
+      "description": "A tiled headline surface flips cell by cell under a sweeping depth field to reveal the rear headline. HyperFrames block, 1920×1080, 8s, 18 variables.",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "motion",
+      "src": "heygen-com/hyperframes",
+      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "license": "Apache-2.0",
+      "original_id": "heygen-com-hyperframes__code-slice-hero",
+      "original_name": "code-slice-hero"
+    },
+    {
       "id": "crayon-storybook",
       "name": "crayon-storybook",
       "sektor": "media",
@@ -86,6 +137,23 @@
       "license": "MIT",
       "original_id": "edenfunf-reelmimic__crayon-storybook",
       "original_name": "crayon-storybook"
+    },
+    {
+      "id": "cuboid-carousel",
+      "name": "cuboid-carousel",
+      "sektor": "media",
+      "description": "A chain of bevelled cuboids rides a travelling wave as a content carousel. HyperFrames block, 1920×1080, 6.666666666666667s, 40 variables.",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "motion",
+      "src": "heygen-com/hyperframes",
+      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "license": "Apache-2.0",
+      "original_id": "heygen-com-hyperframes__cuboid-carousel",
+      "original_name": "cuboid-carousel"
     },
     {
       "id": "cut-the-curve",
@@ -190,6 +258,23 @@
       "original_name": "figma"
     },
     {
+      "id": "frost-sequence-camera-orbit",
+      "name": "frost-sequence-camera-orbit",
+      "sektor": "media",
+      "description": "An orbiting camera follows an ice logo as it breaks apart, reforms into two text moments, and fades. HyperFrames block, 1920×1080, 22.5s, 216 variables.",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "motion",
+      "src": "heygen-com/hyperframes",
+      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "license": "Apache-2.0",
+      "original_id": "heygen-com-hyperframes__frost-sequence-camera-orbit",
+      "original_name": "frost-sequence-camera-orbit"
+    },
+    {
       "id": "general-video",
       "name": "general-video",
       "sektor": "media",
@@ -205,6 +290,40 @@
       "license": "MIT",
       "original_id": "edenfunf-reelmimic__general-video",
       "original_name": "general-video"
+    },
+    {
+      "id": "get-started",
+      "name": "get-started",
+      "sektor": "media",
+      "description": "Use OpenShorts to turn a long video (YouTube link or video file) into vertical 9:16 clips with captions and titles, restyle or re-cut those clips, and publish them to TikTok, Instagram Reels and YouTube Shorts. Use when the user wants shorts, reels or clips from a video, the best moments of a podcas",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "motion",
+      "src": "mutonby/openshorts",
+      "sha": "0af2185c91ef4c95a030034b85df70d9563ba639",
+      "license": "MIT",
+      "original_id": "mutonby-openshorts__get-started",
+      "original_name": "get-started"
+    },
+    {
+      "id": "glass-shard-title",
+      "name": "glass-shard-title",
+      "sektor": "media",
+      "description": "Glass shards fly in through fog and tile themselves into the headline. HyperFrames block, 1920×1080, 12.16s, 19 variables.",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "motion",
+      "src": "heygen-com/hyperframes",
+      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "license": "Apache-2.0",
+      "original_id": "heygen-com-hyperframes__glass-shard-title",
+      "original_name": "glass-shard-title"
     },
     {
       "id": "hyperframes",
@@ -496,6 +615,23 @@
       "original_name": "openshorts"
     },
     {
+      "id": "orbit-card",
+      "name": "orbit-card",
+      "sektor": "media",
+      "description": "A single feature card orbits a dot sphere on approved Blender camera motion. HyperFrames block, 1920×1080, 10s, 4 variables.",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "motion",
+      "src": "heygen-com/hyperframes",
+      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "license": "Apache-2.0",
+      "original_id": "heygen-com-hyperframes__orbit-card",
+      "original_name": "orbit-card"
+    },
+    {
       "id": "oversized-cursor",
       "name": "oversized-cursor",
       "sektor": "media",
@@ -768,6 +904,23 @@
       "original_name": "remotion-to-hyperframes"
     },
     {
+      "id": "reverse-any-video",
+      "name": "reverse-any-video",
+      "sektor": "media",
+      "description": "Rebuild any video file as an editable HyperFrames project - motion graphics, talking heads, live action or AI-generated footage. Measure and watch it, rebuild every layer, then check the render against the original frame by frame. Use to reverse, recreate, replicate or copy a video.",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "motion",
+      "src": "heygen-com/hyperframes",
+      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "license": "Apache-2.0",
+      "original_id": "heygen-com-hyperframes__reverse-any-video",
+      "original_name": "reverse-any-video"
+    },
+    {
       "id": "seam-craft",
       "name": "seam-craft",
       "sektor": "media",
@@ -800,6 +953,23 @@
       "license": "MIT",
       "original_id": "edenfunf-reelmimic__slideshow",
       "original_name": "slideshow"
+    },
+    {
+      "id": "style-sampling",
+      "name": "style-sampling",
+      "sektor": "media",
+      "description": "Make a new episode in a proven video style - Collage Explainer, Finance Explainer, Animated Science Explainer, 3D Brand Explainer, 3D True Crime - on the person's topic. Use for \"an episode of\", \"in the style of\", \"sample this style\", 「用这个风格做一集」. One video to copy is reverse-any-video.",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "motion",
+      "src": "heygen-com/hyperframes",
+      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "license": "Apache-2.0",
+      "original_id": "heygen-com-hyperframes__style-sampling",
+      "original_name": "style-sampling"
     },
     {
       "id": "talking-head-recut",
@@ -868,6 +1038,23 @@
       "license": "MIT",
       "original_id": "edenfunf-reelmimic__whiteboard",
       "original_name": "whiteboard"
+    },
+    {
+      "id": "wireframe-portal-title",
+      "name": "wireframe-portal-title",
+      "sektor": "media",
+      "description": "A wireframe portal bursts open, the title comes through, then its letters swap into a second phrase. HyperFrames block, 1920×1080, 8s, 9 variables.",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "motion",
+      "src": "heygen-com/hyperframes",
+      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "license": "Apache-2.0",
+      "original_id": "heygen-com-hyperframes__wireframe-portal-title",
+      "original_name": "wireframe-portal-title"
     }
   ]
 }

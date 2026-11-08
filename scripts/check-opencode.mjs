@@ -12,6 +12,10 @@ export function checkSkillsDir(dir) {
   if (!fs.existsSync(dir)) return { errors, names };
   for (const d of fs.readdirSync(dir, { withFileTypes: true })) {
     if (!d.isDirectory()) continue;
+    // Direktori `references` bersama (bukan skill) — pola upstream blender:
+    // 13 skill merujuk ../references/*.md. gen-registry sudah memfilter
+    // berdasarkan keberadaan SKILL.md; checker ini mengikuti kontrak yang sama.
+    if (d.name === "references") continue;
     const f = path.join(dir, d.name, "SKILL.md");
     if (!fs.existsSync(f)) { errors.push(`${dir}/${d.name}: SKILL.md tidak ada`); continue; }
     const fm = frontmatter(fs.readFileSync(f, "utf8"));

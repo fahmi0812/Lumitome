@@ -83,7 +83,7 @@ const mcpErr = checkMcpPolicy(); mcpErr.forEach(fail); if (!mcpErr.length) pass(
   try { execFileSync(process.execPath, ["scripts/gen-policy.mjs", "--check"], { stdio: "pipe" }); pass("permissions agent = hasil gen-policy (skill+MCP per sektor)"); }
   catch (e) { fail(`permissions agent basi: ${String(e.stdout || e.message).trim()} → npm run policy`); }
   const act = fs.readdirSync(".opencode/skills").filter((d) => fs.existsSync(`.opencode/skills/${d}/SKILL.md`));
-  if (act.length !== 110) fail(`folder skill aktif ${act.length} != 110`); else pass("folder skill aktif = 110");
+  if (act.length !== 127) fail(`folder skill aktif ${act.length} != 127`); else pass("folder skill aktif = 127");
   // Jumlah skill pack TIDAK di-hardcode di sini (pelajaran v0.3.20) —
   // sudah dijamin dinamis oleh cek registry == folder aktif+pack di atas.
   for (const n of ["api-security", "llm-security"]) if (act.includes(n)) fail(`${n} tidak boleh aktif`);
@@ -95,7 +95,7 @@ const tok = Math.ceil(orch.length / 4);
 if (tok > 600) fail(`orchestrator ~${tok} tok > 600`); else pass(`orchestrator ~${tok} tok`);
 const idx = fs.readFileSync("router/skills-index.md", "utf8");
 // TRIAL lepas-dorman: budget per seksi (router/index-budgets.mjs), bukan satu
-// cap total 2500 — indeks kini 458 entri / ~10,8k tok. Validate memperingatkan
+// cap total 2500 — indeks kini 734 entri / ~17,7k tok. Validate memperingatkan
 // (seperti dulu); asersi kerasnya di tests/suite.mjs.
 const secTok = indexSectionTokens(idx);
 for (const [sec, tok] of Object.entries(secTok)) { if (sec === "total") continue;

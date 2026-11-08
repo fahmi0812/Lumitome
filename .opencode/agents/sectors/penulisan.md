@@ -16,22 +16,130 @@ permissions:
   - { action: "skills_penulisan_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "skills", effect: allow }
   - { action: "skill", resource: "*", effect: deny }
+  - { action: "skill", resource: "ads", effect: allow }
+  - { action: "skill", resource: "ads-amazon", effect: allow }
+  - { action: "skill", resource: "ads-apple", effect: allow }
+  - { action: "skill", resource: "ads-attribution", effect: allow }
+  - { action: "skill", resource: "ads-audit", effect: allow }
+  - { action: "skill", resource: "ads-budget", effect: allow }
+  - { action: "skill", resource: "ads-competitor", effect: allow }
+  - { action: "skill", resource: "ads-create", effect: allow }
+  - { action: "skill", resource: "ads-creative", effect: allow }
+  - { action: "skill", resource: "ads-dna", effect: allow }
+  - { action: "skill", resource: "ads-generate", effect: allow }
+  - { action: "skill", resource: "ads-google", effect: allow }
+  - { action: "skill", resource: "ads-landing", effect: allow }
+  - { action: "skill", resource: "ads-launch", effect: allow }
+  - { action: "skill", resource: "ads-linkedin", effect: allow }
+  - { action: "skill", resource: "ads-math", effect: allow }
+  - { action: "skill", resource: "ads-meta", effect: allow }
+  - { action: "skill", resource: "ads-microsoft", effect: allow }
+  - { action: "skill", resource: "ads-monitor", effect: allow }
+  - { action: "skill", resource: "ads-optimize", effect: allow }
+  - { action: "skill", resource: "ads-photoshoot", effect: allow }
+  - { action: "skill", resource: "ads-pinterest", effect: allow }
+  - { action: "skill", resource: "ads-plan", effect: allow }
+  - { action: "skill", resource: "ads-reddit", effect: allow }
+  - { action: "skill", resource: "ads-report", effect: allow }
+  - { action: "skill", resource: "ads-research", effect: allow }
+  - { action: "skill", resource: "ads-server-side-tracking", effect: allow }
+  - { action: "skill", resource: "ads-setup", effect: allow }
+  - { action: "skill", resource: "ads-snapchat", effect: allow }
+  - { action: "skill", resource: "ads-test", effect: allow }
+  - { action: "skill", resource: "ads-tiktok", effect: allow }
+  - { action: "skill", resource: "ads-validate", effect: allow }
+  - { action: "skill", resource: "ads-x", effect: allow }
+  - { action: "skill", resource: "ads-youtube", effect: allow }
   - { action: "skill", resource: "antislop-copywriting", effect: allow }
+  - { action: "skill", resource: "backlink-audit", effect: allow }
   - { action: "skill", resource: "brag", effect: allow }
   - { action: "skill", resource: "brag-slim", effect: allow }
+  - { action: "skill", resource: "brand-copy", effect: allow }
+  - { action: "skill", resource: "broken-link-checker", effect: allow }
+  - { action: "skill", resource: "budget-planner", effect: allow }
+  - { action: "skill", resource: "business-plan", effect: allow }
+  - { action: "skill", resource: "business-report", effect: allow }
+  - { action: "skill", resource: "campaign-planner", effect: allow }
+  - { action: "skill", resource: "competitor-pages", effect: allow }
+  - { action: "skill", resource: "content-planner", effect: allow }
+  - { action: "skill", resource: "content-writer", effect: allow }
+  - { action: "skill", resource: "contract-drafter", effect: allow }
+  - { action: "skill", resource: "course-slides", effect: allow }
+  - { action: "skill", resource: "data-analyst", effect: allow }
+  - { action: "skill", resource: "data-cleaning", effect: allow }
   - { action: "skill", resource: "diagram-design", effect: allow }
   - { action: "skill", resource: "doc-coauthoring", effect: allow }
   - { action: "skill", resource: "docs-pack", effect: allow }
   - { action: "skill", resource: "drawio-diagram", effect: allow }
+  - { action: "skill", resource: "ecommerce-seo", effect: allow }
+  - { action: "skill", resource: "email-drafter", effect: allow }
+  - { action: "skill", resource: "executive-deck", effect: allow }
+  - { action: "skill", resource: "expense-report", effect: allow }
+  - { action: "skill", resource: "financial-statement-analysis", effect: allow }
+  - { action: "skill", resource: "gemini", effect: allow }
+  - { action: "skill", resource: "genoffice", effect: allow }
+  - { action: "skill", resource: "geo-optimizer", effect: allow }
+  - { action: "skill", resource: "gohighlevel", effect: allow }
+  - { action: "skill", resource: "google-ads", effect: allow }
+  - { action: "skill", resource: "google-ads-assets", effect: allow }
+  - { action: "skill", resource: "google-ads-audit", effect: allow }
+  - { action: "skill", resource: "google-ads-copy", effect: allow }
+  - { action: "skill", resource: "google-ads-landing", effect: allow }
+  - { action: "skill", resource: "google-analytics", effect: allow }
+  - { action: "skill", resource: "hreflang-international", effect: allow }
   - { action: "skill", resource: "humanizer", effect: allow }
   - { action: "skill", resource: "humanizer-indonesia", effect: allow }
+  - { action: "skill", resource: "image-seo", effect: allow }
   - { action: "skill", resource: "internal-comms", effect: allow }
+  - { action: "skill", resource: "interview-coach", effect: allow }
+  - { action: "skill", resource: "invoice-tax-checklist", effect: allow }
+  - { action: "skill", resource: "job-description", effect: allow }
+  - { action: "skill", resource: "keyword-research", effect: allow }
+  - { action: "skill", resource: "kpi-dashboard", effect: allow }
+  - { action: "skill", resource: "labor-contract", effect: allow }
   - { action: "skill", resource: "laporan-generator", effect: allow }
+  - { action: "skill", resource: "lesson-plan", effect: allow }
+  - { action: "skill", resource: "local-seo", effect: allow }
+  - { action: "skill", resource: "meeting-minutes", effect: allow }
+  - { action: "skill", resource: "meta-ads", effect: allow }
+  - { action: "skill", resource: "meta-ads-audit", effect: allow }
+  - { action: "skill", resource: "meta-ads-creative", effect: allow }
+  - { action: "skill", resource: "meta-tags-optimizer", effect: allow }
   - { action: "skill", resource: "naskah-id", effect: allow }
+  - { action: "skill", resource: "nda-drafter", effect: allow }
+  - { action: "skill", resource: "okr-planner", effect: allow }
+  - { action: "skill", resource: "onboarding-plan", effect: allow }
+  - { action: "skill", resource: "paid-ads", effect: allow }
+  - { action: "skill", resource: "paid-ads-amazon", effect: allow }
+  - { action: "skill", resource: "paid-ads-chatgpt", effect: allow }
+  - { action: "skill", resource: "paid-ads-creative", effect: allow }
+  - { action: "skill", resource: "paid-ads-guide", effect: allow }
+  - { action: "skill", resource: "paid-ads-integrations", effect: allow }
+  - { action: "skill", resource: "paid-ads-launch", effect: allow }
+  - { action: "skill", resource: "paid-ads-linkedin", effect: allow }
+  - { action: "skill", resource: "paid-ads-optimize", effect: allow }
+  - { action: "skill", resource: "paid-ads-reddit", effect: allow }
+  - { action: "skill", resource: "paid-ads-review", effect: allow }
+  - { action: "skill", resource: "paid-ads-setup", effect: allow }
+  - { action: "skill", resource: "paid-ads-tiktok", effect: allow }
+  - { action: "skill", resource: "paid-ads-x", effect: allow }
   - { action: "skill", resource: "penulis-ilmiah", effect: allow }
+  - { action: "skill", resource: "performance-review", effect: allow }
+  - { action: "skill", resource: "personal-finance", effect: allow }
+  - { action: "skill", resource: "policy-compliance", effect: allow }
+  - { action: "skill", resource: "ppt-skill", effect: allow }
+  - { action: "skill", resource: "product-launch", effect: allow }
+  - { action: "skill", resource: "programmatic-seo", effect: allow }
+  - { action: "skill", resource: "proposal-writer", effect: allow }
+  - { action: "skill", resource: "quiz-maker", effect: allow }
+  - { action: "skill", resource: "resume-polisher", effect: allow }
+  - { action: "skill", resource: "sales-forecast", effect: allow }
+  - { action: "skill", resource: "schema-markup-generator", effect: allow }
+  - { action: "skill", resource: "search-console", effect: allow }
   - { action: "skill", resource: "seo", effect: allow }
   - { action: "skill", resource: "seo-agentic", effect: allow }
   - { action: "skill", resource: "seo-ahrefs", effect: allow }
+  - { action: "skill", resource: "seo-analysis", effect: allow }
   - { action: "skill", resource: "seo-audit", effect: allow }
   - { action: "skill", resource: "seo-backlinks", effect: allow }
   - { action: "skill", resource: "seo-bing", effect: allow }
@@ -62,9 +170,23 @@ permissions:
   - { action: "skill", resource: "seo-sxo", effect: allow }
   - { action: "skill", resource: "seo-technical", effect: allow }
   - { action: "skill", resource: "seo-unlighthouse", effect: allow }
+  - { action: "skill", resource: "setup-cms", effect: allow }
+  - { action: "skill", resource: "sitemap-audit", effect: allow }
+  - { action: "skill", resource: "slide-planner", effect: allow }
   - { action: "skill", resource: "smartbook-ingest", effect: allow }
   - { action: "skill", resource: "smartdoc", effect: allow }
+  - { action: "skill", resource: "social-media", effect: allow }
+  - { action: "skill", resource: "sop-writer", effect: allow }
+  - { action: "skill", resource: "study-plan", effect: allow }
+  - { action: "skill", resource: "survey-analyst", effect: allow }
+  - { action: "skill", resource: "swot-strategy", effect: allow }
+  - { action: "skill", resource: "sxo", effect: allow }
   - { action: "skill", resource: "technical-writer", effect: allow }
+  - { action: "skill", resource: "terms-of-service", effect: allow }
+  - { action: "skill", resource: "thesis-advisor", effect: allow }
+  - { action: "skill", resource: "upgrade", effect: allow }
+  - { action: "skill", resource: "weekly-report", effect: allow }
+  - { action: "skill", resource: "wordpress", effect: allow }
   - { action: "skill", resource: "*offensive*", effect: ask }
 ---
 

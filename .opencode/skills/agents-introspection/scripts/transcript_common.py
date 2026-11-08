@@ -1,0 +1,658 @@
+"""Shared redaction, pattern, and reader helpers for transcript mining scripts."""
+
+from __future__ import annotations
+
+import datetime as dt
+import functools
+import itertools
+import json
+import os
+import re
+from collections import Counter, deque
+from collections.abc import Iterable
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Literal
+
+EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
+API_KEY_RE = re.compile(r"\b(?:sk|pk|rk|ghp|github_pat|xox[baprs])-[A-Za-z0-9_\-]{16,}\b")
+GENERIC_SECRET_RE = re.compile(
+    r"(?i)\b(?:api[_-]?key|access[_-]?token|secret(?:[_-]?key)?|private[_-]?key|password)\b"
+    r"\s*[:=]\s*[\"']?(?![$<{[])([A-Za-z0-9_./+=-]{16,})"
+)
+EVM_ADDRESS_RE = re.compile(r"(?<![0-9a-fA-F])0x[0-9a-fA-F]{40}(?![0-9a-fA-F])")
+HEX_64_RE = re.compile(r"(?<![0-9a-fA-F])0x[0-9a-fA-F]{64}(?![0-9a-fA-F])")
+LONG_SECRETISH_RE = re.compile(r"(?<![A-Za-z0-9_/-])[A-Za-z0-9_+=/-]{48,}(?![A-Za-z0-9_/-])")
+
+CORRECTION_PATTERNS = {
+    "user-correction": re.compile(r"(?i)\b(actually|wrong|instead|i asked|not what|do not|don't|stop|you should)\b"),
+    "instruction-reminder": re.compile(r"(?i)\b(AGENTS\.md|instructions?|follow .*rules?|violat(?:e|ed|ion))\b"),
+}
+VERIFICATION_PATTERNS = {
+    "tests": re.compile(r"(?i)\b(test|pytest|vitest|unit tests?|integration tests?)\b"),
+    "lint-format": re.compile(r"(?i)\b(lint|format|mdformat|prettier|ruff|eslint)\b"),
+    "repo-check": re.compile(
+        r"(?i)\b(just |uv run|cargo check|npm run|pnpm |bun test|verified|verification|passes?|passed)\b"
+    ),
+}
+THEME_PATTERNS = {
+    "agent-skills": re.compile(
+        r"(?i)\b(SKILL\.md|openai\.yaml|frontmatter|allow_implicit|agent skills?|skill catalog)\b"
+    ),
+    "transcripts": re.compile(r"(?i)\b(transcript|session_index|sessions/|claude/projects|history\.jsonl)\b"),
+    "markdown": re.compile(r"(?i)\b(markdown|mdformat|README\.md|AGENTS\.md)\b"),
+    "git": re.compile(r"(?i)\b(git status|git diff|commit|branch|worktree|staged)\b"),
+    "shell-tooling": re.compile(r"(?i)\b(zsh|bash|just|uv run|rg |fd |jq )\b"),
+    "privacy": re.compile(r"(?i)\b(secret|redact|private key|api key|token|wallet|address)\b"),
+}
+CONTEXT_PREFIXES = (
+    "# AGENTS.md instructions for",
+    "<skill>",
+    "<environment_context>",
+    "<permissions instructions>",
+    "<collaboration_mode>",
+    "<turn_aborted>",
+    "<command-message>",
+    "Base directory for this skill:",
+)
+FAILURE_STATUSES = {"error", "failed", "failure", "cancelled", "canceled", "timed_out", "timeout"}
+# Endings removed from a keyword to find its stem. Derivational endings such as `-er` and `-ion` are not stripped, so
+# `miner` cannot stem to `min` and match `mining`.
+INFLECTION_SUFFIXES = ("ying", "ies", "ied", "ing", "es", "ed", "en", "s", "e", "y")
+# Endings accepted after a stem in text. These include `-er` and `-ion`, so `delete` still finds `deletion`.
+INFLECTION_ENDINGS = r"(?:ying|ies|ied|ing|ions|ion|ers|er|es|ed|en|s|e|y)?(?![a-z])"
+MIN_INFLECTION_STEM = 3
+MAX_FULL_SESSION_BYTES = 2_000_000
+SESSION_HEAD_RECORDS = 250
+SESSION_TAIL_RECORDS = 750
+METADATA_HEAD_RECORDS = 100
+CODEX_HEAD_MARKERS = (b'"session_meta"', b'"turn_context"')
+TAIL_TIMESTAMP_BYTES = 262_144
+TIMESTAMP_KEYS = ("timestamp", "created_at", "updated_at")
+
+
+SessionKind = Literal["primary", "subagent", "guardian", "unknown"]
+
+
+@dataclass(frozen=True)
+class SessionLineage:
+    session_kind: SessionKind = "unknown"
+    parent_session_id: str | None = None
+
+
+def extract_session_lineage(records: Iterable[Any], source: str) -> SessionLineage:
+    """Read native session metadata only; message parentUuid is not session lineage."""
+    if source == "codex":
+        for item in records:
+            if not isinstance(item, dict) or item.get("type") != "session_meta":
+                continue
+            payload = item.get("payload")
+            if not isinstance(payload, dict):
+                continue
+            parent = first_string_shallow(payload, ("parent_thread_id",))
+            native_source = payload.get("source")
+            thread_source = payload.get("thread_source")
+            subagent = native_source.get("subagent") if isinstance(native_source, dict) else None
+            if isinstance(subagent, dict) and subagent.get("other") == "guardian":
+                return SessionLineage("guardian", parent)
+            if (
+                (isinstance(native_source, dict) and "subagent" in native_source)
+                or thread_source == "subagent"
+                or parent
+            ):
+                return SessionLineage("subagent", parent)
+            if thread_source == "user" or (
+                isinstance(native_source, str) and native_source in {"cli", "vscode"} and thread_source is None
+            ):
+                return SessionLineage("primary")
+            return SessionLineage()
+    elif source == "claude":
+        markers = [item.get("isSidechain") for item in records if isinstance(item, dict)]
+        if any(marker is True for marker in markers):
+            return SessionLineage("subagent")
+        if any(marker is False for marker in markers):
+            return SessionLineage("primary")
+    return SessionLineage()
+
+
+def redact_text(value: str | None) -> str:
+    if not value:
+        return ""
+    text = EMAIL_RE.sub("<email>", value)
+    text = API_KEY_RE.sub("<api-key>", text)
+    text = GENERIC_SECRET_RE.sub(lambda match: match.group(0).split(match.group(1), 1)[0] + "<secret>", text)
+    text = HEX_64_RE.sub("<tx-or-key-hash>", text)
+    text = EVM_ADDRESS_RE.sub("<evm-address>", text)
+    return LONG_SECRETISH_RE.sub("<secret-like-token>", text)
+
+
+def truncate(value: str, limit: int = 160) -> str:
+    return value if len(value) <= limit else value[: limit - 3].rstrip() + "..."
+
+
+def count_privacy_gaps(strings: list[str]) -> Counter[str]:
+    counter: Counter[str] = Counter()
+    for text in strings:
+        if EMAIL_RE.search(text):
+            counter["email"] += 1
+        if API_KEY_RE.search(text) or GENERIC_SECRET_RE.search(text):
+            counter["api-key-or-secret"] += 1
+        if HEX_64_RE.search(text):
+            counter["private-key-or-tx-hash"] += 1
+        if EVM_ADDRESS_RE.search(text):
+            counter["evm-address"] += 1
+        if LONG_SECRETISH_RE.search(text):
+            counter["long-secret-like-token"] += 1
+    return counter
+
+
+def count_patterns(strings: list[str], patterns: dict[str, re.Pattern[str]]) -> Counter[str]:
+    counter: Counter[str] = Counter()
+    for text in strings:
+        for name, pattern in patterns.items():
+            if pattern.search(text):
+                counter[name] += 1
+    return counter
+
+
+def keyword_alternatives(keyword: str) -> list[str]:
+    return [alternative.strip() for alternative in keyword.split("|") if alternative.strip()]
+
+
+def inflection_stem(term: str) -> str | None:
+    """Return the stem of a plain lowercase word with one regular inflection ending removed.
+
+    `overwrite` becomes `overwrit`, `committed` becomes `commit`, and `retry` becomes `retr`. The stem is only useful
+    together with `stem_pattern`, which requires an inflection ending or a word boundary after it. Irregular forms
+    such as `overwrote` still need an OR-group.
+    """
+    if not term.isascii() or not term.isalpha():
+        return None
+    for suffix in INFLECTION_SUFFIXES:
+        if not term.endswith(suffix):
+            continue
+        stem = term[: -len(suffix)]
+        if len(stem) >= 2 and stem[-1] == stem[-2] and stem[-1] not in "lsz":
+            stem = stem[:-1]
+        return stem if len(stem) >= MIN_INFLECTION_STEM else None
+    return None
+
+
+def stem_pattern(stem: str) -> str:
+    """Regex source matching `stem`, an optional doubled final consonant, then an inflection ending or boundary."""
+    doubled = re.escape(stem[-1]) + "?" if stem[-1] not in "aeiou" else ""
+    return re.escape(stem) + doubled + INFLECTION_ENDINGS
+
+
+@dataclass(frozen=True)
+class KeywordMatcher:
+    """Case-insensitive matcher for one or more OR-group keywords against already lowercased text."""
+
+    exact: tuple[str, ...]
+    inflections: re.Pattern[str] | None
+
+    def matches(self, lowered: str) -> bool:
+        if any(term in lowered for term in self.exact):
+            return True
+        return self.inflections is not None and self.inflections.search(lowered) is not None
+
+
+def keyword_matcher(keywords: list[str]) -> KeywordMatcher | None:
+    """Build a matcher for lowercase OR-group alternatives plus their regular inflections, or None without any."""
+    exact: list[str] = []
+    stems: list[str] = []
+    for keyword in keywords:
+        for alternative in keyword_alternatives(keyword):
+            lowered = alternative.lower()
+            if lowered not in exact:
+                exact.append(lowered)
+            stem = inflection_stem(lowered)
+            if stem and stem not in stems:
+                stems.append(stem)
+    if not exact:
+        return None
+    inflections = re.compile("|".join(stem_pattern(stem) for stem in stems)) if stems else None
+    return KeywordMatcher(tuple(exact), inflections)
+
+
+def count_keywords(strings: list[str], keywords: list[str]) -> Counter[str]:
+    counter: Counter[str] = Counter()
+    lowered = [text.lower() for text in strings]
+    for keyword in keywords:
+        matcher = keyword_matcher([keyword])
+        if matcher is None:
+            continue
+        matches = sum(1 for text in lowered if matcher.matches(text))
+        if matches:
+            counter[redact_text(keyword)] = matches
+    return counter
+
+
+def raw_prescan_eligible(keywords: list[str]) -> bool:
+    if not keywords:
+        return False
+    for keyword in keywords:
+        alternatives = keyword_alternatives(keyword)
+        if not alternatives:
+            return False
+        for alternative in alternatives:
+            if not alternative.isascii() or '"' in alternative or "\\" in alternative:
+                return False
+    return True
+
+
+def title_already_matches(title: str | None, keywords: list[str]) -> bool:
+    if not title or not keywords:
+        return False
+    return bool(count_keywords([title], keywords))
+
+
+def keywords_present_in_lines(lines: list[str], keywords: list[str]) -> bool:
+    matcher = keyword_matcher(keywords)
+    if matcher is None:
+        return False
+    return any(matcher.matches(line.lower()) for line in lines)
+
+
+def read_jsonl(path: Path) -> Iterable[Any]:
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                item = parse_jsonl_line(line)
+                if item is not None:
+                    yield item
+    except OSError:
+        return
+
+
+def read_jsonl_head(path: Path) -> Iterable[Any]:
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            for _, line in zip(range(METADATA_HEAD_RECORDS), handle):
+                item = parse_jsonl_line(line)
+                if item is not None:
+                    yield item
+    except OSError:
+        return
+
+
+def read_codex_metadata_head(path: Path) -> Iterable[Any]:
+    """Yield session_meta and turn_context records from the head window.
+
+    Same window and order as read_jsonl_head; skips json.loads for lines that cannot be those records.
+    """
+    try:
+        with path.open("rb") as handle:
+            for line in itertools.islice(handle, METADATA_HEAD_RECORDS):
+                if not any(marker in line for marker in CODEX_HEAD_MARKERS):
+                    continue
+                item = parse_jsonl_line(line.decode("utf-8", errors="replace"))
+                if item is not None:
+                    yield item
+    except OSError:
+        return
+
+
+def read_jsonl_sampled(path: Path) -> Iterable[Any]:
+    try:
+        if path.stat().st_size <= MAX_FULL_SESSION_BYTES:
+            yield from read_jsonl(path)
+            return
+    except OSError:
+        return
+    tail: deque[str] = deque(maxlen=SESSION_TAIL_RECORDS)
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            for line_number, line in enumerate(handle):
+                if line_number < SESSION_HEAD_RECORDS:
+                    item = parse_jsonl_line(line)
+                    if item is not None:
+                        yield item
+                else:
+                    tail.append(line)
+    except OSError:
+        return
+    for line in tail:
+        item = parse_jsonl_line(line)
+        if item is not None:
+            yield item
+
+
+def read_jsonl_sampled_with_lines(path: Path) -> Iterable[tuple[int, Any]]:
+    try:
+        if path.stat().st_size <= MAX_FULL_SESSION_BYTES:
+            with path.open("r", encoding="utf-8", errors="replace") as handle:
+                for line_number, line in enumerate(handle):
+                    item = parse_jsonl_line(line)
+                    if item is not None:
+                        yield line_number, item
+            return
+    except OSError:
+        return
+    tail: deque[tuple[int, str]] = deque(maxlen=SESSION_TAIL_RECORDS)
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            for line_number, line in enumerate(handle):
+                if line_number < SESSION_HEAD_RECORDS:
+                    item = parse_jsonl_line(line)
+                    if item is not None:
+                        yield line_number, item
+                else:
+                    tail.append((line_number, line))
+    except OSError:
+        return
+    for line_number, line in tail:
+        item = parse_jsonl_line(line)
+        if item is not None:
+            yield line_number, item
+
+
+def read_raw_lines_sampled(path: Path) -> Iterable[str]:
+    try:
+        if path.stat().st_size <= MAX_FULL_SESSION_BYTES:
+            with path.open("r", encoding="utf-8", errors="replace") as handle:
+                yield from handle
+            return
+    except OSError:
+        return
+    tail: deque[str] = deque(maxlen=SESSION_TAIL_RECORDS)
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            for line_number, line in enumerate(handle):
+                if line_number < SESSION_HEAD_RECORDS:
+                    yield line
+                else:
+                    tail.append(line)
+    except OSError:
+        return
+    yield from tail
+
+
+def read_last_timestamp(path: Path) -> str | None:
+    """Return the last record timestamp string in a bounded tail window of the file."""
+    try:
+        with path.open("rb") as handle:
+            size = handle.seek(0, os.SEEK_END)
+            handle.seek(max(0, size - TAIL_TIMESTAMP_BYTES))
+            lines = handle.read().decode("utf-8", errors="replace").splitlines()
+    except OSError:
+        return None
+    if size > TAIL_TIMESTAMP_BYTES:
+        lines = lines[1:]
+    for line in reversed(lines):
+        value = first_string_shallow(parse_jsonl_line(line), TIMESTAMP_KEYS)
+        if value:
+            return value
+    return None
+
+
+def parse_utc_timestamp(value: str | None) -> dt.datetime | None:
+    if not value:
+        return None
+    text = value.strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        parsed = dt.datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=dt.UTC)
+    return parsed.astimezone(dt.UTC)
+
+
+def file_modified_time(path: Path) -> dt.datetime | None:
+    try:
+        mtime = path.stat().st_mtime
+    except OSError:
+        return None
+    return dt.datetime.fromtimestamp(mtime, tz=dt.UTC)
+
+
+def format_utc_iso(value: dt.datetime) -> str:
+    return value.astimezone(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def parse_jsonl_line(line: str) -> Any | None:
+    try:
+        return json.loads(line) if line.strip() else None
+    except json.JSONDecodeError:
+        return None
+
+
+def parse_content_blocks(content: Any) -> tuple[list[str], Counter[str], int]:
+    texts: list[str] = []
+    tools: Counter[str] = Counter()
+    failures = 0
+    if isinstance(content, str):
+        texts.append(content)
+    elif isinstance(content, list):
+        for block in content:
+            if isinstance(block, str):
+                texts.append(block)
+                continue
+            if not isinstance(block, dict):
+                continue
+            block_type = str(block.get("type", ""))
+            if block_type in {"text", "input_text", "output_text"} and isinstance(block.get("text"), str):
+                texts.append(block["text"])
+            elif block_type in {"tool_use", "tool_call", "function_call"}:
+                name = block.get("name")
+                if isinstance(name, str):
+                    tools[redact_text(name)] += 1
+            elif block_type in {"tool_result", "function_call_output"}:
+                failures += int(has_structured_failure(block))
+    elif isinstance(content, dict):
+        nested_texts, nested_tools, nested_failures = parse_content_blocks([content])
+        texts.extend(nested_texts)
+        tools.update(nested_tools)
+        failures += nested_failures
+    return texts, tools, failures
+
+
+def extract_record_channels(item: Any) -> dict[str, Any]:
+    result: dict[str, Any] = {"user": [], "assistant": [], "context": [], "tools": Counter(), "failures": 0}
+    if not isinstance(item, dict):
+        return result
+    payload = item.get("payload") if isinstance(item.get("payload"), dict) else None
+    candidate = payload or item
+    candidate_type = str(candidate.get("type", item.get("type", "")))
+    role = candidate.get("role")
+    message = candidate.get("message")
+    if isinstance(message, dict):
+        role = message.get("role", role)
+        content = message.get("content")
+    else:
+        content = candidate.get("content")
+        if content is None and isinstance(message, str):
+            content = message
+
+    if candidate_type == "user_message" and role is None:
+        role = "user"
+        content = candidate.get("message")
+    texts, tools, failures = parse_content_blocks(content)
+    result["tools"].update(tools)
+    collect_structured_tools(candidate, result["tools"])
+    result["failures"] += max(failures, int(has_structured_failure(candidate)))
+
+    if role in {"system", "developer"} or item.get("type") in {"system", "developer"}:
+        result["context"].extend(texts)
+    elif role == "user" or item.get("type") == "user" or candidate_type == "user_message":
+        for text in texts:
+            if is_context_envelope(text):
+                result["context"].append(text)
+            else:
+                result["user"].append(text)
+    elif role == "assistant" or item.get("type") == "assistant":
+        result["assistant"].extend(texts)
+    return result
+
+
+def collect_structured_tools(value: Any, counter: Counter[str]) -> None:
+    if not isinstance(value, dict):
+        return
+    value_type = str(value.get("type", ""))
+    if value_type in {"function_call", "tool_use", "tool_call"}:
+        name = value.get("name") or value.get("tool_name")
+        if isinstance(name, str):
+            counter[redact_text(name)] += 1
+
+
+def has_structured_failure(value: Any, depth: int = 0) -> bool:
+    if depth > 6 or not isinstance(value, (dict, list)):
+        return False
+    if isinstance(value, list):
+        return any(has_structured_failure(child, depth + 1) for child in value)
+    if value.get("is_error") is True or value.get("isError") is True:
+        return True
+    exit_code = value.get("exit_code", value.get("exitCode"))
+    if isinstance(exit_code, int) and exit_code != 0:
+        return True
+    status = value.get("status")
+    if isinstance(status, str) and status.lower() in FAILURE_STATUSES:
+        return True
+    for key, child in value.items():
+        if key in {"input", "arguments", "command", "text"}:
+            continue
+        if isinstance(child, (dict, list)) and has_structured_failure(child, depth + 1):
+            return True
+        if key in {"output", "content"} and isinstance(child, str):
+            parsed = parse_json_value(child)
+            if parsed is not None and has_structured_failure(parsed, depth + 1):
+                return True
+    return False
+
+
+def parse_json_value(value: str) -> Any | None:
+    value = value.strip()
+    if not value.startswith(("{", "[")):
+        return None
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return None
+
+
+def extract_tool_failures(item: Any) -> list[dict[str, str | None]]:
+    """Return failure details (tool, status, text) for tool_result/function_call_output blocks in a record."""
+    if not isinstance(item, dict):
+        return []
+    payload = item.get("payload") if isinstance(item.get("payload"), dict) else None
+    candidate = payload or item
+    message = candidate.get("message")
+    content = message.get("content") if isinstance(message, dict) else candidate.get("content")
+    results: list[dict[str, str | None]] = []
+    candidate_type = str(candidate.get("type", item.get("type", "")))
+    if candidate_type in {"function_call_output", "tool_result"}:
+        detail = tool_failure_detail(candidate)
+        if detail is not None:
+            results.append(detail)
+    if isinstance(content, list):
+        for block in content:
+            if isinstance(block, dict) and str(block.get("type", "")) in {"function_call_output", "tool_result"}:
+                detail = tool_failure_detail(block)
+                if detail is not None:
+                    results.append(detail)
+    return results
+
+
+def tool_failure_detail(block: dict[str, Any]) -> dict[str, str | None] | None:
+    if not has_structured_failure(block):
+        return None
+    name = block.get("name") or block.get("tool_name")
+    status, text = tool_failure_status_and_text(block)
+    return {"tool": redact_text(name) if isinstance(name, str) else None, "status": status, "text": redact_text(text)}
+
+
+def tool_failure_status_and_text(value: Any) -> tuple[str | None, str]:
+    if not isinstance(value, dict):
+        return None, ""
+    exit_code = value.get("exit_code", value.get("exitCode"))
+    status = value.get("status")
+    if isinstance(status, str) and isinstance(exit_code, int):
+        status_text: str | None = f"{status} (exit_code={exit_code})"
+    elif isinstance(status, str):
+        status_text = status
+    elif isinstance(exit_code, int):
+        status_text = f"exit_code={exit_code}"
+    elif value.get("is_error") is True or value.get("isError") is True:
+        status_text = "error"
+    else:
+        status_text = None
+    for key in ("output", "content", "text"):
+        raw = value.get(key)
+        if isinstance(raw, str):
+            parsed = parse_json_value(raw)
+            if isinstance(parsed, dict):
+                nested_status, nested_text = tool_failure_status_and_text(parsed)
+                return status_text or nested_status, nested_text or raw
+            return status_text, raw
+        if isinstance(raw, list):
+            texts = [
+                entry.get("text") for entry in raw if isinstance(entry, dict) and isinstance(entry.get("text"), str)
+            ]
+            if texts:
+                return status_text, " ".join(texts)
+    return status_text, ""
+
+
+def is_context_envelope(text: str) -> bool:
+    stripped = text.lstrip()
+    return any(stripped.startswith(prefix) for prefix in CONTEXT_PREFIXES)
+
+
+@functools.lru_cache(maxsize=4096)
+def normalize_path(value: str) -> Path:
+    return Path(os.path.expanduser(value)).resolve(strict=False)
+
+
+def is_within(candidate: Path, root: Path) -> bool:
+    try:
+        candidate.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
+def first_string_shallow(item: Any, keys: tuple[str, ...]) -> str | None:
+    if not isinstance(item, dict):
+        return None
+    for key in keys:
+        value = item.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
+def deduplicate_messages(messages: Iterable[str]) -> list[str]:
+    result: list[str] = []
+    seen: set[str] = set()
+    for message in messages:
+        normalized = " ".join(message.split())
+        if normalized and normalized not in seen:
+            seen.add(normalized)
+            result.append(message.strip())
+    return result
+
+
+def extract_strings(value: Any, depth: int = 0) -> Iterable[str]:
+    if depth > 8:
+        return
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for child in value.values():
+            yield from extract_strings(child, depth + 1)
+    elif isinstance(value, list):
+        for child in value:
+            yield from extract_strings(child, depth + 1)
+
+
+def source_title(item: Any) -> str | None:
+    if not isinstance(item, dict):
+        return None
+    for key in ("title", "summary", "task"):
+        value = item.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None

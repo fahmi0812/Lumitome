@@ -60,7 +60,7 @@ export function isMirror(name, fm, known) {
 // seo/career-extra = kerja tulis/konten (penulisan); osint-extra = riset;
 // motion membawa swanwright_sector=media di frontmatter (peta ini hanya fallback).
 // misc sengaja tidak dipetakan — isinya campuran tanpa sektor yang jujur.
-export const PACK_SECTOR = { cad: "coding", "career-extra": "penulisan", "coding-extra": "coding", "design-extra": "coding", gamedev: "coding", motion: "media", "osint-extra": "riset", "red-team": "security", seo: "penulisan" };
+export const PACK_SECTOR = { cad: "coding", "career-extra": "penulisan", "coding-extra": "coding", "design-extra": "coding", gamedev: "coding", motion: "media", "osint-extra": "riset", "red-team": "security", seo: "penulisan", "3d": "media", penulisan: "penulisan" };
 function entry(dir, id, pack) {
   const fm = frontmatter(fs.readFileSync(path.join(dir, "SKILL.md"), "utf8")) || {}; const prev = byId.get(id);
   const fmDesc = field(fm, "description") || "";
@@ -77,7 +77,11 @@ function entry(dir, id, pack) {
     // karena prev dikembalikan utuh).
     let cp = 0; const fm300 = fmDesc.slice(0, 300);
     while (cp < Math.min(prev.description.length, fm300.length) && prev.description[cp] === fm300[cp]) cp++;
-    const derived = !!prev.description && cp >= 32;
+    // Deskripsi kosong sebelumnya bukan kurasi — adopsi frontmatter (sekelas
+    // bug sha v0.3.26: nilai "" menempel selamanya karena prev dikembalikan utuh).
+    // Ditemukan v0.3.27: blender-director terdaftar tanpa deskripsi sehingga
+    // tidak pernah ter-retrieval, padahal frontmatter-nya lengkap.
+    const derived = (!prev.description && fm300) || (!!prev.description && cp >= 32);
     return { ...prev, ...(derived ? { description: fm300 } : {}), pack: pack || "", sha: field(fm, "swanwright_sha") || prev.sha };
   }
   return { id, name: id, sektor: field(fm, "swanwright_sector") || PACK_SECTOR[pack] || "misc", description: fmDesc.slice(0, 300), triggers: [], champion: false, fallback: null, cost: "low",

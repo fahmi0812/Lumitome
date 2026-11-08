@@ -27,22 +27,82 @@ permissions:
   - { action: "skills_media_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "skills", effect: allow }
   - { action: "skill", resource: "*", effect: deny }
+  - { action: "skill", resource: "3dviz-pro-max", effect: allow }
+  - { action: "skill", resource: "analog-found-footage-horror", effect: allow }
   - { action: "skill", resource: "animate-video", effect: allow }
+  - { action: "skill", resource: "animation", effect: allow }
   - { action: "skill", resource: "anime-cel", effect: allow }
+  - { action: "skill", resource: "anime-style", effect: allow }
+  - { action: "skill", resource: "apocalypse-worlds", effect: allow }
+  - { action: "skill", resource: "archviz", effect: allow }
+  - { action: "skill", resource: "asset-optimization", effect: allow }
+  - { action: "skill", resource: "biome-worlds", effect: allow }
+  - { action: "skill", resource: "blender-director", effect: allow }
+  - { action: "skill", resource: "blender-modeler", effect: allow }
   - { action: "skill", resource: "blender-product-film", effect: allow }
+  - { action: "skill", resource: "body-horror-style", effect: allow }
+  - { action: "skill", resource: "brutalist-mood", effect: allow }
+  - { action: "skill", resource: "camera-cinematography", effect: allow }
+  - { action: "skill", resource: "canopy-part-title", effect: allow }
   - { action: "skill", resource: "captions-overlay", effect: allow }
+  - { action: "skill", resource: "cartoon-style", effect: allow }
+  - { action: "skill", resource: "changelog-video", effect: allow }
+  - { action: "skill", resource: "character-archetypes", effect: allow }
+  - { action: "skill", resource: "character-artist", effect: allow }
+  - { action: "skill", resource: "chibi-style", effect: allow }
+  - { action: "skill", resource: "cloth-sim", effect: allow }
+  - { action: "skill", resource: "code-slice-hero", effect: allow }
+  - { action: "skill", resource: "collision-proxy", effect: allow }
+  - { action: "skill", resource: "comic-book-style", effect: allow }
+  - { action: "skill", resource: "compositing", effect: allow }
+  - { action: "skill", resource: "cosmic-eldritch-horror", effect: allow }
+  - { action: "skill", resource: "cozy-wholesome-mood", effect: allow }
   - { action: "skill", resource: "crayon-storybook", effect: allow }
+  - { action: "skill", resource: "creature-artist", effect: allow }
+  - { action: "skill", resource: "cuboid-carousel", effect: allow }
   - { action: "skill", resource: "cut-the-curve", effect: allow }
+  - { action: "skill", resource: "dark-gritty-mood", effect: allow }
   - { action: "skill", resource: "directing-stickman-videos", effect: allow }
+  - { action: "skill", resource: "dream-loop", effect: allow }
+  - { action: "skill", resource: "dream-surreal-mood", effect: allow }
+  - { action: "skill", resource: "dream-weirdcore-style", effect: allow }
   - { action: "skill", resource: "embedded-captions", effect: allow }
+  - { action: "skill", resource: "environment-artist", effect: allow }
+  - { action: "skill", resource: "export-pipeline", effect: allow }
   - { action: "skill", resource: "faceless-explainer", effect: allow }
+  - { action: "skill", resource: "fantasy-worlds", effect: allow }
   - { action: "skill", resource: "ffmpeg", effect: allow }
   - { action: "skill", resource: "figma", effect: allow }
+  - { action: "skill", resource: "folk-horror-style", effect: allow }
+  - { action: "skill", resource: "frost-sequence-camera-orbit", effect: allow }
+  - { action: "skill", resource: "frutiger-aero-style", effect: allow }
   - { action: "skill", resource: "general-video", effect: allow }
+  - { action: "skill", resource: "genre-action-combat", effect: allow }
+  - { action: "skill", resource: "genre-card-party-idle", effect: allow }
+  - { action: "skill", resource: "genre-metroidvania-roguelike", effect: allow }
+  - { action: "skill", resource: "genre-narrative-vn", effect: allow }
+  - { action: "skill", resource: "genre-open-world-sandbox", effect: allow }
+  - { action: "skill", resource: "genre-puzzle-platformer", effect: allow }
+  - { action: "skill", resource: "genre-racing-sports", effect: allow }
+  - { action: "skill", resource: "genre-rpg", effect: allow }
+  - { action: "skill", resource: "genre-shooter", effect: allow }
+  - { action: "skill", resource: "genre-soulslike", effect: allow }
+  - { action: "skill", resource: "genre-stealth", effect: allow }
+  - { action: "skill", resource: "genre-strategy-sim", effect: allow }
+  - { action: "skill", resource: "genre-survival", effect: allow }
+  - { action: "skill", resource: "geometry-nodes", effect: allow }
+  - { action: "skill", resource: "get-started", effect: allow }
+  - { action: "skill", resource: "glass-shard-title", effect: allow }
   - { action: "skill", resource: "gsap-core", effect: allow }
   - { action: "skill", resource: "gsap-react", effect: allow }
   - { action: "skill", resource: "gsap-scrolltrigger", effect: allow }
   - { action: "skill", resource: "gsap-timeline", effect: allow }
+  - { action: "skill", resource: "hair-groom", effect: allow }
+  - { action: "skill", resource: "hand-painted-style", effect: allow }
+  - { action: "skill", resource: "hard-surface", effect: allow }
+  - { action: "skill", resource: "hd-2d-style", effect: allow }
+  - { action: "skill", resource: "historical-worlds", effect: allow }
+  - { action: "skill", resource: "horror-style", effect: allow }
   - { action: "skill", resource: "hyperframes", effect: allow }
   - { action: "skill", resource: "hyperframes-animation", effect: allow }
   - { action: "skill", resource: "hyperframes-audio", effect: allow }
@@ -52,17 +112,32 @@ permissions:
   - { action: "skill", resource: "hyperframes-keyframes", effect: allow }
   - { action: "skill", resource: "hyperframes-registry", effect: allow }
   - { action: "skill", resource: "hyperframes-studio", effect: allow }
+  - { action: "skill", resource: "indie-horror-aesthetics", effect: allow }
+  - { action: "skill", resource: "isometric-style", effect: allow }
   - { action: "skill", resource: "lemo-opuscar", effect: allow }
+  - { action: "skill", resource: "lighting", effect: allow }
+  - { action: "skill", resource: "liminal-space-style", effect: allow }
+  - { action: "skill", resource: "lod-pipeline", effect: allow }
+  - { action: "skill", resource: "lookdev", effect: allow }
+  - { action: "skill", resource: "lowpoly-style", effect: allow }
+  - { action: "skill", resource: "manga-style", effect: allow }
+  - { action: "skill", resource: "mascot-puppet-horror", effect: allow }
+  - { action: "skill", resource: "materials", effect: allow }
   - { action: "skill", resource: "media-use", effect: allow }
+  - { action: "skill", resource: "minimalist-style", effect: allow }
   - { action: "skill", resource: "motion-design", effect: allow }
   - { action: "skill", resource: "motion-designer", effect: allow }
   - { action: "skill", resource: "motion-doctrine", effect: allow }
   - { action: "skill", resource: "motion-graphics", effect: allow }
   - { action: "skill", resource: "motionmaxxing", effect: allow }
   - { action: "skill", resource: "music-to-video", effect: allow }
+  - { action: "skill", resource: "neon-retrofuturism", effect: allow }
+  - { action: "skill", resource: "noir-style", effect: allow }
   - { action: "skill", resource: "openshorts", effect: allow }
+  - { action: "skill", resource: "orbit-card", effect: allow }
   - { action: "skill", resource: "oversized-cursor", effect: allow }
   - { action: "skill", resource: "painted-animation", effect: allow }
+  - { action: "skill", resource: "painterly-style", effect: allow }
   - { action: "skill", resource: "paper-cutout", effect: allow }
   - { action: "skill", resource: "papercut-build", effect: allow }
   - { action: "skill", resource: "papercut-explainer", effect: allow }
@@ -73,21 +148,52 @@ permissions:
   - { action: "skill", resource: "papercut-storyboard", effect: allow }
   - { action: "skill", resource: "papercut-strategy", effect: allow }
   - { action: "skill", resource: "papercut-voice", effect: allow }
+  - { action: "skill", resource: "physics-sim", effect: allow }
   - { action: "skill", resource: "pixel-art", effect: allow }
+  - { action: "skill", resource: "pixel-art-style", effect: allow }
   - { action: "skill", resource: "pr-to-video", effect: allow }
+  - { action: "skill", resource: "procedural-modeling", effect: allow }
   - { action: "skill", resource: "product-launch-video", effect: allow }
+  - { action: "skill", resource: "prop-artist", effect: allow }
+  - { action: "skill", resource: "psx-horror-style", effect: allow }
+  - { action: "skill", resource: "qa-review", effect: allow }
+  - { action: "skill", resource: "realistic-style", effect: allow }
   - { action: "skill", resource: "remotion-best-practices", effect: allow }
   - { action: "skill", resource: "remotion-to-hyperframes", effect: allow }
+  - { action: "skill", resource: "rendering", effect: allow }
+  - { action: "skill", resource: "retopology", effect: allow }
+  - { action: "skill", resource: "retro-16bit-style", effect: allow }
+  - { action: "skill", resource: "retro-8bit-style", effect: allow }
+  - { action: "skill", resource: "reverse-any-video", effect: allow }
   - { action: "skill", resource: "review-loop", effect: allow }
+  - { action: "skill", resource: "rigging", effect: allow }
+  - { action: "skill", resource: "scene-assembly", effect: allow }
+  - { action: "skill", resource: "sci-fi-punk-worlds", effect: allow }
+  - { action: "skill", resource: "sculpting", effect: allow }
   - { action: "skill", resource: "seam-craft", effect: allow }
+  - { action: "skill", resource: "set-dressing", effect: allow }
   - { action: "skill", resource: "slideshow", effect: allow }
   - { action: "skill", resource: "sound-design", effect: allow }
+  - { action: "skill", resource: "stop-motion-craft-style", effect: allow }
+  - { action: "skill", resource: "style-sampling", effect: allow }
+  - { action: "skill", resource: "stylized-style", effect: allow }
   - { action: "skill", resource: "talking-head-recut", effect: allow }
+  - { action: "skill", resource: "texture-workflow", effect: allow }
+  - { action: "skill", resource: "unity-export", effect: allow }
+  - { action: "skill", resource: "unreal-export", effect: allow }
+  - { action: "skill", resource: "uv-workflow", effect: allow }
+  - { action: "skill", resource: "vector-style", effect: allow }
+  - { action: "skill", resource: "vegetation-artist", effect: allow }
+  - { action: "skill", resource: "vehicle-artist", effect: allow }
+  - { action: "skill", resource: "vfx-fx", effect: allow }
   - { action: "skill", resource: "video-clone", effect: allow }
   - { action: "skill", resource: "video-demo", effect: allow }
   - { action: "skill", resource: "video-shotcraft", effect: allow }
+  - { action: "skill", resource: "visual-console-eras", effect: allow }
+  - { action: "skill", resource: "voxel-style", effect: allow }
   - { action: "skill", resource: "web-sims", effect: allow }
   - { action: "skill", resource: "whiteboard", effect: allow }
+  - { action: "skill", resource: "wireframe-portal-title", effect: allow }
   - { action: "skill", resource: "*offensive*", effect: ask }
 ---
 

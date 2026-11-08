@@ -1,0 +1,165 @@
+---
+argument-hint: <task>
+coordination: exempt
+name: agents-introspection
+description:
+  Use local Codex/Claude Code transcripts to assess recurrence risk for agent behavior. Recommend durable fixes to
+  AGENTS.md or skills from that evidence. Not for routine post-success skill-evolution or agent self-improvement
+  reviews.
+license: MIT
+metadata:
+  swanwright_sector: coding
+  swanwright_src: PaulRBerg/agent-skills
+  swanwright_sha: d9d87d04cd9b932469c488a1de79b3260e7435c8
+  swanwright_original_id: PaulRBerg-agent-skills__agents-introspection
+  swanwright_original_name: agents-introspection
+---
+
+# Agents Introspection
+
+This skill is coordination-exempt: skip the ai-coord gate for its declared work.
+
+## Supported Chat Hosts
+
+Before doing any work, identify the current chat host. If it is not Claude Code or Codex CLI, stop with this error:
+`This skill only works in Claude Code or Codex CLI.`
+
+If a slash or dollar invocation already placed these instructions in the conversation, follow them directly. In that
+case, do not invoke this skill again through a skill tool.
+
+Determine whether prior Codex and Claude Code work in the current project establishes a recurrence risk for the user's
+task. Then recommend the smallest durable intervention justified by the evidence.
+
+Success means the report identifies transcript coverage and separates observed behavior from inference. It applies a
+consistent evidence bar. It either proposes a concrete prevention step or explains why no durable change is justified.
+
+## Input
+
+- `<task>` (required): the task, decision, incident, or workflow to evaluate. If omitted but the current conversation
+  states it clearly, use that task. Otherwise, ask for the missing task.
+
+## Scope and Authority
+
+- Inspect Codex and Claude Code transcripts whose metadata or cwd resolves to the current project and any other local
+  project materially relevant to the user's task. You are authorized to read relevant other-project sessions without
+  asking the user. Establish relevance from task context, explicit project or path references, a shared change or
+  workflow, or session metadata. Do not scan another project's history solely because it shares a basename or keyword.
+- Treat current-project transcripts as internal working evidence. Include direct excerpts when they materially improve
+  the report. Do not summarize or redact solely because the model provider can see them. Never expose credentials,
+  security secrets, or personal wallet addresses.
+- Inspect and report by default. Edit AGENTS.md or skills only when the user explicitly asks to apply or implement
+  fixes. Then make the smallest in-scope local change and validate it.
+- Never modify transcript stores. Before placing transcript evidence in a public or third-party artifact, perform an
+  external-disclosure review and remove unrelated personal or customer data, unsuitable private paths or repository
+  names, and unrelated transcript material. Perform external writes only when authorized.
+
+## Bounded Retrieval
+
+Read `references/transcript-sources.md`. Resolve the current project with `pwd -P`. Identify any other task-relevant
+local projects. Choose 3–6 short, discriminative keywords from relevant filenames, commands, tools, errors, package
+names, issue IDs, and skill names.
+
+In a Codex read-only sandbox, or whenever `uv` cannot write its cache, skip the helper. In either case, go directly to
+the reference's Manual Fallback and do not retry `uv run`.
+
+When the user or an invoking skill sets a history scope, use that scope in place of the default `--since`,
+`--max-sessions`, archive, and five-body limits below. A history scope can set a time window, a session count, specific
+sessions, archived sessions, or other relevant projects. Do not widen a scope that the user stated. Report the applied
+scope in `🗂 Historical coverage`.
+
+1. Run the bundled miner for the current project and each task-relevant local project, unarchived sessions only, with
+   the chosen keywords, `--since 60d`, `--excerpts`, and `--max-sessions 8`. Encode synonyms as one OR-group keyword
+   (`--keyword 'a|b'`) rather than separate `--keyword` flags. The miner also matches regular inflections of a
+   plain-word keyword, so `overwrite` matches `overwriting` and `overwritten`. Irregular forms such as `overwrote` still
+   need an OR-group. `--max-excerpt-bytes` (default 8192) limits the total excerpt size. When `excerpts_truncated` is
+   `true`, use the inspector for candidates without excerpts.
+2. Treat source ownership as a miner invariant. The miner assigns every candidate once from source-native cwd,
+   directory, and history metadata, never from transcript content. Review `ownership`. Reject a candidate only when
+   fallback ownership such as `turn_context.cwd` remains materially ambiguous for the task. The miner excludes
+   conflicting ownership evidence and the live session by default. The miner also excludes known guardian approval
+   sessions before relevance ranking. Review `session_kind` and `parent_session_id` before treating candidates as
+   independent sessions. Explicit guardian paths remain available through the inspector.
+3. Treat miner scores, themes, correction, failure, verification, tool, or `privacy_gaps` counts, redacted `excerpts`,
+   and `started` or `modified` timestamps only as candidate-ranking and triage signals. They are heuristic and are never
+   evidence by themselves. Inspect up to five highest-relevance transcript bodies through the bundled inspector digest
+   (`scripts/transcript-inspect.py`) first. Open raw bodies only when the digest is insufficient. Stop earlier when the
+   evidence bar is met. Include a comparable successful session when available.
+4. When the keyword pass selects fewer than three candidates for a project whose coverage shows owned sessions
+   (`structurally_matched` above zero), rerun the miner for that project with no `--keyword` and the same other flags.
+   This signals-only pass keeps every owned session and ranks by correction, failure, verification, and recency signals.
+   A relevant session can use vocabulary that no keyword predicts. Report the pass in `🗂 Historical coverage`.
+5. If a specific reported incident is missing, use the reference's Exact-Incident Fallback before widening the time
+   window. Both helpers can omit the middle of long sessions. Otherwise, retry once with broader or OR-grouped keywords.
+   If evidence remains weak, retry once with `--since` removed. If unarchived history still lacks signal, retry once
+   with `--include-archived`.
+6. Exceed these bounds only to resolve contradictory evidence or satisfy an explicitly exhaustive request. If the helper
+   fails, use one project-scoped manual fallback from the reference.
+
+Stop and report the coverage gap when the bounded fallbacks still lack useful evidence. Absence of evidence is not
+evidence that a failure never occurred.
+
+For unusually long searches, send sparse progress updates only when a retrieval fallback begins, a finding changes the
+likely intervention, or the search reaches its explicit bound. Use an outcome-first line such as
+`🔎 Broadening transcript search — <verified reason and bound>` or
+`⏳ Checking archived sessions — <verified unarchived/archived coverage>`. Ground counts and coverage claims in
+miner/tool output. Do not narrate routine transcript reads.
+
+## Evidence Contract
+
+Evaluate historical behavior against the AGENTS.md and skill instructions available to that session when recoverable. Do
+not infer that an agent ignored or misapplied a rule solely because the current source tree or installed copies under
+`~/.agents/skills` or `~/.claude/skills` contain it. If the transcript does not establish the historical version or
+availability, mark it unknown and qualify the attribution.
+
+For each relevant session, record only concise, auditable observations about:
+
+- ignored or misread AGENTS.md or skill instructions.
+- wrong cwd, project root, source path, or path encoding.
+- over-broad edits, unrelated churn, overwritten user work, or destructive commands.
+- tooling, shell, parsing, retry, or verification mistakes.
+- invented claims, vague reports, or missing tests and checks.
+- successful patterns that prevented mistakes.
+
+Connect each observation to the current task and label any causal or recurrence claim as inference. State conflicts and
+weak coverage rather than averaging them away.
+
+Use these confidence levels:
+
+- **High**: at least two independent relevant sessions directly support the same pattern and its relevance to the
+  current task.
+- **Medium**: one unambiguous relevant session supports the finding, or multiple sessions provide mixed support.
+- **Low**: only indirect, ambiguous, or heuristic signals exist. Do not recommend a durable repository change from
+  low-confidence evidence.
+
+A durable change requires either the same failure in at least two independent sessions or one unambiguous high-impact
+failure that exposes a missing stable invariant. Treat lower-impact one-offs as manual guardrails.
+
+Count a parent session and its children as one source of recurrence evidence. Guardian approval sessions can contain
+copied parent history. Do not count that copied history as a separate occurrence. Missing lineage metadata yields
+`session_kind: unknown`. An unknown kind or absent parent ID does not establish independence. Verify independence from
+other evidence before counting those sessions separately.
+
+## Choose the Smallest Intervention
+
+- Update AGENTS.md when the lesson is stable, project-wide, and useful to agents working in that scope.
+- Update an existing skill when the failure belongs clearly inside its current workflow.
+- Propose a new skill only for a repeated, reusable procedure that spans projects or repositories.
+- Add a script only when deterministic discovery, parsing, or validation would otherwise be reimplemented.
+- Recommend no durable change for one-off mistakes, weak evidence, or rules already stated clearly. Report the risk and
+  manual guardrail instead.
+
+## Report and Stop
+
+Lead with `### 🔎 Introspection complete — <intervention or coverage-gap outcome>` for read-only work or
+`### ✅ Introspection fixes applied — <outcome>` when explicitly requested fixes were written. Then report only:
+
+1. `🗂 Historical coverage`: project paths, sources checked, fallbacks used, and sessions inspected.
+2. `🔎 Findings`: a compact table with confidence, observed evidence, inference, relevance, and intervention. Keep
+   confidence visibly separate from severity or impact.
+3. `🛡 Durable recommendations`: apply now, consider later, or no change, with the target and prevention mechanism.
+4. `🧪 Validation and gaps`: commands run, checks performed, external-disclosure constraints, and missing evidence.
+
+When fixes were explicitly requested, include exact files changed and validation outcomes. Stop after the current task
+has a recommendation supported by evidence or an explicit coverage gap. Do not mine additional history merely to add
+examples or strengthen prose. Keep transcript references, paths, counters, redactions, and miner JSON exact and
+undecorated.

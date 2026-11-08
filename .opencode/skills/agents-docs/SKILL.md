@@ -1,0 +1,148 @@
+---
+compatibility:
+  Requires curl and a writable user cache directory. Network access populates or refreshes fixed artifacts and fetches
+  uncached topic pages.
+coordination: exempt
+name: agents-docs
+description: >-
+  Use for current official documentation about Codex, Codex CLI, or Claude Code behavior, configuration, prompting,
+  skills, permissions, tools, surfaces, capabilities, troubleshooting, hooks, app-server, or hook trust. Consult the
+  relevant official source before answering.
+license: MIT
+metadata:
+  swanwright_sector: coding
+  swanwright_src: PaulRBerg/agent-skills
+  swanwright_sha: d9d87d04cd9b932469c488a1de79b3260e7435c8
+  swanwright_original_id: PaulRBerg-agent-skills__agents-docs
+  swanwright_original_name: agents-docs
+---
+
+# Agents Docs
+
+This skill is coordination-exempt: skip the ai-coord gate for its declared work.
+
+## Supported Chat Hosts
+
+Before doing any work, identify the current chat host. If it is not Claude Code or Codex CLI, stop with this error:
+`This skill only works in Claude Code or Codex CLI.`
+
+Answer Codex and Claude Code product questions from the narrowest relevant official documentation.
+
+## Classify the request
+
+Classify the request as Codex, Claude Code, or a comparison. Use this skill only for those products and their documented
+behavior. Route generic agent work and provider API, SDK, pricing, authentication, model, migration, or managed-agent
+questions to their relevant source.
+
+Treat `$imagegen` and Codex image-prompting questions as Codex product questions. This classification applies even when
+detailed supporting model guidance is in OpenAI's API Cookbook.
+
+Treat model prompting for Codex as a Codex product question, with supporting guidance from OpenAI's model docs.
+
+## Route official sources
+
+- For Codex, start only at `https://developers.openai.com`. Resolve `scripts/fetch-doc.sh` relative to this skill
+  directory. Run `fetch-doc.sh codex-manual`. Search the returned path narrowly with `rg`. Read only the matching
+  heading range into context. The fixed manual and schema endpoints may redirect to their exact
+  `https://learn.chatgpt.com/docs/` counterparts.
+- For model prompting in Codex, read the
+  [OpenAI latest-model guide](https://developers.openai.com/api/docs/guides/latest-model#prompting-best-practices). It
+  covers the current GPT model family. Treat advice that names one model as measured on that model. Before applying API
+  parameters, confirm Codex settings against the product documentation.
+- For `$imagegen` and Codex image-prompting questions, read the manual's exact
+  [Image generation](https://learn.chatgpt.com/docs/image-generation) topic first. When detailed prompting patterns or
+  production examples are needed, also read the
+  [GPT Image Generation Models Prompting Guide](https://developers.openai.com/cookbook/examples/multimodal/image-gen-models-prompting-guide).
+  Apply its prompt-writing guidance to `$imagegen`. Treat model selection, flags, and API parameters as API-only unless
+  Codex documentation confirms the built-in skill exposes them.
+- For Claude Code, use only `https://code.claude.com`. Start broad product research at
+  `https://code.claude.com/docs/en/overview.md`.
+- For Codex, accept a `cached` manual for ordinary product questions. Use `--refresh` for release/change questions,
+  materially disputed freshness, schema/config discrepancies, conflicts with observed local behavior, and other
+  explicitly unstable cases.
+- When the Codex manual contains sufficient supporting text and identifies the final topic-specific official URL, answer
+  from that evidence and cite the topic URL. When the manual identifies the topic page but lacks enough detail, fetch
+  that exact Markdown page directly. Run one compact domain-restricted search only when the exact official page remains
+  unknown. Never search merely to rediscover a URL already identified by the manual.
+- For a specific Claude Code topic, run a compact domain-restricted web search for the exact official page. Then fetch
+  its Markdown representation when available. Retrieve only the page or section needed for the answer. Never fetch a
+  complete documentation inventory as a discovery shortcut.
+- Prefer the current client's URL-capable fetch for narrow topic pages. Use the helper only for its two fixed Codex
+  artifacts.
+- For comparisons, complete both provider routes independently. Never infer one product's behavior from the other's
+  documentation.
+
+Interpret helper diagnostics precisely:
+
+- `cached` means an integrity-valid artifact was validated no more than 24 hours ago and reused without network access.
+  The validation timestamp did not advance.
+- `revalidated` means an older artifact received a successful conditional `304` response and had its validation metadata
+  refreshed.
+- `fetched` means a successful `200` response supplied integrity-valid content that replaced the prior artifact
+  atomically.
+- `stale` means ordinary revalidation failed and the helper fell back to an integrity-valid artifact no more than seven
+  days old. Disclose its validation timestamp and the retrieval failure. Do not describe `cached` or `stale` evidence as
+  fetched live.
+
+Follow redirects only within the matching official domain, except for the helper's exact Codex artifact redirects to
+`https://learn.chatgpt.com/docs/`. Cite the final page URL reported by the helper or live fetch.
+
+## Investigate under-documented Codex configuration
+
+When a Codex feature or `config.toml` key is missing from the prose documentation, use this bounded procedure:
+
+1. Record the installed client and effective feature state with `codex --version` and `codex features list`.
+2. Resolve the bundled helper relative to this skill directory. Run `fetch-doc.sh --refresh codex-config-schema`. Then
+   search only the relevant definition or path in the returned file.
+3. Compare the schema with the current prose config reference. Treat schema-only fields as under-documented, not as
+   behavior guaranteed by every client.
+4. Check installed help for `codex app-server --strict-config --print-startup-config`. When supported, use that command
+   from a neutral directory to validate configuration without starting a server or inference. Use a temporary
+   `CODEX_HOME` for candidate files or one-off `-c` overrides without changing live settings. Keep validator output
+   private because it can contain configuration values. `--help` alone does not load or validate configuration. Parsing
+   acceptance does not prove runtime behavior: check `codex features list` for removed or ineffective features even when
+   their keys still pass validation.
+5. Report evidence separately as official docs/schema, local observations, or inference. If sources disagree, prefer the
+   installed client's observed behavior for the user's environment and disclose the discrepancy.
+
+Investigate only the key or feature relevant to the request. Do not turn this procedure into a full feature inventory.
+
+## Answer from evidence
+
+- Treat official documentation returned under the bounded cache policy or retrieved live as authoritative for published
+  product claims. Do not answer current or unstable product facts from memory when the relevant page can be refreshed.
+- Cite the exact official page supporting each material claim, not a broad entry point when a topic-specific page was
+  used. Prefer short paraphrases. Quote only when exact wording matters.
+- If verified local commands, versions, configuration, or callable capabilities conflict with the latest docs, report
+  the discrepancy and prefer the observed behavior for that installed environment.
+- If an exact term is absent, search obvious adjacent official concepts and state that the term itself is not
+  documented.
+
+## Route Codex hook, app-server, and trust questions
+
+For Codex hooks, app-server, managed hooks, or hook-trust operations, fetch the relevant official pages:
+
+- `https://developers.openai.com/codex/hooks`
+- `https://developers.openai.com/codex/app-server`
+
+Read [the version-aware hooks reference](references/codex-hooks.md) in the same parallel batch, because the fetches and
+the read are independent. Use its local protocol and config details only when the installed client is explicitly
+verified as the version named there. Keep official behavior and local observations distinct in the answer. Do not turn a
+local implementation detail into a product guarantee.
+
+## Bound failures
+
+If topic-page retrieval fails, try the direct URL and one domain-restricted search. Then stop expanding sources. Helper
+forced refreshes, expired entries, and integrity failures fail closed. State the bounded uncertainty.
+
+Use local `--help`, `--version`, configuration, or observed behavior only when relevant. Label it as local evidence.
+Never silently substitute third-party sources, another provider's docs, or bundled knowledge.
+
+For comparisons, answer a supported side even if the other provider is unavailable. Mark the unsupported side unknown
+instead of manufacturing symmetry. In network-disabled sessions, use only a helper cache entry that satisfies the
+bounded fresh or stale policy. Otherwise, fail transparently. Never create caches in a repository or skill installation.
+
+## Completion
+
+Finish when the answer uses the narrowest relevant official source, includes precise citations, and exposes any
+documentation/local-version discrepancy or retrieval limitation.

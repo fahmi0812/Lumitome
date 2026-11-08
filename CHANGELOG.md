@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.27 — v0.3.27 — Satu korpus
+
+- Satu korpus: batas dorman dihapus (merge trial `trial/no-dormant`) — registry 110 → **624 skill** (514 pack, 66 cermin), lalu impor 341 nominal → **276 ready** (aktif 17 + pack baru 114 + pack lama 145; selisih = dedup 53 terverifikasi, tabrakan nama, estimasi hyperframes salah, 2 penolakan lisensi PolyForm Noncommercial: anything2explainer + video-talkcraft). Korpus akhir **900 skill** (aktif-folder 127, pack 773, cermin 66); pack baru `3d` (95) + `penulisan` (42); red-team tetap disabled (166 skill).
+- Retrieval TIDAK regresi: golden 154 — top-1 0,7946, recall@5 0,9643, MRR 0,8795, miss 4 (sama persis dengan trial; L0-mismatch 0). Probe impor baru 30/30 (recall@5 1,0, top-1 0,8667, MRR 0,925) sesudah 1 putaran tuning — R0 sempat 0,9333 (2 miss: blender-director, resume-polisher). Index terukur 17.735 tok (cap total 22.400 = terukur ×1,25); `route()` FTS p50 ~1 ms.
+- Perbaikan akar yang ditemukan saat impor: (1) `scripts/gen-registry.mjs` — deskripsi registry kosong menempel selamanya (guard `derived` mensyaratkan `prev.description` non-empty); blender-director terdaftar tanpa deskripsi sehingga tidak pernah ter-retrieval. Kini deskripsi kosong diadopsi dari frontmatter. (2) `router/parse.mjs` (parser naif): skalar blok `>`/`|` (lipat spasi / literal newline + chomping), map bersarang berisi list (`metadata.permissions` memutus `swanwright_*`), skalar dikutip multi-baris (`'...'` + baris kosong + `'` penutup, `''` → `'`) — paritas YAML vs naif kini 0 beda di 976 file. (3) L0: aturan CV/resume/lamaran → penulisan (hint resume-polisher; "backend developer" di prompt CV tidak lagi membelokkan ke coding) + Blender-directing → media (hint blender-director).
+- Stitch MCP terdaftar (commit terpisah `115ad85`): remote MCP https://stitch.googleapis.com/mcp, media, off by default, key via `{env:STITCH_API_KEY}`, write/generate = ask.
+- Validate OK (warns 0), test 282/0, metrics golden 154 / L0-mismatch 0. Uji live /loopdesign dengan model: **UNVERIFIED** (menunggu mesin Fahmi — bukan bagian rilis ini).
+
 ## 0.3.26 — v0.3.26 — Design loop
 
 - Design loop: desain dinilai dari **gambar**, bukan dari kode — Maker bangun → render → Design-Gate ukur → kritikus red-team serang → perbaiki → render lagi (maks 3 iterasi, berhenti begitu gate lolos / tanpa perbaikan / budget habis).
