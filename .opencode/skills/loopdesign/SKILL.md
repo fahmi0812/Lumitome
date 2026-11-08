@@ -7,6 +7,7 @@ metadata:
   swanwright_src: fahmi0812/Lumitome
   swanwright_original_id: lumitome__loopdesign
   swanwright_original_name: loopdesign
+  swanwright_sha: 11038fd18e698646a893dd760642ef7666f6ac9c
 ---
 
 # Loopdesign: perbaiki desain berulang sampai gate lolos
@@ -15,11 +16,6 @@ Desain dinilai dari **gambar** (screenshot/export render), bukan dari kode.
 Satu iterasi = Maker bangun → render → Design-Gate ukur → kritikus serang →
 Maker perbaiki. Loop berhenti begitu gate lolos — atau begitu tidak ada
 perbaikan — atau begitu budget iterasi habis. Tidak pernah spin.
-
-Catatan provenance: `swanwright_sha` sengaja tidak diisi — sha skill lokal
-adalah SHA commit yang memperkenalkannya (lihat `external-tools`,
-`stitch-ui`), dan skill ini belum di-commit. Isi setelah commit, jangan
-isi asal. Tanpa sha, `npm run validate` akan gagal (`missing sha`).
 
 ## Batas yang jujur — baca dulu
 

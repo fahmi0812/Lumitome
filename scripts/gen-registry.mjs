@@ -30,7 +30,12 @@ export function isMirror(name, fm, known) {
 }
 function entry(dir, id, pack) {
   const fm = frontmatter(fs.readFileSync(path.join(dir, "SKILL.md"), "utf8")) || {}; const prev = byId.get(id);
-  if (prev) return { ...prev, pack: pack || "" };
+  // Entri lama dipertahankan (deskripsi/sektor adalah lapisan kurasi registry,
+  // BUKAN salinan frontmatter — menyegarkannya akan menulis ulang 110 deskripsi
+  // dan mengubah permukaan routing FTS). Yang disegarkan hanya `sha`: provenance
+  // yang baru terisi setelah commit pengenal (ditemukan v0.3.26: sha "" menempel
+  // selamanya karena prev dikembalikan utuh).
+  if (prev) return { ...prev, pack: pack || "", sha: field(fm, "swanwright_sha") || prev.sha };
   return { id, name: id, sektor: field(fm, "swanwright_sector") || "misc", description: (field(fm, "description") || "").slice(0, 300), triggers: [], champion: false, fallback: null, cost: "low",
     requires_consent: false, pack: pack || "", src: field(fm, "swanwright_src") || "", sha: field(fm, "swanwright_sha") || "", license: field(fm, "license") || field(fm, "swanwright_license") || "",
     original_id: field(fm, "swanwright_original_id") || id, original_name: field(fm, "swanwright_original_name") || id };

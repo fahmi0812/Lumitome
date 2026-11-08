@@ -7,6 +7,7 @@ metadata:
   swanwright_src: fahmi0812/Lumitome
   swanwright_original_id: lumitome__design-assets
   swanwright_original_name: design-assets
+  swanwright_sha: 11038fd18e698646a893dd760642ef7666f6ac9c
 ---
 
 # Design Assets: komponen jadi dari 48 sumber web
@@ -15,11 +16,6 @@ Pengetahuan retrieval aset jadi — mengikuti pola `external-tools`
 (triage → fetch → verify). Prinsipnya: **kode terbaik adalah kode yang
 tidak ditulis.** Tugas yang butuh Data Grid harus berujung ke komponen
 ReUI/shadcn yang benar-benar ter-fetch, bukan komponen karangan.
-
-Catatan provenance: `swanwright_sha` sengaja tidak diisi — sha skill lokal
-adalah SHA commit yang memperkenalkannya (lihat `external-tools`,
-`stitch-ui`), dan skill ini belum di-commit. Isi setelah commit, jangan
-isi asal. Tanpa sha, `npm run validate` akan gagal (`missing sha`).
 
 ## Cara pakai
 
