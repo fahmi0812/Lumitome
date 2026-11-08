@@ -294,11 +294,13 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const met = JSON.parse(cp.execFileSync(process.execPath, ["--no-warnings", "scripts/skill-metrics.mjs", "--json", "--out", path.join(os.tmpdir(), "sw-metrics.json")]).toString());
   // TRIAL lepas-dorman: ambang 0,8 dikalibrasi untuk katalog 110 skill (terukur
   // 0,9167). Sesudah merge 624 skill, retrieval deterministik BM25-only
-  // terukur 0,7857 (top-1 0,6696; kasus gold lama saja: recall@5 0,8750,
-  // top-1 0,6563 — dilusi katalog nyata, bukan artefak ukur). Lantai trial
-  // 0,75 = terukur minus margin; mengembalikan ambang 0,8 = tugas TUNING
-  // (subagent berikutnya), bukan dengan mengubah angka ini diam-diam.
-  ok(`metrik: L0 mismatch 0, recall@5=${met.selected_recall_at5_any}, top-1=${met.top1_accuracy}`, met.layer0_mismatch === 0 && met.cases_with_gold > 50 && met.selected_recall_at5_any >= 0.75);
+  // sempat 0,7857 (top-1 0,6696; kasus gold lama saja: recall@5 0,8750,
+  // top-1 0,6563 — dilusi katalog nyata, bukan artefak ukur). Tuning 3
+  // putaran (hint L0 lintas-sektor + sinonim ID/EN, tanpa ubah ambang):
+  // 0,8214 → 0,8571 → 0,9643 (top-1 0,7946, MRR 0,8795, misses 4 —
+  // sisa hanya coding-04/09/14/19 architect/grill). Ambang 0,8 kembali
+  // karena angka membuktikannya, bukan karena ambang diturunkan.
+  ok(`metrik: L0 mismatch 0, recall@5=${met.selected_recall_at5_any}, top-1=${met.top1_accuracy}`, met.layer0_mismatch === 0 && met.cases_with_gold > 50 && met.selected_recall_at5_any >= 0.8);
 }
 
 // ---------- lumi/fix-v2: guard Lumitome (fail-closed), bwrap, anti-spin, done-gate runtime, parser L1 ----------
