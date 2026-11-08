@@ -9,11 +9,12 @@
     "figma":      { "kind": "direct", "default": "disabled", "risk": "S", "src": "https://developers.figma.com/docs/figma-mcp-server/", "needs": "OAuth (opencode mcp auth figma)" },
     "github":     { "kind": "direct", "default": "disabled", "risk": "T", "src": "https://github.com/github/github-mcp-server", "needs": "env GITHUB_PERSONAL_ACCESS_TOKEN", "ask": ["create_*", "update_*", "merge_*", "push_*", "delete_*", "fork_*", "add_*", "request_*", "assign_*", "dismiss_*", "run_*", "cancel_*", "rerun_*"] },
     "drawio":     { "kind": "direct", "default": "disabled", "risk": "S", "src": "https://github.com/DayuanJiang/next-ai-draw-io", "pin": "@next-ai-drawio/mcp-server@0.4.11", "needs": "opt-in LUMI_MCP=...,drawio (preview browser lokal)" },
-    "figcraft":   { "kind": "direct", "default": "disabled", "risk": "S", "src": "https://github.com/storytold/figcraft", "pin": "v0.16.0", "needs": "figcraft-cli terpasang (AppImage: FigCraft.AppImage cli); opt-in LUMI_MCP=...,figcraft" }
+    "figcraft":   { "kind": "direct", "default": "disabled", "risk": "S", "src": "https://github.com/storytold/figcraft", "pin": "v0.16.0", "needs": "figcraft-cli terpasang (AppImage: FigCraft.AppImage cli); opt-in LUMI_MCP=...,figcraft" },
+    "stitch":     { "kind": "direct", "default": "disabled", "risk": "S", "src": "https://stitch.withgoogle.com/docs/mcp/setup/", "needs": "env STITCH_API_KEY (Stitch Settings > API Keys); opt-in LUMI_MCP=...,stitch", "ask": ["create_project", "delete_project", "generate_*", "edit_*", "apply_*", "create_design_system*", "update_design_system"] }
   },
   "sectors": {
     "coding":    ["context7", "codemem", "github", "playwright", "chromedev"],
-    "media":     ["figma", "playwright", "chromedev", "figcraft"],
+    "media":     ["figma", "playwright", "chromedev", "figcraft", "stitch"],
     "riset":     ["context7", "markitdown", "playwright"],
     "penulisan": ["context7", "markitdown", "drawio"],
     "security":  ["context7", "codemem"],

@@ -178,6 +178,14 @@
         "url": "https://mcp.figma.com/mcp",
         "disabled": true
       },
+      "stitch": {
+        "type": "remote",
+        "url": "https://stitch.googleapis.com/mcp",
+        "headers": {
+          "X-Goog-Api-Key": "{env:STITCH_API_KEY}"
+        },
+        "disabled": true
+      },
       "github": {
         "type": "remote",
         "url": "https://api.githubcopilot.com/mcp/",

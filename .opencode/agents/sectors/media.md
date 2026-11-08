@@ -13,6 +13,15 @@ permissions:
   - { action: "opencode_list_mcp_resources", resource: "chromedev", effect: allow }
   - { action: "figcraft_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "figcraft", effect: allow }
+  - { action: "stitch_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "stitch", effect: allow }
+  - { action: "stitch_create_project", resource: "*", effect: ask }
+  - { action: "stitch_delete_project", resource: "*", effect: ask }
+  - { action: "stitch_generate_*", resource: "*", effect: ask }
+  - { action: "stitch_edit_*", resource: "*", effect: ask }
+  - { action: "stitch_apply_*", resource: "*", effect: ask }
+  - { action: "stitch_create_design_system*", resource: "*", effect: ask }
+  - { action: "stitch_update_design_system", resource: "*", effect: ask }
   - { action: "gw-media_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "gw-media", effect: allow }
   - { action: "skills_media_*", resource: "*", effect: allow }
