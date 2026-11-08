@@ -1,5 +1,23 @@
 {
   "pack": "osint-extra",
-  "note": "dibangkitkan scripts/gen-registry.mjs; skill tanpa entri memakai frontmatter SKILL.md",
-  "skills": []
+  "note": "dibangkitkan scripts/gen-registry.mjs; skill tanpa entri kurasi memakai frontmatter SKILL.md",
+  "skills": [
+    {
+      "id": "geo-sleuth",
+      "name": "geo-sleuth",
+      "sektor": "riset",
+      "description": "Geolocate or chronolocate a photo with tool-verified reasoning (where was this taken / when was it taken / photo geolocation / geo-guessing). Given one or more photos, intake.py does metadata, OCR and reverse image search (Baidu/Yandex) in one command; clues and candidates go on a candidate board (b",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "osint-extra",
+      "src": "",
+      "sha": "",
+      "license": "",
+      "original_id": "oldcircle-geo-sleuth__geo-sleuth",
+      "original_name": "geo-sleuth"
+    }
+  ]
 }
