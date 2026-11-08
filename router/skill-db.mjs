@@ -1,7 +1,9 @@
 /**
  * Swanwright v0.1.6 — Skill Query Layer (desain v0.2, fase 1).
  * SQLite (node:sqlite bawaan Node >= 22.5) : FTS5 BM25 + sqlite-vec opsional, RRF, dedup.
- * Sumber kebenaran: router/skills-registry.json + .opencode/skills/* (aktif) + packs/* (nonaktif).
+ * Sumber kebenaran: router/skills-registry.json (satu katalog: aktif + pack) + .opencode/skills/* + packs/*.
+ * TRIAL lepas-dorman: skill pack di registry utama berstatus "active" (kecuali
+ * pack red-team = "disabled"); tidak ada lagi status "pack".
  * Tidak ada dependensi wajib. sqlite-vec = optionalDependency; tanpa itu → BM25-only.
  */
 import fs from "node:fs";
@@ -157,7 +159,11 @@ export function collectSkills(root = ".") {
   if (fs.existsSync(packs)) for (const p of fs.readdirSync(packs).sort()) {
     const sd = path.join(packs, p, "skills");
     if (!fs.existsSync(sd)) continue;
-    for (const d of fs.readdirSync(sd).sort()) if (!mirrors.has(`${p}/${d}`)) add(path.join(sd, d), p, p === "red-team" ? "disabled" : "pack");
+    for (const d of fs.readdirSync(sd).sort()) if (!mirrors.has(`${p}/${d}`)) add(path.join(sd, d), p, p === "red-team" ? "disabled" : "active");
+    // TRIAL lepas-dorman: skill pack = "active" (bisa ter-route tanpa opts.packs).
+    // Pengecualian keamanan: pack red-team tetap "disabled" — skill ofensif
+    // (api-security, llm-security, dst.) tidak pernah lolos filter status
+    // default searchSkills/searchL0 dan tidak masuk FTS2/enrich/allowlist.
   }
   return out;
 }
@@ -302,7 +308,10 @@ export async function searchSkills(db, queries, opts = {}) {
   }
   if (opts.agent) { where.push("s.id IN (SELECT skill_id FROM allowed_skill WHERE agent = ? AND effect != 'deny')"); params.push(opts.agent); }
   if (opts.packs) { where.push(`(s.pack IS NULL OR s.pack IN (${opts.packs.map(() => "?").join(",") || "''"}))`); params.push(...opts.packs); }
-  else where.push("s.pack IS NULL");
+  // TRIAL lepas-dorman: tanpa opts.packs, TIDAK ada filter pack — skill pack
+  // berstatus "active" ter-route seperti skill folder aktif. Gate keamanan
+  // tinggal di status: red-team = "disabled", tidak pernah lolos status
+  // default ["active"] di atas.
   where.push("s.id NOT IN (SELECT src FROM skill_edge WHERE kind='duplicate')");
   const W = where.join(" AND ");
   const allowedCount = db.prepare(`SELECT count(*) c FROM skill s WHERE ${W}`).get(...params).c;
