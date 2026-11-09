@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixture aturan baru v0.3.29 (skipped-heading + bounce-easing)</title>
+<style>
+  body { font-family: Georgia, serif; background: #fff; color: #1a1a1a; margin: 0; padding: 16px; }
+  h1 { color: #1a1a1a; font-size: 20px; }
+  h3 { color: #1a1a1a; font-size: 16px; }
+  p { color: #1a1a1a; }
+  .card { transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); padding: 1rem; border: 1px solid #1a1a1a; }
+  .state { color: #1a1a1a; font-size: 14px; }
+</style>
+</head>
+<body>
+  <h1>Judul</h1>
+  <h3>Subjudul yang melompat (tanpa h2)</h3>
+  <div class="card">Kartu dengan easing bounce.</div>
+  <p>Paragraf biasa.</p>
+  <div class="state" data-state="empty">Belum ada data.</div>
+  <div class="state" data-state="loading">Memuat data…</div>
+  <div class="state" data-state="error">Gagal memuat. Coba lagi.</div>
+</body>
+</html>

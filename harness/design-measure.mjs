@@ -64,6 +64,14 @@ export function measureInPage() {
   const usedColors = [];
   const backgrounds = [];
   const gradientTexts = [];
+  // heading (v0.3.29): level h1–h6 yang terlihat, dalam urutan DOM — untuk
+  // cek skipped-heading. Yang tersembunyi tidak dihitung.
+  const headings = [];
+  // easing (v0.3.29): timing function hanya dicatat bila elemen BENAR-BENAR
+  // punya transisi/animasi (duration > 0) dan nilainya bukan ease/linear
+  // (keduanya tidak pernah bounce) — kalau tidak, computed value default
+  // akan jadi noise.
+  const easings = [];
   const addColor = (raw, where) => {
     const p = parseRgb(raw);
     if (!p) return;
@@ -111,6 +119,24 @@ export function measureInPage() {
         gradientTexts.push({ where });
       }
     }
+    const td = cs.transitionDuration || "";
+    const tp = cs.transitionProperty || "";
+    if (td !== "0s" && tp !== "none") {
+      const ttf = cs.transitionTimingFunction || "";
+      if (ttf && ttf !== "ease" && ttf !== "linear") easings.push({ value: ttf, where });
+    }
+    const an = cs.animationName || "";
+    const ad = cs.animationDuration || "";
+    if (an !== "none" && ad !== "0s") {
+      const atf = cs.animationTimingFunction || "";
+      if (atf && atf !== "ease" && atf !== "linear") easings.push({ value: atf, where });
+    }
+  }
+  for (const el of document.querySelectorAll("h1,h2,h3,h4,h5,h6")) {
+    if (headings.length >= 100) break;
+    if (!visible(el)) continue;
+    const level = Number(el.tagName[1]);
+    headings.push({ level, where: `h${level}: ${(el.innerText || "").replace(/\s+/g, " ").trim().slice(0, 50)}` });
   }
   const taps = [];
   for (const el of document.querySelectorAll('button, a, input, [role="button"]')) {
@@ -141,7 +167,7 @@ export function measureInPage() {
   }
   return {
     overflow: { scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth },
-    texts, taps, images, fonts, longText, states, usedColors, backgrounds, gradientTexts,
+    texts, taps, images, fonts, longText, states, usedColors, backgrounds, gradientTexts, headings, easings,
   };
 }
 /* eslint-enable no-undef */
@@ -170,7 +196,7 @@ const dedupe = (arr, key) => [...new Map(arr.map((x) => [key(x), x])).values()];
  * Ukur halaman di browser sungguhan di tiap viewport stress-test.
  * target: URL http(s) atau path file .html lokal.
  * → {screenshots, contrast, tapTargets, viewports, assets, textCases,
- *    usedColors, backgrounds, gradientTexts, texts}
+ *    usedColors, backgrounds, gradientTexts, texts, headings, easings}
  * (bentuk input evaluateDesign; screenshots = bukti render).
  */
 export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } = {}) {
@@ -187,7 +213,7 @@ export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } 
     // VM ini jalan sebagai root — Chrome menolak start tanpa --no-sandbox.
     extraArgs: typeof process.getuid === "function" && process.getuid() === 0 ? ["--no-sandbox"] : [],
   });
-  const input = { screenshots: [], contrast: [], tapTargets: [], viewports: [], assets: { fonts: [], images: [] }, textCases: {}, usedColors: [], backgrounds: [], gradientTexts: [], texts: [] };
+  const input = { screenshots: [], contrast: [], tapTargets: [], viewports: [], assets: { fonts: [], images: [] }, textCases: {}, usedColors: [], backgrounds: [], gradientTexts: [], texts: [], headings: [], easings: [] };
   try {
     for (const w of widths) {
       const h = HEIGHT[w] || Math.round(w * 0.625);
@@ -218,6 +244,10 @@ export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } 
         // cek anti-slop overused-font — didedupe per elemen (bukan per
         // viewport) supaya penyebut share-nya benar.
         input.texts.push(...(m.texts ?? []));
+        // headings: urutan DOM dipertahankan (dedupe per level+where,
+        // kemunculan pertama) supaya cek lompatan level benar.
+        input.headings.push(...(m.headings ?? []));
+        input.easings.push(...(m.easings ?? []));
         if (m.longText && !input.textCases.longText) input.textCases.longText = m.longText;
         // state dicek sekali (DOM sama di semua viewport) — dari viewport pertama
         if (w === widths[0]) {
@@ -238,6 +268,8 @@ export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } 
   input.assets.fonts = dedupe(input.assets.fonts, (f) => f.name);
   input.assets.images = dedupe(input.assets.images, (i) => i.src);
   input.usedColors = dedupe(input.usedColors, (c) => `${c.rgb.join(",")}|${c.alpha}`);
+  input.headings = dedupe(input.headings, (h) => `${h.level}|${h.where}`);
+  input.easings = dedupe(input.easings, (e) => e.value);
   input.backgrounds = dedupe(input.backgrounds, (b) => b.value);
   input.gradientTexts = dedupe(input.gradientTexts, (g) => g.where);
   input.texts = dedupe(input.texts, (t) => `${t.where}|${t.font}`);

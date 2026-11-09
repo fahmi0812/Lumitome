@@ -907,10 +907,13 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
   ok("design-gate: parseDesignFile baca arah + token + tipografi + signature + fonts",
     (() => { const d = DM.parseDesignFile("tests/fixtures/design/DESIGN.md");
       return d.direction === "Hangat artisanal" && JSON.stringify(d.tokens) === JSON.stringify(["#2C1A14", "#A0591E", "#FFF8F0", "#FFFFFF"]) && d.typography === "Fraunces (display), Inter (body)" && d.signature === "cangkir SVG berasap" && JSON.stringify(d.fonts) === '["fraunces","inter"]'; })());
-  // anti-slop (v0.3.28 §3.2): subset kurasi native dari Impeccable
-  // (Apache-2.0, 62 aturan built-in terverifikasi di registry.rs;
-  // TIDAK dibundel — telemetrinya menelepon https://impeccable.style/api).
-  // Tiap aturan: tes merah + hijau + pengecualian brief eksplisit (allow).
+  // anti-slop (v0.3.28 §3.2, dikoreksi v0.3.29): subset kurasi native dari
+  // Impeccable (Apache-2.0, 62 aturan = 31 slop + 31 quality) dan ui-craft
+  // (MIT, registry 43 aturan di scripts/detect/rules.mjs — terverifikasi;
+  // klaim v0.3.28 bahwa "43 aturan tidak terverifikasi" salah, dikoreksi
+  // di sini). Jendela hue purple-gradient ikut upstream ui-craft
+  // (ungu 255–330°, cyan/biru 170–255°). Tiap aturan: tes merah + hijau +
+  // pengecualian brief eksplisit (allow).
   ok("design-gate: rgbToHsl — ungu #7C3AED hue ≈ 262, merah hue 0, abu-abu saturasi 0",
     Math.abs(DG.rgbToHsl([124, 58, 237]).h - 262) < 1 && DG.rgbToHsl([255, 0, 0]).h === 0 && DG.rgbToHsl([128, 128, 128]).s === 0);
   ok("design-gate: parseGradientStops baca rgb() + #hex",
@@ -922,6 +925,24 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
     DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(90deg, rgb(34, 211, 238) 0%, rgb(6, 182, 212) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
     DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(90deg, rgb(198, 139, 78) 0%, rgb(62, 39, 35) 100%)" }] }).length === 0 &&
     DG.checkAntiSlop({}).length === 0);
+  // Jendela hue upstream ui-craft (v0.3.29): ungu 255–330°, cyan/biru
+  // 170–255°. KOREKSI terhadap ekspektasi awal rencana: indigo 243° TETAP
+  // ditandai — bukan lewat jendela ungu, tapi karena 243° masuk jendela
+  // cyan/biru (170–255). Harapan "indigo tidak ditandai" keliru secara
+  // aritmetika (243 ∈ [170,255)) dan tidak bisa dipenuhi tanpa mengubah
+  // logika OR menjadi AND (aturan ui-craft asli memang AND: butuh SATU stop
+  // ungu DAN SATU stop cyan dalam gradien yang sama — tapi itu akan
+  // melepas gradien ungu murni dan cyan murni, dan mematahkan tes cyan
+  // lama; jadi OR + angka baru yang dipakai, dan perbedaannya dilaporkan).
+  // Magenta 310° dan biru 220° yang dulu lolos kini ditandai; 305° dan
+  // 230° adalah batas yang benar-benar berubah dari jendela lama.
+  ok("design-gate: anti-slop purple-gradient hue window upstream — indigo 243 ditandai (jendela cyan); magenta 310 gagal; biru 220 gagal; 305 dan 230 kini ditandai",
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(79, 70, 229) 0%, rgb(255, 255, 255) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(255, 0, 212) 0%, rgb(255, 255, 255) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(0, 85, 255) 0%, rgb(255, 255, 255) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(124, 58, 237) 0%, rgb(79, 70, 229) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(255, 0, 234) 0%, rgb(255, 255, 255) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(0, 43, 255) 0%, rgb(255, 255, 255) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")));
   ok("design-gate: anti-slop repeating-gradient — gradien berulang gagal, gradien biasa lolos",
     DG.checkAntiSlop({ backgrounds: [{ value: "repeating-linear-gradient(45deg, rgb(229, 231, 235) 0px, rgb(255, 255, 255) 10px)" }] }).some((f) => f.detail.startsWith("repeating-gradient")) &&
     DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(90deg, rgb(198, 139, 78) 0%, rgb(62, 39, 35) 100%)" }] }).length === 0);
@@ -934,6 +955,22 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
     DG.checkAntiSlop({ texts: [{ font: "Inter, sans-serif" }, { font: "Georgia, serif" }, { font: "Georgia, serif" }] }).length === 0);
   ok("design-gate: anti-slop allow — brief eksplisit mengecualikan purple-gradient + repeating-gradient",
     DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(124, 58, 237) 0%, rgb(79, 70, 229) 100%)" }, { value: "repeating-linear-gradient(45deg, rgb(229, 231, 235) 0px, rgb(255, 255, 255) 10px)" }], allow: ["purple-gradient", "repeating-gradient"] }).length === 0);
+  // skipped-heading (v0.3.29, Impeccable): lompatan level >1 gagal;
+  // heading pertama boleh level berapa saja; allow mengecualikan.
+  ok("design-gate: anti-slop skipped-heading — h1 lalu h3 gagal; h1-h2-h3 lolos; mulai h2 lolos; allow mengecualikan",
+    DG.checkAntiSlop({ headings: [{ level: 1, where: "h1: Judul" }, { level: 3, where: "h3: Sub" }] }).some((f) => f.detail.startsWith("skipped-heading")) &&
+    DG.checkAntiSlop({ headings: [{ level: 1 }, { level: 2 }, { level: 3 }, { level: 2 }] }).length === 0 &&
+    DG.checkAntiSlop({ headings: [{ level: 2 }, { level: 3 }] }).length === 0 &&
+    DG.checkAntiSlop({ headings: [] }).length === 0 &&
+    DG.checkAntiSlop({ headings: [{ level: 1 }, { level: 3 }], allow: ["skipped-heading"] }).length === 0);
+  // bounce-easing (v0.3.29, Impeccable, ADVISORY): cubic-bezier dengan y
+  // di luar [0,1] jadi warn — tidak pernah menggagalkan gate.
+  ok("design-gate: anti-slop bounce-easing — bezier overshoot jadi warn (pass tetap true); ease/linear/bezier normal lolos; allow mengecualikan",
+    (() => { const r = DG.checkAntiSlop({ easings: [{ value: "cubic-bezier(0.68, -0.55, 0.27, 1.55)", where: "div: kartu" }] });
+      return r.some((f) => f.detail.startsWith("bounce-easing") && f.severity === "warn"); })() &&
+    DG.evaluateDesign({ easings: [{ value: "cubic-bezier(0.68, -0.55, 0.27, 1.55)" }] }).pass === true &&
+    DG.checkAntiSlop({ easings: [{ value: "ease" }, { value: "linear" }, { value: "cubic-bezier(0.2, 0, 0, 1)" }] }).length === 0 &&
+    DG.checkAntiSlop({ easings: [{ value: "cubic-bezier(0.68, -0.55, 0.27, 1.55)" }], allow: ["bounce-easing"] }).length === 0);
   // renderer-agnostik: input gate yang sama dari report inspect dan export Figcraft -> vonis sama
   const repBad = JSON.parse(fs.readFileSync("tests/fixtures/design/report.json", "utf8"));
   const repClean = JSON.parse(fs.readFileSync("tests/fixtures/design/report-clean.json", "utf8"));
@@ -975,6 +1012,19 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
       antiDetails.some((d) => d.startsWith("repeating-gradient")) &&
       antiDetails.some((d) => d.startsWith("gradient-text")) &&
       antiDetails.some((d) => d.startsWith("overused-font")));
+    // aturan baru v0.3.29 di browser sungguhan: fixture h1→h3 + easing
+    // bounce — skipped-heading FAIL + bounce-easing WARN (pass false karena
+    // fail-nya, bukan karena warn). Fixture ini bersih dari cek lain.
+    const newRules = await DM.measureAndGate("tests/fixtures/design/bounce-easing.html");
+    const newAnti = newRules.findings.filter((f) => f.check === "anti-slop");
+    ok("design-gate red-test: bounce-easing.html — skipped-heading FAIL + bounce-easing WARN, tepat 2 findings",
+      newRules.pass === false &&
+      newRules.findings.length === 2 &&
+      newAnti.some((f) => f.detail.startsWith("skipped-heading") && f.severity === "fail") &&
+      newAnti.some((f) => f.detail.startsWith("bounce-easing") && f.severity === "warn"));
+    // measurePage kumpulkan headings dalam urutan DOM (fixed.html: h1 level 1).
+    ok("design-gate red-test: measurePage kumpulkan headings (fixed.html h1 level 1)",
+      Array.isArray(fixed.input.headings) && fixed.input.headings.length >= 1 && fixed.input.headings[0].level === 1);
   }
 }
 console.log(`\n${pass} passed, ${fail} failed`);

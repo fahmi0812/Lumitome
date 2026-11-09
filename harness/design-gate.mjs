@@ -243,37 +243,57 @@ export function firstFontFamily(font = "") {
 }
 
 /**
- * Anti-slop deterministik (§3.2 v0.3.28) — subset kurasi native, zero-dep.
- * Sumber aturan: Impeccable (pbakaus/impeccable, Apache-2.0, 62 aturan
- * built-in terverifikasi 2026-11-09 di crates/foundation/src/registry.rs;
- * TIDAK dibundel — telemetrinya ON secara default dan menelepon
- * https://impeccable.style/api (crates/context/src/telemetry.rs:
- * off hanya via DO_NOT_TRACK / IMPECCABLE_NO_TELEMETRY /
- * "telemetry": false di config.local.json), jadi yang dipakai hanya IDE
- * aturan, diimplementasi ulang native di sini).
- * ui-craft (educlopez/ui-craft, MIT) diverifikasi sebagai koleksi skill
- * (audit/kritik/heuristic + UICraftScore), BUKAN registry 43 aturan —
- * klaim "43 aturan" dari riset tidak terverifikasi, jadi subset ini TIDAK
- * mengambil apa pun dari ui-craft.
+ * Anti-slop deterministik (§3.2 v0.3.28, dikoreksi v0.3.29) — subset kurasi
+ * native, zero-dep. Sumber aturan (terverifikasi di repo sumber 2026-11-09):
+ * Impeccable (pbakaus/impeccable, Apache-2.0, 62 aturan built-in = 31 slop +
+ * 31 quality — 45 warning, 16 advisory, 1 error `script-error`; angka 61
+ * adalah versi lama; terverifikasi di crates/foundation/src/registry.rs).
+ * Telemetri Impeccable default ON HANYA untuk roll API (concept-seed /
+ * new-work) — BUKAN untuk detector (crates/detect/ tidak punya referensi
+ * telemetri). TIDAK dibundel — yang dipakai hanya ide aturan, diimplementasi
+ * ulang native di sini.
+ * ui-craft (educlopez/ui-craft, MIT) PUNYA registry 43 aturan anti-slop di
+ * scripts/detect/rules.mjs (14 critical, 25 major, 2 warn, 2 minor; total
+ * gate 52 = 43 anti-slop + 4 token + 5 a11y) dan UICraftScore deterministik
+ * 0–100 offline zero-dep (evals/quality/score.mjs); tidak ada telemetri yang
+ * ditemukan. Koreksi v0.3.29: klaim v0.3.28 bahwa "43 aturan tidak
+ * terverifikasi" SALAH — registry-nya ada dan terverifikasi. Konsep
+ * purple-gradient + gradient-text di bawah dikoroborasi KEDUA repo
+ * (ui-craft `purple-cyan-gradient` critical, `gradient-text-metric` major).
  *
  * Aturan final (masing-masing punya tes merah + hijau):
- * - purple-gradient (Impeccable `ai-color-palette`): gradien dengan stop
- *   ungu/violet (hue 240–300) atau cyan (hue 170–200, saturasi > 0.15).
+ * - purple-gradient (Impeccable `ai-color-palette` + ui-craft
+ *   `purple-cyan-gradient`): gradien dengan stop ungu/violet (hue 255–330)
+ *   atau cyan/biru (hue 170–255, saturasi > 0.15) — jendela ui-craft
+ *   (dulu 240–300 + 170–200, dikoreksi v0.3.29 ke upstream).
  *   Lolos bila SEMUA stop-nya token deklarasi atau transparent — gradien
  *   dari palet brief adalah niat, bukan slop.
  * - repeating-gradient (Impeccable `repeating-stripes-gradient`): gradien
  *   berulang sebagai dekorasi permukaan.
- * - gradient-text (Impeccable `gradient-text`): teks dengan background-clip
- *   text + gradien (teks harus warna solid).
+ * - gradient-text (Impeccable `gradient-text` + ui-craft
+ *   `gradient-text-metric`): teks dengan background-clip text + gradien
+ *   (teks harus warna solid).
  * - overused-font (Impeccable `overused-font` + Anthropic frontend-design):
  *   >50% teks terukur memakai font overused sebagai family pertama DAN
  *   font itu tidak dideklarasikan di DESIGN.md (tipografi).
+ * - skipped-heading (Impeccable `skipped-heading`, quality): level heading
+ *   melompat >1 (mis. h1 lalu h3 tanpa h2). Heading pertama boleh level
+ *   berapa saja — yang dicek hanya lompatan. (v0.3.29)
+ * - bounce-easing (Impeccable `bounce-easing`, advisory): easing
+ *   bounce/elastis (cubic-bezier dengan titik kontrol y di luar [0,1]).
+ *   ADVISORY: severity `warn`, TIDAK PERNAH menggagalkan gate. (v0.3.29)
  *
  * Pengecualian (§6 rencana): bila brief MEMINTA eksplisit pola itu, caller
  * mengisi input.allow dengan id aturan (mis. ["gradient-text"]) — bukan
  * slop, jadi tidak dicek. Tanpa allow, aturan berlaku penuh.
  *
  * Yang sengaja TIDAK masuk subset (dengan alasan):
+ * - transition-all (ui-craft, critical, source rule): MISFIRE pada halaman
+ *   render — kedua file Kopi Senja memakai `transition: all
+ *   var(--transition-base)` yang sah, dan utility `transition-all` Tailwind
+ *   ada di mana-mana (termasuk stack shadcn yang kita rekomendasikan).
+ *   Aturan source tidak berpindah ke gate halaman-render tanpa false
+ *   positive. Ditolak v0.3.29.
  * - nested-cards: butuh heuristik "kartu" (border+radius+shadow bersarang)
  *   yang rawan false positive — butuh kalibrasi sendiri.
  * - cramped-padding / monotonous-spacing / flat-type-hierarchy: butuh
@@ -288,7 +308,7 @@ export function firstFontFamily(font = "") {
  *   repeating-gradient sudah menangkap pola gradien-berulang yang sejenis.
  *
  * input: {backgrounds?, gradientTexts?, texts?, tokens?, declaredFonts?,
- * allow?}. Field yang tidak ada = tidak dicek.
+ * headings?, easings?, allow?}. Field yang tidak ada = tidak dicek.
  */
 export function checkAntiSlop(input = {}) {
   const out = [];
@@ -311,7 +331,9 @@ export function checkAntiSlop(input = {}) {
       if (offToken.length === 0) continue;
       const tell = offToken.find((s) => {
         const { h, s: sat } = rgbToHsl(s.rgb);
-        return sat > 0.15 && ((h >= 240 && h <= 300) || (h >= 170 && h <= 200));
+        // Jendela upstream ui-craft purple-cyan-gradient (v0.3.29):
+        // ungu 255–330°, cyan/biru 170–255° (dulu 240–300 + 170–200).
+        return sat > 0.15 && ((h >= 255 && h <= 330) || (h >= 170 && h < 255));
       });
       if (tell) {
         out.push(finding("anti-slop", "fail", `purple-gradient: gradien dengan stop ${rgbToHex(tell.rgb)} (hue ${Math.round(rgbToHsl(tell.rgb).h)}°)${where} — bukan token deklarasi (Impeccable ai-color-palette)`));
@@ -330,6 +352,44 @@ export function checkAntiSlop(input = {}) {
     if (texts.length > 0 && overused.length / texts.length > 0.5) {
       const sample = [...new Set(overused.map((t) => firstFontFamily(t.font)))].join(", ");
       out.push(finding("anti-slop", "fail", `overused-font: ${overused.length}/${texts.length} teks memakai font overused (${sample}) tanpa deklarasi di DESIGN.md (Impeccable overused-font)`));
+    }
+  }
+  // skipped-heading (v0.3.29, Impeccable `skipped-heading`): level heading
+  // melompat >1 dari heading sebelumnya (mis. h1 lalu h3). Heading pertama
+  // boleh level berapa saja — yang dicek hanya lompatan, supaya tidak ada
+  // false positive pada halaman yang memang mulai dari h2.
+  if (!allow.has("skipped-heading")) {
+    const headings = (Array.isArray(input.headings) ? input.headings : []).filter((h) => Number.isInteger(h.level) && h.level >= 1 && h.level <= 6);
+    for (let i = 1; i < headings.length; i++) {
+      const prev = headings[i - 1].level;
+      const cur = headings[i].level;
+      if (cur > prev + 1) {
+        const where = headings[i].where ? ` di '${String(headings[i].where).slice(0, 60)}'` : "";
+        out.push(finding("anti-slop", "fail", `skipped-heading: h${prev} lalu h${cur} tanpa h${prev + 1}${where} (Impeccable skipped-heading)`));
+        break; // satu finding per halaman sudah cukup sebagai vonis
+      }
+    }
+  }
+  // bounce-easing (v0.3.29, Impeccable `bounce-easing`, ADVISORY): easing
+  // bounce/elastis = cubic-bezier dengan titik kontrol y di luar [0,1]
+  // (mis. cubic-bezier(0.68, -0.55, 0.27, 1.55)). Severity `warn` — memberi
+  // tahu, TIDAK PERNAH menggagalkan gate (pass tidak terpengaruh).
+  if (!allow.has("bounce-easing")) {
+    const easings = Array.isArray(input.easings) ? input.easings : [];
+    const seen = new Set();
+    for (const e of easings) {
+      const value = String(e.value ?? "");
+      for (const m of value.matchAll(/cubic-bezier\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)/g)) {
+        const ys = [Number(m[2]), Number(m[4])];
+        if (!ys.every(Number.isFinite)) continue;
+        if (ys.some((y) => y < 0 || y > 1)) {
+          const key = m[0];
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const where = e.where ? ` di '${String(e.where).slice(0, 60)}'` : "";
+          out.push(finding("anti-slop", "warn", `bounce-easing: easing ${key}${where} — bounce/elastis terasa kuno, pakai ease-out-quart/quint/expo (Impeccable bounce-easing)`));
+        }
+      }
     }
   }
   return out;
@@ -402,7 +462,7 @@ export function stressCases() {
  * Satu titik penilaian: gabungkan semua cek jadi {pass, findings}.
  * input: {screenshots?, contrast?, tapTargets?, viewports?, assets?,
  * textCases?, consistency?, licenses?, tokens?, usedColors?, backgrounds?,
- * gradientTexts?, declaredFonts?, allow?}.
+ * gradientTexts?, declaredFonts?, headings?, easings?, allow?}.
  * Field yang tidak ada = tidak dicek.
  * pass = tidak ada finding severity 'fail'. Findings terurut deterministik
  * berdasarkan nama check, lalu detail.
