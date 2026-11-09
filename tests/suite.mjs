@@ -1000,6 +1000,9 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
   ok("design-gate: criticInput membawa behavior, tetap membuang code/claims/prompt",
     (() => { const ci = DG.criticInput({ screenshots: [], gate: { pass: false, findings: [] }, behavior: [{ id: "cart-empty", passed: false }], code: "x", claims: ["y"], prompt: "z" });
       return Array.isArray(ci.behavior) && ci.behavior.length === 1 && ci.behavior[0].id === "cart-empty" && !("code" in ci) && !("claims" in ci) && !("prompt" in ci); })());
+  // golden (§2 v0.3.32): 19 tes di tests/design-golden-032.mjs — satu sumber
+  // tes, dijalankan di suite (standalone: `node tests/design-golden-032.mjs`).
+  await (await import("./design-golden-032.mjs")).runGoldenTests(ok);
   // cek aset dua lapis (§4 v0.3.31): verified ok → warn (pass tetap true);
   // dead / tanpa verifikasi → fail seperti dulu.
   ok("design-gate: evaluateAssets dua lapis — verified ok jadi warn (pass true); dead tetap fail",
@@ -1036,6 +1039,11 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
     (() => { const c = BH.parseBehaviorContract("tests/fixtures/design/DESIGN-behavior.md");
       const checks = BH.normalizeContract(c);
       return checks.length === 2 && checks[0].id === "cart-empty" && checks[1].kind === "click-then-text" && BH.normalizeContract([]).length === 0; })());
+  // parseBehaviorContract tetap throw bila blok hilang (v0.3.32 §1):
+  // yang fallback ke kontrak default adalah PEMANGGIL, bukan parser.
+  ok("design-behavior: parseBehaviorContract tetap throw bila blok behavior-contract hilang",
+    (() => { try { BH.parseBehaviorContract("tests/fixtures/design/DESIGN.md"); return false; }
+      catch (e) { return String(e?.message ?? e).includes("tidak memuat blok"); } })());
   // state loop (§5 v0.3.31): tulis 3 iterasi mentok → stuckVerdict mentok.
   ok("design-behavior: recordLoopIteration + stuckVerdict — [21,21,21] mentok di 21 findings",
     (() => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-loop-"));
@@ -1183,6 +1191,95 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
       { checks: [{ id: "hilang", label: "elemen tak ada", kind: "text-equals", selector: "#tidak-ada", expected: "x" }] });
     ok("design-behavior red-test: selector tak ada → finding probe-gagal, bukan crash loop",
       probeGagal.pass === false && probeGagal.findings.some((f) => f.check === "probe-gagal"));
+    // Kontrak default turunan DOM (§1 v0.3.32): tanpa kontrak Maker, probe
+    // TIDAK dilewati — checks diturunkan dari DOM live tiap pola derivasi.
+    const { Browser } = await import("../.opencode/skills/design-taste-frontend/scripts/lib/cdp.mjs");
+    const derivedDirect = await (async () => {
+      const { server, url } = await DM.serveLocal("tests/fixtures/design/behavior-default-all.html");
+      const browser = await Browser.launch({ extraArgs: typeof process.getuid === "function" && process.getuid() === 0 ? ["--no-sandbox"] : [] });
+      try {
+        const page = await browser.newPage({ width: 1440, height: 900, dsf: 1 });
+        try {
+          await page.goto(url, { timeoutMs: 30000, settleMs: 800 });
+          return await BH.deriveDefaultContract(page);
+        } finally { await page.close(); }
+      } finally { await browser.close().catch(() => {}); server.close(); }
+    })();
+    ok("design-behavior default: deriveDefaultContract turunkan 5 pola (cart-empty, cart-add, filter, form-empty, theme-toggle) + interactive",
+      JSON.stringify(derivedDirect.derived) === JSON.stringify(["cart-empty", "cart-add", "filter", "form-empty", "theme-toggle"]) &&
+      derivedDirect.interactive === true &&
+      derivedDirect.contract.initial.some((c) => c.id === "cart-empty" && c.expected === "Rp0") &&
+      derivedDirect.contract.actions.some((c) => c.id === "cart-add" && c.expected === "Rp18.000") &&
+      derivedDirect.contract.actions.some((c) => c.id === "filter" && c.kind === "click-then-count" && c.expected === 0) &&
+      derivedDirect.contract.actions.some((c) => c.id === "form-empty" && c.kind === "click-then-count" && c.expected === 1) &&
+      derivedDirect.contract.actions.some((c) => c.id === "theme-toggle" && c.kind === "click-then-attr" && c.expected === "dark"));
+    const defAll = await BH.probeBehavior("tests/fixtures/design/behavior-default-all.html", null);
+    ok("design-behavior default: probe tanpa kontrak PASS di fixture benar (source 'default', 5 checks lolos)",
+      defAll.pass === true && defAll.source === "default" && defAll.checks.length === 5 && defAll.checks.every((c) => c.passed) &&
+      JSON.stringify(defAll.derived) === JSON.stringify(["cart-empty", "cart-add", "filter", "form-empty", "theme-toggle"]));
+    const defDouble = await BH.probeBehavior("tests/fixtures/design/behavior-default-double-add.html", null);
+    ok("design-behavior default: double-add tertangkap tanpa kontrak (1 klik → Rp36.000, cart-add FAIL, lainnya lolos)",
+      defDouble.pass === false && defDouble.source === "default" &&
+      defDouble.checks.find((c) => c.id === "cart-add")?.passed === false &&
+      defDouble.checks.find((c) => c.id === "cart-add")?.actual === "Rp36.000" &&
+      defDouble.checks.filter((c) => c.id !== "cart-add").every((c) => c.passed) &&
+      defDouble.findings.some((f) => f.check === "behavior"));
+    const defPrefill = await BH.probeBehavior("tests/fixtures/design/behavior-cart.html", null);
+    ok("design-behavior default: keranjang prefill tertangkap tanpa kontrak (cart-empty FAIL, total ¥12.000)",
+      defPrefill.pass === false && defPrefill.source === "default" &&
+      defPrefill.checks.find((c) => c.id === "cart-empty")?.passed === false &&
+      defPrefill.checks.find((c) => c.id === "cart-empty")?.actual === "¥12.000");
+    const defEmpty = await BH.probeBehavior("tests/fixtures/design/behavior-cart-empty.html", null);
+    ok("design-behavior default: fixture keranjang-kosong PASS tanpa kontrak (cart-empty + cart-add diturunkan)",
+      defEmpty.pass === true && defEmpty.source === "default" &&
+      defEmpty.derived.includes("cart-empty") && defEmpty.derived.includes("cart-add") &&
+      defEmpty.checks.every((c) => c.passed));
+    const defStatic = await BH.probeBehavior("tests/fixtures/design/behavior-default-static.html", null);
+    ok("design-behavior default: 0 checks → SATU finding warn 'tidak ada interaksi yang bisa diprobe' (bukan skip, bukan fail)",
+      defStatic.pass === true && defStatic.source === "default" && defStatic.checks.length === 0 &&
+      defStatic.findings.length === 1 && defStatic.findings[0].check === "behavior" &&
+      defStatic.findings[0].severity === "warn" && defStatic.findings[0].detail.includes("tidak ada interaksi yang bisa diprobe"));
+    const explicitSrc = await BH.probeBehavior("tests/fixtures/design/behavior-cart-empty.html",
+      { initial: [{ id: "cart-empty", label: "keranjang kosong saat dimuat", kind: "text-equals", selector: "#cart-total-display", expected: "¥0" }] },
+      { source: "behavior.json" });
+    ok("design-behavior: jalur eksplisit tidak regresi — source tercatat ('behavior.json' bila diminta, 'design' default) + kontrak kosong tetap pass tanpa findings",
+      explicitSrc.pass === true && explicitSrc.source === "behavior.json" &&
+      (await BH.probeBehavior("tests/fixtures/design/behavior-cart-empty.html",
+        { initial: [{ id: "cart-empty", label: "keranjang kosong saat dimuat", kind: "text-equals", selector: "#cart-total-display", expected: "¥0" }] })).source === "design" &&
+      (await BH.probeBehavior("tests/fixtures/design/behavior-cart-empty.html", { checks: [] })).pass === true &&
+      (await BH.probeBehavior("tests/fixtures/design/behavior-cart-empty.html", { checks: [] })).findings.length === 0);
+    // measureAndGateWithBehavior (§1 v0.3.32): probe SELALU jalan tiap
+    // iterasi — eksplisit > DESIGN.md > default; blok hilang dicatat
+    // contractNote, bukan ditelan jadi skip.
+    const gwExplicit = await BH.measureAndGateWithBehavior("tests/fixtures/design/behavior-cart-empty.html",
+      { behaviorContract: { initial: [{ id: "cart-empty", label: "keranjang kosong saat dimuat", kind: "text-equals", selector: "#cart-total-display", expected: "¥0" }] } });
+    ok("design-behavior gate: kontrak eksplisit via opts.behaviorContract → behaviorSource 'design', contractNote null, probe jalan",
+      gwExplicit.behaviorSource === "design" && gwExplicit.contractNote === null &&
+      Array.isArray(gwExplicit.behavior) && gwExplicit.behavior.length === 1 && gwExplicit.behavior[0].passed === true);
+    const gwDesign = await BH.measureAndGateWithBehavior("tests/fixtures/design/behavior-cart-empty.html",
+      { designFile: "tests/fixtures/design/DESIGN-behavior.md" });
+    ok("design-behavior gate: kontrak dari DESIGN.md (ada blok) → behaviorSource 'design', contractNote null, probe jalan",
+      gwDesign.behaviorSource === "design" && gwDesign.contractNote === null &&
+      gwDesign.behavior.length === 2 && gwDesign.behavior.every((c) => c.passed));
+    const gwDouble = await BH.measureAndGateWithBehavior("tests/fixtures/design/behavior-default-double-add.html",
+      { designFile: "tests/fixtures/design/DESIGN.md" });
+    ok("design-behavior gate: DESIGN.md tanpa blok → contractNote tercatat + kontrak default jalan (double-add FAIL, gate FAIL)",
+      gwDouble.behaviorSource === "default" && typeof gwDouble.contractNote === "string" &&
+      gwDouble.contractNote.includes("kontrak default") &&
+      gwDouble.pass === false &&
+      gwDouble.findings.some((f) => f.check === "behavior" && f.detail.includes("klik tambah")));
+    const gwAll = await BH.measureAndGateWithBehavior("tests/fixtures/design/behavior-default-all.html",
+      { designFile: "tests/fixtures/design/DESIGN.md" });
+    ok("design-behavior gate: DESIGN.md tanpa blok + fixture benar → kontrak default PASS, gate PASS (warn kontras diizinkan, tanpa fail)",
+      gwAll.behaviorSource === "default" && typeof gwAll.contractNote === "string" &&
+      gwAll.behavior.length === 5 && gwAll.behavior.every((c) => c.passed) && gwAll.pass === true &&
+      gwAll.findings.every((f) => f.severity !== "fail"));
+    const gwStatic = await BH.measureAndGateWithBehavior("tests/fixtures/design/behavior-default-static.html");
+    ok("design-behavior gate: tanpa kontrak apa pun + halaman statis → warn 0-check, pass tetap true, source 'default'",
+      gwStatic.behaviorSource === "default" && typeof gwStatic.contractNote === "string" &&
+      gwStatic.contractNote.includes("tidak ada kontrak eksplisit") &&
+      gwStatic.pass === true && Array.isArray(gwStatic.behavior) && gwStatic.behavior.length === 0 &&
+      gwStatic.findings.some((f) => f.check === "behavior" && f.severity === "warn" && f.detail.includes("tidak ada interaksi yang bisa diprobe")));
     // token-fidelity actionable, red-test browser (§2 v0.3.31): fixture
     // netral-sebagai-tint PASS — 0 findings token-fidelity.
     const neutralTint = await DM.measureAndGate("tests/fixtures/design/token-neutral-tint.html", { designFile: "tests/fixtures/design/DESIGN-neutral.md" });

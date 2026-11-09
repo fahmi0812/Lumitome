@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="id" data-theme="light"><head><meta charset="utf-8"><title>Fixture behavior default: semua pola (BENAR)</title>
+<style>
+  body{font-family:sans-serif;background:#FFF8F0;color:#2C1A14;margin:2rem}
+  button{padding:12px 20px;font-size:16px;min-height:44px;min-width:44px;background:#A0591E;color:#FFFFFF;border:2px solid #2C1A14;cursor:pointer}
+  input{height:44px;box-sizing:border-box;font-size:16px;border:2px solid #2C1A14;background:#FFFFFF;color:#2C1A14;padding:0 12px}
+  .menu-card{background:#FFFFFF;border:2px solid #2C1A14;padding:1rem;margin:0.5rem 0}
+  .menu-card-price{color:#2C1A14}
+  .form-error{display:none;color:#A0591E}
+  .state{color:#2C1A14}
+</style>
+</head><body>
+<h1>Kedai Kopi</h1>
+<button type="button" id="themeToggleBtn" aria-label="Ganti mode gelap atau terang">Mode Gelap</button>
+<h2>Menu</h2>
+<div>
+  <button type="button" class="filter-btn" data-filter="all">SEMUA</button>
+  <button type="button" class="filter-btn" data-filter="kopi">KOPI</button>
+  <button type="button" class="filter-btn" data-filter="makanan">MAKANAN</button>
+</div>
+<div class="menu-grid">
+  <article class="menu-card" data-category="kopi" data-id="1">
+    <h3>Es Kopi Senja</h3>
+    <span class="menu-card-price">Rp18.000</span>
+    <button type="button" class="btn-add-cart" data-name="Es Kopi Senja" data-price="18000" data-id="1" aria-label="Tambah Es Kopi Senja ke Keranjang">+</button>
+  </article>
+  <article class="menu-card" data-category="kopi" data-id="2">
+    <h3>Kopi Tubruk</h3>
+    <span class="menu-card-price">Rp15.000</span>
+    <button type="button" class="btn-add-cart" data-name="Kopi Tubruk" data-price="15000" data-id="2" aria-label="Tambah Kopi Tubruk ke Keranjang">+</button>
+  </article>
+  <article class="menu-card" data-category="makanan" data-id="3">
+    <h3>Croissant Butter</h3>
+    <span class="menu-card-price">Rp18.000</span>
+    <button type="button" class="btn-add-cart" data-name="Croissant Butter" data-price="18000" data-id="3" aria-label="Tambah Croissant Butter ke Keranjang">+</button>
+  </article>
+  <article class="menu-card" data-category="makanan" data-id="4">
+    <h3>Pisang Goreng</h3>
+    <span class="menu-card-price">Rp12.000</span>
+    <button type="button" class="btn-add-cart" data-name="Pisang Goreng" data-price="12000" data-id="4" aria-label="Tambah Pisang Goreng ke Keranjang">+</button>
+  </article>
+</div>
+<h2>Keranjang</h2>
+<div id="cart-items">Keranjang kosong.</div>
+<div>Total: <span id="cartTotalPrice">Rp0</span></div>
+<h2>Reservasi</h2>
+<form id="reservationForm" novalidate>
+  <label for="resName">Nama Lengkap *</label>
+  <input type="text" id="resName" required>
+  <span class="form-error" id="errorName">Nama wajib diisi minimal 3 huruf.</span>
+  <button type="submit">KIRIM RESERVASI</button>
+</form>
+<div class="state" data-state="empty">Belum ada pesanan.</div>
+<div class="state" data-state="loading">Memuat menu…</div>
+<div class="state" data-state="error">Gagal memuat. Coba lagi.</div>
+<script>
+  const cart = [];
+  const totalEl = document.getElementById("cartTotalPrice");
+  function formatRupiah(num) { return "Rp" + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+  function addToCart(id, name, price) {
+    cart.push({ id, name, price });
+    totalEl.textContent = formatRupiah(cart.reduce((s, i) => s + i.price, 0));
+  }
+  document.querySelectorAll(".btn-add-cart").forEach((btn) => btn.addEventListener("click", () => {
+    addToCart(btn.getAttribute("data-id"), btn.getAttribute("data-name"), Number(btn.getAttribute("data-price")));
+  }));
+  document.querySelectorAll("[data-filter]").forEach((btn) => btn.addEventListener("click", () => {
+    const f = btn.getAttribute("data-filter");
+    document.querySelectorAll(".menu-card").forEach((card) => {
+      card.style.display = (f === "all" || card.getAttribute("data-category") === f) ? "" : "none";
+    });
+  }));
+  document.getElementById("reservationForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = document.getElementById("resName").value.trim();
+    document.getElementById("errorName").style.display = name.length < 3 ? "block" : "none";
+  });
+  const htmlEl = document.documentElement;
+  document.getElementById("themeToggleBtn").addEventListener("click", () => {
+    const next = htmlEl.getAttribute("data-theme") === "light" ? "dark" : "light";
+    htmlEl.setAttribute("data-theme", next);
+  });
+</script>
+</body></html>

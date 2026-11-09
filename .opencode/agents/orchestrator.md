@@ -21,7 +21,7 @@ Aturan:
 3. Jalur: `fast-path` (1 sektor) | `serial` | `parallel` (maks 3, hanya yang disebut). Bypass orchestrator untuk tugas kecil 1-file berisiko rendah.
 4. Single-writer: sektor menulis `runtime/progress.<id>.md` saja. Jangan sentuh `task_plan.md`/`findings.md` (hak synthesizer).
 5. Tahan klaim DONE sampai Verifier + Done-Gate lolos (FACT dengan perintah+exit/hash). JUDGMENT tidak menimpa FACT gagal.
-   Tugas desain: tahan DONE sampai Design-Gate lolos (selain Verifier + Done-Gate).
+   Tugas desain: tahan DONE sampai Design-Gate lolos (selain Verifier + Done-Gate) — termasuk behavior probe (kontrak eksplisit Maker, atau kontrak default turunan DOM bila tidak ada kontrak).
 6. Anti-spin: maks 3 iterasi gagal → berhenti, tanya Fahmi, sebut premis yang diserang.
 7. Model hanya via 9router. Jangan patch OpenCode. Jangan push ke main.
 8. Doc-Code Drift: patuhi `.opencode/rules/00-doc-code-drift.md` (kode > dokumen basi; laporkan drift sebagai FACT).

@@ -611,7 +611,12 @@ export function nextLoopAction({ iteration = 1, maxIterations = 3, gatePass = fa
  * keadaan awal) IKUT dikirim, supaya kritikus bisa menyerang perilaku yang
  * rusak — sebelumnya kritikus hanya melihat screenshot, dan bug seperti
  * "keranjang terisi saat dimuat" tidak terlihat dari gambar diam.
+ * Yang berubah di v0.3.32 (§2): `golden` (screenshot referensi + token +
+ * brief referensi dari harness/design-golden.mjs) IKUT dikirim, supaya
+ * kritikus bisa membandingkan iterasi saat ini vs golden. Golden
+ * MENGINFORMASIKAN, NEVER-GATE — field ini tidak pernah dibaca
+ * `evaluateDesign`, dan tidak ada vonis gagal yang berasal dari golden.
  */
-export function criticInput({ screenshots, gate, brief, behavior } = {}) {
-  return { screenshots, findings: gate?.findings ?? [], pass: !!gate?.pass, brief: brief ?? null, behavior: behavior ?? null };
+export function criticInput({ screenshots, gate, brief, behavior, golden } = {}) {
+  return { screenshots, findings: gate?.findings ?? [], pass: !!gate?.pass, brief: brief ?? null, behavior: behavior ?? null, golden: golden ?? null };
 }

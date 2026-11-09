@@ -129,8 +129,10 @@ export function buildPairwisePacket(a, b, order = "ab") {
  * Bandingkan dua kandidat (file .html lokal / URL) secara pairwise.
  * opts: {nameA, nameB, measureOptsA, measureOptsB, contractA, contractB,
  *   includeDom=true}.
- * Mengukur keduanya (gate + behavior bila ada kontrak + ringkasan DOM),
- * lalu skor checklist di KEDUA urutan presentasi — pemenang harus sama.
+ * Mengukur keduanya (gate + behavior SELALU — kontrak Maker bila ada,
+ * atau kontrak default turunan DOM bila tidak ada, via
+ * measureAndGateWithBehavior — + ringkasan DOM), lalu skor checklist di
+ * KEDUA urutan presentasi — pemenang harus sama.
  * → {winner: "a"|"b"|"tie", winnerName, aWins, bWins, orderConsistent,
  *      items, packets: {ab, ba}, a: {name, findings, behavior, dom, screenshots},
  *      b: {...}}.
@@ -140,9 +142,9 @@ export async function comparePairwise(aTarget, bTarget, opts = {}) {
   const nameA = opts.nameA ?? "A";
   const nameB = opts.nameB ?? "B";
   const measureOne = async (target, name, measureOpts, contract) => {
-    const r = contract
-      ? await measureAndGateWithBehavior(target, { ...measureOpts, behaviorContract: contract })
-      : await measureAndGate(target, measureOpts);
+    // v0.3.32 §1: behavior SELALU diukur — tanpa kontrak eksplisit,
+    // measureAndGateWithBehavior menurunkan kontrak default dari DOM.
+    const r = await measureAndGateWithBehavior(target, { ...measureOpts, behaviorContract: contract });
     const dom = opts.includeDom === false ? [] : await collectDomSummary(target);
     return { name, findings: r.findings, behavior: r.behavior ?? null, screenshots: r.screenshots ?? [], dom };
   };

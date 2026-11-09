@@ -92,11 +92,24 @@ file `behavior.json` di workspace tugas, format sama):
 ```
 
 Kind yang tersedia: `text-equals`, `text-contains`, `count`, `exists`,
-`attr-equals`, `click-then-text`, `click-then-count`. Kontrak dibaca
+`attr-equals`, `click-then-text`, `click-then-count`, `click-then-attr`. Kontrak dibaca
 `parseBehaviorContract` dan dijalankan `probeBehavior` tiap iterasi —
 hasilnya findings gate (`behavior` / `probe-gagal`). Probe yang gagal
 jalan (timeout, elemen tak ditemukan) = finding `probe-gagal`, bukan
 crash loop.
+
+**Kontrak ini WAJIB — bukan opsional, dan tidak bisa dilewati.** Bila Maker
+tidak menulis kontrak, gate MENURUNKAN kontrak default otomatis dari DOM
+(`deriveDefaultContract`: keranjang kosong saat dimuat, klik tambah = tepat
+1 item, filter menyaring, form kosong = error muncul, toggle ganti state —
+hanya yang bisa diturunkan dengan keyakinan tinggi) dan probe TETAP jalan
+tiap iterasi. Bila tidak ada satu pun check yang bisa diturunkan, gate
+memberi finding warn "tidak ada interaksi yang bisa diprobe" — bukan skip
+diam-diam — dan DONE tetap butuh kontrak eksplisit dari Maker. **Tidak ada
+DONE tanpa behavior probe yang berjalan DAN lolos.** (Pelajaran v0.3.32:
+loop Kopi Senja Minecraft 5 iterasi lolos gate deterministik 0 findings
+sementara bug double-add Rp36.000 bertahan — karena DESIGN.md tanpa
+kontrak dan behavior gate v0.3.31 hanya jalan "bila ada kontrak".)
 
 Lalu, Maker wajib menyebutkan **3 jebakan AI-slop yang paling mungkin
 bikin halaman itu gagal** — spesifik untuk halaman itu, bukan generik.
@@ -116,7 +129,7 @@ Fahmi (mis. lavender lembut + maskot MotionSense) seolah itu cacat.
 |---|---|
 | 1. Maker bangun | Sektor agent pemilik skill desain itu: desain UI = coding (`design-taste-frontend`, `impeccable`, `hallmark`, `ui-ux-pro-max`, `stitch-ui`); motion/video = media (`motion-design`, `review-loop`, `web-sims`). Per iterasi router pilih **≤5 skill** yang relevan buat iterasi itu; set-nya boleh ganti antar iterasi. Tidak pernah >5 dalam satu konteks. |
 | 2. Render | Figcraft export (desain Figcraft, `figcraft-cli export`) atau screenshot browser (web, via `.opencode/skills/design-taste-frontend/scripts/inspect.mjs` / playwright / chromedev). Dua renderer, satu gate: desain yang sama harus dapat vonis yang sama dari renderer mana pun. **File sementara/scratch SELALU di dalam workspace (`<workspace>/.tmp/` atau subdir tugas), JANGAN `/tmp`** — guard menolak `rm` di luar workspace. |
-| 3. Gate ukur | `harness/design-gate.mjs` + Design Stress-Test: viewport ekstrem 1440/768/390 (overflow, elemen bertumpuk, teks terpotong), edge-case data & teks (teks sangat panjang, empty state, loading, error, data tidak konsisten = finding), aksesibilitas (rasio kontras dihitung dari piksel, minimal 4,5:1 WCAG AA; tombol sentuh <44px langsung gagal; font/gambar gagal muat — gambar yang gagal di browser dicek HTTP-nya dulu: 200 + byte gambar valid = warn artefak lingkungan, bukan fail), kesetiaan token (warna render vs token DESIGN.md — solid di luar token = finding bernama + bersaran), due diligence (aksesibilitas, lisensi aset, konsistensi data). **Tiap iterasi juga menjalankan behavior gate**: `probeBehavior` menjalankan kontrak interaksi dari `DESIGN.md` (keadaan awal + hasil klik) — hasilnya findings `behavior`/`probe-gagal` yang ikut menentukan vonis gate. Jumlah findings tiap iterasi dicatat ke `<workspace>/.tmp/loopdesign/loop-history.jsonl` (`recordLoopIteration`) untuk aturan mentok (§4). |
+| 3. Gate ukur | `harness/design-gate.mjs` + Design Stress-Test: viewport ekstrem 1440/768/390 (overflow, elemen bertumpuk, teks terpotong), edge-case data & teks (teks sangat panjang, empty state, loading, error, data tidak konsisten = finding), aksesibilitas (rasio kontras dihitung dari piksel, minimal 4,5:1 WCAG AA; tombol sentuh <44px langsung gagal; font/gambar gagal muat — gambar yang gagal di browser dicek HTTP-nya dulu: 200 + byte gambar valid = warn artefak lingkungan, bukan fail), kesetiaan token (warna render vs token DESIGN.md — solid di luar token = finding bernama + bersaran), due diligence (aksesibilitas, lisensi aset, konsistensi data). **Tiap iterasi juga menjalankan behavior gate — SELALU, tidak bisa dilewati**: `probeBehavior` menjalankan kontrak interaksi dari `DESIGN.md` (keadaan awal + hasil klik); bila tidak ada kontrak, gate menurunkan kontrak default otomatis dari DOM (`deriveDefaultContract`) dan probe tetap jalan; bila tidak ada check yang bisa diturunkan, hasilnya finding warn "tidak ada interaksi yang bisa diprobe" — bukan skip diam-diam. Hasilnya findings `behavior`/`probe-gagal` yang ikut menentukan vonis gate. Jumlah findings tiap iterasi dicatat ke `<workspace>/.tmp/loopdesign/loop-history.jsonl` (`recordLoopIteration`) untuk aturan mentok (§4). |
 | 4. Kritikus menyerang | §3 — red team + pairwise (iterasi sekarang vs sebelumnya, dua urutan presentasi). Pairwise MENGINFORMASIKAN, never-gate. |
 | 5. Maker perbaiki | Dari findings gate + kritik. Lalu kembali ke langkah 2. |
 
@@ -146,7 +159,8 @@ ringkasan brief/data dari DESIGN.md) + hasil probe perilaku (`behavior` di
 6. **Pairwise (iterasi sekarang vs sebelumnya).** Kritikus membandingkan
    kandidat secara pairwise — bukan menilai satu gambar sendirian. Harness
    (`harness/design-pairwise.mjs`, `comparePairwise`) mengukur kedua
-   kandidat (gate + behavior bila ada kontrak + ringkasan DOM: bounding box
+   kandidat (gate + behavior — kontrak Maker, atau kontrak default turunan DOM
+   bila tidak ada kontrak — + ringkasan DOM: bounding box
    + computed styles) dan menyusun packet kritikus dalam DUA urutan
    presentasi (A-lalu-B dan B-lalu-A) plus skor checklist biner per tugas
    (satu item per kategori gate + total findings — kandidat menang item bila
@@ -157,9 +171,41 @@ ringkasan brief/data dari DESIGN.md) + hasil probe perilaku (`behavior` di
    vonis lolos/gagal gate.** Vonis tetap milik gate deterministik +
    behavior gate.
 
+### Golden — kritik berjangkar referensi (v0.3.32 §2)
+
+Golden = render referensi untuk keluarga brief yang sama: screenshot yang
+sudah disetujui + `DESIGN.md`/token + ringkasan brief, disimpan di workspace
+tugas sebagai `goldens/<nama>/` (mis. `goldens/kopi-senja/` berisi
+`screenshot.png`, `DESIGN.md`, `brief.json`).
+
+**Cara menyediakan golden:** minta Maker/pengguna satu screenshot referensi
+(desain yang sudah disetujui, mockup klien, atau halaman acuan) + arah dan
+tokennya, simpan apa adanya di `goldens/<nama>/`. Golden dibaca dengan
+`loadGolden()` (`harness/design-golden.mjs`) dan dikirim ke kritikus lewat
+field `golden` di `criticInput()` — kritikus membandingkan iterasi saat ini
+vs golden (layout, densitas, hierarki, kesetiaan arah) dan melaporkan
+divergensi sebagai temuan advisory. Pakai saat brief berulang / keluarga
+desain yang sama, supaya halaman berikutnya terasa satu keluarga dengan
+halaman yang sudah disetujui.
+
+**Batasnya (jangan dilanggar):**
+- Golden **MENGINFORMASIKAN, NEVER-GATE** — divergensi vs golden tidak
+  pernah mengubah vonis gate (`evaluateDesign` tidak membaca golden).
+- Golden **wajib dari referensi tepercaya, BUKAN dari output loop sendiri**
+  (bukan iterasi sebelumnya, bukan render yang dibuat loopdesign) — itu
+  self-referential dan tidak valid: loop akan menilai dirinya sendiri bagus.
+- Golden yang salah = patokan yang salah: golden usang (brief berubah) atau
+  dari keluarga brief lain akan menyesatkan kritikus.
+- Golden tanpa screenshot atau tanpa arah/token = tidak valid — `loadGolden`
+  throw, jangan diam-diam lanjut tanpa golden.
+
 ## 4 — Aturan berhenti (tidak bisa ditawar)
 
 - **Gate lolos → berhenti.** Sudah bagus, tidak perlu lanjut.
+- **Tidak ada DONE tanpa behavior probe lolos.** "Gate lolos" berarti lolos
+  TERMASUK behavior probe (kontrak eksplisit Maker, atau kontrak default
+  turunan DOM bila tidak ada kontrak). Gate deterministik 0 findings tapi
+  behavior belum jalan = belum DONE.
 - **Iterasi tanpa perbaikan → berhenti, meski N belum habis.** Skor gate sama
   atau turun = RuntimeSpin: pengulangan tanpa progres = spin.
 - **Mentok → berhenti + vonis.** Jumlah findings tidak berkurang 2 iterasi
