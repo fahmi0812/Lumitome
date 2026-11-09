@@ -29,18 +29,22 @@ ReUI/shadcn yang benar-benar ter-fetch, bukan komponen karangan.
 
 ## Sumber kode — komponen siap pakai
 
-| Sumber | Cara fetch |
-|---|---|
-| shadcn/ui | CLI: `npx shadcn@latest add <komponen>`; atau registry JSON `ui.shadcn.com/r/<komponen>.json`; atau raw GitHub `shadcn-ui/ui`. |
-| ReUI | Registry JSON / CLI di situs resmi ReUI; fetch raw file komponen dari repo GitHub-nya. Cocok untuk Data Grid dan komponen data-padat. |
-| Watermelon UI | Registry / situs resmi; fetch raw file dari repo GitHub-nya. |
-| 21st.dev | Registry komponen (situs 21st.dev); fetch dari registry-nya, periksa lisensi per komponen sebelum pakai. |
-| Magic UI | Registry / CLI di situs resmi Magic UI; komponen animasi siap pakai. |
-| HyperUI | Kumpulan komponen Tailwind gratis (situs HyperUI); salin sumber komponen, sesuaikan token proyek. |
-| daisyUI | `npm install daisyui` + plugin Tailwind; komponen berbasis class Tailwind. |
-| NiceUI | Registry / situs resmi; fetch raw file dari repo GitHub-nya. |
-| Flowbite | `npm install flowbite` + plugin Tailwind; komponen + blok siap pakai. |
-| Aceternity UI | Registry / situs resmi Aceternity; komponen animasi + efek; salin sumber komponen ke proyek. |
+Lisensi diverifikasi dari sumber primer (LICENSE repo / situs resmi) 2026-11-09.
+"Gratis" = komponen inti; "Pro" = tier berbayar terpisah. Bila lisensi
+ragu-ragu, jangan pakai — tulis apa adanya.
+
+| Sumber | Lisensi (terverifikasi) | Cara fetch |
+|---|---|---|
+| shadcn/ui | MIT | CLI: `npx shadcn@latest add <komponen>`; atau registry JSON `ui.shadcn.com/r/styles/default/<komponen>.json`; atau raw GitHub `shadcn-ui/ui`. |
+| ReUI | MIT (komponen gratis; Pro berbayar: blok + template) | Registry JSON / CLI di situs resmi ReUI; fetch raw file komponen dari repo GitHub-nya. Cocok untuk Data Grid dan komponen data-padat. |
+| Watermelon UI | MIT (repo `WatermelonCorp/watermelon-platform`; repo registry lama 404) | Registry `ui.watermelon.sh/r/<komponen>.json` / situs resmi; fetch raw file dari repo `WatermelonCorp/watermelon-platform`. |
+| 21st.dev | Per-komponen / per-author — TIDAK ada lisensi blanket (platformnya MIT) | Registry komponen (situs 21st.dev); fetch dari registry-nya, periksa lisensi per komponen ke repo asli author-nya sebelum pakai. |
+| Magic UI | MIT (komponen gratis; template/blok Pro berbayar) | Registry / CLI di situs resmi Magic UI; komponen animasi siap pakai. |
+| HyperUI | MIT | Kumpulan komponen Tailwind gratis (situs HyperUI); salin sumber komponen, sesuaikan token proyek. |
+| daisyUI | MIT (inti gratis; ekstra berbayar: Blueprint MCP, store) | `npm install daisyui` + plugin Tailwind; komponen berbasis class Tailwind. |
+| NiceUI | MIT per klaim situs — repo publik TIDAK ditemukan | Registry `niceui.dev/r/<komponen>.json` / situs resmi. JANGAN fetch dari GitHub (tidak ada repo yang bisa diverifikasi). |
+| Flowbite | MIT (kode rilis; docs CC BY 3.0; Pro EULA; nama/logo trademark) | `npm install flowbite` + plugin Tailwind; komponen + blok siap pakai. |
+| Aceternity UI | **PROPRIETARY — BUKAN MIT.** End-product use OK (unlimited end product, boleh dimodifikasi); **DILARANG** redistribusi source file, jual sebagai template/komponen, atau jual di marketplace; Pro All-Access berbayar | Registry / situs resmi Aceternity; komponen animasi + efek; salin sumber komponen ke proyek (end product saja — JANGAN vendor ke repo publik, itu redistribusi). |
 
 Aturan fetch umum bila satu sumber tidak punya CLI/registry yang jelas:
 cek dokumentasi resmi sumber itu dulu, lalu fetch raw file dari repo
@@ -59,6 +63,11 @@ Collected, Aura, Refero Styles, Footer Design, Supahero, Navbar Gallery,
 CTA Gallery, GetLayers, 404s.design, Oversight Supply, MotionSites,
 Scrolltide, Bencho, Diagram Design.
 
+Catatan health-check 2026-11-09: 49/50 sumber HIDUP, 0 mati. **Diagram
+Design: URL belum terverifikasi** (`diagram.design` tidak resolve; SKILL.md
+tidak mencantum URL) — jangan dipakai sebelum URL-nya dipastikan
+(kandidat: `cathrynlavery/diagram-design`, belum dipastikan).
+
 ## Token
 
 | Kebutuhan | Sumber |
@@ -73,6 +82,22 @@ Scrolltide, Bencho, Diagram Design.
 Token yang dipakai harus ditulis ke `design.md` / `DESIGN_SYSTEM.md`
 proyek (lihat `stitch-ui`, `design-system`) supaya semua bagian halaman
 diikat token yang sama — bukan token baru per komponen.
+
+Catatan lisensi token (terverifikasi 2026-11-09): **React Bits = MIT +
+Commons Clause v1.0** (bukan OSI; komersial OK, dilarang menjual /
+mendistribusikan ulang komponen itu sendiri). **GSAP = lisensi standar
+"No Charge" Webflow/GreenSock, bukan MIT** (gratis penuh, komersial OK;
+larangan: membangun tool animasi no-code pesaing Webflow).
+
+## Celah yang diketahui (health-check 2026-11-09 — belum ditambah sumber)
+
+Semua 10 sumber kode adalah React/Tailwind web. Yang belum tercakup:
+komponen native Android (MotionSense Recorder), Laravel/Blade (SIPALAB —
+kandidat varian Blade Flowbite `themesberg/flowbite-laravel-components`
+TIDAK punya LICENSE file di repo, dicek 2026-11-09, jangan pakai sebelum
+lisensinya dipastikan), chart/data-visualisasi, foto/ilustrasi stok, dan
+pemeriksa aksesibilitas/kontras eksternal. Jangan tambah sumber demi jumlah —
+tambah hanya bila ada kebutuhan nyata + lisensi terverifikasi.
 
 ## Diagram
 

@@ -1497,7 +1497,7 @@
       "id": "loopdesign",
       "name": "loopdesign",
       "sektor": "coding",
-      "description": "Perbaiki desain berulang sampai bagus lewat loop render → gate → kritik (loopdesign / desain loop): Maker pre-mortem 3 jebakan AI-slop sebelum coding, bangun dari komponen nyata, render jadi screenshot, ukur dengan Design-Gate deterministik (viewport, kontras, tap target), lalu kritikus red team men",
+      "description": "Perbaiki desain berulang sampai bagus lewat loop render → gate → kritik (loopdesign / desain loop): Maker direction-first (DESIGN.md: arah + token) + pre-mortem 3 jebakan AI-slop sebelum coding, bangun dari komponen nyata, render jadi screenshot, ukur dengan Design-Gate deterministik (viewport, kont",
       "triggers": [],
       "champion": false,
       "fallback": null,

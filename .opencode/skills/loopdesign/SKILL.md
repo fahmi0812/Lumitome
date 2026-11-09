@@ -1,6 +1,6 @@
 ---
 name: loopdesign
-description: 'Perbaiki desain berulang sampai bagus lewat loop render → gate → kritik (loopdesign / desain loop): Maker pre-mortem 3 jebakan AI-slop sebelum coding, bangun dari komponen nyata, render jadi screenshot, ukur dengan Design-Gate deterministik (viewport, kontras, tap target), lalu kritikus red team menyerang hasilnya — perbaiki dan ulang sampai gate lolos, maks N iterasi (default 3). Use for perbaiki desain berulang sampai bagus, loopdesign, desain loop, uji desain, kritik desain, red team desain.'
+description: 'Perbaiki desain berulang sampai bagus lewat loop render → gate → kritik (loopdesign / desain loop): Maker direction-first (DESIGN.md: arah + token) + pre-mortem 3 jebakan AI-slop sebelum coding, bangun dari komponen nyata, render jadi screenshot, ukur dengan Design-Gate deterministik (viewport, kontras, tap target, kesetiaan token), lalu kritikus red team menyerang hasilnya — perbaiki dan ulang sampai gate lolos, maks N iterasi (default 3). Use for perbaiki desain berulang sampai bagus, loopdesign, desain loop, uji desain, kritik desain, red team desain.'
 license: MIT
 metadata:
   swanwright_sector: coding
@@ -27,17 +27,40 @@ perbaikan — atau begitu budget iterasi habis. Tidak pernah spin.
   `harness/design-measure.mjs`, output `{pass, findings[]}`) adalah satu-satunya
   vonis lolos/gagal. Kritikus memberi pendapat; gate memberi vonis.
 - **Maker ≠ kritikus.** Kritikus adalah sub-agent terpisah (depth 1, konteks
-  sendiri). Ia hanya menerima screenshot + hasil ukur gate — tidak pernah
+  sendiri). Ia menerima screenshot + hasil ukur gate + brief/token — tidak pernah
   melihat kode atau klaim Maker. Maker yang menilai dirinya sendiri batal.
-- **Gate tidak menilai rasa.** "Terlihat bagus", "terasa modern", "cocok untuk
-  sidang" bukan kerja gate — itu kerja kritikus (§3).
+- **Gate menilai kesetiaan token + aksesibilitas (deterministik).**
+  "Terlihat bagus", "terasa modern", "cocok untuk sidang" bukan kerja gate —
+  itu kerja kritikus (§3).
 
-## 1 — Pre-mortem SEBELUM coding (oleh Maker)
+## 1 — Direction-first + pre-mortem SEBELUM coding (oleh Maker)
 
-Sebelum menulis satu baris kode pun, Maker wajib menyebutkan **3 jebakan
-AI-slop yang paling mungkin bikin halaman itu gagal** — spesifik untuk halaman
-itu, bukan generik. Contoh: "bahaya gradien ungu generik, tabel dashboard
-terlalu sempit di HP, tombol aksi tidak kelihatan".
+Sebelum menulis satu baris kode pun, Maker wajib commit **SATU arah estetika
+bernama** dan menulisnya ke **`DESIGN.md`** di workspace tugas (pola
+Anthropic frontend-design) — formatnya:
+
+```
+# DESIGN.md — <nama proyek>
+Arah: <nama arah estetika, mis. "Hangat artisanal">
+Token:
+- #RRGGBB — <peran, mis. kopi (teks/heading)>
+- ... (4–6 hex)
+Tipografi: <font display> (display), <font body> (body)
+Signature: <satu elemen signature>
+```
+
+`DESIGN.md` adalah source of truth: **Maker hanya memakai token deklarasi
+di CSS — tidak ada raw hex di luar DESIGN.md.** Warna di luar token =
+finding `token-fidelity` di gate (fail). Warna merek yang memang dibutuhkan
+(mis. hijau WhatsApp) harus ikut dideklarasikan sebagai token, bukan
+diselipkan diam-diam. Bila brief tidak memberi token, Maker menetapkan
+4–6 token sendiri di DESIGN.md sebelum coding — jangan mulai dari CSS
+tanpa arah tertulis.
+
+Lalu, Maker wajib menyebutkan **3 jebakan AI-slop yang paling mungkin
+bikin halaman itu gagal** — spesifik untuk halaman itu, bukan generik.
+Contoh: "bahaya gradien ungu generik, tabel dashboard terlalu sempit di
+HP, tombol aksi tidak kelihatan".
 
 Lalu, untuk tiap jebakan, ambil **komponen nyata dari skill `design-assets`**
 (shadcn, ReUI, Watermelon UI, Astryx, …) yang mencegahnya dari awal.
@@ -51,14 +74,15 @@ Fahmi (mis. lavender lembut + maskot MotionSense) seolah itu cacat.
 | Langkah | Yang dilakukan |
 |---|---|
 | 1. Maker bangun | Sektor agent pemilik skill desain itu: desain UI = coding (`design-taste-frontend`, `impeccable`, `hallmark`, `ui-ux-pro-max`, `stitch-ui`); motion/video = media (`motion-design`, `review-loop`, `web-sims`). Per iterasi router pilih **≤5 skill** yang relevan buat iterasi itu; set-nya boleh ganti antar iterasi. Tidak pernah >5 dalam satu konteks. |
-| 2. Render | Figcraft export (desain Figcraft, `figcraft-cli export`) atau screenshot browser (web, via `.opencode/skills/design-taste-frontend/scripts/inspect.mjs` / playwright / chromedev). Dua renderer, satu gate: desain yang sama harus dapat vonis yang sama dari renderer mana pun. |
-| 3. Gate ukur | `harness/design-gate.mjs` + Design Stress-Test: viewport ekstrem 1440/768/390 (overflow, elemen bertumpuk, teks terpotong), edge-case data & teks (teks sangat panjang, empty state, loading, error, data tidak konsisten = finding), aksesibilitas (rasio kontras dihitung dari piksel, minimal 4,5:1 WCAG AA; tombol sentuh <44px langsung gagal; font/gambar gagal muat), due diligence (aksesibilitas, lisensi aset, konsistensi data). |
+| 2. Render | Figcraft export (desain Figcraft, `figcraft-cli export`) atau screenshot browser (web, via `.opencode/skills/design-taste-frontend/scripts/inspect.mjs` / playwright / chromedev). Dua renderer, satu gate: desain yang sama harus dapat vonis yang sama dari renderer mana pun. **File sementara/scratch SELALU di dalam workspace (`<workspace>/.tmp/` atau subdir tugas), JANGAN `/tmp`** — guard menolak `rm` di luar workspace. |
+| 3. Gate ukur | `harness/design-gate.mjs` + Design Stress-Test: viewport ekstrem 1440/768/390 (overflow, elemen bertumpuk, teks terpotong), edge-case data & teks (teks sangat panjang, empty state, loading, error, data tidak konsisten = finding), aksesibilitas (rasio kontras dihitung dari piksel, minimal 4,5:1 WCAG AA; tombol sentuh <44px langsung gagal; font/gambar gagal muat), kesetiaan token (warna render vs token DESIGN.md — solid di luar token = finding), due diligence (aksesibilitas, lisensi aset, konsistensi data). |
 | 4. Kritikus menyerang | §3. |
 | 5. Maker perbaiki | Dari findings gate + kritik. Lalu kembali ke langkah 2. |
 
 ## 3 — Kritikus Red-Team / Devil's Advocate (sub-agent terpisah)
 
-Input kritikus: screenshot + hasil ukur gate saja. Urutan kerjanya:
+Input kritikus: screenshot + hasil ukur gate + brief/token (arah + token +
+ringkasan brief/data dari DESIGN.md). Urutan kerjanya:
 
 1. **Steelmanning — duluan, sebelum menyerang.** Nyatakan dulu versi terkuat
    desain ini ("lavender lembut, maskot lucu, pengalaman rekam yang tenang").

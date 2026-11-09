@@ -885,6 +885,55 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
   ok("design-gate: criticInput membuang code/claims/prompt/source, hanya screenshot + gate",
     (() => { const ci = DG.criticInput({ screenshots: [{ width: 390, path: "a.jpg" }], gate: { pass: false, findings: [{ check: "contrast", severity: "fail", detail: "x" }] }, code: "x", claims: ["y"], prompt: "z", source: "w" });
       return !("code" in ci) && !("claims" in ci) && !("prompt" in ci) && !("source" in ci) && ci.pass === false && ci.findings.length === 1 && ci.screenshots.length === 1; })());
+  // token-fidelity (v0.3.28 §3.1): aturan turunan — solid harus token, tint
+  // hanya dari token, transparent lolos, deklarasi rusak gagal.
+  ok("design-gate: rgbToHex [160,89,30] = #A0591E", DG.rgbToHex([160, 89, 30]) === "#A0591E");
+  ok("design-gate: token-fidelity — solid token lolos, solid di luar token gagal",
+    DG.checkTokenFidelity(["#3E2723", "#FFF8F0"], [{ rgb: [62, 39, 35], alpha: 1 }]).length === 0 &&
+    DG.checkTokenFidelity(["#3E2723", "#FFF8F0"], [{ rgb: [44, 26, 20], alpha: 1, where: "header" }]).length === 1);
+  ok("design-gate: token-fidelity — tint dari token lolos, tint bukan token gagal, transparent lolos",
+    DG.checkTokenFidelity(["#FFF8F0"], [{ rgb: [255, 248, 240], alpha: 0.94 }]).length === 0 &&
+    DG.checkTokenFidelity(["#FFF8F0"], [{ rgb: [44, 26, 20], alpha: 0.6 }]).length === 1 &&
+    DG.checkTokenFidelity(["#FFF8F0"], [{ rgb: [0, 0, 0], alpha: 0 }]).length === 0);
+  ok("design-gate: token-fidelity — token tidak bisa diparse gagal; tanpa token/warna tidak dicek",
+    DG.checkTokenFidelity(["#ZZZ", "#3E2723"], [{ rgb: [62, 39, 35], alpha: 1 }]).length === 1 &&
+    DG.checkTokenFidelity([], [{ rgb: [1, 2, 3], alpha: 1 }]).length === 0 &&
+    DG.checkTokenFidelity(["#3E2723"], []).length === 0);
+  ok("design-gate: token-fidelity — evaluateDesign tanpa tokens lolos seperti dulu",
+    DG.evaluateDesign({ contrast: [{ fg: "#000", bg: "#fff", kind: "text" }] }).pass === true);
+  ok("design-gate: criticInput membawa brief/token, tetap membuang code/claims/prompt",
+    (() => { const ci = DG.criticInput({ screenshots: [], gate: { pass: false, findings: [] }, brief: { direction: "Hangat", tokens: ["#3E2723"] }, code: "x", claims: ["y"], prompt: "z" });
+      return ci.brief && ci.brief.direction === "Hangat" && JSON.stringify(ci.brief.tokens) === '["#3E2723"]' && !("code" in ci) && !("claims" in ci) && !("prompt" in ci); })());
+  ok("design-gate: parseDesignFile baca arah + token + tipografi + signature + fonts",
+    (() => { const d = DM.parseDesignFile("tests/fixtures/design/DESIGN.md");
+      return d.direction === "Hangat artisanal" && JSON.stringify(d.tokens) === JSON.stringify(["#2C1A14", "#A0591E", "#FFF8F0", "#FFFFFF"]) && d.typography === "Fraunces (display), Inter (body)" && d.signature === "cangkir SVG berasap" && JSON.stringify(d.fonts) === '["fraunces","inter"]'; })());
+  // anti-slop (v0.3.28 §3.2): subset kurasi native dari Impeccable
+  // (Apache-2.0, 62 aturan built-in terverifikasi di registry.rs;
+  // TIDAK dibundel — telemetrinya menelepon https://impeccable.style/api).
+  // Tiap aturan: tes merah + hijau + pengecualian brief eksplisit (allow).
+  ok("design-gate: rgbToHsl — ungu #7C3AED hue ≈ 262, merah hue 0, abu-abu saturasi 0",
+    Math.abs(DG.rgbToHsl([124, 58, 237]).h - 262) < 1 && DG.rgbToHsl([255, 0, 0]).h === 0 && DG.rgbToHsl([128, 128, 128]).s === 0);
+  ok("design-gate: parseGradientStops baca rgb() + #hex",
+    DG.parseGradientStops("linear-gradient(135deg, rgb(124, 58, 237) 0%, #4F46E5 100%)").length === 2 &&
+    DG.parseGradientStops("none").length === 0);
+  ok("design-gate: anti-slop purple-gradient — gradien ungu gagal; gradien dari token lolos; cyan gagal; gradien karamel lolos; tanpa gradien tidak dicek",
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(124, 58, 237) 0%, rgb(79, 70, 229) 100%)", where: "div: hero" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(124, 58, 237) 0%, rgb(79, 70, 229) 100%)" }], tokens: ["#7C3AED", "#4F46E5"] }).length === 0 &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(90deg, rgb(34, 211, 238) 0%, rgb(6, 182, 212) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(90deg, rgb(198, 139, 78) 0%, rgb(62, 39, 35) 100%)" }] }).length === 0 &&
+    DG.checkAntiSlop({}).length === 0);
+  ok("design-gate: anti-slop repeating-gradient — gradien berulang gagal, gradien biasa lolos",
+    DG.checkAntiSlop({ backgrounds: [{ value: "repeating-linear-gradient(45deg, rgb(229, 231, 235) 0px, rgb(255, 255, 255) 10px)" }] }).some((f) => f.detail.startsWith("repeating-gradient")) &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(90deg, rgb(198, 139, 78) 0%, rgb(62, 39, 35) 100%)" }] }).length === 0);
+  ok("design-gate: anti-slop gradient-text — teks bergradien gagal; allow mengecualikan",
+    DG.checkAntiSlop({ gradientTexts: [{ where: "h1: Kopi Senja" }] }).some((f) => f.detail.startsWith("gradient-text")) &&
+    DG.checkAntiSlop({ gradientTexts: [{ where: "h1: Kopi Senja" }], allow: ["gradient-text"] }).length === 0);
+  ok("design-gate: anti-slop overused-font — Inter >50% teks gagal; dideklarasi di DESIGN.md lolos; ≤50% lolos",
+    DG.checkAntiSlop({ texts: [{ font: "Inter, sans-serif" }, { font: "Inter, sans-serif" }, { font: "Georgia, serif" }] }).some((f) => f.detail.startsWith("overused-font")) &&
+    DG.checkAntiSlop({ texts: [{ font: "Inter, sans-serif" }, { font: "Inter, sans-serif" }], declaredFonts: ["inter"] }).length === 0 &&
+    DG.checkAntiSlop({ texts: [{ font: "Inter, sans-serif" }, { font: "Georgia, serif" }, { font: "Georgia, serif" }] }).length === 0);
+  ok("design-gate: anti-slop allow — brief eksplisit mengecualikan purple-gradient + repeating-gradient",
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(124, 58, 237) 0%, rgb(79, 70, 229) 100%)" }, { value: "repeating-linear-gradient(45deg, rgb(229, 231, 235) 0px, rgb(255, 255, 255) 10px)" }], allow: ["purple-gradient", "repeating-gradient"] }).length === 0);
   // renderer-agnostik: input gate yang sama dari report inspect dan export Figcraft -> vonis sama
   const repBad = JSON.parse(fs.readFileSync("tests/fixtures/design/report.json", "utf8"));
   const repClean = JSON.parse(fs.readFileSync("tests/fixtures/design/report-clean.json", "utf8"));
@@ -906,6 +955,26 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
       slop.pass === false && ["contrast", "tap-target", "overflow", "assets"].every((c) => slopChecks.has(c)));
     const fixed = await DM.measureAndGate("tests/fixtures/design/fixed.html");
     ok("design-gate red-test: fixed PASS tanpa findings", fixed.pass === true && fixed.findings.length === 0);
+    // token-fidelity red-test (v0.3.28 §3.1): fixture bersih (hanya token
+    // deklarasi + tint token + transparent) lolos; fixture slop gagal.
+    const TOKENS = ["#2C1A14", "#A0591E", "#FFF8F0", "#FFFFFF"];
+    const tokClean = await DM.measureAndGate("tests/fixtures/design/token-clean.html", { designFile: "tests/fixtures/design/DESIGN.md" });
+    ok("design-gate red-test: token-clean PASS via DESIGN.md (hanya token + tint token + transparent)",
+      tokClean.pass === true && tokClean.findings.length === 0);
+    const tokSlop = await DM.measureAndGate("tests/fixtures/design/token-slop.html", { tokens: TOKENS });
+    const tokChecks = new Set(tokSlop.findings.map((f) => f.check));
+    ok("design-gate red-test: token-slop FAIL token-fidelity (warna solid di luar token)",
+      tokSlop.pass === false && tokChecks.has("token-fidelity") && tokSlop.findings.filter((f) => f.check === "token-fidelity").length === 2);
+    // anti-slop red-test (v0.3.28 §3.2): fixture gradien ungu + teks
+    // bergradien + gradien berulang + Inter di mana-mana gagal 4 aturan.
+    const antiSlop = await DM.measureAndGate("tests/fixtures/design/anti-slop.html");
+    const antiDetails = antiSlop.findings.filter((f) => f.check === "anti-slop").map((f) => f.detail);
+    ok("design-gate red-test: anti-slop FAIL 4 aturan (purple-gradient + repeating-gradient + gradient-text + overused-font)",
+      antiSlop.pass === false &&
+      antiDetails.some((d) => d.startsWith("purple-gradient")) &&
+      antiDetails.some((d) => d.startsWith("repeating-gradient")) &&
+      antiDetails.some((d) => d.startsWith("gradient-text")) &&
+      antiDetails.some((d) => d.startsWith("overused-font")));
   }
 }
 console.log(`\n${pass} passed, ${fail} failed`);

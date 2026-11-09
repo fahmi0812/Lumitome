@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixture token-slop — warna solid di luar token (RED-TEST)</title>
+<style>
+  body { font-family: sans-serif; background: #FFF8F0; color: #2C1A14; margin: 0; padding: 16px; }
+  h1 { color: #2C1A14; font-size: 20px; }
+  p { color: #2C1A14; }
+  .offtoken { background: #7C3AED; color: #FFFFFF; padding: 12px; max-width: 100%; box-sizing: border-box; }
+  .offtoken2 { background: #123456; color: #FFFFFF; padding: 12px; }
+  button { height: 48px; min-width: 48px; padding: 0 16px; background: #A0591E; color: #FFFFFF; border: none; }
+  .state { color: #2C1A14; font-size: 14px; }
+</style>
+</head>
+<body>
+  <h1>Kopi Senja — token-slop</h1>
+  <p>Dua blok solid di luar token deklarasi (ungu + biru gelap).</p>
+  <div class="offtoken">Blok ungu — bukan token.</div>
+  <div class="offtoken2">Blok biru gelap — bukan token.</div>
+  <button>Pesan Sekarang</button>
+  <div class="state" data-state="empty">Belum ada pesanan.</div>
+  <div class="state" data-state="loading">Memuat menu…</div>
+  <div class="state" data-state="error">Gagal memuat. Coba lagi.</div>
+</body>
+</html>

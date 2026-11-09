@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixture token-clean — hanya token deklarasi (DESIGN.md)</title>
+<style>
+  body { font-family: sans-serif; background: #FFF8F0; color: #2C1A14; margin: 0; padding: 16px; }
+  h1 { color: #2C1A14; font-size: 20px; }
+  p { color: #2C1A14; }
+  .card { background: #FFFFFF; border: 1px solid rgba(160, 89, 30, 0.5); padding: 12px; max-width: 100%; box-sizing: border-box; }
+  .card p { color: #2C1A14; }
+  .strip { background: #A0591E; height: 8px; }
+  button { height: 48px; min-width: 48px; padding: 0 16px; background: #2C1A14; color: #FFFFFF; border: none; }
+  .ghost { background: transparent; color: #2C1A14; font-size: 14px; }
+  .state { color: #2C1A14; font-size: 14px; }
+</style>
+</head>
+<body>
+  <h1>Kopi Senja — token-clean</h1>
+  <p>Semua warna dari token DESIGN.md; border tint dari token; satu elemen transparent.</p>
+  <div class="card"><p>Kartu putih dengan border tint karamel.</p></div>
+  <div class="strip"></div>
+  <button>Pesan Sekarang</button>
+  <div class="ghost">Teks di atas background transparent.</div>
+  <div class="state" data-state="empty">Belum ada pesanan.</div>
+  <div class="state" data-state="loading">Memuat menu…</div>
+  <div class="state" data-state="error">Gagal memuat. Coba lagi.</div>
+</body>
+</html>

@@ -57,6 +57,18 @@ export function measureInPage() {
     return [255, 255, 255];
   };
   const texts = [];
+  // warna render untuk cek token-fidelity (§3.1 v0.3.28): computed styles
+  // color/background/border dari elemen yang terlihat. Gradien dicatat
+  // terpisah (backgroundImage) untuk cek anti-slop — stop warnanya diurus
+  // di sana, bukan di sini. Bayangan (box-shadow) sengaja tidak dikumpulkan.
+  const usedColors = [];
+  const backgrounds = [];
+  const gradientTexts = [];
+  const addColor = (raw, where) => {
+    const p = parseRgb(raw);
+    if (!p) return;
+    usedColors.push({ rgb: p.rgb, alpha: p.a, where });
+  };
   for (const el of document.body.querySelectorAll("*")) {
     if (texts.length >= 500) break;
     const tag = el.tagName;
@@ -73,7 +85,32 @@ export function measureInPage() {
     if (!fg || fg.a < 0.99) continue;
     const bg = bgBehind(el);
     if (!bg) continue;
-    texts.push({ fg: fg.rgb, bg, size, weight: +cs.fontWeight || 400, where: `${tag.toLowerCase()}: ${direct.slice(0, 50)}` });
+    texts.push({ fg: fg.rgb, bg, size, weight: +cs.fontWeight || 400, font: cs.fontFamily, where: `${tag.toLowerCase()}: ${direct.slice(0, 50)}` });
+  }
+  // warna + gradien dikumpulkan dari SEMUA elemen terlihat (bukan cuma teks),
+  // supaya kartu/tombol/border ikut dicek token-fidelity-nya.
+  for (const el of document.body.querySelectorAll("*")) {
+    if (!visible(el)) continue;
+    const cs = getComputedStyle(el);
+    const tag = el.tagName.toLowerCase();
+    const where = `${tag}: ${(el.innerText || "").replace(/\s+/g, " ").trim().slice(0, 50)}`;
+    addColor(cs.color, where);
+    addColor(cs.backgroundColor, where);
+    addColor(cs.borderTopColor, where);
+    addColor(cs.borderRightColor, where);
+    addColor(cs.borderBottomColor, where);
+    addColor(cs.borderLeftColor, where);
+    const bi = cs.backgroundImage;
+    if (bi && bi !== "none" && /gradient\(/i.test(bi)) {
+      backgrounds.push({ value: bi.slice(0, 500), where });
+      // teks bergradien (§3.2 v0.3.28): background-clip text + gradien.
+      // Dipisah dari loop teks di atas — teks ini color: transparent
+      // (alpha 0) sehingga tidak masuk texts. backgroundClip ter-computed
+      // adalah "text" baik ditulis background-clip maupun -webkit-.
+      if ((cs.backgroundClip === "text" || cs.webkitBackgroundClip === "text") && (el.innerText || "").trim()) {
+        gradientTexts.push({ where });
+      }
+    }
   }
   const taps = [];
   for (const el of document.querySelectorAll('button, a, input, [role="button"]')) {
@@ -104,7 +141,7 @@ export function measureInPage() {
   }
   return {
     overflow: { scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth },
-    texts, taps, images, fonts, longText, states,
+    texts, taps, images, fonts, longText, states, usedColors, backgrounds, gradientTexts,
   };
 }
 /* eslint-enable no-undef */
@@ -132,7 +169,8 @@ const dedupe = (arr, key) => [...new Map(arr.map((x) => [key(x), x])).values()];
 /**
  * Ukur halaman di browser sungguhan di tiap viewport stress-test.
  * target: URL http(s) atau path file .html lokal.
- * → {screenshots, contrast, tapTargets, viewports, assets, textCases}
+ * → {screenshots, contrast, tapTargets, viewports, assets, textCases,
+ *    usedColors, backgrounds, gradientTexts, texts}
  * (bentuk input evaluateDesign; screenshots = bukti render).
  */
 export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } = {}) {
@@ -149,7 +187,7 @@ export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } 
     // VM ini jalan sebagai root — Chrome menolak start tanpa --no-sandbox.
     extraArgs: typeof process.getuid === "function" && process.getuid() === 0 ? ["--no-sandbox"] : [],
   });
-  const input = { screenshots: [], contrast: [], tapTargets: [], viewports: [], assets: { fonts: [], images: [] }, textCases: {} };
+  const input = { screenshots: [], contrast: [], tapTargets: [], viewports: [], assets: { fonts: [], images: [] }, textCases: {}, usedColors: [], backgrounds: [], gradientTexts: [], texts: [] };
   try {
     for (const w of widths) {
       const h = HEIGHT[w] || Math.round(w * 0.625);
@@ -173,6 +211,13 @@ export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } 
         input.tapTargets.push(...m.taps);
         input.assets.fonts.push(...m.fonts);
         input.assets.images.push(...m.images);
+        input.usedColors.push(...(m.usedColors ?? []));
+        input.backgrounds.push(...(m.backgrounds ?? []));
+        input.gradientTexts.push(...(m.gradientTexts ?? []));
+        // texts disimpan apa adanya (fg/bg/size/weight/font/where) untuk
+        // cek anti-slop overused-font — didedupe per elemen (bukan per
+        // viewport) supaya penyebut share-nya benar.
+        input.texts.push(...(m.texts ?? []));
         if (m.longText && !input.textCases.longText) input.textCases.longText = m.longText;
         // state dicek sekali (DOM sama di semua viewport) — dari viewport pertama
         if (w === widths[0]) {
@@ -192,6 +237,10 @@ export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } 
   input.tapTargets = dedupe(input.tapTargets, (t) => `${t.label}|${t.width}x${t.height}`);
   input.assets.fonts = dedupe(input.assets.fonts, (f) => f.name);
   input.assets.images = dedupe(input.assets.images, (i) => i.src);
+  input.usedColors = dedupe(input.usedColors, (c) => `${c.rgb.join(",")}|${c.alpha}`);
+  input.backgrounds = dedupe(input.backgrounds, (b) => b.value);
+  input.gradientTexts = dedupe(input.gradientTexts, (g) => g.where);
+  input.texts = dedupe(input.texts, (t) => `${t.where}|${t.font}`);
   return input;
 }
 
@@ -272,16 +321,65 @@ export function fromFigcraftExport(dir) {
   }
   input.screenshots.sort((a, b) => (a.width ?? 0) - (b.width ?? 0) || (a.path < b.path ? -1 : 1));
   if (sidecar) {
-    for (const k of ["contrast", "tapTargets", "viewports", "assets", "textCases", "consistency", "licenses"]) {
+    for (const k of ["contrast", "tapTargets", "viewports", "assets", "textCases", "consistency", "licenses", "tokens", "usedColors", "backgrounds", "gradientTexts"]) {
       if (sidecar[k] !== undefined) input[k] = sidecar[k];
     }
   }
   return input;
 }
 
-/** measurePage → evaluateDesign. → {pass, findings, screenshots, input}. */
+/**
+ * Baca DESIGN.md — source of truth arah + token (§3.1 v0.3.28).
+ * Format yang dibaca Maker (lihat loopdesign §1):
+ *   Arah: <nama arah estetika>
+ *   Token: (daftar hex, satu per baris — atau di mana saja di file)
+ *   Tipografi: <font display>, <font body>
+ *   Signature: <elemen signature>
+ * Token = SEMUA kode hex (#rrggbb/#rgb) yang ditemukan di file (dedupe,
+ * huruf besar). Arah/tipografi/signature dibaca dari baris berlabel bila ada.
+ * → {direction, tokens, typography, signature, fonts} (null bila tidak ada).
+ * fonts = nama font (lowercase) dari baris Tipografi — "Fraunces (display),
+ * Inter (body)" → ["fraunces", "inter"]; dipakai pengecualian overused-font.
+ */
+export function parseDesignFile(path) {
+  const raw = readFileSync(resolve(path), "utf8");
+  const tokens = [...new Set([...raw.matchAll(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g)].map((m) => "#" + m[1].toUpperCase()))];
+  const line = (re) => raw.match(re)?.[1]?.trim() || null;
+  const typography = line(/^(?:Tipografi|Typography)\s*:\s*(.+)$/m);
+  const fonts = typography
+    ? typography.split(",").map((p) => p.split("(")[0].trim().replace(/^["']|["']$/g, "").toLowerCase()).filter(Boolean)
+    : [];
+  return {
+    direction: line(/^(?:Arah|Direction)\s*:\s*(.+)$/m),
+    tokens,
+    typography,
+    signature: line(/^Signature\s*:\s*(.+)$/m),
+    fonts,
+  };
+}
+
+/**
+ * measurePage → evaluateDesign. → {pass, findings, screenshots, input}.
+ * opts.designFile: path DESIGN.md — token dibaca dari sana (fail bila file
+ * tidak mendeklarasikan token hex sama sekali); opts.tokens: token langsung
+ * (dipakai tes/red-test; menang atas designFile bila keduanya ada).
+ * opts.declaredFonts: font yang dideklarasikan (menang atas designFile);
+ * opts.allow: id aturan anti-slop yang dikecualikan bila brief meminta
+ * eksplisit (mis. ["gradient-text"]).
+ */
 export async function measureAndGate(target, opts = {}) {
   const input = await measurePage(target, opts);
+  if (opts.tokens) {
+    input.tokens = opts.tokens;
+  } else if (opts.designFile) {
+    const design = parseDesignFile(opts.designFile);
+    if (design.tokens.length === 0) throw new Error(`DESIGN.md ${opts.designFile} tidak mendeklarasikan token hex`);
+    input.tokens = design.tokens;
+    input.design = design;
+    input.declaredFonts = design.fonts;
+  }
+  if (opts.declaredFonts) input.declaredFonts = opts.declaredFonts;
+  if (opts.allow) input.allow = opts.allow;
   const gate = evaluateDesign(input);
   return { pass: gate.pass, findings: gate.findings, screenshots: input.screenshots, input };
 }

@@ -1,11 +1,14 @@
 /**
- * Lumitome design-gate — gate deterministik untuk hasil desain (v0.3.26).
+ * Lumitome design-gate — gate deterministik untuk hasil desain (v0.3.26;
+ * token-fidelity + anti-slop v0.3.28).
  * Meniru pola done-gate (`harness/lumi-guard.mjs`): input render (screenshot PNG)
  * + metrik terhitung; output `{pass, findings[]}`. Pure, zero dependency, ESM.
  *
- * Yang diukur gate (deterministik, §4.1 rencana v0.3.26):
+ * Yang diukur gate (deterministik, §4.1 rencana v0.3.26 + §3.1/§3.2 v0.3.28):
  * viewport ekstrem, edge-case teks/data, aksesibilitas (kontras WCAG AA,
- * tap target), aset gagal muat, konsistensi data, lisensi aset.
+ * tap target), aset gagal muat, konsistensi data, lisensi aset,
+ * kesetiaan token (warna render vs token deklarasi DESIGN.md),
+ * anti-slop (pola slop yang bisa dihitung dari DOM/computed styles).
  * Yang TIDAK di gate: "terlihat bagus" / "terasa modern" — itu kerja kritikus.
  *
  * Fail-closed: warna yang tidak bisa diparse, lisensi yang tidak dikenal, dan
@@ -189,6 +192,200 @@ export function checkLicenses(assets = []) {
   return out;
 }
 
+/** [r,g,b] (0-255) → '#RRGGBB' (huruf besar). */
+export function rgbToHex(rgb) {
+  return "#" + rgb.map((n) => Math.round(n).toString(16).padStart(2, "0")).join("").toUpperCase();
+}
+
+/** [r,g,b] (0-255) → {h: 0-360, s: 0-1, l: 0-1} (HSL). */
+export function rgbToHsl([r, g, b]) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return { h: 0, s: 0, l };
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+  else if (max === g) h = ((b - r) / d + 2) * 60;
+  else h = ((r - g) / d + 4) * 60;
+  return { h, s, l };
+}
+
+/**
+ * Parse stop warna dari string gradien CSS (computed backgroundImage):
+ * rgb()/rgba()/#hex → [{rgb, alpha}]. String lain diabaikan.
+ */
+export function parseGradientStops(value = "") {
+  const out = [];
+  const s = String(value);
+  for (const m of s.matchAll(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*([\d.]+))?\s*\)/g)) {
+    out.push({ rgb: [+m[1], +m[2], +m[3]], alpha: m[4] === undefined ? 1 : +m[4] });
+  }
+  for (const m of s.matchAll(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g)) {
+    const rgb = parseColor("#" + m[1]);
+    if (rgb) out.push({ rgb, alpha: 1 });
+  }
+  return out;
+}
+
+/**
+ * Font yang paling sering dipakai generator AI (Impeccable `overused-font`:
+ * Inter, Roboto, Fraunces, Geist, Plus Jakarta Sans, Space Grotesk).
+ * Bukan larangan mutlak — yang dicek adalah dominasi TANPA deklarasi di
+ * DESIGN.md (lihat checkAntiSlop).
+ */
+export const OVERUSED_FONTS = new Set(["inter", "roboto", "fraunces", "geist", "plus jakarta sans", "space grotesk"]);
+
+/** Ambil nama family pertama dari string font-family CSS (lowercase). */
+export function firstFontFamily(font = "") {
+  return String(font).split(",")[0].trim().replace(/^["']|["']$/g, "").toLowerCase();
+}
+
+/**
+ * Anti-slop deterministik (§3.2 v0.3.28) — subset kurasi native, zero-dep.
+ * Sumber aturan: Impeccable (pbakaus/impeccable, Apache-2.0, 62 aturan
+ * built-in terverifikasi 2026-11-09 di crates/foundation/src/registry.rs;
+ * TIDAK dibundel — telemetrinya ON secara default dan menelepon
+ * https://impeccable.style/api (crates/context/src/telemetry.rs:
+ * off hanya via DO_NOT_TRACK / IMPECCABLE_NO_TELEMETRY /
+ * "telemetry": false di config.local.json), jadi yang dipakai hanya IDE
+ * aturan, diimplementasi ulang native di sini).
+ * ui-craft (educlopez/ui-craft, MIT) diverifikasi sebagai koleksi skill
+ * (audit/kritik/heuristic + UICraftScore), BUKAN registry 43 aturan —
+ * klaim "43 aturan" dari riset tidak terverifikasi, jadi subset ini TIDAK
+ * mengambil apa pun dari ui-craft.
+ *
+ * Aturan final (masing-masing punya tes merah + hijau):
+ * - purple-gradient (Impeccable `ai-color-palette`): gradien dengan stop
+ *   ungu/violet (hue 240–300) atau cyan (hue 170–200, saturasi > 0.15).
+ *   Lolos bila SEMUA stop-nya token deklarasi atau transparent — gradien
+ *   dari palet brief adalah niat, bukan slop.
+ * - repeating-gradient (Impeccable `repeating-stripes-gradient`): gradien
+ *   berulang sebagai dekorasi permukaan.
+ * - gradient-text (Impeccable `gradient-text`): teks dengan background-clip
+ *   text + gradien (teks harus warna solid).
+ * - overused-font (Impeccable `overused-font` + Anthropic frontend-design):
+ *   >50% teks terukur memakai font overused sebagai family pertama DAN
+ *   font itu tidak dideklarasikan di DESIGN.md (tipografi).
+ *
+ * Pengecualian (§6 rencana): bila brief MEMINTA eksplisit pola itu, caller
+ * mengisi input.allow dengan id aturan (mis. ["gradient-text"]) — bukan
+ * slop, jadi tidak dicek. Tanpa allow, aturan berlaku penuh.
+ *
+ * Yang sengaja TIDAK masuk subset (dengan alasan):
+ * - nested-cards: butuh heuristik "kartu" (border+radius+shadow bersarang)
+ *   yang rawan false positive — butuh kalibrasi sendiri.
+ * - cramped-padding / monotonous-spacing / flat-type-hierarchy: butuh
+ *   geometri teks-vs-box dan statistik distribusi + ambang kalibrasi.
+ * - marquee: prompt benchmark kita sendiri MEWAJIBKAN ticker berjalan —
+ *   aturan ini akan false-fail pada brief yang sah.
+ * - icon-tile-stack / hero-eyebrow-chip / kicker / oversized-h1: butuh
+ *   heuristik geometri layout DOM, bukan warna/font yang bisa dihitung.
+ * - tiny-text / undersized-ui-text: butuh ambang per-peran teks (label
+ *   mikro vs body) yang belum dikalibrasi.
+ * - codex-grid-background: butuh analisis background-size + layer gradien;
+ *   repeating-gradient sudah menangkap pola gradien-berulang yang sejenis.
+ *
+ * input: {backgrounds?, gradientTexts?, texts?, tokens?, declaredFonts?,
+ * allow?}. Field yang tidak ada = tidak dicek.
+ */
+export function checkAntiSlop(input = {}) {
+  const out = [];
+  const allow = new Set(Array.isArray(input.allow) ? input.allow : []);
+  const tokens = (Array.isArray(input.tokens) ? input.tokens : []).map((t) => parseColor(t)).filter(Boolean);
+  const isToken = (rgb) => tokens.some((t) => t[0] === rgb[0] && t[1] === rgb[1] && t[2] === rgb[2]);
+  const backgrounds = Array.isArray(input.backgrounds) ? input.backgrounds : [];
+  if (!allow.has("purple-gradient") || !allow.has("repeating-gradient")) {
+    for (const b of backgrounds) {
+      const value = String(b.value ?? "");
+      if (!/gradient\(/i.test(value)) continue;
+      const where = b.where ? ` di '${String(b.where).slice(0, 60)}'` : "";
+      if (!allow.has("repeating-gradient") && /repeating-(linear|radial)-gradient\(/i.test(value)) {
+        out.push(finding("anti-slop", "fail", `repeating-gradient: gradien berulang sebagai dekorasi permukaan${where} (Impeccable repeating-stripes-gradient)`));
+        continue;
+      }
+      if (allow.has("purple-gradient")) continue;
+      const stops = parseGradientStops(value);
+      const offToken = stops.filter((s) => s.alpha > 0 && !isToken(s.rgb));
+      if (offToken.length === 0) continue;
+      const tell = offToken.find((s) => {
+        const { h, s: sat } = rgbToHsl(s.rgb);
+        return sat > 0.15 && ((h >= 240 && h <= 300) || (h >= 170 && h <= 200));
+      });
+      if (tell) {
+        out.push(finding("anti-slop", "fail", `purple-gradient: gradien dengan stop ${rgbToHex(tell.rgb)} (hue ${Math.round(rgbToHsl(tell.rgb).h)}°)${where} — bukan token deklarasi (Impeccable ai-color-palette)`));
+      }
+    }
+  }
+  if (!allow.has("gradient-text")) {
+    for (const g of Array.isArray(input.gradientTexts) ? input.gradientTexts : []) {
+      out.push(finding("anti-slop", "fail", `gradient-text: teks bergradien${g.where ? ` di '${String(g.where).slice(0, 60)}'` : ""} — teks harus warna solid (Impeccable gradient-text)`));
+    }
+  }
+  if (!allow.has("overused-font")) {
+    const declared = new Set((Array.isArray(input.declaredFonts) ? input.declaredFonts : []).map((f) => String(f).toLowerCase()));
+    const texts = (Array.isArray(input.texts) ? input.texts : []).filter((t) => typeof t.font === "string" && t.font.trim() !== "");
+    const overused = texts.filter((t) => OVERUSED_FONTS.has(firstFontFamily(t.font)) && !declared.has(firstFontFamily(t.font)));
+    if (texts.length > 0 && overused.length / texts.length > 0.5) {
+      const sample = [...new Set(overused.map((t) => firstFontFamily(t.font)))].join(", ");
+      out.push(finding("anti-slop", "fail", `overused-font: ${overused.length}/${texts.length} teks memakai font overused (${sample}) tanpa deklarasi di DESIGN.md (Impeccable overused-font)`));
+    }
+  }
+  return out;
+}
+
+/**
+ * Kesetiaan token (§3.1 v0.3.28): setiap warna render harus berasal dari
+ * token deklarasi (DESIGN.md — source of truth).
+ * tokens: ['#3E2723', ...] (nilai yang bisa diparse parseColor).
+ * usedColors: [{rgb: [r,g,b], alpha: 0-1, where}] dari measurePage
+ * (computed styles: color/background/border, dedupe).
+ *
+ * Aturan turunan — eksplisit, masing-masing dites:
+ * - solid (alpha >= 0.99): rgb harus sama persis dengan salah satu token.
+ * - tint (0 < alpha < 0.99): diizinkan HANYA bila rgb-nya token (tint dari token).
+ * - transparent (alpha === 0): diizinkan.
+ * - warna render yang tidak bisa diparse: fail (fail-closed).
+ * - token deklarasi yang tidak bisa diparse: fail (deklarasi rusak).
+ *
+ * Yang sengaja TIDAK dicek di sini: bayangan (box-shadow/text-shadow tidak
+ * dikumpulkan measurePage, jadi tidak bisa false-fail) dan gradien
+ * (stop warnanya diurus cek anti-slop, bukan cek ini).
+ */
+export function checkTokenFidelity(tokens = [], usedColors = []) {
+  const out = [];
+  if (!tokens || tokens.length === 0 || !usedColors || usedColors.length === 0) return out;
+  const parsed = tokens.map((t) => ({ raw: t, rgb: parseColor(t) }));
+  for (const p of parsed) {
+    if (!p.rgb) out.push(finding("token-fidelity", "fail", `token deklarasi '${String(p.raw).slice(0, 40)}' tidak bisa diparse — perbaiki DESIGN.md`));
+  }
+  const valid = parsed.filter((p) => p.rgb).map((p) => p.rgb);
+  if (valid.length === 0) return out;
+  const isToken = (rgb) => valid.some((t) => t[0] === rgb[0] && t[1] === rgb[1] && t[2] === rgb[2]);
+  const seen = new Set();
+  for (const u of usedColors) {
+    const rgb = Array.isArray(u.rgb) ? u.rgb : parseColor(u.color ?? u);
+    const alpha = typeof u.alpha === "number" ? u.alpha : 1;
+    if (!rgb || rgb.length < 3 || !rgb.slice(0, 3).every((n) => Number.isFinite(n) && n >= 0 && n <= 255)) {
+      out.push(finding("token-fidelity", "fail", `warna render tidak bisa diparse (${JSON.stringify(u).slice(0, 60)})`));
+      continue;
+    }
+    const key = `${rgb.slice(0, 3).join(",")}|${alpha}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (alpha === 0) continue; // transparent
+    if (isToken(rgb)) continue;
+    const where = u.where ? ` di '${String(u.where).slice(0, 60)}'` : "";
+    if (alpha < 0.99) {
+      out.push(finding("token-fidelity", "fail", `tint rgba(${rgb.slice(0, 3).join(",")}, ${alpha})${where} bukan dari token deklarasi`));
+    } else {
+      out.push(finding("token-fidelity", "fail", `warna solid ${rgbToHex(rgb)}${where} bukan token deklarasi (token: ${tokens.join(", ")})`));
+    }
+  }
+  return out;
+}
+
 // ---------- stress-test & loop ----------
 
 /** Definisi edge-case yang harus diproduksi renderer sebelum dinilai gate. */
@@ -204,7 +401,9 @@ export function stressCases() {
 /**
  * Satu titik penilaian: gabungkan semua cek jadi {pass, findings}.
  * input: {screenshots?, contrast?, tapTargets?, viewports?, assets?,
- * textCases?, consistency?, licenses?}. Field yang tidak ada = tidak dicek.
+ * textCases?, consistency?, licenses?, tokens?, usedColors?, backgrounds?,
+ * gradientTexts?, declaredFonts?, allow?}.
+ * Field yang tidak ada = tidak dicek.
  * pass = tidak ada finding severity 'fail'. Findings terurut deterministik
  * berdasarkan nama check, lalu detail.
  */
@@ -217,6 +416,8 @@ export function evaluateDesign(input = {}) {
     ...evaluateTextCases(input.textCases),
     ...checkConsistency(input.consistency),
     ...checkLicenses(input.licenses),
+    ...checkTokenFidelity(input.tokens, input.usedColors),
+    ...checkAntiSlop(input),
   ];
   findings.sort((a, b) => (a.check < b.check ? -1 : a.check > b.check ? 1 : a.detail < b.detail ? -1 : a.detail > b.detail ? 1 : 0));
   return { pass: !findings.some((f) => f.severity === "fail"), findings };
@@ -236,10 +437,14 @@ export function nextLoopAction({ iteration = 1, maxIterations = 3, gatePass = fa
 }
 
 /**
- * Input kritikus (§4.3): HANYA screenshot + hasil ukur gate. Field apa pun yang
- * berbau kode/klaim (code, source, claims, prompt, dll) dibuang — kritikus
- * tidak pernah melihat kode atau klaim Maker.
+ * Input kritikus (§4.3 v0.3.26, §3.4 v0.3.28): screenshot + hasil ukur gate +
+ * brief/token. Field apa pun yang berbau kode/klaim (code, source, claims,
+ * prompt, dll) dibuang — kritikus tidak pernah melihat kode atau klaim Maker.
+ * Yang berubah di v0.3.28: `brief` (arah + token + ringkasan brief/data)
+ * IKUT dikirim, supaya kritikus bisa menangkap pelanggaran token/brief —
+ * sebelumnya aturan "screenshot + gate saja" ikut membuang token, jadi
+ * kritikus pun buta terhadap drift token.
  */
-export function criticInput({ screenshots, gate } = {}) {
-  return { screenshots, findings: gate?.findings ?? [], pass: !!gate?.pass };
+export function criticInput({ screenshots, gate, brief } = {}) {
+  return { screenshots, findings: gate?.findings ?? [], pass: !!gate?.pass, brief: brief ?? null };
 }
