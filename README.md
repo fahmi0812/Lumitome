@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.29-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.30-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -32,13 +32,15 @@ curl -fsSL https://raw.githubusercontent.com/fahmi0812/Lumitome/main/install.sh 
 
 This puts everything in `~/.lumitome` and adds a `lumitome` command in `~/.local/bin`.
 
+While it installs (and uninstalls) you see one status line and one line when it is done. If something goes wrong you get a short message; the full details are in `~/.lumitome/logs/install.log`.
+
 **Windows, or any system with npm:**
 
 ```bash
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.29.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.30.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
@@ -155,7 +157,7 @@ This is optional. Skip it if you are not sure.
 bash ~/.lumitome/src/install.sh --uninstall
 ```
 
-This removes `~/.lumitome` and the `lumitome` command. Nothing else is touched.
+This removes `~/.lumitome` and the `lumitome` command. Nothing else is touched. Like installing, it shows one status line and one line when it is done.
 
 If you installed with npm: `npm uninstall -g lumitome`, then delete the `.lumitome` folder in your home folder.
 

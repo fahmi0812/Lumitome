@@ -735,6 +735,62 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   fs.rmSync(home, { recursive: true, force: true });
 }
 
+// ---------- v0.3.30: install.sh tenang — spinner bash, baris polos non-TTY, log file ----------
+{
+  const osm = await import("node:os");
+  const INST = fs.readFileSync("install.sh", "utf8");
+  const BASH = "/bin/bash";
+  ok("install tenang: 7 langkah berlabel manusiawi + log install.log, tanpa 'N/7' teknis di layar",
+    ["Menyiapkan mesin", "Menyiapkan Node", "Menyiapkan codebase-memory", "Menyiapkan uv", "Menyiapkan env", "Menyiapkan proyek", "Menyiapkan launcher"].every((s) => INST.includes(s))
+    && INST.includes("logs/install.log") && !/say "1\/7/.test(INST) && !/say "7\/7/.test(INST));
+  ok("install tenang: spinner bash murni (braille + ASCII), logo emas dua warna, non-TTY tanpa ANSI",
+    INST.includes("⠋") && INST.includes("L U M I") && INST.includes("38;2;%s;%s;%sm") && INST.includes("_gold 201 150 46") && INST.includes("_gold 243 210 122")
+    && INST.includes("TERM") && INST.includes('"dumb"') && INST.includes("CI") && INST.includes("_spin_stop"));
+  ok("install.sh: bash -n lolos", cp.spawnSync(BASH, ["-n", "install.sh"], { encoding: "utf8" }).status === 0);
+  const ESC = /\x1b\[/;
+  const sb = fs.mkdtempSync(path.join(osm.tmpdir(), "lumiinst-"));
+  fs.mkdirSync(path.join(sb, "tmp"), { recursive: true });
+  const runInst = (args, env = {}) => cp.spawnSync(BASH, ["install.sh", ...args], { encoding: "utf8", timeout: 120000, env: { ...process.env, TMPDIR: path.join(sb, "tmp"), ...env } });
+  const mkHome = (name) => { const h = path.join(sb, name); fs.mkdirSync(h, { recursive: true }); return h; };
+  // (1) --uninstall non-TTY: satu baris hasil, tanpa ANSI/spinner; sentinel user utuh
+  const h1 = mkHome("h1");
+  fs.mkdirSync(path.join(h1, ".lumitome"), { recursive: true }); fs.writeFileSync(path.join(h1, ".lumitome", ".lumitome-home"), "");
+  fs.mkdirSync(path.join(h1, ".local", "bin"), { recursive: true });
+  fs.writeFileSync(path.join(h1, ".local", "bin", "lumitome"), "#!/usr/bin/env bash\n# LUMITOME-LAUNCHER\n");
+  fs.writeFileSync(path.join(h1, "keep.txt"), "sentinel");
+  const u1 = runInst(["--uninstall"], { HOME: h1, LUMI_HOME: path.join(h1, ".lumitome") });
+  const u1out = u1.stdout + u1.stderr;
+  ok("install --uninstall non-TTY: 'Selesai', tanpa ANSI/spinner, launcher + home terhapus, sentinel utuh",
+    u1.status === 0 && /Selesai/.test(u1out) && !ESC.test(u1out) && !/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/.test(u1out)
+    && !fs.existsSync(path.join(h1, ".local", "bin", "lumitome")) && !fs.existsSync(path.join(h1, ".lumitome")) && fs.existsSync(path.join(h1, "keep.txt")));
+  // (1b) uninstall tidak menyentuh home tanpa marker / launcher bukan milik lumitome
+  const h2 = mkHome("h2");
+  fs.mkdirSync(path.join(h2, ".lumitome"), { recursive: true }); fs.writeFileSync(path.join(h2, ".lumitome", "punya-user.txt"), "jangan hapus");
+  fs.mkdirSync(path.join(h2, ".local", "bin"), { recursive: true });
+  fs.writeFileSync(path.join(h2, ".local", "bin", "lumitome"), "#!/usr/bin/env bash\n# bukan launcher lumitome\n");
+  const u2 = runInst(["--uninstall"], { HOME: h2, LUMI_HOME: path.join(h2, ".lumitome"), LUMI_FORCE_HOME: "1" });
+  ok("install --uninstall: home tanpa marker + launcher asing dibiarkan",
+    u2.status === 0 && /Selesai/.test(u2.stdout + u2.stderr) && fs.existsSync(path.join(h2, ".lumitome", "punya-user.txt")) && fs.existsSync(path.join(h2, ".local", "bin", "lumitome")));
+  // (2) --dry-run tetap mencetak perintah, tanpa ANSI
+  const h3 = mkHome("h3");
+  const d1 = runInst(["--dry-run"], { HOME: h3, LUMI_HOME: path.join(h3, ".lumitome") });
+  const d1out = d1.stdout + d1.stderr;
+  ok("install --dry-run: mencetak perintah (dry-run), tanpa ANSI, exit 0",
+    d1.status === 0 && /\(dry-run\)/.test(d1out) && /npm ci/.test(d1out) && !ESC.test(d1out));
+  // (4) red-test: curl hilang (PATH tanpa curl) → FAIL + path log, tanpa sisa escape
+  const h4 = mkHome("h4");
+  const binNoCurl = path.join(sb, "bin");
+  fs.mkdirSync(binNoCurl);
+  for (const d of ["/usr/bin", "/bin"]) { try { for (const f of fs.readdirSync(d)) { if (f === "curl") continue; const t = path.join(binNoCurl, f); try { fs.symlinkSync(path.join(d, f), t); } catch {} } } catch {} }
+  const r1 = runInst([], { HOME: h4, LUMI_HOME: path.join(h4, ".lumitome"), PATH: binNoCurl });
+  const r1out = r1.stdout + r1.stderr;
+  const logHit = /Log: ([^\n]*install\.log)/.exec(r1out);
+  ok("install red-test: curl hilang → exit != 0, FAIL + 'butuh curl' + path log, tanpa escape",
+    r1.status !== 0 && /FAIL/.test(r1out) && /butuh 'curl'/.test(r1out) && !!logHit && !ESC.test(r1out)
+    && fs.existsSync(logHit[1]) && fs.readFileSync(logHit[1], "utf8").includes("butuh 'curl'"));
+  fs.rmSync(sb, { recursive: true, force: true });
+}
+
 // ---------- v0.3.16: sandbox gaya Codex: baca $HOME (ro), tulis cwd; rahasia di-mask ----------
 {
   const G = await import("../harness/lumi-guard.mjs");
