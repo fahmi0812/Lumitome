@@ -7,7 +7,7 @@ metadata:
   swanwright_src: fahmi0812/Lumitome
   swanwright_original_id: lumitome__loopdesign
   swanwright_original_name: loopdesign
-  swanwright_sha: 11038fd18e698646a893dd760642ef7666f6ac9c
+  swanwright_sha: bcfe239b105e5ddf82e81eff7cf44128a9723cf1
 ---
 
 # Loopdesign: perbaiki desain berulang sampai gate lolos
