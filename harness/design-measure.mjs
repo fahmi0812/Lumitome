@@ -11,7 +11,7 @@ import { tmpdir } from "node:os";
 import { resolve, join, dirname, extname, sep, relative, basename } from "node:path";
 import { Browser, findChrome } from "../.opencode/skills/design-taste-frontend/scripts/lib/cdp.mjs";
 import { probe } from "../.opencode/skills/design-taste-frontend/scripts/lib/probe.mjs";
-import { STRESS_VIEWPORTS, contrastRatio, evaluateDesign } from "./design-gate.mjs";
+import { STRESS_VIEWPORTS, contrastRatio, evaluateDesign, parseColor } from "./design-gate.mjs";
 
 /** Chrome puppeteer yang sudah ada di VM ini (fallback bila findChrome gagal). */
 export const VM_CHROME_PATH = "/home/hatch/.cache/puppeteer/chrome/linux-156.0.8078.47/chrome-linux64/chrome";
@@ -146,6 +146,43 @@ export function measureInPage() {
     if (r.width < 1 || r.height < 1) continue;
     taps.push({ width: Math.round(r.width), height: Math.round(r.height), label: (el.innerText || el.value || el.getAttribute("aria-label") || el.tagName).replace(/\s+/g, " ").trim().slice(0, 40) });
   }
+  // Variabel CSS (§2 v0.3.31): deklarasi --nama dari stylesheet same-origin
+  // (style inline + <link> lokal) — supaya finding token-fidelity bisa
+  // menyebut NAMA variabelnya, bukan cuma hex. Stylesheet cross-origin
+  // (Google Fonts dsb.) dilempar try/catch dan dilewati — bukan error.
+  // Nilai var(--lain) di-resolve satu tingkat dari peta yang sama.
+  // SEMUA deklarasi dikumpulkan (bukan Map per nama): tema gelap + terang
+  // bisa mendeklarasikan --nama yang sama dengan nilai beda (mis. Tokyo:
+  // --border #252538 gelap vs #D0D2DE terang) — keduanya harus bisa dinamai.
+  const cssVars = [];
+  try {
+    const rawVars = [];
+    const byName = new Map();
+    for (const sheet of document.styleSheets) {
+      let rules;
+      try { rules = sheet.cssRules; } catch { continue; }
+      if (!rules) continue;
+      for (const rule of rules) {
+        const style = rule.style;
+        if (!style) continue;
+        for (let i = 0; i < style.length; i++) {
+          const prop = style[i];
+          if (prop && prop.startsWith("--")) {
+            const value = style.getPropertyValue(prop).trim();
+            rawVars.push({ name: prop, value });
+            byName.set(prop, value);
+          }
+        }
+      }
+    }
+    const resolveVar = (v, depth = 0) => {
+      if (depth > 3) return v;
+      const m = String(v).match(/^var\(\s*(--[a-zA-Z0-9-_]+)\s*(?:,.*)?\)$/);
+      if (m && byName.has(m[1])) return resolveVar(byName.get(m[1]), depth + 1);
+      return v;
+    };
+    for (const { name, value } of rawVars) cssVars.push({ name, value: resolveVar(value) });
+  } catch { /* stylesheet tak terbaca — cssVars kosong, finding tanpa nama var */ }
   const images = [...document.images].map((i) => ({ src: (i.currentSrc || i.src).slice(0, 200), loaded: i.complete && i.naturalWidth > 0 }));
   const fonts = [...document.fonts].map((f) => ({ name: f.family, loaded: f.status === "loaded" }));
   // teks panjang: elemen yang overflow secara horizontal di dalam kotaknya sendiri
@@ -167,13 +204,15 @@ export function measureInPage() {
   }
   return {
     overflow: { scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth },
-    texts, taps, images, fonts, longText, states, usedColors, backgrounds, gradientTexts, headings, easings,
+    texts, taps, images, fonts, longText, states, usedColors, backgrounds, gradientTexts, headings, easings, cssVars,
   };
 }
 /* eslint-enable no-undef */
 
 // ---------- server file lokal (pola inspect.mjs) ----------
-async function serveLocal(file) {
+// Diekspor untuk dipakai ulang probe behavior + pairwise (satu pola server,
+// bukan tiga salinan).
+export async function serveLocal(file) {
   const root = resolve(".");
   const f = resolve(file);
   const base = f.startsWith(root + sep) ? root : dirname(f);
@@ -191,6 +230,46 @@ async function serveLocal(file) {
 }
 
 const dedupe = (arr, key) => [...new Map(arr.map((x) => [key(x), x])).values()];
+
+/** Magic bytes format gambar yang dikenali cek dua lapis (§4 v0.3.31). */
+const IMAGE_MAGIC = [
+  { test: (b) => b[0] === 0xff && b[1] === 0xd8, label: "JPEG" },
+  { test: (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47, label: "PNG" },
+  { test: (b) => b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38, label: "GIF" },
+  { test: (b) => b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50, label: "WebP" },
+  { test: (b) => b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70 && String.fromCharCode(...b.slice(8, 12)) === "avif", label: "AVIF" },
+  { test: (b) => b[0] === 0x3c && b[1] === 0x73 && b[2] === 0x76 && b[3] === 0x67, label: "SVG" },
+];
+
+/**
+ * Cek aset dua lapis (§4 v0.3.31): gambar yang gagal dimuat di browser dicek
+ * HTTP-nya — status + content-type / magic bytes, timeout singkat, paralel.
+ * → Map src → {ok, note}: ok bila status 200 DAN (content-type image/* ATAU
+ * magic bytes gambar valid). Selain itu {ok: false, note: alasan}.
+ * Hanya URL http(s) yang dicek; sisanya (data:, blob:, relatif) {ok:false}.
+ * Timeout per URL 5 detik; gagal fetch (DNS, refused, timeout) = dead.
+ */
+export async function verifyImageUrls(urls, { timeoutMs = 5000 } = {}) {
+  const out = new Map();
+  const list = [...new Set((Array.isArray(urls) ? urls : []).filter((u) => typeof u === "string" && /^https?:\/\//i.test(u)))];
+  await Promise.all(list.map(async (url) => {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs), headers: { "user-agent": "Lumitome-design-gate/1.0" } });
+      if (res.status !== 200) { out.set(url, { ok: false, note: `HTTP ${res.status}` }); return; }
+      const ct = (res.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+      const buf = new Uint8Array(await res.arrayBuffer());
+      const magic = IMAGE_MAGIC.find((m) => { try { return m.test(buf); } catch { return false; } });
+      if (ct.startsWith("image/") || magic) {
+        out.set(url, { ok: true, note: `200 + ${magic ? magic.label : ct || "byte gambar"} valid` });
+      } else {
+        out.set(url, { ok: false, note: `200 tapi bukan gambar (content-type: ${ct || "?"})` });
+      }
+    } catch (e) {
+      out.set(url, { ok: false, note: String(e?.name === "TimeoutError" ? "timeout" : e?.message ?? e).slice(0, 80) });
+    }
+  }));
+  return out;
+}
 
 /**
  * Ukur halaman di browser sungguhan di tiap viewport stress-test.
@@ -213,7 +292,7 @@ export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } 
     // VM ini jalan sebagai root — Chrome menolak start tanpa --no-sandbox.
     extraArgs: typeof process.getuid === "function" && process.getuid() === 0 ? ["--no-sandbox"] : [],
   });
-  const input = { screenshots: [], contrast: [], tapTargets: [], viewports: [], assets: { fonts: [], images: [] }, textCases: {}, usedColors: [], backgrounds: [], gradientTexts: [], texts: [], headings: [], easings: [] };
+  const input = { screenshots: [], contrast: [], tapTargets: [], viewports: [], assets: { fonts: [], images: [] }, textCases: {}, usedColors: [], backgrounds: [], gradientTexts: [], texts: [], headings: [], easings: [], cssVars: [] };
   try {
     for (const w of widths) {
       const h = HEIGHT[w] || Math.round(w * 0.625);
@@ -240,6 +319,9 @@ export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } 
         input.usedColors.push(...(m.usedColors ?? []));
         input.backgrounds.push(...(m.backgrounds ?? []));
         input.gradientTexts.push(...(m.gradientTexts ?? []));
+        // cssVars: deklarasi --nama halaman (mentah) → dinormalisasi di bawah
+        // jadi {name, rgb} bila nilainya warna yang bisa diparse.
+        input.cssVars.push(...(m.cssVars ?? []));
         // texts disimpan apa adanya (fg/bg/size/weight/font/where) untuk
         // cek anti-slop overused-font — didedupe per elemen (bukan per
         // viewport) supaya penyebut share-nya benar.
@@ -267,6 +349,24 @@ export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } 
   input.tapTargets = dedupe(input.tapTargets, (t) => `${t.label}|${t.width}x${t.height}`);
   input.assets.fonts = dedupe(input.assets.fonts, (f) => f.name);
   input.assets.images = dedupe(input.assets.images, (i) => i.src);
+  // Cek aset dua lapis (§4 v0.3.31): gambar yang gagal di browser dicek
+  // HTTP-nya — 200 + byte gambar valid = BUKAN fail (verified "ok", gate
+  // hanya warn). Yang mati/invalid tetap fail. Timeout singkat, paralel.
+  const failed = input.assets.images.filter((i) => i.loaded === false && /^https?:\/\//i.test(i.src));
+  if (failed.length > 0) {
+    const verdicts = await verifyImageUrls(failed.map((i) => i.src));
+    for (const img of failed) {
+      const v = verdicts.get(img.src);
+      if (v?.ok) { img.verified = "ok"; img.verifyNote = v.note; }
+      else { img.verified = "dead"; img.verifyNote = v?.note ?? "tidak terjangkau"; }
+    }
+  }
+  // cssVars: normalisasi nilai jadi rgb (parseColor gate) — yang bukan warna
+  // (mis. "16px", "var() tak ter-resolve") dibuang; dedupe per nama+rgb.
+  input.cssVars = dedupe(
+    input.cssVars.map((v) => ({ name: v.name, rgb: parseColor(v.value) })).filter((v) => v.rgb),
+    (v) => `${v.name}|${v.rgb.join(",")}`,
+  );
   input.usedColors = dedupe(input.usedColors, (c) => `${c.rgb.join(",")}|${c.alpha}`);
   input.headings = dedupe(input.headings, (h) => `${h.level}|${h.where}`);
   input.easings = dedupe(input.easings, (e) => e.value);
@@ -367,11 +467,19 @@ export function fromFigcraftExport(dir) {
  *   Token: (daftar hex, satu per baris — atau di mana saja di file)
  *   Tipografi: <font display>, <font body>
  *   Signature: <elemen signature>
+ *   Netral: (v0.3.31 §2 — warna netral WAJIB tint turunan token, bukan
+ *     ciptaan sendiri; format per baris: `- --nama: tint #HEX <persen>%`
+ *     atau `- --nama: #HEX (tint dari #HEX)`)
  * Token = SEMUA kode hex (#rrggbb/#rgb) yang ditemukan di file (dedupe,
  * huruf besar). Arah/tipografi/signature dibaca dari baris berlabel bila ada.
- * → {direction, tokens, typography, signature, fonts} (null bila tidak ada).
+ * → {direction, tokens, typography, signature, fonts, tokenVars, neutrals}
+ * (null bila tidak ada).
  * fonts = nama font (lowercase) dari baris Tipografi — "Fraunces (display),
  * Inter (body)" → ["fraunces", "inter"]; dipakai pengecualian overused-font.
+ * tokenVars = peta nama variabel CSS → hex dari baris `--nama: #HEX` di mana
+ * saja di file (mis. `- --text-muted: #A0A0B8`).
+ * neutrals = [{name, base}] dari seksi Netral — var yang dideklarasikan
+ * sebagai tint dari token (`base` = hex token induknya).
  */
 export function parseDesignFile(path) {
   const raw = readFileSync(resolve(path), "utf8");
@@ -381,12 +489,24 @@ export function parseDesignFile(path) {
   const fonts = typography
     ? typography.split(",").map((p) => p.split("(")[0].trim().replace(/^["']|["']$/g, "").toLowerCase()).filter(Boolean)
     : [];
+  const tokenVars = {};
+  for (const m of raw.matchAll(/(--[a-zA-Z0-9-_]+)\s*:\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})\b/g)) {
+    tokenVars[m[1]] = m[2].toUpperCase();
+  }
+  const neutrals = [];
+  // Baris `- --nama: tint #HEX ...` di mana saja di file = netral yang
+  // dideklarasikan sebagai tint dari token (seksi Netral di DESIGN.md).
+  for (const m of raw.matchAll(/^\s*-\s*(--[a-zA-Z0-9-_]+)\s*:\s*tint\s+(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})\b/gm)) {
+    neutrals.push({ name: m[1], base: m[2].toUpperCase() });
+  }
   return {
     direction: line(/^(?:Arah|Direction)\s*:\s*(.+)$/m),
     tokens,
     typography,
     signature: line(/^Signature\s*:\s*(.+)$/m),
     fonts,
+    tokenVars,
+    neutrals,
   };
 }
 
@@ -398,6 +518,10 @@ export function parseDesignFile(path) {
  * opts.declaredFonts: font yang dideklarasikan (menang atas designFile);
  * opts.allow: id aturan anti-slop yang dikecualikan bila brief meminta
  * eksplisit (mis. ["gradient-text"]).
+ * opts.behavior: hasil probe behavior (array checks dari probeBehavior, atau
+ * null) — digabung ke gate sebagai findings behavior/probe-gagal (§1 v0.3.31).
+ * Untuk probe + ukur sekaligus pakai measureAndGateWithBehavior di
+ * harness/design-behavior.mjs (probe butuh browser sendiri).
  */
 export async function measureAndGate(target, opts = {}) {
   const input = await measurePage(target, opts);
@@ -412,6 +536,7 @@ export async function measureAndGate(target, opts = {}) {
   }
   if (opts.declaredFonts) input.declaredFonts = opts.declaredFonts;
   if (opts.allow) input.allow = opts.allow;
+  if (opts.behavior) input.behavior = opts.behavior;
   const gate = evaluateDesign(input);
   return { pass: gate.pass, findings: gate.findings, screenshots: input.screenshots, input };
 }

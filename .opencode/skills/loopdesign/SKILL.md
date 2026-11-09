@@ -25,7 +25,10 @@ perbaikan — atau begitu budget iterasi habis. Tidak pernah spin.
 - **Gate yang memutuskan, bukan kritikus.** `harness/design-gate.mjs`
   (deterministik: input render PNG + metrik terhitung dari
   `harness/design-measure.mjs`, output `{pass, findings[]}`) adalah satu-satunya
-  vonis lolos/gagal. Kritikus memberi pendapat; gate memberi vonis.
+  vonis lolos/gagal — ditambah behavior gate (`harness/design-behavior.mjs`:
+  probe interaksi terskrip dari kontrak Maker, findings `behavior` /
+  `probe-gagal`). Kritikus memberi pendapat; gate memberi vonis. Kritikus
+  pairwise (§3) hanya menginformasikan — tidak pernah mengubah vonis.
 - **Maker ≠ kritikus.** Kritikus adalah sub-agent terpisah (depth 1, konteks
   sendiri). Ia menerima screenshot + hasil ukur gate + brief/token — tidak pernah
   melihat kode atau klaim Maker. Maker yang menilai dirinya sendiri batal.
@@ -45,17 +48,55 @@ Arah: <nama arah estetika, mis. "Hangat artisanal">
 Token:
 - #RRGGBB — <peran, mis. kopi (teks/heading)>
 - ... (4–6 hex)
+Netral:
+- --text-muted: tint #RRGGBB 60%
+- --border: tint #RRGGBB 15%
 Tipografi: <font display> (display), <font body> (body)
 Signature: <satu elemen signature>
 ```
 
 `DESIGN.md` adalah source of truth: **Maker hanya memakai token deklarasi
 di CSS — tidak ada raw hex di luar DESIGN.md.** Warna di luar token =
-finding `token-fidelity` di gate (fail). Warna merek yang memang dibutuhkan
-(mis. hijau WhatsApp) harus ikut dideklarasikan sebagai token, bukan
-diselipkan diam-diam. Bila brief tidak memberi token, Maker menetapkan
-4–6 token sendiri di DESIGN.md sebelum coding — jangan mulai dari CSS
-tanpa arah tertulis.
+finding `token-fidelity` di gate (fail) — finding-nya menyebut nama
+variabel CSS + saran ganti (token terdekat / tint dari token), jadi
+langsung bisa dikerjakan. **Warna netral (muted, border, dsb.) WAJIB
+dideklarasikan di seksi `Netral:` sebagai tint turunan token** (mis.
+`--text-muted: tint #F2F2F7 60%`) — Maker tidak boleh menciptakan netral
+sendiri. Warna merek yang memang dibutuhkan (mis. hijau WhatsApp) harus
+ikut dideklarasikan sebagai token, bukan diselipkan diam-diam. Bila brief
+tidak memberi token, Maker menetapkan 4–6 token sendiri di DESIGN.md
+sebelum coding — jangan mulai dari CSS tanpa arah tertulis.
+
+**Aturan token-fidelity dulu:** bila yang tersisa hanya findings
+token-fidelity, Maker memperbaiki persis itu dulu sebelum poles apa pun —
+jangan menghabiskan iterasi untuk polesan sementara warna di luar token
+masih ada.
+
+Lalu, Maker wajib mendeklarasikan **kontrak interaksi** halaman — daftar
+interaksi + keadaan awal yang diharapkan + hasil klik yang diharapkan —
+sebagai blok fenced ```` ```behavior-contract ```` di `DESIGN.md` (atau
+file `behavior.json` di workspace tugas, format sama):
+
+```behavior-contract
+{
+  "initial": [
+    { "id": "cart-empty", "label": "keranjang kosong saat dimuat",
+      "kind": "text-equals", "selector": "#cart-total-display", "expected": "¥0" }
+  ],
+  "actions": [
+    { "id": "cart-add", "label": "klik + Tambah → total bertambah sebesar harga",
+      "kind": "click-then-text", "click": ".add-service-btn[data-id=\"photowalk\"]",
+      "selector": "#cart-total-display", "expected": "¥12.000" }
+  ]
+}
+```
+
+Kind yang tersedia: `text-equals`, `text-contains`, `count`, `exists`,
+`attr-equals`, `click-then-text`, `click-then-count`. Kontrak dibaca
+`parseBehaviorContract` dan dijalankan `probeBehavior` tiap iterasi —
+hasilnya findings gate (`behavior` / `probe-gagal`). Probe yang gagal
+jalan (timeout, elemen tak ditemukan) = finding `probe-gagal`, bukan
+crash loop.
 
 Lalu, Maker wajib menyebutkan **3 jebakan AI-slop yang paling mungkin
 bikin halaman itu gagal** — spesifik untuk halaman itu, bukan generik.
@@ -75,14 +116,15 @@ Fahmi (mis. lavender lembut + maskot MotionSense) seolah itu cacat.
 |---|---|
 | 1. Maker bangun | Sektor agent pemilik skill desain itu: desain UI = coding (`design-taste-frontend`, `impeccable`, `hallmark`, `ui-ux-pro-max`, `stitch-ui`); motion/video = media (`motion-design`, `review-loop`, `web-sims`). Per iterasi router pilih **≤5 skill** yang relevan buat iterasi itu; set-nya boleh ganti antar iterasi. Tidak pernah >5 dalam satu konteks. |
 | 2. Render | Figcraft export (desain Figcraft, `figcraft-cli export`) atau screenshot browser (web, via `.opencode/skills/design-taste-frontend/scripts/inspect.mjs` / playwright / chromedev). Dua renderer, satu gate: desain yang sama harus dapat vonis yang sama dari renderer mana pun. **File sementara/scratch SELALU di dalam workspace (`<workspace>/.tmp/` atau subdir tugas), JANGAN `/tmp`** — guard menolak `rm` di luar workspace. |
-| 3. Gate ukur | `harness/design-gate.mjs` + Design Stress-Test: viewport ekstrem 1440/768/390 (overflow, elemen bertumpuk, teks terpotong), edge-case data & teks (teks sangat panjang, empty state, loading, error, data tidak konsisten = finding), aksesibilitas (rasio kontras dihitung dari piksel, minimal 4,5:1 WCAG AA; tombol sentuh <44px langsung gagal; font/gambar gagal muat), kesetiaan token (warna render vs token DESIGN.md — solid di luar token = finding), due diligence (aksesibilitas, lisensi aset, konsistensi data). |
-| 4. Kritikus menyerang | §3. |
+| 3. Gate ukur | `harness/design-gate.mjs` + Design Stress-Test: viewport ekstrem 1440/768/390 (overflow, elemen bertumpuk, teks terpotong), edge-case data & teks (teks sangat panjang, empty state, loading, error, data tidak konsisten = finding), aksesibilitas (rasio kontras dihitung dari piksel, minimal 4,5:1 WCAG AA; tombol sentuh <44px langsung gagal; font/gambar gagal muat — gambar yang gagal di browser dicek HTTP-nya dulu: 200 + byte gambar valid = warn artefak lingkungan, bukan fail), kesetiaan token (warna render vs token DESIGN.md — solid di luar token = finding bernama + bersaran), due diligence (aksesibilitas, lisensi aset, konsistensi data). **Tiap iterasi juga menjalankan behavior gate**: `probeBehavior` menjalankan kontrak interaksi dari `DESIGN.md` (keadaan awal + hasil klik) — hasilnya findings `behavior`/`probe-gagal` yang ikut menentukan vonis gate. Jumlah findings tiap iterasi dicatat ke `<workspace>/.tmp/loopdesign/loop-history.jsonl` (`recordLoopIteration`) untuk aturan mentok (§4). |
+| 4. Kritikus menyerang | §3 — red team + pairwise (iterasi sekarang vs sebelumnya, dua urutan presentasi). Pairwise MENGINFORMASIKAN, never-gate. |
 | 5. Maker perbaiki | Dari findings gate + kritik. Lalu kembali ke langkah 2. |
 
 ## 3 — Kritikus Red-Team / Devil's Advocate (sub-agent terpisah)
 
 Input kritikus: screenshot + hasil ukur gate + brief/token (arah + token +
-ringkasan brief/data dari DESIGN.md). Urutan kerjanya:
+ringkasan brief/data dari DESIGN.md) + hasil probe perilaku (`behavior` di
+`criticInput`). Urutan kerjanya:
 
 1. **Steelmanning — duluan, sebelum menyerang.** Nyatakan dulu versi terkuat
    desain ini ("lavender lembut, maskot lucu, pengalaman rekam yang tenang").
@@ -101,12 +143,29 @@ ringkasan brief/data dari DESIGN.md). Urutan kerjanya:
    `impeccable`, `hallmark` masing-masing meninjau dari rubriknya sendiri.
    Ini pemakaian alami cap ≤5 — para peer itu skill yang di-routing per
    iterasi.
+6. **Pairwise (iterasi sekarang vs sebelumnya).** Kritikus membandingkan
+   kandidat secara pairwise — bukan menilai satu gambar sendirian. Harness
+   (`harness/design-pairwise.mjs`, `comparePairwise`) mengukur kedua
+   kandidat (gate + behavior bila ada kontrak + ringkasan DOM: bounding box
+   + computed styles) dan menyusun packet kritikus dalam DUA urutan
+   presentasi (A-lalu-B dan B-lalu-A) plus skor checklist biner per tugas
+   (satu item per kategori gate + total findings — kandidat menang item bila
+   findings fail-nya di kategori itu lebih sedikit). Kritikus meninjau
+   kedua urutan; pemenang harus sama di keduanya, kalau tidak hasilnya
+   tie (inkonsisten — jangan dipakai). **Hasil pairwise MENGINFORMASIKAN
+   Maker kandidat mana yang lebih baik dan di mana — tidak pernah mengubah
+   vonis lolos/gagal gate.** Vonis tetap milik gate deterministik +
+   behavior gate.
 
 ## 4 — Aturan berhenti (tidak bisa ditawar)
 
 - **Gate lolos → berhenti.** Sudah bagus, tidak perlu lanjut.
 - **Iterasi tanpa perbaikan → berhenti, meski N belum habis.** Skor gate sama
   atau turun = RuntimeSpin: pengulangan tanpa progres = spin.
+- **Mentok → berhenti + vonis.** Jumlah findings tidak berkurang 2 iterasi
+  berturut-turut → loop berhenti dengan vonis "mentok di N findings" +
+  daftar findings yang tersisa — bukan menghabiskan budget N
+  (`checkStuck` / `stuckVerdict` atas `loop-history.jsonl`).
 - **N habis → berhenti + laporkan findings yang tersisa.**
 - **3 iterasi GAGAL berturut-turut → orchestrator berhenti, tanya Fahmi,
   sebut premis yang diserang** (aturan 6 orchestrator yang sudah ada).

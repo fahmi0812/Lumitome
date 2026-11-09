@@ -791,6 +791,15 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   fs.rmSync(sb, { recursive: true, force: true });
 }
 
+// ---------- v0.3.31: install.sh tar --no-same-owner + guard (4 titik) ----------
+{
+  const INST31 = fs.readFileSync("install.sh", "utf8");
+  const tarLines = INST31.split("\n").filter((l) => l.includes("tar ") && l.includes("-xzf"));
+  ok("install tar: --no-same-owner di SEMUA 4 titik ekstraksi + guard (|| die, atau run yang sudah die)",
+    tarLines.length === 4 && tarLines.every((l) => l.includes("tar --no-same-owner")) &&
+    tarLines.every((l) => l.includes("|| die") || l.includes("run tar")));
+}
+
 // ---------- v0.3.16: sandbox gaya Codex: baca $HOME (ro), tulis cwd; rahasia di-mask ----------
 {
   const G = await import("../harness/lumi-guard.mjs");
@@ -897,6 +906,9 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
 {
   const DG = await import("../harness/design-gate.mjs");
   const DM = await import("../harness/design-measure.mjs");
+  const PW = await import("../harness/design-pairwise.mjs");
+  const BH = await import("../harness/design-behavior.mjs");
+  const os = await import("node:os");
   ok("design-gate: kontras hitam/putih = 21", DG.contrastRatio("#000", "#fff") === 21);
   ok("design-gate: kontras #767676 di putih ≈ 4.54 (batas AA)", Math.abs(DG.contrastRatio("#767676", "#ffffff") - 4.54) < 0.01);
   ok("design-gate: parseColor #rgb/#rrggbb/rgb + tidak dikenal -> null",
@@ -960,6 +972,80 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
   ok("design-gate: criticInput membawa brief/token, tetap membuang code/claims/prompt",
     (() => { const ci = DG.criticInput({ screenshots: [], gate: { pass: false, findings: [] }, brief: { direction: "Hangat", tokens: ["#3E2723"] }, code: "x", claims: ["y"], prompt: "z" });
       return ci.brief && ci.brief.direction === "Hangat" && JSON.stringify(ci.brief.tokens) === '["#3E2723"]' && !("code" in ci) && !("claims" in ci) && !("prompt" in ci); })());
+  // token-fidelity actionable (§2 v0.3.31): finding menyebut nama variabel
+  // CSS + saran ganti (token terdekat / tint dari token).
+  ok("design-gate: nearestToken — #000000 terdekat #0B0B14, #A0A0B8 terdekat #F2F2F7",
+    DG.rgbToHex(DG.nearestToken([0, 0, 0], [[11, 11, 20], [242, 242, 247]])) === "#0B0B14" &&
+    DG.rgbToHex(DG.nearestToken([160, 160, 184], [[11, 11, 20], [242, 242, 247]])) === "#F2F2F7");
+  ok("design-gate: variableNamesFor — rgb cocok nama var-nya, rgb lain kosong",
+    JSON.stringify(DG.variableNamesFor([0, 0, 0], [{ name: "--black", rgb: [0, 0, 0] }, { name: "--bg", rgb: [11, 11, 20] }])) === '["--black"]' &&
+    DG.variableNamesFor([1, 2, 3], [{ name: "--black", rgb: [0, 0, 0] }]).length === 0);
+  ok("design-gate: token-fidelity actionable — solid menyebut --black + saran token terdekat; tint menyebut --border + saran tint",
+    (() => { const f = DG.checkTokenFidelity(["#0B0B14", "#F2F2F7"], [{ rgb: [0, 0, 0], alpha: 1, where: "button: X" }], { cssVars: [{ name: "--black", rgb: [0, 0, 0] }] });
+      return f.length === 1 && f[0].detail.includes("(variabel --black)") && f[0].detail.includes("#000000") && f[0].detail.includes("ganti dengan token terdekat #0B0B14"); })() &&
+    (() => { const f = DG.checkTokenFidelity(["#F2F2F7"], [{ rgb: [37, 37, 56], alpha: 0.5, where: "div: Y" }], { cssVars: [{ name: "--border", rgb: [37, 37, 56] }] });
+      return f.length === 1 && f[0].detail.includes("(variabel --border)") && f[0].detail.includes("tint dari token #F2F2F7"); })() &&
+    // tanpa cssVars, finding tetap ada + bersaran (nama var saja yang hilang)
+    DG.checkTokenFidelity(["#0B0B14"], [{ rgb: [0, 0, 0], alpha: 1 }])[0].detail.includes("ganti dengan token terdekat #0B0B14"));
+  // behavior gate (§1 v0.3.31): asersi gagal → finding behavior; probe gagal
+  // → finding probe-gagal; lolos → tanpa finding.
+  ok("design-gate: evaluateBehavior — fail asersi → behavior; error probe → probe-gagal; pass → kosong",
+    (() => { const f = DG.evaluateBehavior([{ id: "cart-empty", label: "keranjang kosong saat dimuat", passed: false, detail: "teks '#cart-total-display' = '¥12.000', diharapkan '¥0'" }]);
+      return f.length === 1 && f[0].check === "behavior" && f[0].severity === "fail" && f[0].detail.includes("keranjang kosong"); })() &&
+    (() => { const f = DG.evaluateBehavior([{ id: "klik", label: "klik tambah", passed: false, error: "timeout 5000ms" }]);
+      return f.length === 1 && f[0].check === "probe-gagal" && f[0].detail.startsWith("probe-gagal:"); })() &&
+    DG.evaluateBehavior([{ id: "a", label: "x", passed: true }]).length === 0 &&
+    DG.evaluateDesign({ behavior: [{ id: "a", label: "x", passed: false, detail: "d" }] }).pass === false);
+  // criticInput + behavior (§3 v0.3.31): behavior ikut, code/klaim tetap dibuang.
+  ok("design-gate: criticInput membawa behavior, tetap membuang code/claims/prompt",
+    (() => { const ci = DG.criticInput({ screenshots: [], gate: { pass: false, findings: [] }, behavior: [{ id: "cart-empty", passed: false }], code: "x", claims: ["y"], prompt: "z" });
+      return Array.isArray(ci.behavior) && ci.behavior.length === 1 && ci.behavior[0].id === "cart-empty" && !("code" in ci) && !("claims" in ci) && !("prompt" in ci); })());
+  // cek aset dua lapis (§4 v0.3.31): verified ok → warn (pass tetap true);
+  // dead / tanpa verifikasi → fail seperti dulu.
+  ok("design-gate: evaluateAssets dua lapis — verified ok jadi warn (pass true); dead tetap fail",
+    (() => { const f = DG.evaluateAssets({ images: [{ src: "u", loaded: false, verified: "ok", verifyNote: "200 + JPEG valid" }] });
+      return f.length === 1 && f[0].severity === "warn" && DG.evaluateDesign({ assets: { images: [{ src: "u", loaded: false, verified: "ok" }] } }).pass === true; })() &&
+    DG.evaluateAssets({ images: [{ src: "u", loaded: false, verified: "dead" }] }).some((f) => f.severity === "fail") &&
+    DG.evaluateAssets({ images: [{ src: "u", loaded: false }] }).some((f) => f.severity === "fail"));
+  // aturan berhenti saat mentok (§5 v0.3.31): 2 transisi tak berkurang → stuck.
+  ok("design-gate: checkStuck — [21,21,21] mentok 'mentok di 21 findings'; [45,21,21]/[10,9,9]/[30,30,25] belum; <3 data belum",
+    DG.checkStuck([21, 21, 21]).stuck === true && DG.checkStuck([21, 21, 21]).verdict === "mentok di 21 findings" &&
+    DG.checkStuck([45, 21, 21]).stuck === false && DG.checkStuck([10, 9, 9]).stuck === false &&
+    DG.checkStuck([30, 30, 25]).stuck === false && DG.checkStuck([21, 21]).stuck === false);
+  ok("design-gate: nextLoopAction mentok → stop 'mentok' + verdict; gate lolos tetap menang atas mentok",
+    DG.nextLoopAction({ iteration: 2, stuck: DG.checkStuck([21, 21, 21]) }).reason === "mentok" &&
+    DG.nextLoopAction({ iteration: 2, stuck: DG.checkStuck([21, 21, 21]) }).verdict === "mentok di 21 findings" &&
+    DG.nextLoopAction({ iteration: 2, gatePass: true, stuck: DG.checkStuck([21, 21, 21]) }).action === "done");
+  // pairwise checklist (§6 v0.3.31): murni — kandidat dengan fail lebih
+  // sedikit per kategori menang item; seri = 0 keduanya.
+  ok("design-gate: scoreChecklist pairwise — 5x menang tap-target + text-cases + total atas basic; token-fidelity seri",
+    (() => { const n = (check, k) => Array.from({ length: k }, () => ({ check, severity: "fail" }));
+      const s = PW.scoreChecklist(
+        [...n("tap-target", 19), ...n("text-cases", 4), ...n("token-fidelity", 13)],
+        [...n("token-fidelity", 13)]);
+      const byCat = Object.fromEntries(s.items.map((i) => [i.category, i.winner]));
+      return s.winner === "b" && byCat["tap-target"] === "b" && byCat["text-cases"] === "b" && byCat["total"] === "b" && byCat["token-fidelity"] === "tie"; })());
+  // parseDesignFile: netral-sebagai-tint + tokenVars (§2 v0.3.31).
+  ok("design-gate: parseDesignFile baca Netral (tint token) + tokenVars --nama",
+    (() => { const d = DM.parseDesignFile("tests/fixtures/design/DESIGN-neutral.md");
+      return JSON.stringify(d.neutrals) === JSON.stringify([{ name: "--text-muted", base: "#2C1A14" }, { name: "--border", base: "#2C1A14" }]) &&
+        d.tokenVars["--text-muted"] === undefined /* tint rgba, bukan hex — tidak masuk tokenVars */ &&
+        DM.parseDesignFile("tests/fixtures/design/DESIGN.md").neutrals.length === 0; })());
+  // parseBehaviorContract (§1 v0.3.31): blok fenced di DESIGN.md.
+  ok("design-behavior: parseBehaviorContract baca blok behavior-contract dari DESIGN.md (1 initial + 1 action)",
+    (() => { const c = BH.parseBehaviorContract("tests/fixtures/design/DESIGN-behavior.md");
+      const checks = BH.normalizeContract(c);
+      return checks.length === 2 && checks[0].id === "cart-empty" && checks[1].kind === "click-then-text" && BH.normalizeContract([]).length === 0; })());
+  // state loop (§5 v0.3.31): tulis 3 iterasi mentok → stuckVerdict mentok.
+  ok("design-behavior: recordLoopIteration + stuckVerdict — [21,21,21] mentok di 21 findings",
+    (() => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-loop-"));
+      BH.recordLoopIteration(dir, { iteration: 1, findings: 21, pass: false });
+      BH.recordLoopIteration(dir, { iteration: 2, findings: 21, pass: false });
+      BH.recordLoopIteration(dir, { iteration: 3, findings: 21, pass: false });
+      const counts = BH.readLoopCounts(dir);
+      const v = BH.stuckVerdict(dir);
+      fs.rmSync(dir, { recursive: true, force: true });
+      return JSON.stringify(counts) === "[21,21,21]" && v.stuck === true && v.verdict === "mentok di 21 findings"; })());
   ok("design-gate: parseDesignFile baca arah + token + tipografi + signature + fonts",
     (() => { const d = DM.parseDesignFile("tests/fixtures/design/DESIGN.md");
       return d.direction === "Hangat artisanal" && JSON.stringify(d.tokens) === JSON.stringify(["#2C1A14", "#A0591E", "#FFF8F0", "#FFFFFF"]) && d.typography === "Fraunces (display), Inter (body)" && d.signature === "cangkir SVG berasap" && JSON.stringify(d.fonts) === '["fraunces","inter"]'; })());
@@ -1081,6 +1167,39 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
     // measurePage kumpulkan headings dalam urutan DOM (fixed.html: h1 level 1).
     ok("design-gate red-test: measurePage kumpulkan headings (fixed.html h1 level 1)",
       Array.isArray(fixed.input.headings) && fixed.input.headings.length >= 1 && fixed.input.headings[0].level === 1);
+    // behavior gate red-test (§1 v0.3.31): fixture keranjang terisi FAIL
+    // (finding behavior "keranjang kosong saat dimuat"); fixture
+    // keranjang-kosong PASS; selector tak ada → probe-gagal, bukan crash.
+    const CART_CONTRACT = { initial: [{ id: "cart-empty", label: "keranjang kosong saat dimuat", kind: "text-equals", selector: "#cart-total-display", expected: "¥0" }], actions: [{ id: "cart-add", label: "klik + Tambah → total bertambah", kind: "click-then-text", click: '.add-service-btn[data-id="photowalk"]', selector: "#cart-total-display", expected: "¥24.000" }] };
+    const cartBug = await BH.probeBehavior("tests/fixtures/design/behavior-cart.html", CART_CONTRACT);
+    ok("design-behavior red-test: keranjang terisi saat dimuat FAIL behavior (finding 'keranjang kosong', total ¥12.000)",
+      cartBug.pass === false && cartBug.checks.find((c) => c.id === "cart-empty")?.passed === false &&
+      cartBug.findings.some((f) => f.check === "behavior" && f.detail.includes("keranjang kosong")));
+    const cartEmpty = await BH.probeBehavior("tests/fixtures/design/behavior-cart-empty.html",
+      { initial: [{ id: "cart-empty", label: "keranjang kosong saat dimuat", kind: "text-equals", selector: "#cart-total-display", expected: "¥0" }], actions: [{ id: "cart-add", label: "klik + Tambah → total ¥12.000", kind: "click-then-text", click: '.add-service-btn[data-id="photowalk"]', selector: "#cart-total-display", expected: "¥12.000" }] });
+    ok("design-behavior red-test: keranjang kosong saat dimuat PASS (initial ¥0 + klik tambah → ¥12.000)",
+      cartEmpty.pass === true && cartEmpty.checks.every((c) => c.passed));
+    const probeGagal = await BH.probeBehavior("tests/fixtures/design/behavior-cart-empty.html",
+      { checks: [{ id: "hilang", label: "elemen tak ada", kind: "text-equals", selector: "#tidak-ada", expected: "x" }] });
+    ok("design-behavior red-test: selector tak ada → finding probe-gagal, bukan crash loop",
+      probeGagal.pass === false && probeGagal.findings.some((f) => f.check === "probe-gagal"));
+    // token-fidelity actionable, red-test browser (§2 v0.3.31): fixture
+    // netral-sebagai-tint PASS — 0 findings token-fidelity.
+    const neutralTint = await DM.measureAndGate("tests/fixtures/design/token-neutral-tint.html", { designFile: "tests/fixtures/design/DESIGN-neutral.md" });
+    ok("design-gate red-test: token-neutral-tint PASS (netral = tint token, 0 token-fidelity)",
+      neutralTint.pass === true && neutralTint.findings.filter((f) => f.check === "token-fidelity").length === 0);
+    // cek aset dua lapis, red-test browser (§4 v0.3.31): URL mati → fail.
+    const dead = await DM.measureAndGate("tests/fixtures/design/asset-dead.html");
+    ok("design-gate red-test: asset-dead FAIL assets (URL mati, 1 fail assets)",
+      dead.pass === false && dead.findings.filter((f) => f.check === "assets" && f.severity === "fail").length === 1);
+    // pairwise red-test (§6 v0.3.31): fixed > slop di kedua urutan, packet
+    // bertukar urutan; pemenang konsisten. (Kopi basic vs 5x — kriteria
+    // plan — diuji di eval luar repo: eval-0331.mjs, 5x menang 3-0.)
+    const pw = await PW.comparePairwise("tests/fixtures/design/fixed.html", "tests/fixtures/design/slop.html", { nameA: "fixed", nameB: "slop" });
+    ok("design-pairwise red-test: fixed > slop, pemenang sama di kedua urutan, packet bertukar urutan",
+      pw.winner === "a" && pw.winnerName === "fixed" && pw.orderConsistent === true &&
+      pw.packets.ab.first.name === "fixed" && pw.packets.ba.first.name === "slop" &&
+      pw.a.dom.length > 0 && pw.b.dom.length > 0);
   }
 }
 console.log(`\n${pass} passed, ${fail} failed`);

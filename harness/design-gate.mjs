@@ -4,11 +4,13 @@
  * Meniru pola done-gate (`harness/lumi-guard.mjs`): input render (screenshot PNG)
  * + metrik terhitung; output `{pass, findings[]}`. Pure, zero dependency, ESM.
  *
- * Yang diukur gate (deterministik, §4.1 rencana v0.3.26 + §3.1/§3.2 v0.3.28):
- * viewport ekstrem, edge-case teks/data, aksesibilitas (kontras WCAG AA,
- * tap target), aset gagal muat, konsistensi data, lisensi aset,
- * kesetiaan token (warna render vs token deklarasi DESIGN.md),
- * anti-slop (pola slop yang bisa dihitung dari DOM/computed styles).
+ * Yang diukur gate (deterministik, §4.1 rencana v0.3.26 + §3.1/§3.2 v0.3.28
+ * + v0.3.31): viewport ekstrem, edge-case teks/data, aksesibilitas (kontras
+ * WCAG AA, tap target), aset gagal muat (cek dua lapis: browser lalu HTTP),
+ * konsistensi data, lisensi aset, kesetiaan token (warna render vs token
+ * deklarasi DESIGN.md — finding menyebut variabel CSS + saran ganti),
+ * anti-slop (pola slop yang bisa dihitung dari DOM/computed styles),
+ * perilaku (probe interaksi terskrip dari kontrak Maker — behavior gate).
  * Yang TIDAK di gate: "terlihat bagus" / "terasa modern" — itu kerja kritikus.
  *
  * Fail-closed: warna yang tidak bisa diparse, lisensi yang tidak dikenal, dan
@@ -132,14 +134,24 @@ export function evaluateOverflow(viewports = []) {
   return out;
 }
 
-/** Aset gagal muat. assets: {fonts: [{name, loaded}], images: [{src, loaded}]}. */
+/** Aset gagal muat. assets: {fonts: [{name, loaded}], images: [{src, loaded, verified?, verifyNote?}]}.
+ * Cek dua lapis (§4 v0.3.31): gambar yang gagal di browser dicek HTTP-nya
+ * dulu (measurePage mengisi `verified`). verified === "ok" (200 + byte
+ * gambar valid) = BUKAN fail — hanya warn "artefak lingkungan". Tanpa
+ * verifikasi (atau verified === "dead") = fail seperti dulu. */
 export function evaluateAssets(assets = {}) {
   const out = [];
   for (const f of assets.fonts ?? []) {
     if (f.loaded === false) out.push(finding("assets", "fail", `font '${f.name}' gagal dimuat (fallback)`));
   }
   for (const i of assets.images ?? []) {
-    if (i.loaded === false) out.push(finding("assets", "fail", `gambar '${String(i.src).slice(0, 100)}' gagal dimuat`));
+    if (i.loaded === false) {
+      if (i.verified === "ok") {
+        out.push(finding("assets", "warn", `gambar '${String(i.src).slice(0, 100)}' gagal dimuat di browser tapi URL hidup (${i.verifyNote ?? "200 + byte gambar valid"}) — kemungkinan artefak lingkungan/offline, bukan fail`));
+      } else {
+        out.push(finding("assets", "fail", `gambar '${String(i.src).slice(0, 100)}' gagal dimuat`));
+      }
+    }
   }
   return out;
 }
@@ -395,12 +407,42 @@ export function checkAntiSlop(input = {}) {
   return out;
 }
 
+/** Token deklarasi terdekat dari warna render (jarak Euclidean RGB) — saran
+ * ganti untuk finding token-fidelity (§2 v0.3.31). tokens: [[r,g,b], ...]. */
+export function nearestToken(rgb, tokens = []) {
+  let best = null, bestD = Infinity;
+  for (const t of tokens) {
+    const d = (t[0] - rgb[0]) ** 2 + (t[1] - rgb[1]) ** 2 + (t[2] - rgb[2]) ** 2;
+    if (d < bestD) { bestD = d; best = t; }
+  }
+  return best;
+}
+
+/** Nama variabel CSS (--nama) yang nilainya sama dengan warna render, bila
+ * diketahui. cssVars: [{name, rgb}] dari measurePage (deklarasi :root /
+ * stylesheet halaman). Satu warna bisa punya beberapa nama (tema gelap +
+ * terang) — kembalikan semuanya, dipisah koma. */
+export function variableNamesFor(rgb, cssVars = []) {
+  const names = [];
+  for (const v of Array.isArray(cssVars) ? cssVars : []) {
+    const vrgb = Array.isArray(v.rgb) ? v.rgb : parseColor(v.value ?? v);
+    if (vrgb && vrgb[0] === rgb[0] && vrgb[1] === rgb[1] && vrgb[2] === rgb[2]) {
+      const name = String(v.name ?? "").trim();
+      if (name && !names.includes(name)) names.push(name);
+    }
+  }
+  return names;
+}
+
 /**
- * Kesetiaan token (§3.1 v0.3.28): setiap warna render harus berasal dari
- * token deklarasi (DESIGN.md — source of truth).
+ * Kesetiaan token (§3.1 v0.3.28, bisa ditindaklanjuti §2 v0.3.31): setiap
+ * warna render harus berasal dari token deklarasi (DESIGN.md — source of
+ * truth).
  * tokens: ['#3E2723', ...] (nilai yang bisa diparse parseColor).
  * usedColors: [{rgb: [r,g,b], alpha: 0-1, where}] dari measurePage
  * (computed styles: color/background/border, dedupe).
+ * opts.cssVars: [{name, rgb|value}] — deklarasi variabel CSS halaman, supaya
+ * finding bisa menyebut NAMA variabelnya (mis. --text-muted), bukan cuma hex.
  *
  * Aturan turunan — eksplisit, masing-masing dites:
  * - solid (alpha >= 0.99): rgb harus sama persis dengan salah satu token.
@@ -409,11 +451,15 @@ export function checkAntiSlop(input = {}) {
  * - warna render yang tidak bisa diparse: fail (fail-closed).
  * - token deklarasi yang tidak bisa diparse: fail (deklarasi rusak).
  *
+ * Finding SELALU menyebut nama variabel (bila diketahui) + saran ganti:
+ * token terdekat, atau tint dari token itu. Maker tidak perlu menebak —
+ * finding-nya langsung bisa dikerjakan.
+ *
  * Yang sengaja TIDAK dicek di sini: bayangan (box-shadow/text-shadow tidak
  * dikumpulkan measurePage, jadi tidak bisa false-fail) dan gradien
  * (stop warnanya diurus cek anti-slop, bukan cek ini).
  */
-export function checkTokenFidelity(tokens = [], usedColors = []) {
+export function checkTokenFidelity(tokens = [], usedColors = [], opts = {}) {
   const out = [];
   if (!tokens || tokens.length === 0 || !usedColors || usedColors.length === 0) return out;
   const parsed = tokens.map((t) => ({ raw: t, rgb: parseColor(t) }));
@@ -423,6 +469,7 @@ export function checkTokenFidelity(tokens = [], usedColors = []) {
   const valid = parsed.filter((p) => p.rgb).map((p) => p.rgb);
   if (valid.length === 0) return out;
   const isToken = (rgb) => valid.some((t) => t[0] === rgb[0] && t[1] === rgb[1] && t[2] === rgb[2]);
+  const cssVars = opts.cssVars ?? [];
   const seen = new Set();
   for (const u of usedColors) {
     const rgb = Array.isArray(u.rgb) ? u.rgb : parseColor(u.color ?? u);
@@ -437,16 +484,66 @@ export function checkTokenFidelity(tokens = [], usedColors = []) {
     if (alpha === 0) continue; // transparent
     if (isToken(rgb)) continue;
     const where = u.where ? ` di '${String(u.where).slice(0, 60)}'` : "";
+    // Nama variabel (§2 v0.3.31): "--text-muted", atau "" bila tak diketahui.
+    const names = variableNamesFor(rgb, cssVars);
+    const varPart = names.length ? ` (variabel ${names.join(", ")})` : "";
+    // Saran ganti: token terdekat (selalu ada — valid tidak kosong).
+    const near = nearestToken(rgb, valid);
+    const nearHex = near ? rgbToHex(near) : null;
     if (alpha < 0.99) {
-      out.push(finding("token-fidelity", "fail", `tint rgba(${rgb.slice(0, 3).join(",")}, ${alpha})${where} bukan dari token deklarasi`));
+      out.push(finding("token-fidelity", "fail", `tint rgba(${rgb.slice(0, 3).join(",")}, ${alpha})${varPart}${where} bukan dari token deklarasi — pakai tint dari token ${nearHex ? nearHex + " " : ""}(mis. rgba(${near ? near.join(", ") : ""}, ${alpha})) atau token ${nearHex ?? "terdekat"}`));
     } else {
-      out.push(finding("token-fidelity", "fail", `warna solid ${rgbToHex(rgb)}${where} bukan token deklarasi (token: ${tokens.join(", ")})`));
+      out.push(finding("token-fidelity", "fail", `warna solid ${rgbToHex(rgb)}${varPart}${where} bukan token deklarasi (token: ${tokens.join(", ")}) — ganti dengan token terdekat ${nearHex ?? "(tidak ada)"} atau tint dari token itu`));
     }
   }
   return out;
 }
 
 // ---------- stress-test & loop ----------
+
+/**
+ * Behavior gate (§1 v0.3.31) — hasil probe interaksi terskrip (dari
+ * `harness/design-behavior.mjs`, atau ditulis langsung oleh caller).
+ * results: [{id, label, passed, detail?, error?}].
+ * - passed === false + error → finding check "probe-gagal" (probe-nya
+ *   sendiri gagal jalan — timeout, elemen tak ditemukan, browser mati —
+ *   BUKAN crash loop).
+ * - passed === false tanpa error → finding check "behavior" (asersi
+ *   kontrak dilanggar: keranjang terisi saat dimuat, klik tidak mengubah
+ *   total, dsb.).
+ * - passed === true → tidak ada finding.
+ */
+export function evaluateBehavior(results = []) {
+  const out = [];
+  for (const r of Array.isArray(results) ? results : []) {
+    if (r.passed) continue;
+    const label = String(r.label ?? r.id ?? "(tanpa label)").slice(0, 80);
+    const detail = String(r.detail ?? r.actual ?? "").slice(0, 120);
+    if (r.error) {
+      out.push(finding("probe-gagal", "fail", `probe-gagal: '${label}' — ${String(r.error).slice(0, 160)}`));
+    } else {
+      out.push(finding("behavior", "fail", `'${label}'${detail ? ` — ${detail}` : ""}`));
+    }
+  }
+  return out;
+}
+
+/**
+ * Aturan berhenti saat mentok (§5 v0.3.31): jumlah findings tidak berkurang
+ * 2 iterasi berturut-turut → loop berhenti dengan vonis "mentok di N
+ * findings", bukan menghabiskan budget N.
+ * counts: jumlah findings per iterasi, urut (mis. [45, 21, 21, 21]).
+ * Stuck bila DUA transisi terakhir sama-sama tidak berkurang
+ * (counts[-2] >= counts[-3] DAN counts[-1] >= counts[-2]).
+ * → {stuck, findings, verdict} — verdict null bila belum mentok.
+ */
+export function checkStuck(counts = []) {
+  const c = (Array.isArray(counts) ? counts : []).map(Number).filter(Number.isFinite);
+  if (c.length < 3) return { stuck: false, findings: c.length ? c[c.length - 1] : null, verdict: null };
+  const stuck = c[c.length - 2] >= c[c.length - 3] && c[c.length - 1] >= c[c.length - 2];
+  const n = c[c.length - 1];
+  return { stuck, findings: n, verdict: stuck ? `mentok di ${n} findings` : null };
+}
 
 /** Definisi edge-case yang harus diproduksi renderer sebelum dinilai gate. */
 export function stressCases() {
@@ -461,8 +558,9 @@ export function stressCases() {
 /**
  * Satu titik penilaian: gabungkan semua cek jadi {pass, findings}.
  * input: {screenshots?, contrast?, tapTargets?, viewports?, assets?,
- * textCases?, consistency?, licenses?, tokens?, usedColors?, backgrounds?,
- * gradientTexts?, declaredFonts?, headings?, easings?, allow?}.
+ * textCases?, consistency?, licenses?, tokens?, usedColors?, cssVars?,
+ * backgrounds?, gradientTexts?, declaredFonts?, headings?, easings?,
+ * allow?, behavior?}.
  * Field yang tidak ada = tidak dicek.
  * pass = tidak ada finding severity 'fail'. Findings terurut deterministik
  * berdasarkan nama check, lalu detail.
@@ -476,20 +574,28 @@ export function evaluateDesign(input = {}) {
     ...evaluateTextCases(input.textCases),
     ...checkConsistency(input.consistency),
     ...checkLicenses(input.licenses),
-    ...checkTokenFidelity(input.tokens, input.usedColors),
+    ...checkTokenFidelity(input.tokens, input.usedColors, { cssVars: input.cssVars }),
     ...checkAntiSlop(input),
+    ...evaluateBehavior(input.behavior),
   ];
   findings.sort((a, b) => (a.check < b.check ? -1 : a.check > b.check ? 1 : a.detail < b.detail ? -1 : a.detail > b.detail ? 1 : 0));
   return { pass: !findings.some((f) => f.severity === "fail"), findings };
 }
 
 /**
- * Aturan berhenti loop (§4.2 rencana): done bila gate lolos; stop bila N habis
- * ('n-habis'), tanpa perbaikan ('tanpa-perbaikan'), atau 3 gagal berturut-turut
- * ('anti-spin'); selain itu fix.
+ * Aturan berhenti loop (§4.2 rencana, + §5 v0.3.31 mentok): done bila gate
+ * lolos; stop bila N habis ('n-habis'), tanpa perbaikan ('tanpa-perbaikan'),
+ * mentok ('mentok' — findings tak berkurang 2 iterasi berturut-turut, vonis
+ * "mentok di N findings"), atau 3 gagal berturut-turut ('anti-spin');
+ * selain itu fix. `stuck` boleh boolean atau hasil checkStuck().
  */
-export function nextLoopAction({ iteration = 1, maxIterations = 3, gatePass = false, improved = true, consecutiveFailures = 0 } = {}) {
+export function nextLoopAction({ iteration = 1, maxIterations = 3, gatePass = false, improved = true, consecutiveFailures = 0, stuck = false } = {}) {
   if (gatePass) return { action: "done", reason: "gate-lolos" };
+  const isStuck = stuck === true || (stuck && stuck.stuck === true);
+  if (isStuck) {
+    const n = stuck && typeof stuck.findings === "number" ? stuck.findings : null;
+    return { action: "stop", reason: "mentok", verdict: n === null ? "mentok" : `mentok di ${n} findings` };
+  }
   if (iteration >= maxIterations) return { action: "stop", reason: "n-habis" };
   if (consecutiveFailures >= 3) return { action: "stop", reason: "anti-spin" };
   if (!improved) return { action: "stop", reason: "tanpa-perbaikan" };
@@ -497,14 +603,15 @@ export function nextLoopAction({ iteration = 1, maxIterations = 3, gatePass = fa
 }
 
 /**
- * Input kritikus (§4.3 v0.3.26, §3.4 v0.3.28): screenshot + hasil ukur gate +
- * brief/token. Field apa pun yang berbau kode/klaim (code, source, claims,
- * prompt, dll) dibuang — kritikus tidak pernah melihat kode atau klaim Maker.
- * Yang berubah di v0.3.28: `brief` (arah + token + ringkasan brief/data)
- * IKUT dikirim, supaya kritikus bisa menangkap pelanggaran token/brief —
- * sebelumnya aturan "screenshot + gate saja" ikut membuang token, jadi
- * kritikus pun buta terhadap drift token.
+ * Input kritikus (§4.3 v0.3.26, §3.4 v0.3.28, §3 v0.3.31): screenshot +
+ * hasil ukur gate + brief/token + hasil probe perilaku. Field apa pun yang
+ * berbau kode/klaim (code, source, claims, prompt, dll) dibuang — kritikus
+ * tidak pernah melihat kode atau klaim Maker.
+ * Yang berubah di v0.3.31: `behavior` (hasil probe §1: checks lolos/gagal +
+ * keadaan awal) IKUT dikirim, supaya kritikus bisa menyerang perilaku yang
+ * rusak — sebelumnya kritikus hanya melihat screenshot, dan bug seperti
+ * "keranjang terisi saat dimuat" tidak terlihat dari gambar diam.
  */
-export function criticInput({ screenshots, gate, brief } = {}) {
-  return { screenshots, findings: gate?.findings ?? [], pass: !!gate?.pass, brief: brief ?? null };
+export function criticInput({ screenshots, gate, brief, behavior } = {}) {
+  return { screenshots, findings: gate?.findings ?? [], pass: !!gate?.pass, brief: brief ?? null, behavior: behavior ?? null };
 }

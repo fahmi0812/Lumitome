@@ -207,13 +207,17 @@ note "OpenCode v$OC_VERSION ($OC_FLAVOR)"
 oc_engine() { XDG_DATA_HOME="$SW_HOME/xdg/data" XDG_CONFIG_HOME="$SW_HOME/xdg/config" XDG_STATE_HOME="$SW_HOME/xdg/state" XDG_CACHE_HOME="$SW_HOME/xdg/cache" \
   OPENCODE_DISABLE_AUTOUPDATE=1 OPENCODE_DISABLE_MODELS_FETCH=1 "$BIN/opencode" "$@"; }
 oc_have_flavor() { cat "$BIN/opencode.flavor" 2>/dev/null || echo upstream; }
+# tar --no-same-owner (v0.3.31 §7): tarball rilis milik uid lain harus tetap
+# bisa diekstrak saat install jalan sebagai root — tanpa flag ini install
+# sebagai root di mesin uid≠1000 mati diam-diam. Semua ekstraksi tar di
+# skrip ini memakai flag itu + guard `|| die` (atau `run`, yang sudah die).
 if [ -x "$BIN/opencode" ] && oc_engine --version 2>/dev/null | grep -q "v$OC_VERSION" && [ "$(oc_have_flavor)" = "$OC_FLAVOR" ]; then note "sudah terpasang ($BIN/opencode, $OC_FLAVOR)"
 else
   set -- $OC_PICK
   fetch "$OC_BASE/$1" "$2" "$OC_BASE/SHA256SUMS"
   if [ "$DRY" = 0 ]; then
     rm -rf "$TMP/oc"
-    case "$1" in *.zip) unzip -qo "$TMP/$1" -d "$TMP/oc";; *) mkdir -p "$TMP/oc" && tar -xzf "$TMP/$1" -C "$TMP/oc";; esac
+    case "$1" in *.zip) unzip -qo "$TMP/$1" -d "$TMP/oc";; *) mkdir -p "$TMP/oc" && tar --no-same-owner -xzf "$TMP/$1" -C "$TMP/oc" || die "ekstrak opencode gagal";; esac
     rm -f "$BIN/opencode"; install -m 0755 "$(find "$TMP/oc" -type f -name opencode | head -1)" "$BIN/opencode"
     echo "$OC_FLAVOR" > "$BIN/opencode.flavor"
     oc_engine --version 2>>"$LOG_FILE" | grep -q "v$OC_VERSION" || die "versi opencode tidak sesuai"
@@ -235,7 +239,7 @@ elif [ "$DO_NODE" = 1 ]; then
     darwin-x64) NSHA=efcc2b0db6f94bf53eddb038fe2b370277a042bd29e4f19b8f8e23598795b819;; darwin-arm64) NSHA=c9e1dbc748b33ed2d14f42445191ecaf14c56259c7a9a26d0042c49ec2b66428;; esac
   nb="https://nodejs.org/dist/v$NODE_VERSION"; nf="node-v$NODE_VERSION-$OS-$ARCH.tar.gz"
   fetch "$nb/$nf" "$NSHA" "$nb/SHASUMS256.txt"
-  run tar -xzf "$TMP/$nf" -C "$SW_HOME"; NODE="$NODE_DIR/bin/node"; [ "$DRY" = 1 ] || note "node $("$NODE" -v) → $NODE_DIR"
+  run tar --no-same-owner -xzf "$TMP/$nf" -C "$SW_HOME"; NODE="$NODE_DIR/bin/node"; [ "$DRY" = 1 ] || note "node $("$NODE" -v) → $NODE_DIR"
 else die "node >= 22.6 tidak ada (hapus --no-node agar dipasang otomatis)"; fi
 if [ "$DRY" = 0 ]; then
   "$NODE" --no-warnings -e 'const{DatabaseSync}=require("node:sqlite");new DatabaseSync(":memory:").exec("create virtual table t using fts5(a)")' >>"$LOG_FILE" 2>&1 \
@@ -262,7 +266,7 @@ else
   cb="https://github.com/DeusData/codebase-memory-mcp/releases/download/v$CBM_VERSION"
   fetch "$cb/$cf" "$cs" "$cb/checksums.txt"
   if [ "$DRY" = 0 ]; then
-    mkdir -p "$TMP/cbm" && tar -xzf "$TMP/$cf" -C "$TMP/cbm"
+    mkdir -p "$TMP/cbm" && tar --no-same-owner -xzf "$TMP/$cf" -C "$TMP/cbm" || die "ekstrak codebase-memory gagal"
     install -m 0755 "$(find "$TMP/cbm" -type f -name codebase-memory-mcp | head -1)" "$BIN/codebase-memory-mcp"
     note "$("$BIN/codebase-memory-mcp" --version 2>>"$LOG_FILE") (didaftarkan manual sebagai 'codemem'; 'install' tidak dijalankan)"
   fi
@@ -281,7 +285,7 @@ else
     darwin-arm64) ut=aarch64-apple-darwin; us=60fbd5c8a1ed681845eea28d9d622fcde03c51e91a43465b64a1e17db1ed3472;; esac
   ub="https://github.com/astral-sh/uv/releases/download/$UV_VERSION"
   fetch "$ub/uv-$ut.tar.gz" "$us" "$ub/uv-$ut.tar.gz.sha256"
-  if [ "$DRY" = 0 ]; then tar -xzf "$TMP/uv-$ut.tar.gz" -C "$TMP"; install -m 0755 "$TMP/uv-$ut/uv" "$TMP/uv-$ut/uvx" "$BIN/"; note "$("$BIN/uv" --version 2>>"$LOG_FILE")"; fi
+  if [ "$DRY" = 0 ]; then tar --no-same-owner -xzf "$TMP/uv-$ut.tar.gz" -C "$TMP" || die "ekstrak uv gagal"; install -m 0755 "$TMP/uv-$ut/uv" "$TMP/uv-$ut/uvx" "$BIN/"; note "$("$BIN/uv" --version 2>>"$LOG_FILE")"; fi
 fi
 
 # ---------- env.sh (PATH + default 9router; token opsional di secrets.env, chmod 600, DI LUAR repo) ----------

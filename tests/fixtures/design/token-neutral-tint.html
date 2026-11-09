@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><title>Fixture token: netral sebagai tint token (BENAR)</title>
+<style>
+  :root {
+    --kopi: #2C1A14;
+    --karamel: #A0591E;
+    --cream: #FFF8F0;
+    --putih: #FFFFFF;
+    /* Netral dideklarasikan sebagai tint dari token (DESIGN-neutral.md) */
+    --text-muted: rgba(44, 26, 20, 0.6);
+    --border: rgba(44, 26, 20, 0.15);
+  }
+  body { font-family: Georgia, serif; background: var(--cream); color: var(--kopi); margin: 2rem; }
+  .card { background: var(--putih); border: 1px solid var(--border); padding: 1.5rem; max-width: 40rem; }
+  .muted { color: var(--text-muted); }
+  .cta { color: var(--karamel); }
+  .state { color: var(--kopi); font-size: 14px; }
+</style>
+</head><body>
+<h1>Kopi Senja</h1>
+<div class="card">
+  <p>Es kopi susu gula aren.</p>
+  <p class="muted">Diseduh pelan, diminum tenang.</p>
+  <p class="cta">Pesan sekarang</p>
+</div>
+<div class="state" data-state="empty">Belum ada pesanan.</div>
+<div class="state" data-state="loading">Memuat menu…</div>
+<div class="state" data-state="error">Gagal memuat. Coba lagi.</div>
+</body></html>

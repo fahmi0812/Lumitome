@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><title>Fixture behavior: keranjang kosong saat dimuat (BENAR)</title>
+<style>body{font-family:sans-serif;background:#fff;color:#111;margin:2rem}button{padding:12px 20px;font-size:16px}</style>
+</head><body>
+<h1>Layanan</h1>
+<button type="button" class="add-service-btn" data-id="photowalk">+ Tambah Photo walk (¥12.000)</button>
+<button type="button" class="add-service-btn" data-id="dj_ren">+ Tambah DJ Ren (¥20.000)</button>
+<h2>Keranjang</h2>
+<div id="cart-items"></div>
+<div>Total: <span id="cart-total-display">¥0</span></div>
+<script>
+  const prices = { photowalk: 12000, dj_ren: 20000 };
+  const names = { photowalk: "Photo walk", dj_ren: "DJ Ren" };
+  let cart = [];
+  const itemsEl = document.getElementById("cart-items");
+  const totalEl = document.getElementById("cart-total-display");
+  function renderCart() {
+    itemsEl.textContent = cart.length === 0 ? "Keranjang kosong." : cart.map((i) => i.name).join(", ");
+    totalEl.textContent = "¥" + cart.reduce((s, i) => s + i.price, 0).toLocaleString("id-ID");
+  }
+  document.querySelectorAll(".add-service-btn").forEach((b) => b.addEventListener("click", () => {
+    const id = b.dataset.id;
+    cart.push({ id, name: names[id], price: prices[id] });
+    renderCart();
+  }));
+  renderCart();
+</script>
+</body></html>
