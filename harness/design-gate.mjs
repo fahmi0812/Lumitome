@@ -249,6 +249,12 @@ export function parseGradientStops(value = "") {
  */
 export const OVERUSED_FONTS = new Set(["inter", "roboto", "fraunces", "geist", "plus jakarta sans", "space grotesk"]);
 
+/** Emoji: Unicode Extended_Pictographic (v0.3.36 §4, unslop signs.md). */
+const EMOJI_RE = /\p{Extended_Pictographic}/u;
+/** Kata hype di heading (v0.3.36 §4, unslop signs.md) — word boundary
+ *  supaya "magical"/"unlocked" tidak kena. */
+const HYPE_RE = /\b(supercharge|seamless|unlock|magic|revolutionize|game-?changing|ai-?powered)\b/i;
+
 /** Ambil nama family pertama dari string font-family CSS (lowercase). */
 export function firstFontFamily(font = "") {
   return String(font).split(",")[0].trim().replace(/^["']|["']$/g, "").toLowerCase();
@@ -371,6 +377,78 @@ export function checkAntiSlop(input = {}) {
       out.push(finding("anti-slop", "fail", `overused-font: ${overused.length}/${texts.length} teks memakai font overused (${sample}) tanpa deklarasi di DESIGN.md (Impeccable overused-font)`));
     }
   }
+  // ---- aturan unslop signs.md (v0.3.36 §4, CC BY 4.0 Damir Sokolovsky) ----
+  // Teks antarmuka untuk cek copy: texts + headings, didedupe per string
+  // `where` — heading yang sama muncul di kedua array dengan string where
+  // identik, jadi tidak double. BATAS: `where` terpotong 50 karakter —
+  // emoji/kata di luar 50 karakter pertama tidak terlihat cek ini; jangan
+  // diam-diam diperluas.
+  const copyTexts = (() => {
+    const seen = new Set(); const out2 = [];
+    for (const t of [...(Array.isArray(input.texts) ? input.texts : []), ...(Array.isArray(input.headings) ? input.headings : [])]) {
+      const w = String(t.where ?? "");
+      if (!w || seen.has(w)) continue;
+      seen.add(w); out2.push(w);
+    }
+    return out2;
+  })();
+  const tagOf = (w) => w.slice(0, w.indexOf(":")).toLowerCase();
+  const textOf = (w) => { const i = w.indexOf(":"); return i >= 0 ? w.slice(i + 1).trim() : w; };
+  // emoji-icon: emoji sebagai ikon/dekorasi di teks antarmuka → ganti ikon
+  // garis satu set. Satu finding per teks. Pengecualian prinsipil: © ® ™
+  // (U+00A9/U+00AE/U+2122) memang cocok Extended_Pictographic, tapi itu
+  // tanda tipografi legal (hak cipta/merek) — bukan emoji sebagai ikon.
+  // Tanpa pengecualian ini, SETIAP footer "© 2026 ..." di halaman mana pun
+  // kena fail — false positive sistematis. Emoji ikon asli (👋🚀ℹ⏳⚠)
+  // tetap kena.
+  if (!allow.has("emoji-icon")) {
+    for (const w of copyTexts) {
+      if (EMOJI_RE.test(w.replace(/[\u00A9\u00AE\u2122]/g, ""))) {
+        out.push(finding("anti-slop", "fail", `emoji-icon: emoji di teks antarmuka di '${w.slice(0, 60)}' — ganti ikon garis satu set (unslop signs)`));
+      }
+    }
+  }
+  // copy-shout: `!`/`!!` di heading + button. Body copy TIDAK dicek —
+  // tanda seru wajar di prosa.
+  if (!allow.has("copy-shout")) {
+    for (const w of copyTexts) {
+      if (!/^(h[1-6]|button)$/.test(tagOf(w))) continue;
+      if (textOf(w).includes("!")) {
+        out.push(finding("anti-slop", "fail", `copy-shout: tanda seru di ${tagOf(w)} di '${w.slice(0, 60)}' — tulis pernyataan biasa (unslop signs)`));
+      }
+    }
+  }
+  // greeting-headline: heading sapaan ("Welcome back, ...", "Selamat
+  // datang", "Halo", ...) → judul harus menamai konteks (nama halaman /
+  // periode), bukan menyapa.
+  if (!allow.has("greeting-headline")) {
+    for (const w of copyTexts) {
+      if (!/^h[1-6]$/.test(tagOf(w))) continue;
+      if (/^(welcome back|selamat datang|halo|hai|hi|hey)\b/i.test(textOf(w))) {
+        out.push(finding("anti-slop", "fail", `greeting-headline: heading sapaan di '${w.slice(0, 60)}' — judul harus menamai konteks (unslop signs)`));
+      }
+    }
+  }
+  // hype-words: kata hype di heading — supercharge, seamless, unlock,
+  // magic, revolutionize, game-changing, AI-powered (daftar kecil eksplisit).
+  if (!allow.has("hype-words")) {
+    for (const w of copyTexts) {
+      if (!/^h[1-6]$/.test(tagOf(w))) continue;
+      const m = textOf(w).match(HYPE_RE);
+      if (m) {
+        out.push(finding("anti-slop", "fail", `hype-words: kata hype "${m[0].toLowerCase()}" di heading di '${w.slice(0, 60)}' — tulis apa yang sebenarnya dilakukan produk (unslop signs)`));
+      }
+    }
+  }
+  // heavy-font: weight 800/900 — hierarki dari ukuran + warna, bukan
+  // weight. Satu finding agregat (seperti overused-font): jumlah + contoh.
+  if (!allow.has("heavy-font")) {
+    const heavy = (Array.isArray(input.texts) ? input.texts : []).filter((t) => Number(t.weight) >= 800);
+    if (heavy.length > 0) {
+      const sample = [...new Set(heavy.map((t) => String(t.where ?? "").slice(0, 40)))].slice(0, 3).join("; ");
+      out.push(finding("anti-slop", "fail", `heavy-font: ${heavy.length} teks memakai weight >= 800 (${sample}) — hierarki dari ukuran + warna, bukan weight (unslop signs)`));
+    }
+  }
   // skipped-heading (v0.3.29, Impeccable `skipped-heading`): level heading
   // melompat >1 dari heading sebelumnya (mis. h1 lalu h3). Heading pertama
   // boleh level berapa saja — yang dicek hanya lompatan, supaya tidak ada
@@ -406,6 +484,49 @@ export function checkAntiSlop(input = {}) {
           const where = e.where ? ` di '${String(e.where).slice(0, 60)}'` : "";
           out.push(finding("anti-slop", "warn", `bounce-easing: easing ${key}${where} — bounce/elastis terasa kuno, pakai ease-out-quart/quint/expo (Impeccable bounce-easing)`));
         }
+      }
+    }
+  }
+  // uppercase-tracked (v0.3.36 §4, unslop signs.md, ADVISORY): teks
+  // uppercase + letter-spacing lebar. tracking = computed letter-spacing
+  // (px) dibagi ukuran font (em); lebar bila >= 0.05em. Satu warn per nilai
+  // tracking berbeda (seperti bounce-easing) — memberi tahu, TIDAK PERNAH
+  // menggagalkan gate (pass tidak terpengaruh).
+  if (!allow.has("uppercase-tracked")) {
+    const seen = new Set();
+    for (const t of Array.isArray(input.texts) ? input.texts : []) {
+      if (String(t.transform ?? "").toLowerCase() !== "uppercase") continue;
+      const size = Number(t.size);
+      if (!size || size <= 0) continue;
+      const tr = String(t.tracking ?? "").trim().toLowerCase();
+      if (tr === "" || tr === "normal") continue;
+      const px = parseFloat(tr);
+      if (!Number.isFinite(px) || px <= 0) continue;
+      if (px / size < 0.05) continue;
+      if (!/[A-Za-zÀ-ÖØ-öø-ÿ]/.test(textOf(String(t.where ?? "")))) continue;
+      if (seen.has(tr)) continue;
+      seen.add(tr);
+      out.push(finding("anti-slop", "warn", `uppercase-tracked: label uppercase dengan letter-spacing ${tr} di '${String(t.where ?? "").slice(0, 60)}' — pakai sentence case + tracking normal (unslop signs)`));
+    }
+  }
+  // motion-slop (v0.3.36 §4, unslop signs.md, ADVISORY): class
+  // animate-pulse / animate-ping / hover:scale — motion yang berulang tanpa
+  // alasan. Yang dicek hanya keberadaan class-nya (bukan apakah animasinya
+  // jalan) — pemakaian sah (indikator live) tetap di-warn, Maker/kritikus
+  // yang memutuskan. TIDAK PERNAH menggagalkan gate. Class lain yang
+  // kebetulan ada di `motionClasses` diabaikan (predikat sama dengan filter
+  // koleksi di measureInPage — jangan sampai class biasa ikut di-warn).
+  // transition-all SENGAJA tidak dicek di sini — DITOLAK v0.3.29
+  // (misfire di Kopi Senja).
+  if (!allow.has("motion-slop")) {
+    const seen = new Set();
+    const isMotion = (c) => c === "animate-pulse" || c === "animate-ping" || String(c).startsWith("hover:scale");
+    for (const m of Array.isArray(input.motionClasses) ? input.motionClasses : []) {
+      for (const c of Array.isArray(m.classes) ? m.classes : []) {
+        if (!isMotion(c)) continue;
+        if (seen.has(c)) continue;
+        seen.add(c);
+        out.push(finding("anti-slop", "warn", `motion-slop: class ${c} di '${String(m.where ?? "").slice(0, 60)}' — hapus motion berulang tanpa alasan (unslop signs)`));
       }
     }
   }
@@ -621,7 +742,13 @@ export function nextLoopAction({ iteration = 1, maxIterations = 3, gatePass = fa
  * kritikus bisa membandingkan iterasi saat ini vs golden. Golden
  * MENGINFORMASIKAN, NEVER-GATE — field ini tidak pernah dibaca
  * `evaluateDesign`, dan tidak ada vonis gagal yang berasal dari golden.
+ * Yang berubah di v0.3.36 (§1): `direction` (dari hasil `parseDesignFile`:
+ * nama arah + Karakter + Dunia + Momen + Signature) IKUT dikirim, supaya
+ * kritikus bisa menilai kesetiaan iterasi pada arah yang dideklarasikan
+ * Maker — tetap membuang code/klaim, seperti field lain.
  */
-export function criticInput({ screenshots, gate, brief, behavior, golden } = {}) {
-  return { screenshots, findings: gate?.findings ?? [], pass: !!gate?.pass, brief: brief ?? null, behavior: behavior ?? null, golden: golden ?? null };
+export function criticInput({ screenshots, gate, brief, behavior, golden, design } = {}) {
+  const d = design && typeof design === "object" ? design : null;
+  const direction = d ? { name: d.direction ?? null, character: d.character ?? null, world: d.world ?? null, moments: d.moments ?? null, signature: d.signature ?? null } : null;
+  return { screenshots, findings: gate?.findings ?? [], pass: !!gate?.pass, brief: brief ?? null, behavior: behavior ?? null, golden: golden ?? null, direction };
 }

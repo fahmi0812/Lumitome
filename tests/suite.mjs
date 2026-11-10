@@ -942,6 +942,7 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
   const DM = await import("../harness/design-measure.mjs");
   const PW = await import("../harness/design-pairwise.mjs");
   const BH = await import("../harness/design-behavior.mjs");
+  const SN = await import("../harness/design-snapshot.mjs");
   const os = await import("node:os");
   ok("design-gate: kontras hitam/putih = 21", DG.contrastRatio("#000", "#fff") === 21);
   ok("design-gate: kontras #767676 di putih ≈ 4.54 (batas AA)", Math.abs(DG.contrastRatio("#767676", "#ffffff") - 4.54) < 0.01);
@@ -1006,6 +1007,24 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
   ok("design-gate: criticInput membawa brief/token, tetap membuang code/claims/prompt",
     (() => { const ci = DG.criticInput({ screenshots: [], gate: { pass: false, findings: [] }, brief: { direction: "Hangat", tokens: ["#3E2723"] }, code: "x", claims: ["y"], prompt: "z" });
       return ci.brief && ci.brief.direction === "Hangat" && JSON.stringify(ci.brief.tokens) === '["#3E2723"]' && !("code" in ci) && !("claims" in ci) && !("prompt" in ci); })());
+  // direction (§1 v0.3.36): criticInput membawa arah (nama + Karakter +
+  // Dunia + Momen + Signature) dari parseDesignFile; tanpa design → null.
+  ok("design-gate: criticInput membawa direction dari parseDesignFile; tanpa design → null",
+    (() => { const d = DM.parseDesignFile("tests/fixtures/design/DESIGN.md");
+      const ci = DG.criticInput({ screenshots: [], gate: { pass: true, findings: [] }, design: d });
+      return ci.direction && ci.direction.name === "Hangat artisanal" && ci.direction.character === "tenang, teliti, sedikit hangat" && ci.direction.world === "kertas dan tinta" && ci.direction.moments === "grafik utama + kartu perangkat" && ci.direction.signature === "cangkir SVG berasap"; })() &&
+    DG.criticInput({ screenshots: [], gate: { pass: true, findings: [] } }).direction === null);
+  // snapshot (§5 v0.3.36): parse argumen + target tak valid → error bersih.
+  ok("design-snapshot: parseSnapshotArgs — posisi + --dark/--width= + default 1440x810; flag tak dikenal / lebar tak valid / argumen kurang → throw",
+    (() => { const a = SN.parseSnapshotArgs(["https://example.com", "out.html"]);
+      return a.target === "https://example.com" && a.out === "out.html" && a.width === 1440 && a.height === 810 && a.scheme === "no-preference"; })() &&
+    (() => { const a = SN.parseSnapshotArgs(["f.html", "o.html", "--dark", "--width=800", "--height", "600"]);
+      return a.width === 800 && a.height === 600 && a.scheme === "dark"; })() &&
+    (() => { try { SN.parseSnapshotArgs(["a", "b", "--ngawur"]); return false; } catch (e) { return String(e.message).includes("flag tak dikenal"); } })() &&
+    (() => { try { SN.parseSnapshotArgs(["a", "b", "--width", "0"]); return false; } catch (e) { return String(e.message).includes("--width"); } })() &&
+    (() => { try { SN.parseSnapshotArgs(["hanya-satu"]); return false; } catch (e) { return String(e.message).includes("usage:"); } })());
+  ok("design-snapshot: target tak valid → reject error bersih (tanpa Chrome, tanpa crash)",
+    await SN.snapshot("bukan-url", "tests/fixtures/design/.tmp-snap.html").then(() => false, (e) => String(e?.message ?? e).includes("target tidak ditemukan")));
   // token-fidelity actionable (§2 v0.3.31): finding menyebut nama variabel
   // CSS + saran ganti (token terdekat / tint dari token).
   ok("design-gate: nearestToken — #000000 terdekat #0B0B14, #A0A0B8 terdekat #F2F2F7",
@@ -1091,6 +1110,13 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
   ok("design-gate: parseDesignFile baca arah + token + tipografi + signature + fonts",
     (() => { const d = DM.parseDesignFile("tests/fixtures/design/DESIGN.md");
       return d.direction === "Hangat artisanal" && JSON.stringify(d.tokens) === JSON.stringify(["#2C1A14", "#A0591E", "#FFF8F0", "#FFFFFF"]) && d.typography === "Fraunces (display), Inter (body)" && d.signature === "cangkir SVG berasap" && JSON.stringify(d.fonts) === '["fraunces","inter"]'; })());
+  // direction (§1 v0.3.36, unslop): Karakter + Dunia + Momen dibaca dari
+  // DESIGN.md (toleran: bila tidak ada → null, jangan fail).
+  ok("design-gate: parseDesignFile baca Karakter + Dunia + Momen; tanpa ketiganya → null",
+    (() => { const d = DM.parseDesignFile("tests/fixtures/design/DESIGN.md");
+      return d.character === "tenang, teliti, sedikit hangat" && d.world === "kertas dan tinta" && d.moments === "grafik utama + kartu perangkat"; })() &&
+    (() => { const d = DM.parseDesignFile("tests/fixtures/design/DESIGN-neutral.md");
+      return d.character === null && d.world === null && d.moments === null; })());
   // anti-slop (v0.3.28 §3.2, dikoreksi v0.3.29): subset kurasi native dari
   // Impeccable (Apache-2.0, 62 aturan = 31 slop + 31 quality) dan ui-craft
   // (MIT, registry 43 aturan di scripts/detect/rules.mjs — terverifikasi;
@@ -1164,6 +1190,54 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
     DG.evaluateDesign({ easings: [{ value: "cubic-bezier(0.68, -0.55, 0.27, 1.55)" }] }).pass === true &&
     DG.checkAntiSlop({ easings: [{ value: "ease" }, { value: "linear" }, { value: "cubic-bezier(0.2, 0, 0, 1)" }] }).length === 0 &&
     DG.checkAntiSlop({ easings: [{ value: "cubic-bezier(0.68, -0.55, 0.27, 1.55)" }], allow: ["bounce-easing"] }).length === 0);
+  // aturan unslop signs.md (v0.3.36 §4): emoji-icon, copy-shout,
+  // greeting-headline, hype-words, heavy-font (FAIL) + uppercase-tracked,
+  // motion-slop (WARN advisory, tidak pernah menggagalkan gate).
+  ok("design-gate: anti-slop emoji-icon — emoji di teks gagal; tanpa emoji lolos; allow mengecualikan",
+    DG.checkAntiSlop({ texts: [{ where: "h1: Halo 👋" }] }).some((f) => f.detail.startsWith("emoji-icon") && f.severity === "fail") &&
+    DG.checkAntiSlop({ texts: [{ where: "h1: Kopi Senja" }], headings: [{ level: 1, where: "h1: Kopi Senja" }] }).length === 0 &&
+    DG.checkAntiSlop({ texts: [{ where: "button: Beli 🚀" }], allow: ["emoji-icon"] }).length === 0);
+  // © ® ™ bukan emoji-icon: tanda tipografi legal, bukan ikon — footer
+  // "© 2026 ..." tidak boleh kena fail (koreksi presisi v0.3.36).
+  ok("design-gate: anti-slop emoji-icon — ©/®/™ di teks bukan emoji-icon; emoji asli tetap gagal",
+    DG.checkAntiSlop({ texts: [{ where: "div: © 2026 Kopi Senja" }, { where: "div: Merek ® dan ™" }] }).filter((f) => f.detail.startsWith("emoji-icon")).length === 0 &&
+    DG.checkAntiSlop({ texts: [{ where: "span: ℹ" }, { where: "span: ⚠" }] }).filter((f) => f.detail.startsWith("emoji-icon")).length === 2);
+  ok("design-gate: anti-slop copy-shout — '!' di heading/button gagal; '!' di body lolos; allow mengecualikan",
+    DG.checkAntiSlop({ texts: [{ where: "h1: Beli sekarang!" }] }).some((f) => f.detail.startsWith("copy-shout")) &&
+    DG.checkAntiSlop({ texts: [{ where: "button: Beli!" }] }).some((f) => f.detail.startsWith("copy-shout")) &&
+    DG.checkAntiSlop({ texts: [{ where: "p: Wah, menarik sekali!" }] }).length === 0 &&
+    DG.checkAntiSlop({ texts: [{ where: "h1: Beli!" }], allow: ["copy-shout"] }).length === 0);
+  ok("design-gate: anti-slop greeting-headline — sapaan gagal; judul biasa lolos; 'High quality' bukan 'hi'; allow mengecualikan",
+    DG.checkAntiSlop({ headings: [{ level: 1, where: "h1: Welcome back, Damir" }] }).some((f) => f.detail.startsWith("greeting-headline")) &&
+    DG.checkAntiSlop({ headings: [{ level: 1, where: "h1: Selamat datang di Kopi Senja" }] }).some((f) => f.detail.startsWith("greeting-headline")) &&
+    DG.checkAntiSlop({ headings: [{ level: 1, where: "h1: Halo, ini Kopi Senja" }] }).some((f) => f.detail.startsWith("greeting-headline")) &&
+    DG.checkAntiSlop({ headings: [{ level: 1, where: "h1: High quality coffee" }] }).length === 0 &&
+    DG.checkAntiSlop({ headings: [{ level: 1, where: "h1: Kopi Senja" }] }).length === 0 &&
+    DG.checkAntiSlop({ headings: [{ level: 1, where: "h1: Welcome back" }], allow: ["greeting-headline"] }).length === 0);
+  ok("design-gate: anti-slop hype-words — kata hype di heading gagal; 'magical'/'unlocked' lolos (word boundary); allow mengecualikan",
+    ["Supercharge alur kerja", "Seamless dan cepat", "Unlock semua fitur", "Magic di setiap cangkir", "Revolutionize kopi", "Game-changing!", "AI-powered dashboard"].every((t) =>
+      DG.checkAntiSlop({ headings: [{ level: 2, where: `h2: ${t}` }] }).some((f) => f.detail.startsWith("hype-words"))) &&
+    DG.checkAntiSlop({ headings: [{ level: 2, where: "h2: Magical things" }, { level: 2, where: "h2: Unlocked achievements" }] }).length === 0 &&
+    DG.checkAntiSlop({ headings: [{ level: 2, where: "h2: Supercharge" }], allow: ["hype-words"] }).length === 0);
+  ok("design-gate: anti-slop heavy-font — weight >= 800 gagal; 700 lolos; allow mengecualikan",
+    DG.checkAntiSlop({ texts: [{ weight: 800, where: "h1: Tebal" }] }).some((f) => f.detail.startsWith("heavy-font") && f.severity === "fail") &&
+    DG.checkAntiSlop({ texts: [{ weight: 900, where: "h1: Tebal" }] }).some((f) => f.detail.startsWith("heavy-font")) &&
+    DG.checkAntiSlop({ texts: [{ weight: 700, where: "h1: Tebal" }] }).length === 0 &&
+    DG.checkAntiSlop({ texts: [{ weight: 800, where: "h1: Tebal" }], allow: ["heavy-font"] }).length === 0);
+  ok("design-gate: anti-slop uppercase-tracked — uppercase + tracking lebar jadi warn (pass tetap true); tracking kecil/normal lolos; allow mengecualikan",
+    (() => { const r = DG.checkAntiSlop({ texts: [{ transform: "uppercase", tracking: "2px", size: 12, where: "p: NAVIGATION" }] });
+      return r.some((f) => f.detail.startsWith("uppercase-tracked") && f.severity === "warn"); })() &&
+    DG.evaluateDesign({ texts: [{ transform: "uppercase", tracking: "2px", size: 12, where: "p: NAVIGATION" }] }).pass === true &&
+    DG.checkAntiSlop({ texts: [{ transform: "uppercase", tracking: "0.2px", size: 12, where: "p: NAV" }] }).length === 0 &&
+    DG.checkAntiSlop({ texts: [{ transform: "uppercase", tracking: "normal", size: 12, where: "p: NAV" }] }).length === 0 &&
+    DG.checkAntiSlop({ texts: [{ transform: "none", tracking: "2px", size: 12, where: "p: Biasa" }] }).length === 0 &&
+    DG.checkAntiSlop({ texts: [{ transform: "uppercase", tracking: "2px", size: 12, where: "p: NAVIGATION" }], allow: ["uppercase-tracked"] }).length === 0);
+  ok("design-gate: anti-slop motion-slop — animate-pulse/ping + hover:scale jadi warn (pass tetap true); class lain lolos; transition-all TIDAK dicek (ditolak v0.3.29); allow mengecualikan",
+    (() => { const r = DG.checkAntiSlop({ motionClasses: [{ classes: ["animate-pulse"], where: "div: kartu" }, { classes: ["hover:scale-105"], where: "div: kartu" }, { classes: ["animate-ping"], where: "span: dot" }] });
+      return r.filter((f) => f.detail.startsWith("motion-slop") && f.severity === "warn").length === 3; })() &&
+    DG.evaluateDesign({ motionClasses: [{ classes: ["animate-pulse"], where: "div: kartu" }] }).pass === true &&
+    DG.checkAntiSlop({ motionClasses: [{ classes: ["rounded-lg", "shadow"], where: "div: kartu" }] }).length === 0 &&
+    DG.checkAntiSlop({ motionClasses: [{ classes: ["animate-pulse"], where: "div: kartu" }], allow: ["motion-slop"] }).length === 0);
   // renderer-agnostik: input gate yang sama dari report inspect dan export Figcraft -> vonis sama
   const repBad = JSON.parse(fs.readFileSync("tests/fixtures/design/report.json", "utf8"));
   const repClean = JSON.parse(fs.readFileSync("tests/fixtures/design/report-clean.json", "utf8"));
@@ -1215,6 +1289,36 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
       newRules.findings.length === 2 &&
       newAnti.some((f) => f.detail.startsWith("skipped-heading") && f.severity === "fail") &&
       newAnti.some((f) => f.detail.startsWith("bounce-easing") && f.severity === "warn"));
+    // aturan unslop signs.md (§4 v0.3.36): fixture sengaja kotor di 5
+    // aturan FAIL + 2 WARN — dan bersih dari cek lain (tepat 9 findings).
+    const signs = await DM.measureAndGate("tests/fixtures/design/unslop-signs.html");
+    const signsAnti = signs.findings.filter((f) => f.check === "anti-slop");
+    ok("design-gate red-test: unslop-signs FAIL 5 aturan (emoji-icon + copy-shout x2 + greeting-headline + hype-words + heavy-font) + WARN uppercase-tracked + motion-slop x2, tepat 9 findings",
+      signs.pass === false &&
+      signs.findings.length === 9 &&
+      signsAnti.filter((f) => f.detail.startsWith("emoji-icon")).length === 1 &&
+      signsAnti.filter((f) => f.detail.startsWith("copy-shout")).length === 2 &&
+      signsAnti.filter((f) => f.detail.startsWith("greeting-headline")).length === 1 &&
+      signsAnti.filter((f) => f.detail.startsWith("hype-words")).length === 1 &&
+      signsAnti.filter((f) => f.detail.startsWith("heavy-font")).length === 1 &&
+      signsAnti.filter((f) => f.detail.startsWith("uppercase-tracked") && f.severity === "warn").length === 1 &&
+      signsAnti.filter((f) => f.detail.startsWith("motion-slop") && f.severity === "warn").length === 2);
+    // measurePage kumpulkan koleksi baru §4: transform/tracking di texts
+    // + motionClasses per elemen.
+    ok("design-gate red-test: measurePage kumpulkan transform/tracking + motionClasses (unslop-signs)",
+      signs.input.texts.some((t) => t.transform === "uppercase" && t.tracking === "3px") &&
+      signs.input.motionClasses.some((m) => m.classes.includes("animate-pulse")) &&
+      signs.input.motionClasses.some((m) => m.classes.includes("hover:scale-105")));
+    // snapshot (§5 v0.3.36): fixture lokal → HTML + PNG tertulis; HTML
+    // tanpa <script>; URL relatif dijadikan absolut.
+    const snapDir = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-snap-"));
+    const snapOut = path.join(snapDir, "snap.html");
+    const snap = await SN.snapshot("tests/fixtures/design/snapshot-page.html", snapOut);
+    const snapHtml = fs.readFileSync(snap.html, "utf8");
+    ok("design-snapshot: fixture lokal → HTML + PNG tertulis, tanpa <script>, link absolut",
+      fs.existsSync(snap.html) && fs.existsSync(snap.png) && fs.statSync(snap.png).size > 0 &&
+      snapHtml.includes("Halaman snapshot") && !/<script[\s>]/.test(snapHtml) && /href="http:\/\/127\.0\.0\.1:\d+\/tentang"/.test(snapHtml));
+    fs.rmSync(snapDir, { recursive: true, force: true });
     // measurePage kumpulkan headings dalam urutan DOM (fixed.html: h1 level 1).
     ok("design-gate red-test: measurePage kumpulkan headings (fixed.html h1 level 1)",
       Array.isArray(fixed.input.headings) && fixed.input.headings.length >= 1 && fixed.input.headings[0].level === 1);

@@ -67,6 +67,9 @@ export function measureInPage() {
   // heading (v0.3.29): level h1–h6 yang terlihat, dalam urutan DOM — untuk
   // cek skipped-heading. Yang tersembunyi tidak dihitung.
   const headings = [];
+  // class motion (v0.3.36 §4): animate-pulse / animate-ping / hover:scale
+  // per elemen terlihat — untuk cek motion-slop (warn advisory).
+  const motionClasses = [];
   // easing (v0.3.29): timing function hanya dicatat bila elemen BENAR-BENAR
   // punya transisi/animasi (duration > 0) dan nilainya bukan ease/linear
   // (keduanya tidak pernah bounce) — kalau tidak, computed value default
@@ -93,7 +96,9 @@ export function measureInPage() {
     if (!fg || fg.a < 0.99) continue;
     const bg = bgBehind(el);
     if (!bg) continue;
-    texts.push({ fg: fg.rgb, bg, size, weight: +cs.fontWeight || 400, font: cs.fontFamily, where: `${tag.toLowerCase()}: ${direct.slice(0, 50)}` });
+    // transform + tracking (v0.3.36 §4): computed text-transform +
+    // letter-spacing — untuk cek uppercase-tracked (warn advisory).
+    texts.push({ fg: fg.rgb, bg, size, weight: +cs.fontWeight || 400, font: cs.fontFamily, transform: cs.textTransform, tracking: cs.letterSpacing, where: `${tag.toLowerCase()}: ${direct.slice(0, 50)}` });
   }
   // warna + gradien dikumpulkan dari SEMUA elemen terlihat (bukan cuma teks),
   // supaya kartu/tombol/border ikut dicek token-fidelity-nya.
@@ -131,6 +136,11 @@ export function measureInPage() {
       const atf = cs.animationTimingFunction || "";
       if (atf && atf !== "ease" && atf !== "linear") easings.push({ value: atf, where });
     }
+    // class motion (v0.3.36 §4): hanya class-nya yang dicatat (bukan
+    // apakah animasinya jalan) — cek motion-slop advisory.
+    const cls = (el.getAttribute("class") || "").split(/\s+/).filter(Boolean);
+    const motion = cls.filter((c) => c === "animate-pulse" || c === "animate-ping" || c.startsWith("hover:scale"));
+    if (motion.length > 0) motionClasses.push({ classes: motion, where });
   }
   for (const el of document.querySelectorAll("h1,h2,h3,h4,h5,h6")) {
     if (headings.length >= 100) break;
@@ -204,7 +214,7 @@ export function measureInPage() {
   }
   return {
     overflow: { scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth },
-    texts, taps, images, fonts, longText, states, usedColors, backgrounds, gradientTexts, headings, easings, cssVars,
+    texts, taps, images, fonts, longText, states, usedColors, backgrounds, gradientTexts, headings, easings, cssVars, motionClasses,
   };
 }
 /* eslint-enable no-undef */
@@ -292,7 +302,7 @@ export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } 
     // VM ini jalan sebagai root — Chrome menolak start tanpa --no-sandbox.
     extraArgs: typeof process.getuid === "function" && process.getuid() === 0 ? ["--no-sandbox"] : [],
   });
-  const input = { screenshots: [], contrast: [], tapTargets: [], viewports: [], assets: { fonts: [], images: [] }, textCases: {}, usedColors: [], backgrounds: [], gradientTexts: [], texts: [], headings: [], easings: [], cssVars: [] };
+  const input = { screenshots: [], contrast: [], tapTargets: [], viewports: [], assets: { fonts: [], images: [] }, textCases: {}, usedColors: [], backgrounds: [], gradientTexts: [], texts: [], headings: [], easings: [], cssVars: [], motionClasses: [] };
   try {
     for (const w of widths) {
       const h = HEIGHT[w] || Math.round(w * 0.625);
@@ -330,6 +340,9 @@ export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } 
         // kemunculan pertama) supaya cek lompatan level benar.
         input.headings.push(...(m.headings ?? []));
         input.easings.push(...(m.easings ?? []));
+        // motionClasses: class motion per elemen (dedupe per class+where,
+        // kemunculan pertama) supaya cek motion-slop advisory.
+        input.motionClasses.push(...(m.motionClasses ?? []));
         if (m.longText && !input.textCases.longText) input.textCases.longText = m.longText;
         // state dicek sekali (DOM sama di semua viewport) — dari viewport pertama
         if (w === widths[0]) {
@@ -373,6 +386,7 @@ export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } 
   input.backgrounds = dedupe(input.backgrounds, (b) => b.value);
   input.gradientTexts = dedupe(input.gradientTexts, (g) => g.where);
   input.texts = dedupe(input.texts, (t) => `${t.where}|${t.font}`);
+  input.motionClasses = dedupe(input.motionClasses, (m) => `${m.classes.join(",")}|${m.where}`);
   return input;
 }
 
@@ -464,6 +478,10 @@ export function fromFigcraftExport(dir) {
  * Baca DESIGN.md — source of truth arah + token (§3.1 v0.3.28).
  * Format yang dibaca Maker (lihat loopdesign §1):
  *   Arah: <nama arah estetika>
+ *   Karakter: <2–3 kata konkret> (v0.3.36 §1, unslop — kata generik
+ *     clean/modern/sleek/minimal/premium dilarang sebagai Karakter)
+ *   Dunia: <tempat/material produk> (v0.3.36 §1, unslop — menentukan tint netral)
+ *   Momen: <1–2 titik yang boleh kaya warna> (v0.3.36 §1, unslop)
  *   Token: (daftar hex, satu per baris — atau di mana saja di file)
  *   Tipografi: <font display>, <font body>
  *   Signature: <elemen signature>
@@ -471,8 +489,10 @@ export function fromFigcraftExport(dir) {
  *     ciptaan sendiri; format per baris: `- --nama: tint #HEX <persen>%`
  *     atau `- --nama: #HEX (tint dari #HEX)`)
  * Token = SEMUA kode hex (#rrggbb/#rgb) yang ditemukan di file (dedupe,
- * huruf besar). Arah/tipografi/signature dibaca dari baris berlabel bila ada.
- * → {direction, tokens, typography, signature, fonts, tokenVars, neutrals}
+ * huruf besar). Arah/tipografi/signature/karakter/dunia/momen dibaca dari
+ * baris berlabel bila ada.
+ * → {direction, character, world, moments, tokens, typography, signature,
+ *    fonts, tokenVars, neutrals}
  * (null bila tidak ada).
  * fonts = nama font (lowercase) dari baris Tipografi — "Fraunces (display),
  * Inter (body)" → ["fraunces", "inter"]; dipakai pengecualian overused-font.
@@ -501,6 +521,9 @@ export function parseDesignFile(path) {
   }
   return {
     direction: line(/^(?:Arah|Direction)\s*:\s*(.+)$/m),
+    character: line(/^Karakter\s*:\s*(.+)$/m),
+    world: line(/^(?:Dunia|World)\s*:\s*(.+)$/m),
+    moments: line(/^Momen\s*:\s*(.+)$/m),
     tokens,
     typography,
     signature: line(/^Signature\s*:\s*(.+)$/m),
