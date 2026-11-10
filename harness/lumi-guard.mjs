@@ -92,13 +92,46 @@ function isDeployKeyPath(key, ws, home, lumiHome) {
   return within(lumiHome, abs) || within(ws, abs);
 }
 
+/** Pakai kunci SSH pribadi (~/.ssh) HANYA sebagai argumen -i/IdentityFile perintah
+ *  ssh/scp/sftp/rsync — dan HANYA di tier trusted (izin eksplisit user via
+ *  `lumitome trust trusted`). Isi kunci tidak pernah dibaca/disalin/dicetak:
+ *  yang diizinkan hanya meneruskan path kunci ke biner ssh. Bentuk yang lolos
+ *  hanya `-i <path>` dan `-o IdentityFile=<path>` (spasi); bentuk -e rsync dan
+ *  -i menempel tetap ditolak (fail-closed). Segala sentuhan secret-path lain
+ *  di perintah yang sama — mis. perintah remote yang menyentuh ~/.ssh/.env —
+ *  tetap ditolak aturan secret (hanya SATU kemunculan nilai kunci yang dihapus
+ *  dari pemeriksaan; kemunculan berikutnya tetap ketangkap). */
+function sshKeyUseOnly(cmd, { workspace, home }) {
+  for (const seg of segments(cmd)) {
+    const w = words(seg);
+    let i = 0; while (i < w.length && /^(sudo|command|exec|nohup|time|env|xargs|builtin)$|^[A-Za-z_]+=/.test(w[i])) i++;
+    const bin = path.basename(w[i] || "");
+    if (!(bin === "ssh" || bin === "scp" || bin === "sftp" || bin === "rsync")) return false;
+    const key = sshKeyArg(w.slice(i + 1));
+    if (!key) return false;
+    let s = String(key);
+    if (s === "~") s = home; else if (s.startsWith("~/")) s = path.join(home, s.slice(2));
+    const abs = path.resolve(workspace, s);
+    if (!within(path.join(home, ".ssh"), abs)) return false;
+    const rest = [...w];
+    const kpos = rest.findIndex((t, j) => j > i && (t === key || t === `IdentityFile=${key}` || t === `-oIdentityFile=${key}`));
+    if (kpos < 0) return false;
+    rest.splice(kpos, 1);
+    if (isSecretPath(rest.join(" "))) return false;
+  }
+  return true;
+}
+
 /** Keputusan untuk satu perintah shell. effect: allow | ask | deny. */
 export function classifyShell(command, { workspace = process.cwd(), headless = false, branch, tier = "standard", home = os.homedir(), lumiHome = path.join(os.homedir(), ".lumitome") } = {}) {
   const cmd = String(command ?? "");
   const ws = path.resolve(workspace);
   if (!cmd.trim()) return { effect: "allow" };
   // 1) rahasia (berlaku untuk semua verb: cat/less/grep/source/cp/…)
-  if (isSecretPath(cmd) && !nameOnly(cmd)) return { effect: "deny", rule: "secret", reason: "LUMI_DENY secret: perintah menyentuh isi .env/secret (hanya .env.example; daftar nama via ls/find/test diizinkan)" };
+  // Pengecualian sempit: di tier trusted, pakai kunci ~/.ssh sebagai -i/IdentityFile
+  // ssh/scp/sftp/rsync diizinkan (isi kunci tidak pernah dibaca — hanya diteruskan
+  // ke biner ssh). Segala akses secret lain tetap ditolak di semua tier.
+  if (isSecretPath(cmd) && !nameOnly(cmd) && !(tier === "trusted" && sshKeyUseOnly(cmd, { workspace: ws, home }))) return { effect: "deny", rule: "secret", reason: "LUMI_DENY secret: perintah menyentuh isi .env/secret (hanya .env.example; daftar nama via ls/find/test diizinkan)" };
   if (KEY_VAR.test(cmd)) return { effect: "deny", rule: "secret-var", reason: "LUMI_DENY secret: perintah mereferensikan variabel API key/token" };
   if (/\beval\b/.test(cmd) && /\bgit\b|\brm\b|\.env/.test(cmd)) return { effect: "deny", rule: "eval", reason: "LUMI_DENY eval: perintah dinamis berisiko tidak bisa diverifikasi" };
   let ask = null;
@@ -108,8 +141,12 @@ export function classifyShell(command, { workspace = process.cwd(), headless = f
     if (i >= w.length && w.some((x) => x === "env")) return { effect: "deny", rule: "env-dump", reason: "LUMI_DENY env-dump: menampilkan environment (berisi key) dilarang" };
     const bin = path.basename(w[i] || "");
     const args = w.slice(i + 1);
-    // 2b) SSH: kunci deploy khusus, atau tier trusted. Tanpa itu, kunci utama user (~/.ssh) tidak boleh dipakai agent.
-    // (Kunci pola rahasia — id_*, ~/.ssh/ — sudah ditolak aturan secret di atas; di sini yang dicek hanya lokasinya.)
+    // 2b) SSH: kunci deploy khusus, atau tier trusted. Di tier trusted, kunci utama
+    // user (~/.ssh) BOLEH dipakai sebagai -i/IdentityFile (pengecualian sempit di
+    // aturan secret di atas — isi kunci tidak pernah dibaca; hanya diteruskan ke
+    // biner ssh). Tanpa tier trusted, kunci utama tetap ditolak.
+    // (Kunci pola rahasia — id_*, ~/.ssh/ — sudah ditolak aturan secret di atas
+    // kecuali pengecualian itu; di sini yang dicek hanya lokasinya.)
     if (bin === "ssh" || bin === "scp" || bin === "sftp" || (bin === "rsync" && args.some((a) => /^[^/\s]+:/.test(a) && !/^[A-Za-z]:[\\/]/.test(a)))) {
       if (tier !== "trusted") {
         if (args.includes("-A") || args.some((a, j) => a === "-o" && /ForwardAgent\s*=\s*yes/i.test(args[j + 1] || "")) || args.some((a) => /^-oForwardAgent\s*=\s*yes/i.test(a)))
