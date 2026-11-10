@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.35 — Verifikasi resmi kunci SSH trusted
+
+- Verifikasi resmi (atas permintaan Fahmi — "resminya"): pengecualian guard v0.3.34 kini punya tes suite + lolos full check. Tes lama yang mengunci perilaku lama diperbarui (kunci `~/.ssh` sebagai `-i` di tier trusted kini allow, bukan deny) + 3 tes baru (12 asersi): `-o IdentityFile` + `scp -i` allow di trusted / deny di standard; baca/salin kunci tetap deny di trusted; perintah remote yang menyentuh kunci/`.env` tetap deny (hanya satu kemunculan nilai kunci yang dikecualikan); kunci deploy lama tetap allow; `-i` non-secret di standard deny ssh-key; multi-segmen fail-closed.
+- Validate OK (warns 0), test **372/0** (369 + 3 tes baru — 1 tes lama diperbarui ke semantik baru + 3 tes baru, 12 asersi). Dengan ini catatan "tanpa testing" di v0.3.34 resmi dicabut: perubahan guard itu kini terverifikasi penuh (hasil E2E updater ada di catatan rilis).
+
 ## 0.3.34 — Kunci SSH pribadi di tier trusted
 
 - Guard SSH dibuka sempit (atas permintaan eksplisit Fahmi — sebelumnya agent tidak bisa memakai kunci pribadi `~/.ssh` sama sekali, sehingga kerjaan deploy terganggu): di tier `trusted` (`lumitome trust trusted`), agent boleh memakai kunci `~/.ssh` HANYA sebagai argumen `-i`/`-o IdentityFile=` perintah `ssh`/`scp`/`sftp`/`rsync` (`sshKeyUseOnly` di `harness/lumi-guard.mjs`). Isi kunci tidak pernah dibaca/disalin/dicetak — hanya path-nya yang diteruskan ke biner ssh. Segala akses secret lain tetap ditolak di semua tier: `cat`/`cp` kunci, `.env`, variabel key/token, env-dump; perintah remote yang menyentuh `~/.ssh`/`.env` tetap ditolak (hanya SATU kemunculan nilai kunci yang dikecualikan dari pemeriksaan); tier non-trusted tetap wajib kunci deploy `~/.lumitome/<nama>`; bentuk `-e` rsync dan `-i` menempel tetap ditolak (fail-closed).
