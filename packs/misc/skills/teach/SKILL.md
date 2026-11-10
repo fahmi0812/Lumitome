@@ -3,6 +3,8 @@ name: teach
 description: Explain a body of work plainly so a person actually understands it. Runs the `how` and `why` skills and weaves what they find into one clear explanation. Use for 'teach me this', 'help me really understand X', 'explain this change or subsystem to me'.
 disable-model-invocation: true
 metadata:
+  swanwright_src: cursor/plugins
+  swanwright_sha: 236e5481d05cbadc315b374a5de54971858c27bb
   swanwright_original_id: cursor-plugins__teach
 ---
 

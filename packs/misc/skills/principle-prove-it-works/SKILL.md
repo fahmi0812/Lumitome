@@ -3,6 +3,8 @@ name: principle-prove-it-works
 description: Apply after completing a task, before declaring done. Verify against the real artifact (run the feature, read the actual value, inspect the diff), not a proxy, self-report, or 'it compiles.'
 disable-model-invocation: true
 metadata:
+  swanwright_src: cursor/plugins
+  swanwright_sha: 236e5481d05cbadc315b374a5de54971858c27bb
   swanwright_original_id: cursor-plugins__principle-prove-it-works
 ---
 

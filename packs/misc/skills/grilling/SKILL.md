@@ -2,6 +2,8 @@
 name: grilling
 description: Grill the user relentlessly about a plan, decision, or idea. Use when the user wants to stress-test their thinking, or uses any 'grill' trigger phrases.
 metadata:
+  swanwright_src: mattpocock/skills
+  swanwright_sha: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
   swanwright_original_id: mattpocock-skills__grilling
 ---
 

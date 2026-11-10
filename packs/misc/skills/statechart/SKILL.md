@@ -3,6 +3,8 @@ name: statechart
 description: Check a TLA+ model of a system that moves between states, such as a product flow, a protocol, or a service, and draw it as a Mermaid statechart. The report gives the shortest path to each state that breaks a rule. Use for /statechart, or to show a bug as a path through states.
 disable-model-invocation: true
 metadata:
+  swanwright_src: cursor/plugins
+  swanwright_sha: 236e5481d05cbadc315b374a5de54971858c27bb
   swanwright_original_id: cursor-plugins__statechart
 ---
 

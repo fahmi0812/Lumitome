@@ -2,6 +2,8 @@
 name: setup-pstack
 description: Configure which models pstack uses per role and at what reasoning budget. Detects your available models and writes an always-applied rule that overrides the skill defaults. Use for /setup-pstack, "configure pstack models", "pstack budget", or changing pstack's model choices.
 metadata:
+  swanwright_src: cursor/plugins
+  swanwright_sha: 236e5481d05cbadc315b374a5de54971858c27bb
   swanwright_original_id: cursor-plugins__setup-pstack
 ---
 

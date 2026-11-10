@@ -3,6 +3,8 @@ name: principle-foundational-thinking
 description: 'Apply before writing logic: choosing core types and data structures, sequencing scaffold-vs-feature work, asking what concurrent actors share. Get the data structures right so downstream code becomes obvious.'
 disable-model-invocation: true
 metadata:
+  swanwright_src: cursor/plugins
+  swanwright_sha: 236e5481d05cbadc315b374a5de54971858c27bb
   swanwright_original_id: cursor-plugins__principle-foundational-thinking
 ---
 

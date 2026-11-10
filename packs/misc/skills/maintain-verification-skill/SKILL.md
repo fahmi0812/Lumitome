@@ -3,6 +3,8 @@ name: maintain-verification-skill
 description: 'Periodic pass that keeps a project''s verification skill and feature map honest: parallel source readers per feature, one live session driving every feature, at most one PR of proven corrections. Use for /maintain-verification-skill or "audit the verify skill".'
 disable-model-invocation: true
 metadata:
+  swanwright_src: cursor/plugins
+  swanwright_sha: 236e5481d05cbadc315b374a5de54971858c27bb
   swanwright_original_id: cursor-plugins__maintain-verification-skill
 ---
 

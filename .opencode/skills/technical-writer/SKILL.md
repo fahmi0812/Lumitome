@@ -2,8 +2,10 @@
 name: technical-writer
 description: Write, review, and edit developer documentation for SDKs, libraries, and frameworks, including sites such as agent-browser.dev and portless.sh. Use for getting-started guides, tutorials, API references, conceptual explanations, integration guides, migration guides, troubleshooting, and code examples.
 metadata:
-  version: '1.3'
+  version: "1.3"
   internal: 'true'
+  swanwright_src: vercel-labs/json-render
+  swanwright_sha: 18194121c8f087afacd9a8ef65fbda18374ee039
   swanwright_original_id: vercel-labs-json-render__technical-writer
 ---
 

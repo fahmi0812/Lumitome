@@ -2,6 +2,8 @@
 name: writing-for-agents
 description: Writing documents for agents. Use when creating or editing skills, or modifying AGENTS.md or CLAUDE.md.
 metadata:
+  swanwright_src: mattpocock/skills
+  swanwright_sha: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
   swanwright_original_id: mattpocock-skills__writing-for-agents
 ---
 

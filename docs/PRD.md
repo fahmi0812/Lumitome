@@ -20,7 +20,7 @@ Fahmi (pemilik). Agen coding OpenCode mengeksekusi di branch; Fahmi review & buk
 1. Routing 2 lapis (Layer-0 regex 0-token, Layer-1 1x 9router) + maks 3 skill + lazy-load.
 2. Peran: orchestrator tipis, elephant, executor sektor (bwrap), goldfish (kompleks/release), verifier, synthesizer.
 3. Done-gate FACT/JUDGMENT; UNRUN≠PASS; anti-spin max 3.
-4. Packs mati default; enable via `npm run enable-pack`.
+4. Satu korpus (sejak v0.3.27): skill pack non-red-team ter-route seperti skill aktif; tidak ada lagi status dormant/pack. `npm run enable-pack -- <pack>` hanya menyalin pack ke `.opencode/skills` agar OpenCode memuatnya sebagai skill native (opsional; `--disable` mencabut salinannya). Pack red-team (166 skill) tetap disabled dari routing.
 5. `/correct` → tes/rule permanen.
 6. `/pentest` wajib consent+scope.
 

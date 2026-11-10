@@ -2,6 +2,8 @@
 name: react
 description: React renderer for json-render that turns JSON specs into React components. Use when working with @json-render/react, building React UIs from JSON, creating component catalogs, or rendering AI-generated specs.
 metadata:
+  swanwright_src: vercel-labs/json-render
+  swanwright_sha: 18194121c8f087afacd9a8ef65fbda18374ee039
   swanwright_original_id: vercel-labs-json-render__react
 ---
 

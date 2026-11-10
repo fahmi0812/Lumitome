@@ -85,8 +85,20 @@ export class Browser {
       try { if (pid) { if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { stdio: 'ignore' }); else process.kill(pid, 'SIGKILL'); } } catch {}
       try { rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {}
     };
-    process.once('exit', drop);
-    for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.once(sig, () => { drop(); process.exit(130); });
+    // Tiap launch mendaftarkan 1 listener 'exit' + 1 per sinyal di process.
+    // Tanpa dilepas, launch berulang dalam satu proses menumpuk listener
+    // (MaxListenersExceededWarning setelah 11 launch — kebocoran, bukan
+    // pemakaian sah, jadi diperbaiki dengan melepas, bukan setMaxListeners).
+    // close() melepasnya; proses yang mati tanpa close() tetap dibersihkan
+    // drop() lewat handler ini. Launch yang gagal juga melepasnya.
+    const onExit = () => drop();
+    const onSignal = () => { drop(); process.exit(130); };
+    const detachProcess = () => {
+      process.removeListener('exit', onExit);
+      for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.removeListener(sig, onSignal);
+    };
+    process.once('exit', onExit);
+    for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.once(sig, onSignal);
     const args = [
       '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${dir}`,
       '--disk-cache-size=16777216', '--media-cache-size=16777216',
@@ -108,11 +120,13 @@ export class Browser {
         if (m) { clearTimeout(t); resolve(m[1]); }
       });
       proc.on('exit', (code) => { clearTimeout(t); reject(new Error('Chrome exited early, code ' + code + '\n' + buf.slice(-600))); });
-    });
+    }).catch((e) => { detachProcess(); throw e; });
     const b = new Browser();
     b.proc = proc; b.dir = dir; b.nextId = 1; b.pending = new Map(); b.listeners = new Map();
+    b.detachProcess = detachProcess;
     b.ws = new WebSocket(wsUrl);
-    await new Promise((res, rej) => { b.ws.onopen = res; b.ws.onerror = () => rej(new Error('CDP socket failed')); });
+    await new Promise((res, rej) => { b.ws.onopen = res; b.ws.onerror = () => rej(new Error('CDP socket failed')); })
+      .catch((e) => { detachProcess(); throw e; });
     b.ws.onmessage = (ev) => {
       const msg = JSON.parse(typeof ev.data === 'string' ? ev.data : Buffer.from(ev.data).toString());
       if (msg.id && b.pending.has(msg.id)) {
@@ -157,6 +171,7 @@ export class Browser {
   }
 
   async close() {
+    try { this.detachProcess?.(); } catch {}
     try { await this.send('Browser.close', {}, undefined, 3000); } catch {}
     try { this.ws.close(); } catch {}
     try { this.proc.kill(); } catch {}

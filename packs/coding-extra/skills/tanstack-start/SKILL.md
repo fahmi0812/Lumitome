@@ -2,6 +2,8 @@
 name: tanstack-start
 description: Build JSON-defined TanStack Start applications with @json-render/tanstack-start. Use for Start route specs, splat routing, SSR loaders, head metadata, layouts, and client navigation. Do not use for generic TanStack Router apps that do not use json-render.
 metadata:
+  swanwright_src: vercel-labs/json-render
+  swanwright_sha: 18194121c8f087afacd9a8ef65fbda18374ee039
   swanwright_original_id: vercel-labs-json-render__tanstack-start
 ---
 

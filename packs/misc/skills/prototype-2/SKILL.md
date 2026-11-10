@@ -2,6 +2,8 @@
 name: prototype-2
 description: Build a throwaway prototype to answer a design question. Use when the user wants to sanity-check whether a state model or logic feels right, or explore what a UI should look like.
 metadata:
+  swanwright_src: mattpocock/skills
+  swanwright_sha: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
   swanwright_original_id: mattpocock-skills__prototype
   swanwright_original_name: prototype
 ---

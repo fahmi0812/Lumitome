@@ -3,6 +3,8 @@ name: react-email
 description: React Email renderer for json-render that turns JSON specs into HTML or plain-text emails using @react-email/components and @react-email/render. Use when working with @json-render/react-email, building transactional or marketing emails from JSON, creating email catalogs, rendering AI-generated email specs, or when the user mentions react-email, HTML email, or transactional email.
 metadata:
   tags: react-email, email, json-render, html email, transactional email
+  swanwright_src: vercel-labs/json-render
+  swanwright_sha: 18194121c8f087afacd9a8ef65fbda18374ee039
   swanwright_original_id: vercel-labs-json-render__react-email
 ---
 

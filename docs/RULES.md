@@ -27,7 +27,7 @@ Teks ditulis ulang (parafrase/sintesis), tidak disalin. Sumber dibaca pada SHA b
 | Sumber | SHA | Lisensi | Dipakai untuk |
 |---|---|---|---|
 | multica-ai/andrej-karpathy-skills | 2c606141936f1eeef17fa3043a72095b4765b9c2 | MIT (README) | think-before-coding, simplicity, surgical, goal-driven verify |
-| obra/superpowers | 2ce8aa15d05bd57213e6f746f953aafb7ded7a8b | MIT | TDD, root cause dulu, verifikasi sebelum klaim selesai, plan→execute |
+| obra/superpowers | 22f0b463e7a5e579904dd6211a520321035526f7 | MIT | TDD, root cause dulu, verifikasi sebelum klaim selesai, plan→execute |
 | poteto/noodle (brain/principles) | 82d2921c52370f23f29086de81ccfb600939c037 | MIT | prove-it-works, fix-root-causes, never-block-on-the-human, guard-the-context-window, subtract-before-you-add, encode-lessons-in-structure |
 | poteto/brainmaxxing | ec4d8e43dee639d6f5d94aed3ca16af7b298ecfc | MIT | (prinsip identik dengan noodle; konfirmasi) |
 | poteto/verification-skill-example | d5abe70d0d8c671672b6cef4069363f26c488feb | tanpa lisensi → hanya ide, tanpa teks | verifikasi per fitur, bukti nyata |
@@ -36,7 +36,7 @@ Teks ditulis ulang (parafrase/sintesis), tidak disalin. Sumber dibaca pada SHA b
 | affaan-m/ECC (rules/common) | b38be6a7f6350964d59328b52f0624e1d1d552d1 | MIT | KISS/YAGNI, secret hygiene, delegation contract |
 | alvinunreal/oh-my-opencode-slim | 5c6655f0b7d36b0e7c1b3e537eedf799ee971102 | MIT | "model-facing bytes are a budget", tanpa duplikasi instruksi tool |
 | mattpocock/skills | 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d | MIT | subagent dengan konteks segar |
-| google/elephant-goldfish-model | 403d8881d62022490637d740657b33f01e321ea8 | Apache-2.0 | tanpa PR otomatis, ringkasan perubahan eksplisit |
+| google/elephant-goldfish-model | bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31 | Apache-2.0 | tanpa PR otomatis, ringkasan perubahan eksplisit |
 | miqdadbadjuber/anti-slop | 941b1532f9cc8ffde766bca5921d75257c9e5762 | MIT | (UI/copy; tetap skill on-demand, tidak always-on) |
 | fahmi0812/Swanwright | da868bdb4a5423bfd017d19aa5f2ad4a3d5d089b | MIT | hard constraints, evidence FACT, doc-code drift (arXiv:2610.30571) |
 

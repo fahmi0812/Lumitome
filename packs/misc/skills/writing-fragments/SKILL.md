@@ -3,6 +3,8 @@ name: writing-fragments
 description: 'Writing, explore: mine raw fragments, no structure yet.'
 disable-model-invocation: true
 metadata:
+  swanwright_src: mattpocock/skills
+  swanwright_sha: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
   swanwright_original_id: mattpocock-skills__writing-fragments
 ---
 

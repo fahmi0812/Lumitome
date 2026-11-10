@@ -2,6 +2,8 @@
 name: devtools-vue
 description: Vue adapter for the json-render devtools inspector. Use whenever the user wants to add, configure, or troubleshoot @json-render/devtools-vue in a Vue json-render app, including spec inspection, state editing, action and stream timelines, catalog browsing, or DOM picking.
 metadata:
+  swanwright_src: vercel-labs/json-render
+  swanwright_sha: 18194121c8f087afacd9a8ef65fbda18374ee039
   swanwright_original_id: vercel-labs-json-render__devtools-vue
 ---
 

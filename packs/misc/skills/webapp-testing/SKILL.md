@@ -3,6 +3,8 @@ name: webapp-testing
 description: Toolkit for interacting with and testing local web applications using Playwright. Supports verifying frontend functionality, debugging UI behavior, capturing browser screenshots, and viewing browser logs.
 license: Complete terms in LICENSE.txt
 metadata:
+  swanwright_src: anthropics/skills
+  swanwright_sha: 2c5958ecac7cee2b583967a2c4981d0f4a75c579
   swanwright_original_id: anthropics-skills__webapp-testing
 ---
 

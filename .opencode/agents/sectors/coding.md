@@ -56,6 +56,7 @@ permissions:
   - { action: "skill", resource: "archify", effect: allow }
   - { action: "skill", resource: "archify-review", effect: allow }
   - { action: "skill", resource: "archify-tuning", effect: allow }
+  - { action: "skill", resource: "architect", effect: allow }
   - { action: "skill", resource: "ask-sonner", effect: allow }
   - { action: "skill", resource: "asset-pipeline", effect: allow }
   - { action: "skill", resource: "audio-design", effect: allow }
@@ -148,6 +149,9 @@ permissions:
   - { action: "skill", resource: "godot-signals-groups", effect: allow }
   - { action: "skill", resource: "godot-tilemap", effect: allow }
   - { action: "skill", resource: "godot-ui-control", effect: allow }
+  - { action: "skill", resource: "grill-me", effect: allow }
+  - { action: "skill", resource: "grill-with-docs", effect: allow }
+  - { action: "skill", resource: "grilling", effect: allow }
   - { action: "skill", resource: "gsap-core", effect: allow }
   - { action: "skill", resource: "gsap-frameworks", effect: allow }
   - { action: "skill", resource: "gsap-performance", effect: allow }

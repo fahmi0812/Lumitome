@@ -6,7 +6,7 @@ Kode Lumitome (wrapper `lumitome/`, harness `harness/`) dan basis Swanwright (fa
 - `stitch-ui`: alur 6 langkah disintesis dari "Panduan Lengkap Perancangan UI dengan Stitch dan AI", rangkuman tutorial video berbahasa Indonesia (materi pengguna); ditulis ulang dengan kata sendiri. MIT.
 
 ## Rules inti (`lumitome/rules/`)
-Sintesis/parafrase (bukan salinan) dari: multica-ai/andrej-karpathy-skills @2c60614 (MIT), obra/superpowers @2ce8aa1 (MIT), poteto/noodle @82d2921 (MIT), unicodef1wn/grokbot-field-notes @02780c0 (MIT), qkal/Canny @f2c5e53 (MIT), affaan-m/ECC @b38be6a (MIT), alvinunreal/oh-my-opencode-slim @5c6655f (MIT), google/elephant-goldfish-model @403d888 (Apache-2.0). Tabel lengkap: docs/RULES.md.
+Sintesis/parafrase (bukan salinan) dari: multica-ai/andrej-karpathy-skills @2c60614 (MIT), obra/superpowers @22f0b46 (MIT), poteto/noodle @82d2921 (MIT), unicodef1wn/grokbot-field-notes @02780c0 (MIT), qkal/Canny @f2c5e53 (MIT), affaan-m/ECC @b38be6a (MIT), alvinunreal/oh-my-opencode-slim @5c6655f (MIT), google/elephant-goldfish-model @bdcfe8c (Apache-2.0). Tabel lengkap: docs/RULES.md.
 
 ## OpenCode (engine)
 - Sumber: https://github.com/anomalyco/opencode — Lisensi: MIT, Copyright (c) 2025 opencode.
@@ -49,7 +49,7 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - Jumlah skill: 1
 
 ## anthropics/skills
-- SHA: `ca45fc496a3436251f191354091d557da31c15b5`
+- SHA: `2c5958ecac7cee2b583967a2c4981d0f4a75c579`
 - Lisensi: PER-SKILL
 - Jumlah skill: 15
 
@@ -84,7 +84,7 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - Jumlah skill: 1
 
 ## cursor/plugins
-- SHA: `4dd1d05818d19792e7cd6e818f1667f95f7e1dbe`
+- SHA: `236e5481d05cbadc315b374a5de54971858c27bb`
 - Lisensi: MIT
 - Jumlah skill: 58
 
@@ -129,7 +129,7 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - Jumlah skill: 4
 
 ## google/elephant-goldfish-model
-- SHA: `403d8881d62022490637d740657b33f01e321ea8`
+- SHA: `bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31`
 - Lisensi: Apache-2.0
 - Jumlah skill: 7
 
@@ -174,7 +174,7 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - Jumlah skill: 1
 
 ## mattpocock/skills
-- SHA: `a496f5513d4a4cf889bc48e189e579f4b0bdf6aa`
+- SHA: `4ae2317ddb22b046e26455e4f9c9b3aaaf62212d`
 - Lisensi: MIT
 - Jumlah skill: 38
 
@@ -189,7 +189,7 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - Jumlah skill: 1 (pack motion; salinan `tools/directory` tidak di-vendor — nama duplikat, varian installer)
 
 ## morluto/rea
-- SHA: `8f920bb65b8d8ae669411501b0a3a59a62883ac3`
+- SHA: `c52a9b9d79021d4799c478d73a3fd3ed795b2318`
 - Lisensi: MIT
 - Jumlah skill: 5
 
@@ -200,7 +200,7 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - Rule turunan: `.opencode/rules/06-coding-karpathy.md` (ringkasan parafrase, sitasi sumber+SHA)
 
 ## nextlevelbuilder/ui-ux-pro-max-skill
-- SHA: `28b3b8dee8c976df4fa3e94aed4e092ad43fcb03`
+- SHA: `4f2dbb67e64969a9a30ab00742f2d55d66ddec2b`
 - Lisensi: MIT
 - Jumlah skill: 13
 
@@ -225,7 +225,7 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - Jumlah skill: 1
 
 ## obra/superpowers
-- SHA: `2ce8aa15d05bd57213e6f746f953aafb7ded7a8b`
+- SHA: `22f0b463e7a5e579904dd6211a520321035526f7`
 - Lisensi: MIT
 - Jumlah skill: 15
 
@@ -235,7 +235,7 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - Jumlah skill: 1
 
 ## pbakaus/impeccable
-- SHA: `df3a4abe7d0840d5f60324812c432e00b66a4e75`
+- SHA: `500eeb7e655d1916c8d0880d05c8a80b5a8a86fb`
 - Lisensi: Apache-2.0
 - Jumlah skill: 26
 
@@ -250,7 +250,7 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - Jumlah skill: 39
 
 ## vercel-labs/json-render
-- SHA: `92b273065ba224491ba789f9de6936d32e8a37f8`
+- SHA: `18194121c8f087afacd9a8ef65fbda18374ee039`
 - Lisensi: Apache-2.0
 - Jumlah skill: 32
 
@@ -280,10 +280,10 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 - DavidHDev_canvas-ui SHA `a04a99b235299ee79a123a16ccb2e6cf9da74b6b` lisensi Commons-Clause: Tidak di-vendor: Commons Clause atau 0 SKILL.md (PageIndex=tool/MCP). Lihat sync-upstream.
 - DavidHDev_react-bits SHA `e12c22192ac7b4b452c5e2feb9b586d74765d696` lisensi Commons-Clause: Tidak di-vendor: Commons Clause atau 0 SKILL.md (PageIndex=tool/MCP). Lihat sync-upstream.
 - VectifyAI_PageIndex SHA `2e0f4dd35aa6a24c2dedfcf54678b0b0ad323ce8` lisensi MIT-tool: Tidak di-vendor: Commons Clause atau 0 SKILL.md (PageIndex=tool/MCP). Lihat sync-upstream.
-- anthropics_skills SHA `ca45fc496a3436251f191354091d557da31c15b5` lisensi PROPRIETARY-Anthropic: All rights reserved — jangan vendor; fetch via sync-upstream setelah izin
-- anthropics_skills SHA `ca45fc496a3436251f191354091d557da31c15b5` lisensi PROPRIETARY-Anthropic: All rights reserved — jangan vendor; fetch via sync-upstream setelah izin
-- anthropics_skills SHA `ca45fc496a3436251f191354091d557da31c15b5` lisensi PROPRIETARY-Anthropic: All rights reserved — jangan vendor; fetch via sync-upstream setelah izin
-- anthropics_skills SHA `ca45fc496a3436251f191354091d557da31c15b5` lisensi PROPRIETARY-Anthropic: All rights reserved — jangan vendor; fetch via sync-upstream setelah izin
+- anthropics_skills SHA `2c5958ecac7cee2b583967a2c4981d0f4a75c579` lisensi PROPRIETARY-Anthropic: All rights reserved — jangan vendor; fetch via sync-upstream setelah izin
+- anthropics_skills SHA `2c5958ecac7cee2b583967a2c4981d0f4a75c579` lisensi PROPRIETARY-Anthropic: All rights reserved — jangan vendor; fetch via sync-upstream setelah izin
+- anthropics_skills SHA `2c5958ecac7cee2b583967a2c4981d0f4a75c579` lisensi PROPRIETARY-Anthropic: All rights reserved — jangan vendor; fetch via sync-upstream setelah izin
+- anthropics_skills SHA `2c5958ecac7cee2b583967a2c4981d0f4a75c579` lisensi PROPRIETARY-Anthropic: All rights reserved — jangan vendor; fetch via sync-upstream setelah izin
 
 ## Filosofi / pola (bukan vendoring penuh)
 - cursor/plugins pstack (MIT) — principles & /correct

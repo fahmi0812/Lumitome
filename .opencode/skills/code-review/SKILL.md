@@ -2,6 +2,8 @@
 name: code-review
 description: 'Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes: Standards (does the code follow this repo''s documented coding standards?) and Spec (does the code match what the originating issue/spec asked for?). Runs both reviews in parallel sub-agents and reports them side by side. Use when the user wants to review a branch, a PR, work-in-progress changes, or asks to "review since X".'
 metadata:
+  swanwright_src: mattpocock/skills
+  swanwright_sha: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
   swanwright_original_id: mattpocock-skills__code-review
 ---
 

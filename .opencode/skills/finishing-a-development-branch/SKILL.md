@@ -2,6 +2,8 @@
 name: finishing-a-development-branch
 description: Use when implementation is complete, all tests pass, and you need to decide how to integrate the work
 metadata:
+  swanwright_src: obra/superpowers
+  swanwright_sha: 22f0b463e7a5e579904dd6211a520321035526f7
   swanwright_original_id: obra-superpowers__finishing-a-development-branch
 ---
 

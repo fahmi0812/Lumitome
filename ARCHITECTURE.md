@@ -1,6 +1,6 @@
 # Arsitektur Final Swanwright v0.1.6
 
-Target: **OpenCode v2.2.4** (rilis GitHub anomalyco/opencode). Model hanya via **9router**. 624 skill di satu registry (458 bisa ter-route; 166 pack red-team tetap disabled, termasuk `api-security` & `llm-security`). Trial lepas-dorman: tidak ada lagi pack nonaktif.
+Target: **OpenCode v2.2.4** (rilis GitHub anomalyco/opencode). Model hanya via **9router**. 900 skill di satu registry (734 bisa ter-route; 166 pack red-team tetap disabled, termasuk `api-security` & `llm-security`). Sejak v0.3.27 (satu korpus): tidak ada lagi pack nonaktif/dorman.
 Diagram: `docs/diagrams/arsitektur-final.png` (sistem) · `docs/diagrams/orchestrator-final.png` (alur orchestrator). Sumber Mermaid di sebelahnya.
 
 ![Arsitektur final](docs/diagrams/arsitektur-final.png)
@@ -50,7 +50,7 @@ Rincian, pin versi, dan alasan: `docs/MCP.md`. Gateway: `docs/MCP-GATEWAY.md`.
 Design loop (v0.3.26): tugas desain tidak selesai di kode — `/loopdesign [N]` menjalankan skill `loopdesign` (pre-mortem 3 jebakan AI-slop sebelum coding, komponen nyata dari `design-assets`) dalam loop render → `harness/design-gate.mjs` ukur (viewport 1440/768/390, kontras ≥4,5:1, tap target ≥44px) → kritikus sub-agent terpisah menyerang dari screenshot + metrik saja → Maker perbaiki; orchestrator menahan DONE sampai Design-Gate lolos, dan loop berhenti bila gate lolos, tanpa perbaikan, N habis, atau 3 iterasi gagal berturut-turut. v0.3.31: Maker juga mendeklarasikan kontrak interaksi di `DESIGN.md` (blok `behavior-contract`) yang dijalankan tiap iterasi sebagai behavior gate (`harness/design-behavior.mjs`, probe CDP terskrip — findings `behavior`/`probe-gagal` ikut memvonis; probe gagal = finding, bukan crash); findings token-fidelity menyebut nama variabel CSS + saran ganti dan netral wajib tint token; gambar gagal di browser dicek HTTP dulu (200 + byte gambar valid = warn, bukan fail); kritikus membandingkan pairwise iterasi sekarang vs sebelumnya dalam dua urutan presentasi (`harness/design-pairwise.mjs` — checklist biner + DOM bbox/computed styles + screenshot, MENGINFORMASIKAN, never-gate); findings tak berkurang 2 iterasi berturut-turut → berhenti dengan vonis "mentok di N findings" (state di `<workspace>/.tmp/loopdesign/loop-history.jsonl`).
 
 ## 5. Invarian (dicek `npm test` / `npm run validate`)
-- 624 skill di satu registry (458 bisa ter-route, 166 red-team disabled); api-security/llm-security tidak aktif; golden 154 L0 0 mismatch.
+- 900 skill di satu registry (734 bisa ter-route, 166 red-team disabled); api-security/llm-security tidak aktif; golden 154 L0 0 mismatch.
 - `opencode.jsonc` lolos skema resmi (ajv 2020) + native V2 + kebijakan MCP (`checkMcpPolicy`).
 - Frontmatter agent = keluaran `gen-policy` (tidak boleh basi).
 - Plugin v2 `export default {id, setup}`; push main/master & cbm install diblok.

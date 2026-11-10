@@ -3,6 +3,8 @@ name: mcp-builder
 description: Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use when building MCP servers to integrate external APIs or services, whether in Python (FastMCP) or Node/TypeScript (MCP SDK).
 license: Complete terms in LICENSE.txt
 metadata:
+  swanwright_src: anthropics/skills
+  swanwright_sha: 2c5958ecac7cee2b583967a2c4981d0f4a75c579
   swanwright_original_id: anthropics-skills__mcp-builder
 ---
 

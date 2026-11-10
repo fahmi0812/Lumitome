@@ -3,6 +3,8 @@ name: principle-model-the-domain
 description: Apply when writing stateful logic, or when code branches a lot or repeats a shape assumption across files.
 disable-model-invocation: true
 metadata:
+  swanwright_src: cursor/plugins
+  swanwright_sha: 236e5481d05cbadc315b374a5de54971858c27bb
   swanwright_original_id: cursor-plugins__principle-model-the-domain
 ---
 

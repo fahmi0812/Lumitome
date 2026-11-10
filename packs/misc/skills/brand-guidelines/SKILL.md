@@ -3,6 +3,8 @@ name: brand-guidelines
 description: Applies Anthropic's official brand colors and typography to any sort of artifact that may benefit from having Anthropic's look-and-feel. Use it when brand colors or style guidelines, visual formatting, or company design standards apply.
 license: Complete terms in LICENSE.txt
 metadata:
+  swanwright_src: anthropics/skills
+  swanwright_sha: 2c5958ecac7cee2b583967a2c4981d0f4a75c579
   swanwright_original_id: anthropics-skills__brand-guidelines
 ---
 

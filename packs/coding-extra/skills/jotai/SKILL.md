@@ -2,6 +2,8 @@
 name: jotai
 description: Jotai adapter for json-render's StateStore interface. Use when integrating json-render with Jotai for state management via @json-render/jotai.
 metadata:
+  swanwright_src: vercel-labs/json-render
+  swanwright_sha: 18194121c8f087afacd9a8ef65fbda18374ee039
   swanwright_original_id: vercel-labs-json-render__jotai
 ---
 

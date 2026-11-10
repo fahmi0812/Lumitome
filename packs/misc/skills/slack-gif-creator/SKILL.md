@@ -3,6 +3,8 @@ name: slack-gif-creator
 description: Knowledge and utilities for creating animated GIFs optimized for Slack. Provides constraints, validation tools, and animation concepts. Use when users request animated GIFs for Slack like "make me a GIF of X doing Y for Slack."
 license: Complete terms in LICENSE.txt
 metadata:
+  swanwright_src: anthropics/skills
+  swanwright_sha: 2c5958ecac7cee2b583967a2c4981d0f4a75c579
   swanwright_original_id: anthropics-skills__slack-gif-creator
 ---
 

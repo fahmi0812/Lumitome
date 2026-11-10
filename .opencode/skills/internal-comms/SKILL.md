@@ -3,6 +3,8 @@ name: internal-comms
 description: A set of resources to help me write all kinds of internal communications, using the formats that my company likes to use. Claude should use this skill whenever asked to write some sort of internal communications (status reports, leadership updates, 3P updates, company newsletters, FAQs, incident reports, project updates, etc.).
 license: Complete terms in LICENSE.txt
 metadata:
+  swanwright_src: anthropics/skills
+  swanwright_sha: 2c5958ecac7cee2b583967a2c4981d0f4a75c579
   swanwright_original_id: anthropics-skills__internal-comms
 ---
 

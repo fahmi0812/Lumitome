@@ -2,6 +2,8 @@
 name: receiving-code-review
 description: Use when receiving code review feedback, before implementing suggestions, especially if feedback seems unclear or technically questionable - requires technical rigor and verification, not performative agreement or blind implementation
 metadata:
+  swanwright_src: obra/superpowers
+  swanwright_sha: 22f0b463e7a5e579904dd6211a520321035526f7
   swanwright_original_id: obra-superpowers__receiving-code-review
 ---
 

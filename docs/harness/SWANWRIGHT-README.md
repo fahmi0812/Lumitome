@@ -117,7 +117,7 @@ Installer **idempoten**, mem-pin SHA256 + mencocokkan file checksum rilis untuk 
 | | |
 |---|---|
 | **Orchestrator tipis** | Primary agent → sub-agen sektor (depth=1) → Elephant / Goldfish / Synthesizer |
-| **110 skill aktif** | Lazy-load; `api-security` & `llm-security` tetap disabled |
+| **900 skill (734 ter-route)** | Lazy-load; `api-security` & `llm-security` tetap disabled |
 | **Skill Query Layer** | SQLite FTS5 BM25 (+sqlite-vec opsional), filter SQL keras, RRF, 1 panggilan 9router pilih ≤5 |
 | **MCP per sektor** | deny-by-default `*_*` → allow server sektor sendiri; `skills` read-only |
 | **Plugin guard** | Blok push ke `main`/`master` + blok `codebase-memory-mcp install/update` |
@@ -167,7 +167,7 @@ Swanwright/
 ├── router/                 # skill-db FTS5, layer0, layer1-select, mcp-sectors
 ├── harness/                # done-gate, scan-gate, sandbox
 ├── scripts/doctor.sh       # verifikasi 0 FAIL
-├── packs/                  # pack opsional (mati default)
+├── packs/                  # pack: bagian satu korpus routing (red-team disabled)
 ├── docs/                   # PRD, MCP, routing, catalog
 └── assets/                 # logo, banner, diagram
 ```

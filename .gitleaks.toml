@@ -11,3 +11,11 @@ useDefault = true
 [[allowlists]]
 description = "Payload/contoh dokumentasi pentest yang di-vendor di pack red-team (nonaktif), bukan kredensial nyata"
 paths = ['''^packs/red-team/''']
+
+[[allowlists]]
+description = "Kunci publik PostHog (phc_, client-side by design, hanya kirim event) yang di-vendor dari upstream edenfunf/reelmimic di skill media-use; bukan kredensial Fahmi dan tidak bisa membaca data proyek. Rotasi butuh pemilik proyek PostHog upstream."
+paths = ['''^packs/motion/skills/media-use/scripts/lib/telemetry\.mjs$''']
+
+[[allowlists]]
+description = "False positive generic-api-key: pesan error 'Missing/duplicate asset/image ID' di script validasi referensi; 'key' di sini variabel lokal berisi ID aset, bukan kredensial."
+paths = ['''^packs/motion/skills/directing-stickman-videos/scripts/a6_reference_check\.py$''']

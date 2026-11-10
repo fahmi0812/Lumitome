@@ -2,6 +2,8 @@
 name: using-git-worktrees
 description: Use when starting feature work that needs isolation from current workspace or before executing implementation plans - ensures an isolated workspace exists via native tools or git worktree fallback
 metadata:
+  swanwright_src: obra/superpowers
+  swanwright_sha: 22f0b463e7a5e579904dd6211a520321035526f7
   swanwright_original_id: obra-superpowers__using-git-worktrees
 ---
 

@@ -4,6 +4,8 @@ description: Grill me about specs for the workflows I want to build, within this
 disable-model-invocation: true
 argument-hint: A workflow to design, or nothing to go find one
 metadata:
+  swanwright_src: mattpocock/skills
+  swanwright_sha: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
   swanwright_original_id: mattpocock-skills__loop-me
 ---
 

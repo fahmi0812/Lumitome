@@ -3,6 +3,8 @@ name: pr
 description: Use when writing a PR body.
 metadata:
   credits: '{"skill": "show-me", "author": "Dex Horthy", "organisation": "Humanlayer", "url": "https://github.com/humanlayer/skills/blob/main/plugins/show-me/skills/show-me/SKILL.md"}'
+  swanwright_src: mattpocock/skills
+  swanwright_sha: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
   swanwright_original_id: mattpocock-skills__pr
 ---
 

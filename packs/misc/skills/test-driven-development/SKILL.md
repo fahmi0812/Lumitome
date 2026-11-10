@@ -2,6 +2,8 @@
 name: test-driven-development
 description: Use when implementing any feature or bugfix, before writing implementation code
 metadata:
+  swanwright_src: obra/superpowers
+  swanwright_sha: 22f0b463e7a5e579904dd6211a520321035526f7
   swanwright_original_id: obra-superpowers__test-driven-development
 ---
 

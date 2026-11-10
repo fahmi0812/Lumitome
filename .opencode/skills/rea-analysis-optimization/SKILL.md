@@ -2,6 +2,8 @@
 name: rea-analysis-optimization
 description: Optimize REA providers and shared analysis workflows for agent context, latency, CPU, and memory while preserving correctness and Evidence. Use for analysis bottlenecks and cache or query design; CI/test-suite optimization belongs to rea-ci-tests-audit.
 metadata:
+  swanwright_src: morluto/rea
+  swanwright_sha: c52a9b9d79021d4799c478d73a3fd3ed795b2318
   swanwright_original_id: morluto-rea__rea-analysis-optimization
 ---
 
@@ -12,8 +14,8 @@ equivalent completed investigations. A useful outcome can also be a measured
 decision to leave an implementation alone.
 
 Follow the checkout's [performance priorities](../../../AGENTS.md#performance),
-[tool design](../../../docs/tool-design.md), and
-[testing guide](../../../docs/testing.md). This skill supplies an optimization
+[tool design](../../../docs/development/tool-design.md), and
+[testing guide](../../../docs/development/testing.md). This skill supplies an optimization
 workflow, not additional permission to execute targets, publish, or merge.
 Use the current contracts, provider prerequisites, and user authorization.
 

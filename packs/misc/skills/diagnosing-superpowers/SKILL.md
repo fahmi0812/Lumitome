@@ -2,6 +2,8 @@
 name: diagnosing-superpowers
 description: Use when a superpowers session went wrong and your human partner wants to know why — repeated work, ignored plans, stumbles, poor results, a skill that didn't fire, "it took too long", "why is it so expensive", "what is it doing" — or wants to build a bug report for the superpowers maintainers, for the current session or a past one identified by id or path, on any harness.
 metadata:
+  swanwright_src: obra/superpowers
+  swanwright_sha: 22f0b463e7a5e579904dd6211a520321035526f7
   swanwright_original_id: obra-superpowers__diagnosing-superpowers
 ---
 

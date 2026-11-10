@@ -2,6 +2,8 @@
 name: directives
 description: Pre-built custom directives for json-render — formatting, math, string manipulation, and i18n. Use when working with @json-render/directives, defining custom directives with defineDirective, or adding $format, $math, $concat, $count, $truncate, $pluralize, $join, or $t to specs.
 metadata:
+  swanwright_src: vercel-labs/json-render
+  swanwright_sha: 18194121c8f087afacd9a8ef65fbda18374ee039
   swanwright_original_id: vercel-labs-json-render__directives
 ---
 

@@ -3,6 +3,8 @@ name: setup-matt-pocock-skills
 description: 'Configure this repo for the engineering skills: set up its issue tracker, triage label vocabulary, and domain doc layout. Run once before first use of the other engineering skills.'
 disable-model-invocation: true
 metadata:
+  swanwright_src: mattpocock/skills
+  swanwright_sha: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
   swanwright_original_id: mattpocock-skills__setup-matt-pocock-skills
 ---
 

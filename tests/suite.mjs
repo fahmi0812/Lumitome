@@ -54,6 +54,11 @@ for (const c of g) { const r = layer0(c.prompt); if (r.hit && r.sektor && r.sekt
 ok(`golden layer0 strict: 0 mismatch (dapat ${gMis})`, gMis === 0);
 ok("layer0: tulis paper tetap penulisan", layer0("tolong tulis paper ilmiah tentang LLM").sektor === "penulisan");
 ok("layer0: rangkum paper -> riset", layer0("rangkum 3 paper tentang RAG").sektor === "riset");
+// v0.3.33 §5 — review arsitektur: golden coding-04/09/14/19 (architect/grill).
+// Tetap spesifik: "diagram arsitektur" tidak boleh ikut (penulisan), "rencana arsitektur" tetap riset.
+const ar = layer0("kerjakan review arsitektur API");
+ok("layer0: review arsitektur -> coding + architect/grill", ar.hit && ar.sektor === "coding" && ar.skillsHint.includes("architect") && ar.skillsHint.includes("grill"));
+ok("layer0: diagram/rencana arsitektur tidak dibajak coding", layer0("bantu buat diagram arsitektur").sektor !== "coding" && layer0("interrogate rencana arsitektur ini, cari blind spot").sektor === "riset");
 const v014 = g.filter((c) => c.expect_skill);
 const v014Bad = v014.filter((c) => { const r = layer0(c.prompt); return !r.hit || r.sektor !== c.expect_sektor || !r.skillsHint.includes(c.expect_skill); });
 ok(`golden v0.1.4: skill baru ter-route (sektor+skill) ${v014.length - v014Bad.length}/${v014.length}${v014Bad.length ? " gagal: " + v014Bad.map((c) => c.id).join(",") : ""}`, v014.length >= 20 && v014Bad.length === 0);
@@ -301,6 +306,32 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   // sisa hanya coding-04/09/14/19 architect/grill). Ambang 0,8 kembali
   // karena angka membuktikannya, bukan karena ambang diturunkan.
   ok(`metrik: L0 mismatch 0, recall@5=${met.selected_recall_at5_any}, top-1=${met.top1_accuracy}`, met.layer0_mismatch === 0 && met.cases_with_gold > 50 && met.selected_recall_at5_any >= 0.8);
+  // v0.3.33 §5 — 4 miss architect/grill lunas (coding-04/09/14/19): recall@5 0,9643 → 1,0.
+  ok(`golden architect/grill: 4 miss lunas (misses_at5=${met.misses_at5})`, met.misses_at5 === 0);
+  const ar2 = await SD.route("kerjakan review arsitektur API", { useL1: false, log: false });
+  ok("route: review arsitektur API -> architect + grill-* terpilih", ar2.l0.hit && ar2.l0.sektor === "coding" && ar2.picked.includes("architect") && ar2.picked.some((p) => p.startsWith("grill")));
+  // §4 v0.3.33: metrik golden DIPIN PERSIS pada baseline BARU v0.3.33
+  // (bukan ambang longgar) — optimasi latensi dilarang mengubah semantik
+  // ranking. Pin diperbarui dari v0.3.32 (recall@5 0,9643, MRR 0,8795,
+  // miss 4) ke angka pasca-§5 yang sah: §5 melunasi 4 miss architect/grill
+  // (coding-04/09/14/19) → recall@5 1,0, MRR 0,8973, miss 0.
+  ok(`metrik identik baseline v0.3.33: recall@5=${met.selected_recall_at5_any} top-1=${met.top1_accuracy} MRR=${met.mrr_at32} miss=${met.misses_at5} L0-mismatch=${met.layer0_mismatch}`,
+    met.selected_recall_at5_any === 1 && met.top1_accuracy === 0.7946 && met.mrr_at32 === 0.8973 && met.misses_at5 === 0 && met.layer0_mismatch === 0);
+  // §4 v0.3.33: latensi route() — median 30 prompt golden pertama (warmup 3x).
+  // Baseline v0.3.32: median ~62ms; sesudah optimasi trigram + vocab-cache:
+  // ~8–12ms. Ambang 40ms memberi headroom noise VM tapi gagal pada kecepatan lama.
+  {
+    const SD4 = await import("../router/skill-db.mjs");
+    process.env.SW_ROUTE_CACHE = "0";
+    const sample = g.slice(0, 30);
+    for (const c of sample.slice(0, 3)) await SD4.route(c.prompt, { useL1: false, log: false });
+    const lat = [];
+    for (const c of sample) { const t0 = performance.now(); await SD4.route(c.prompt, { useL1: false, log: false }); lat.push(performance.now() - t0); }
+    delete process.env.SW_ROUTE_CACHE;
+    lat.sort((a, b) => a - b);
+    const med = lat[Math.floor(lat.length / 2)];
+    ok(`latensi route(): median ${med.toFixed(1)}ms < 40ms (30 prompt golden, warmup 3x)`, med < 40);
+  }
 }
 
 // ---------- lumi/fix-v2: guard Lumitome (fail-closed), bwrap, anti-spin, done-gate runtime, parser L1 ----------
@@ -1062,37 +1093,46 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
   // (MIT, registry 43 aturan di scripts/detect/rules.mjs — terverifikasi;
   // klaim v0.3.28 bahwa "43 aturan tidak terverifikasi" salah, dikoreksi
   // di sini). Jendela hue purple-gradient ikut upstream ui-craft
-  // (ungu 255–330°, cyan/biru 170–255°). Tiap aturan: tes merah + hijau +
+  // (ungu 255–330°, cyan/biru 170–255°) DAN logikanya AND sejak v0.3.33
+  // (dulu OR v0.3.29–v0.3.32). Tiap aturan: tes merah + hijau +
   // pengecualian brief eksplisit (allow).
   ok("design-gate: rgbToHsl — ungu #7C3AED hue ≈ 262, merah hue 0, abu-abu saturasi 0",
     Math.abs(DG.rgbToHsl([124, 58, 237]).h - 262) < 1 && DG.rgbToHsl([255, 0, 0]).h === 0 && DG.rgbToHsl([128, 128, 128]).s === 0);
   ok("design-gate: parseGradientStops baca rgb() + #hex",
     DG.parseGradientStops("linear-gradient(135deg, rgb(124, 58, 237) 0%, #4F46E5 100%)").length === 2 &&
     DG.parseGradientStops("none").length === 0);
-  ok("design-gate: anti-slop purple-gradient — gradien ungu gagal; gradien dari token lolos; cyan gagal; gradien karamel lolos; tanpa gradien tidak dicek",
+  // AND (v0.3.33, ikut upstream ui-craft `purple-cyan-gradient`): fail
+  // HANYA bila satu gradien mengandung stop ungu DAN stop cyan/biru.
+  // Gradien ungu murni kini PASS (dulu FAIL di OR); gradien cyan murni
+  // juga PASS (dulu FAIL di OR — berubah juga, sama seperti ungu murni);
+  // gradien ungu+cyan tetap FAIL; gradien dari token lolos; karamel lolos.
+  ok("design-gate: anti-slop purple-gradient AND — ungu+cyan gagal; ungu murni lolos; cyan murni lolos; token lolos; karamel lolos; tanpa gradien tidak dicek",
     DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(124, 58, 237) 0%, rgb(79, 70, 229) 100%)", where: "div: hero" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(124, 58, 237) 0%, rgb(168, 85, 247) 100%)" }] }).length === 0 &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(90deg, rgb(34, 211, 238) 0%, rgb(6, 182, 212) 100%)" }] }).length === 0 &&
     DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(124, 58, 237) 0%, rgb(79, 70, 229) 100%)" }], tokens: ["#7C3AED", "#4F46E5"] }).length === 0 &&
-    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(90deg, rgb(34, 211, 238) 0%, rgb(6, 182, 212) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(124, 58, 237) 0%, rgb(79, 70, 229) 100%)" }], tokens: ["#4F46E5"] }).length === 0 &&
     DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(90deg, rgb(198, 139, 78) 0%, rgb(62, 39, 35) 100%)" }] }).length === 0 &&
     DG.checkAntiSlop({}).length === 0);
   // Jendela hue upstream ui-craft (v0.3.29): ungu 255–330°, cyan/biru
-  // 170–255°. KOREKSI terhadap ekspektasi awal rencana: indigo 243° TETAP
-  // ditandai — bukan lewat jendela ungu, tapi karena 243° masuk jendela
-  // cyan/biru (170–255). Harapan "indigo tidak ditandai" keliru secara
-  // aritmetika (243 ∈ [170,255)) dan tidak bisa dipenuhi tanpa mengubah
-  // logika OR menjadi AND (aturan ui-craft asli memang AND: butuh SATU stop
-  // ungu DAN SATU stop cyan dalam gradien yang sama — tapi itu akan
-  // melepas gradien ungu murni dan cyan murni, dan mematahkan tes cyan
-  // lama; jadi OR + angka baru yang dipakai, dan perbedaannya dilaporkan).
-  // Magenta 310° dan biru 220° yang dulu lolos kini ditandai; 305° dan
-  // 230° adalah batas yang benar-benar berubah dari jendela lama.
-  ok("design-gate: anti-slop purple-gradient hue window upstream — indigo 243 ditandai (jendela cyan); magenta 310 gagal; biru 220 gagal; 305 dan 230 kini ditandai",
-    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(79, 70, 229) 0%, rgb(255, 255, 255) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
-    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(255, 0, 212) 0%, rgb(255, 255, 255) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
-    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(0, 85, 255) 0%, rgb(255, 255, 255) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
+  // 170–255° — DENGAN logika AND sejak v0.3.33. Stop tunggal dari satu
+  // jendela saja TIDAK cukup: indigo 243° (jendela cyan), magenta 310°
+  // (jendela ungu), biru 220°/230° (jendela cyan) masing-masing lolos bila
+  // pasangannya putih/netral. Fail butuh PASANGAN dalam satu gradien:
+  // ungu 262° + indigo 243°, magenta 305° + biru 230°, dan batas jendela
+  // hue 255° (rgb(64,0,255), ungu) + cyan 187° ikut gagal. Catatan
+  // v0.3.29 soal "indigo tidak ditandai mustahil tanpa AND" kini
+  // terjawab: AND-lah yang dipakai, dan indigo tunggal memang lolos.
+  ok("design-gate: anti-slop purple-gradient hue window upstream AND — stop tunggal lolos (indigo 243, magenta 310, biru 220/230); pasangan ungu+cyan gagal (262+243, 305+230, batas 255+187)",
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(79, 70, 229) 0%, rgb(255, 255, 255) 100%)" }] }).length === 0 &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(255, 0, 212) 0%, rgb(255, 255, 255) 100%)" }] }).length === 0 &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(0, 85, 255) 0%, rgb(255, 255, 255) 100%)" }] }).length === 0 &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(124, 58, 237) 0%, rgb(255, 255, 255) 100%)" }] }).length === 0 &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(0, 43, 255) 0%, rgb(255, 255, 255) 100%)" }] }).length === 0 &&
     DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(124, 58, 237) 0%, rgb(79, 70, 229) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
-    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(255, 0, 234) 0%, rgb(255, 255, 255) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
-    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(0, 43, 255) 0%, rgb(255, 255, 255) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")));
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(255, 0, 234) 0%, rgb(0, 43, 255) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(64, 0, 255) 0%, rgb(34, 211, 238) 100%)" }] }).some((f) => f.detail.startsWith("purple-gradient")) &&
+    DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(135deg, rgb(124, 58, 237) 0%, rgb(79, 70, 229) 100%)" }, { value: "linear-gradient(90deg, rgb(198, 139, 78) 0%, rgb(62, 39, 35) 100%)" }] }).filter((f) => f.detail.startsWith("purple-gradient")).length === 1);
   ok("design-gate: anti-slop repeating-gradient — gradien berulang gagal, gradien biasa lolos",
     DG.checkAntiSlop({ backgrounds: [{ value: "repeating-linear-gradient(45deg, rgb(229, 231, 235) 0px, rgb(255, 255, 255) 10px)" }] }).some((f) => f.detail.startsWith("repeating-gradient")) &&
     DG.checkAntiSlop({ backgrounds: [{ value: "linear-gradient(90deg, rgb(198, 139, 78) 0%, rgb(62, 39, 35) 100%)" }] }).length === 0);
@@ -1213,6 +1253,23 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
       derivedDirect.contract.actions.some((c) => c.id === "filter" && c.kind === "click-then-count" && c.expected === 0) &&
       derivedDirect.contract.actions.some((c) => c.id === "form-empty" && c.kind === "click-then-count" && c.expected === 1) &&
       derivedDirect.contract.actions.some((c) => c.id === "theme-toggle" && c.kind === "click-then-attr" && c.expected === "dark"));
+    // MaxListeners (§9 v0.3.33): tiap Browser.launch dulu mendaftarkan
+    // listener process (exit + SIGINT/SIGTERM/SIGHUP) yang tidak pernah
+    // dilepas — 11 launch = MaxListenersExceededWarning. close() kini
+    // melepasnya: hitungan listener kembali ke baseline + 0 warning.
+    const mlWarns = [];
+    const onMlWarn = (w) => { if (w.name === "MaxListenersExceededWarning") mlWarns.push(w.message); };
+    process.on("warning", onMlWarn);
+    const baseExit = process.listenerCount("exit");
+    const baseInt = process.listenerCount("SIGINT");
+    try {
+      for (let i = 0; i < 3; i++) {
+        const b = await Browser.launch({ extraArgs: typeof process.getuid === "function" && process.getuid() === 0 ? ["--no-sandbox"] : [] });
+        try { await b.newPage({ width: 800, height: 600 }); } finally { await b.close().catch(() => {}); }
+      }
+    } finally { process.removeListener("warning", onMlWarn); }
+    ok("design-cdp: launch+close tidak menumpuk listener process (exit/SIGINT kembali ke baseline, 0 MaxListenersExceededWarning)",
+      process.listenerCount("exit") === baseExit && process.listenerCount("SIGINT") === baseInt && mlWarns.length === 0);
     const defAll = await BH.probeBehavior("tests/fixtures/design/behavior-default-all.html", null);
     ok("design-behavior default: probe tanpa kontrak PASS di fixture benar (source 'default', 5 checks lolos)",
       defAll.pass === true && defAll.source === "default" && defAll.checks.length === 5 && defAll.checks.every((c) => c.passed) &&

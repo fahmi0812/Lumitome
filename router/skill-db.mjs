@@ -94,10 +94,15 @@ export async function embed(texts, provider = embedProvider()) {
 }
 
 // ---------- sqlite-vec (opsional) ----------
+let _vecPath = undefined; // undefined = belum dicek, null = sqlite-vec tidak ada, string = path loadable
 export function loadVec(db) {
   try {
-    const sv = createRequire(import.meta.url)("sqlite-vec");
-    db.loadExtension(sv.getLoadablePath());
+    if (_vecPath === undefined) {
+      try { _vecPath = createRequire(import.meta.url)("sqlite-vec").getLoadablePath(); }
+      catch { _vecPath = null; } // tanpa sqlite-vec: jangan ulang require gagal tiap openDb
+    }
+    if (!_vecPath) return null;
+    db.loadExtension(_vecPath);
     return db.prepare("select vec_version() v").get().v;
   } catch { return null; }
 }

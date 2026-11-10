@@ -4,7 +4,9 @@ description: Create strategic HTML presentations with Chart.js, design tokens, r
 argument-hint: '[topic] [slide-count]'
 metadata:
   author: claudekit
-  version: 1.0.0
+  version: "1.0.0"
+  swanwright_src: nextlevelbuilder/ui-ux-pro-max-skill
+  swanwright_sha: 4f2dbb67e64969a9a30ab00742f2d55d66ddec2b
   swanwright_original_id: nextlevelbuilder-ui-ux-pro-max-skill__slides
 ---
 

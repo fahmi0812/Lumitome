@@ -4,6 +4,8 @@ description: The Elephant resolution skill. Ingests flat deficiency reports from
 license: Apache-2.0
 disable-model-invocation: true
 metadata:
+  swanwright_src: google/elephant-goldfish-model
+  swanwright_sha: bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31
   swanwright_original_id: google-elephant-goldfish-model__egm-resolve
 ---
 
@@ -93,7 +95,7 @@ using your file-writing tool. Use this layout:
 ## Prioritized Findings & AI Suggestions
 
 {{range findings, ordered by Severity}}
-### [Issue 1] [`[ReviewerPersona]`] - Severity: [High | Medium | Low]
+### [Issue 1] [`[ReviewerPersona]`] - Severity: [Blocker | Major | Nit]
 *   **Affected Scope:** [Lines Start-End]([RelativePath]#L[Start]-L[End]) ([Sub-header])
 *   **Discrepancy Description:** [copied from FindingsList]
 *   **Rationale:** [copied from FindingsList]

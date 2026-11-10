@@ -3,6 +3,8 @@ name: to-spec
 description: 'Turn the current conversation into a spec and publish it to the project issue tracker: no interview, just synthesis of what you''ve already discussed.'
 disable-model-invocation: true
 metadata:
+  swanwright_src: mattpocock/skills
+  swanwright_sha: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
   swanwright_original_id: mattpocock-skills__to-spec
 ---
 

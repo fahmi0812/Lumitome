@@ -2,6 +2,8 @@
 name: shadcn-svelte
 description: Pre-built shadcn-svelte components for json-render Svelte apps. Use when working with @json-render/shadcn-svelte, adding standard UI components to a Svelte catalog, or building Svelte web UIs with shadcn-svelte + Tailwind CSS components.
 metadata:
+  swanwright_src: vercel-labs/json-render
+  swanwright_sha: 18194121c8f087afacd9a8ef65fbda18374ee039
   swanwright_original_id: vercel-labs-json-render__shadcn-svelte
 ---
 

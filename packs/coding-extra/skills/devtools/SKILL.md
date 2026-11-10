@@ -2,6 +2,8 @@
 name: devtools
 description: Drop-in inspector panel for any json-render app. Use when the user wants to debug a generative UI, inspect the spec tree, edit state at runtime, see dispatched actions, follow stream patches live, browse a catalog, or pick DOM elements to find their spec keys. Triggers include "add devtools", "debug json-render", "inspect the spec", "why is this element not rendering", "see the state at runtime", or requests to tap streams / capture action logs for `@json-render/devtools`.
 metadata:
+  swanwright_src: vercel-labs/json-render
+  swanwright_sha: 18194121c8f087afacd9a8ef65fbda18374ee039
   swanwright_original_id: vercel-labs-json-render__devtools
 ---
 

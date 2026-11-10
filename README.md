@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.32-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.33-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -18,7 +18,7 @@ Lumitome is a coding assistant that runs in your terminal. It is built on OpenCo
 
 You give it a task, such as "fix the failing tests". It reads your code, edits files, and runs commands to get it done.
 
-624 skills in one registry across coding, writing, research, security, finance, media and misc — 458 routable; the 166-skill red-team pack stays disabled (trial: no dormant packs). Run `/docs-pack` to scaffold a project's 12 living docs, `/stitch-ui` to build UI from a reference image, or `/external-tools` to install an external app and connect it to the agent.
+900 skills in one registry across coding, writing, research, security, finance, media and misc — 734 routable; the 166-skill red-team pack stays disabled (since v0.3.27: one corpus, no dormant packs). Run `/docs-pack` to scaffold a project's 12 living docs, `/stitch-ui` to build UI from a reference image, or `/external-tools` to install an external app and connect it to the agent.
 
 ## Install
 
@@ -40,7 +40,7 @@ While it installs (and uninstalls) you see one status line and one line when it 
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.32.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.33.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome

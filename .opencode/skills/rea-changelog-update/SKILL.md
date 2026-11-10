@@ -2,13 +2,15 @@
 name: rea-changelog-update
 description: Prepare or rewrite REA release changelogs and GitHub release notes from pinned Git history, with verified contributor thanks and Release Please synchronization.
 metadata:
+  swanwright_src: morluto/rea
+  swanwright_sha: c52a9b9d79021d4799c478d73a3fd3ed795b2318
   swanwright_original_id: morluto-rea__rea-changelog-update
 ---
 
 # REA changelog update
 
 Use this for release-note preparation and contributor attribution. Read
-[docs/releasing.md](../../../docs/releasing.md) from the repository root for
+[docs/development/releasing.md](../../../docs/development/releasing.md) from the repository root for
 publication authority and the existing checkpoint checks. This skill prepares
 notes; it does not authorize merging, tagging, or publishing.
 

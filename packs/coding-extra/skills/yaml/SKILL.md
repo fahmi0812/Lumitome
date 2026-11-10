@@ -2,6 +2,8 @@
 name: yaml
 description: YAML wire format for json-render with streaming parser, prompt generation, and AI SDK transform. Use when working with @json-render/yaml, YAML-based spec streaming, yaml-spec/yaml-edit fences, or YAML prompt generation.
 metadata:
+  swanwright_src: vercel-labs/json-render
+  swanwright_sha: 18194121c8f087afacd9a8ef65fbda18374ee039
   swanwright_original_id: vercel-labs-json-render__yaml
 ---
 

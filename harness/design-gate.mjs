@@ -275,9 +275,12 @@ export function firstFontFamily(font = "") {
  *
  * Aturan final (masing-masing punya tes merah + hijau):
  * - purple-gradient (Impeccable `ai-color-palette` + ui-craft
- *   `purple-cyan-gradient`): gradien dengan stop ungu/violet (hue 255–330)
- *   atau cyan/biru (hue 170–255, saturasi > 0.15) — jendela ui-craft
- *   (dulu 240–300 + 170–200, dikoreksi v0.3.29 ke upstream).
+ *   `purple-cyan-gradient`): SATU gradien mengandung stop ungu/violet
+ *   (hue 255–330) DAN stop cyan/biru (hue 170–255, saturasi > 0.15) —
+ *   jendela ui-craft (dulu 240–300 + 170–200, dikoreksi v0.3.29 ke
+ *   upstream). Aturan upstream memang AND; v0.3.29–v0.3.32 memakai OR
+ *   (over-flag: gradien ungu murni / cyan murni ikut gagal), dikoreksi
+ *   ke AND di v0.3.33 — konsekuensi: gradien ungu murni kini lolos.
  *   Lolos bila SEMUA stop-nya token deklarasi atau transparent — gradien
  *   dari palet brief adalah niat, bukan slop.
  * - repeating-gradient (Impeccable `repeating-stripes-gradient`): gradien
@@ -341,14 +344,16 @@ export function checkAntiSlop(input = {}) {
       const stops = parseGradientStops(value);
       const offToken = stops.filter((s) => s.alpha > 0 && !isToken(s.rgb));
       if (offToken.length === 0) continue;
-      const tell = offToken.find((s) => {
-        const { h, s: sat } = rgbToHsl(s.rgb);
-        // Jendela upstream ui-craft purple-cyan-gradient (v0.3.29):
-        // ungu 255–330°, cyan/biru 170–255° (dulu 240–300 + 170–200).
-        return sat > 0.15 && ((h >= 255 && h <= 330) || (h >= 170 && h < 255));
-      });
-      if (tell) {
-        out.push(finding("anti-slop", "fail", `purple-gradient: gradien dengan stop ${rgbToHex(tell.rgb)} (hue ${Math.round(rgbToHsl(tell.rgb).h)}°)${where} — bukan token deklarasi (Impeccable ai-color-palette)`));
+      // Aturan upstream ui-craft `purple-cyan-gradient` adalah AND (v0.3.33):
+      // fail HANYA bila SATU gradien mengandung stop ungu (hue 255–330°)
+      // DAN stop cyan/biru (hue 170–255°, saturasi > 0.15). Gradien ungu
+      // murni atau cyan murni kini lolos — dulu OR (v0.3.29) menandainya.
+      const isPurple = (s) => { const { h, s: sat } = rgbToHsl(s.rgb); return sat > 0.15 && h >= 255 && h <= 330; };
+      const isCyan = (s) => { const { h, s: sat } = rgbToHsl(s.rgb); return sat > 0.15 && h >= 170 && h < 255; };
+      const purple = offToken.find(isPurple);
+      const cyan = offToken.find(isCyan);
+      if (purple && cyan) {
+        out.push(finding("anti-slop", "fail", `purple-gradient: gradien dengan stop ungu ${rgbToHex(purple.rgb)} (hue ${Math.round(rgbToHsl(purple.rgb).h)}°) + stop cyan/biru ${rgbToHex(cyan.rgb)} (hue ${Math.round(rgbToHsl(cyan.rgb).h)}°)${where} — bukan token deklarasi (Impeccable ai-color-palette)`));
       }
     }
   }

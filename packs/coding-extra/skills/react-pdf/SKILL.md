@@ -2,6 +2,8 @@
 name: react-pdf
 description: React PDF renderer for json-render. Use when generating PDF documents from JSON specs, working with @json-render/react-pdf, or rendering specs to PDF buffers/streams/files.
 metadata:
+  swanwright_src: vercel-labs/json-render
+  swanwright_sha: 18194121c8f087afacd9a8ef65fbda18374ee039
   swanwright_original_id: vercel-labs-json-render__react-pdf
 ---
 

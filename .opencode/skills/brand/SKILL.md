@@ -4,7 +4,9 @@ description: Brand voice, visual identity, messaging frameworks, asset managemen
 argument-hint: '[update|review|create] [args]'
 metadata:
   author: claudekit
-  version: 1.0.0
+  version: "1.0.0"
+  swanwright_src: nextlevelbuilder/ui-ux-pro-max-skill
+  swanwright_sha: 4f2dbb67e64969a9a30ab00742f2d55d66ddec2b
   swanwright_original_id: nextlevelbuilder-ui-ux-pro-max-skill__brand
 ---
 

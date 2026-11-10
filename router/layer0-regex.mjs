@@ -38,6 +38,12 @@ export const KEYWORD_RULES = [
   { re: /\b(figure it out|playbook (migrasi|perubahan)|migrasi besar)\b/i, sektor: "riset", skillsHint: ["figure-it-out"] },
   { re: /\b(riset|research|sumber primer)\b(?!.*\b(tulis|naskah)\b)/i, sektor: "riset", skillsHint: ["research", "deep-research"] },
   { re: /\b(code audit|audit kode|sast|semgrep|codeql|cve)\b/i, sektor: "security", skillsHint: ["code-audit", "security-audit"] },
+  // v0.3.33 — review arsitektur = architect (sketsa/validasi struktur sebelum
+  // kode) + grill-* (interogasi desain sampai tajam). Jendela 2 kata menutup
+  // "tinjauan atas arsitektur" juga — tapi tetap spesifik: "diagram
+  // arsitektur" tetap penulisan (golden penulisan-03/08/13/18) dan "rencana
+  // arsitektur" tetap riset/interrogate (v014-riset-11). Golden coding-04/09/14/19.
+  { re: /\b(review|tinjau\w*|ulas\w*)\b(?:\s+\S+){0,2}\s+(arsitektur|architecture)\b|\barchitecture\s+review\b/i, sektor: "coding", skillsHint: ["architect", "grill"] },
   { re: /\b(code review|review (kode|pr)|minta review|feedback review)\b/i, sektor: "coding", skillsHint: ["code-review", "requesting-code-review", "receiving-code-review"] },
   { re: /\b(ci|typecheck|github actions|workflow runs?)\b/i, sektor: "coding", skillsHint: ["gh-axi"] },
   { re: /\b(gsap|scrolltrigger|animasi scroll)\b/i, sektor: "media", /* golden media-05 dkk: animasi = executor media; skill gsap-* tetap terdaftar coding (design UI) */ skillsHint: ["gsap-core", "gsap-react", "gsap-timeline", "gsap-scrolltrigger"] },

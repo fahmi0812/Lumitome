@@ -4,6 +4,8 @@ description: Executes the Antagonistic-Review process from the Elephant-Goldfish
 license: Apache-2.0
 disable-model-invocation: true
 metadata:
+  swanwright_src: google/elephant-goldfish-model
+  swanwright_sha: bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31
   swanwright_original_id: google-elephant-goldfish-model__egm-review-loop
 ---
 
@@ -50,7 +52,13 @@ The caller or user provides exactly these parameters:
 *   **`Standards`**: Mapping of reviewer names to standard names (shortnames or
     paths).
 *   **`GoldfishContext`**: A reading list (source files, directories, or
-    documentation URLs) fed to reviewers to establish their baseline.
+    documentation URLs) fed to reviewers to establish their baseline. An empty
+    list from the caller counts as provided; do not ask for it again. Some
+    reviewers cannot open URLs, so before the first round save the raw page of
+    each URL as a new file in the working directory (or your harness's artifact
+    directory) and pass its absolute path instead. If a page cannot be saved,
+    ask the user for a local copy and end your turn; if no one can answer,
+    as in a headless run, leave it out, tell the user, and keep going.
 
 ## Path & Standard Resolution Logic
 
@@ -111,8 +119,10 @@ file` mode is specified, confirm full-file line bounds).
         The synthesizer spawns the Goldfish review swarm in
         parallel, deduplicates findings, writes the report artifact, and
         returns a single summary message to avoid context pollution in the root
-        conversation. Pass it the Failed Reviewers rule below. Its summary must
-        give a status, `completed` or `not run`, for each requested reviewer.
+        conversation. Pass it the Failed Reviewers rule below and
+        `GoldfishContext`, and tell it to give those files to each reviewer.
+        Its summary must give a status, `completed` or `not run`, for each
+        requested reviewer.
     *   **Direct Dispatch (Flat Swarm)**: Alternatively, spawn each requested
         reviewer subagent in `Reviewers` directly.
         Instruct each subagent to first read its persona definition in

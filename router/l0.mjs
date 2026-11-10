@@ -8,10 +8,19 @@ import { tokens, rrf, hintMatch, sanitize } from "./skill-db.mjs";
 const tri = (w) => { const s = ` ${w} `, out = new Set(); for (let i = 0; i + 3 <= s.length; i++) out.add(s.slice(i, i + 3)); return out; };
 const jac = (a, b) => { let n = 0; for (const x of a) if (b.has(x)) n++; return n / (a.size + b.size - n || 1); };
 const VOCAB = new WeakMap();
+/** Cache vocab per katalog (source_hash): route() membuka handle DB baru tiap
+ * panggilan, jadi cache per-handle (WeakMap) selalu miss dan vocab dibangun
+ * ulang tiap route() (~40–60ms). source_hash = kunci kesegaran indeks yang
+ * sama dipakai indexState(); hash sama ⇒ isi FTS2 sama ⇒ vocab sama.
+ * DB tanpa meta (mis. in-memory di tes) tetap pakai WeakMap per-handle. */
+let VOCAB_BY_HASH = null;
 
-/** Kosakata per skill (dari kolom FTS2) + trigram per term; di-cache per handle DB. */
+/** Kosakata per skill (dari kolom FTS2) + trigram per term; di-cache per katalog. */
 function vocab(db) {
-  let v = VOCAB.get(db); if (v) return v;
+  let hash = null;
+  try { hash = db.prepare("SELECT v FROM meta WHERE k='source_hash'").get()?.v || null; } catch { hash = null; }
+  if (hash) { if (VOCAB_BY_HASH?.hash === hash) return VOCAB_BY_HASH.v; }
+  else { const v = VOCAB.get(db); if (v) return v; }
   const rows = db.prepare("SELECT s.name, f.name AS n, f.aliases, f.synonyms, f.examples, f.short FROM skill_fts2 f JOIN skill s ON s.id = f.rowid").all();
   const terms = new Map(), bySkill = new Map();
   for (const r of rows) {
@@ -21,7 +30,9 @@ function vocab(db) {
     bySkill.set(r.name, all);
     for (const w of all) if (!terms.has(w)) terms.set(w, tri(w));
   }
-  v = { terms, bySkill }; VOCAB.set(db, v); return v;
+  const v = { terms, bySkill };
+  if (hash) VOCAB_BY_HASH = { hash, v }; else VOCAB.set(db, v);
+  return v;
 }
 
 /** Koreksi token yang tidak ada di kosakata ke term terdekat (Jaccard trigram ≥ th). */
@@ -59,12 +70,26 @@ export function searchL0(db, prompt, { sectors = [], hints = [], n = 12 } = {}) 
     const fixedToks = [...new Set([...toks.filter((t) => !fixes.some((f) => f[0] === t)), ...fixes.map((f) => f[1])])];
     const B = fixes.length && fq(fixedToks) ? st.all(fq(fixedToks), ...params) : [];
     if (B.length) { lists.push(B.map((r, i) => [r.name, i + 1])); weights.push(0.9); }
-    // kemiripan trigram per skill: Σ_token max Jaccard (≥0.5) ke term skill
-    const { bySkill } = vocab(db); const C = [];
+    // kemiripan trigram per skill: Σ_token max Jaccard (≥0.5) ke term skill.
+    // Dulu: tri(w) + jac dihitung ulang untuk tiap (skill × token × term).
+    // Sekarang: skor per (token, term) dihitung SEKALI per token memakai set
+    // trigram yang sudah di-cache di `terms`, lalu tiap skill tinggal lookup.
+    // Nilai yang dipakai identik (max yang sama, filter panjang & ambang sama).
+    const { bySkill, terms } = vocab(db);
     const qt = toks.filter((t) => t.length >= 4).map((t) => [t, tri(t)]);
+    const termScore = qt.map(([t, tt]) => {
+      const m = new Map();
+      for (const [w, wt] of terms) {
+        if (Math.abs(w.length - t.length) > 3) continue;
+        const j = w === t ? 1 : jac(tt, wt);
+        if (j >= 0.5) m.set(w, j);
+      }
+      return m;
+    });
+    const C = [];
     for (const [name, ws] of bySkill) {
       if (!allowed.has(name)) continue; let sc = 0;
-      for (const [t, tt] of qt) { let m = 0; for (const w of ws) { if (Math.abs(w.length - t.length) > 3) continue; const j = w === t ? 1 : jac(tt, tri(w)); if (j > m) m = j; } if (m >= 0.5) sc += m; }
+      for (const m of termScore) { let best = 0; for (const w of ws) { const j = m.get(w); if (j !== undefined && j > best) best = j; } if (best > 0) sc += best; }
       if (sc > 0) C.push([name, sc]);
     }
     C.sort((a, b) => b[1] - a[1]);

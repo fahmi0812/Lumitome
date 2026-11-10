@@ -4,6 +4,8 @@ description: Bootstrap directory README.md files across a repository subtree.
 license: Apache-2.0
 disable-model-invocation: true
 metadata:
+  swanwright_src: google/elephant-goldfish-model
+  swanwright_sha: bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31
   swanwright_original_id: google-elephant-goldfish-model__egm-bootstrap
 ---
 
@@ -56,9 +58,9 @@ If your harness has no subagent tool, run the scout steps inline.
     `git add`). All filesystem changes must be written locally using standard
     file-writing tools. Tracking
     and submitting is deferred to the human user.
-3.  **Temporary File Isolation**: Parallel workers sharing the workspace must
-    perform all status tracking, check-pointing, and log writing in independent,
-    worker-specific directories outside the project repository workspace.
+3.  **Temporary File Isolation**: Each worker keeps its status, checkpoint,
+    and log files in its own directory outside the workspace (host scratch or
+    `mktemp -d`), never a fixed, shared path. If neither exists, skip them.
 4.  **Tool Usage (CRITICAL)**: Use your shell, file-reading, file-writing, and file-editing tools for directory discovery and contract/README
     generation. Adhere to clean Markdown formatting directly during generation
     (standard headers, tables, and fenced code blocks). If a project markdown
@@ -132,9 +134,11 @@ If your harness has no subagent tool, run the scout steps inline.
     *   *Source Code Files*: Files matching recognized source code, schema, and
         contract extensions:
         - Systems & Compiled: `.c`, `.cc`, `.cpp`, `.cxx`, `.h`, `.hh`, `.hpp`,
-          `.rs`, `.go`, `.zig`, `.lean`
-        - Managed & Enterprise: `.java`, `.kt`, `.scala`, `.cs`, `.fs`
-        - Scripting & Dynamic: `.py`, `.rb`, `.php`, `.lua`, `.sh`, `.bash`
+          `.rs`, `.go`, `.zig`, `.lean`, `.f`, `.f90`, `.f95`, `.f03`, `.f08`,
+          `.hs`
+        - Managed & Enterprise: `.java`, `.kt`, `.scala`, `.cs`, `.fs`, `.vb`
+        - Scripting & Dynamic: `.py`, `.rb`, `.php`, `.lua`, `.sh`, `.bash`,
+          `.ps1`, `.psm1`, `.psd1`, `.r`, `.R`, `.ex`, `.exs`
         - Web & Mobile: `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.swift`,
           `.m`, `.dart`
         - Data & Schemas / IDLs: `.sql`, `.proto`, `.graphql`, `.gql`,

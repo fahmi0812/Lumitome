@@ -11,7 +11,7 @@ import path from "node:path";
 export const SYN = {
   laporan: ["report"], report: ["laporan"], kode: ["code"], code: ["kode"], tes: ["test", "uji"], test: ["tes", "uji"], uji: ["test", "tes"],
   keamanan: ["security"], security: ["keamanan"], dokumen: ["document", "doc"], document: ["dokumen"], dokumentasi: ["documentation", "docs"],
-  documentation: ["dokumentasi"], desain: ["design"], design: ["desain"], riset: ["research"], research: ["riset", "penelitian"],
+  documentation: ["dokumentasi"], desain: ["design"], design: ["desain"], arsitektur: ["architecture"], architecture: ["arsitektur"], arsitek: ["architect"], architect: ["arsitek"], riset: ["research"], research: ["riset", "penelitian"],
   keuangan: ["finance", "financial"], finance: ["keuangan"], pajak: ["tax"], tax: ["pajak"], anggaran: ["budget"], budget: ["anggaran"],
   utang: ["debt", "hutang"], debt: ["utang"], tabungan: ["savings"], pembukuan: ["bookkeeping"], neraca: ["balance sheet"],
   rasio: ["ratio"], ratio: ["rasio"], animasi: ["animation"], animation: ["animasi"], video: ["video"], suara: ["sound", "audio"],

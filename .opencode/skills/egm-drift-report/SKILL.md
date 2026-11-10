@@ -4,6 +4,8 @@ description: Runs drift detection on all design documents to check for document 
 license: Apache-2.0
 disable-model-invocation: true
 metadata:
+  swanwright_src: google/elephant-goldfish-model
+  swanwright_sha: bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31
   swanwright_original_id: google-elephant-goldfish-model__egm-drift-report
 ---
 

@@ -301,7 +301,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "sha": "500eeb7e655d1916c8d0880d05c8a80b5a8a86fb",
       "license": "Apache-2.0",
       "original_id": "pbakaus-impeccable__audit",
       "original_name": "audit"
@@ -358,7 +358,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "sha": "4f2dbb67e64969a9a30ab00742f2d55d66ddec2b",
       "license": "MIT",
       "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__banner-design",
       "original_name": "banner-design"
@@ -395,7 +395,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "obra/superpowers",
-      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "sha": "22f0b463e7a5e579904dd6211a520321035526f7",
       "license": "MIT",
       "original_id": "obra-superpowers__brainstorming",
       "original_name": "brainstorming",
@@ -416,7 +416,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "sha": "4f2dbb67e64969a9a30ab00742f2d55d66ddec2b",
       "license": "MIT",
       "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__brand",
       "original_name": "brand"
@@ -515,7 +515,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "mattpocock/skills",
-      "sha": "a496f5513d4a4cf889bc48e189e579f4b0bdf6aa",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "MIT",
       "original_id": "mattpocock-skills__code-review",
       "original_name": "code-review",
@@ -554,7 +554,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "cursor/plugins",
-      "sha": "4dd1d05818d19792e7cd6e818f1667f95f7e1dbe",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "MIT",
       "original_id": "cursor-plugins__correct",
       "original_name": "correct",
@@ -595,7 +595,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "sha": "4f2dbb67e64969a9a30ab00742f2d55d66ddec2b",
       "license": "MIT",
       "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__design",
       "original_name": "design"
@@ -649,7 +649,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "sha": "4f2dbb67e64969a9a30ab00742f2d55d66ddec2b",
       "license": "MIT",
       "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__design-system",
       "original_name": "design-system"
@@ -711,7 +711,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "obra/superpowers",
-      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "sha": "22f0b463e7a5e579904dd6211a520321035526f7",
       "license": "MIT",
       "original_id": "obra-superpowers__dispatching-parallel-agents",
       "original_name": "dispatching-parallel-agents",
@@ -734,7 +734,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "anthropics/skills",
-      "sha": "ca45fc496a3436251f191354091d557da31c15b5",
+      "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
       "license": "PER-SKILL",
       "original_id": "anthropics-skills__doc-coauthoring",
       "original_name": "doc-coauthoring",
@@ -793,7 +793,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "google/elephant-goldfish-model",
-      "sha": "403d8881d62022490637d740657b33f01e321ea8",
+      "sha": "bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31",
       "license": "Apache-2.0",
       "original_id": "google-elephant-goldfish-model__egm-bootstrap",
       "original_name": "egm-bootstrap"
@@ -812,7 +812,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "google/elephant-goldfish-model",
-      "sha": "403d8881d62022490637d740657b33f01e321ea8",
+      "sha": "bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31",
       "license": "Apache-2.0",
       "original_id": "google-elephant-goldfish-model__egm-brainstorm",
       "original_name": "egm-brainstorm"
@@ -831,7 +831,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "google/elephant-goldfish-model",
-      "sha": "403d8881d62022490637d740657b33f01e321ea8",
+      "sha": "bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31",
       "license": "Apache-2.0",
       "original_id": "google-elephant-goldfish-model__egm-draft",
       "original_name": "egm-draft"
@@ -851,7 +851,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "google/elephant-goldfish-model",
-      "sha": "403d8881d62022490637d740657b33f01e321ea8",
+      "sha": "bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31",
       "license": "Apache-2.0",
       "original_id": "google-elephant-goldfish-model__egm-drift-report",
       "original_name": "egm-drift-report"
@@ -870,7 +870,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "google/elephant-goldfish-model",
-      "sha": "403d8881d62022490637d740657b33f01e321ea8",
+      "sha": "bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31",
       "license": "Apache-2.0",
       "original_id": "google-elephant-goldfish-model__egm-resolve",
       "original_name": "egm-resolve"
@@ -889,7 +889,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "google/elephant-goldfish-model",
-      "sha": "403d8881d62022490637d740657b33f01e321ea8",
+      "sha": "bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31",
       "license": "Apache-2.0",
       "original_id": "google-elephant-goldfish-model__egm-review",
       "original_name": "egm-review"
@@ -909,7 +909,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "google/elephant-goldfish-model",
-      "sha": "403d8881d62022490637d740657b33f01e321ea8",
+      "sha": "bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31",
       "license": "Apache-2.0",
       "original_id": "google-elephant-goldfish-model__egm-review-loop",
       "original_name": "egm-review-loop"
@@ -971,7 +971,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "obra/superpowers",
-      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "sha": "22f0b463e7a5e579904dd6211a520321035526f7",
       "license": "MIT",
       "original_id": "obra-superpowers__executing-plans",
       "original_name": "executing-plans"
@@ -1008,7 +1008,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "cursor/plugins",
-      "sha": "4dd1d05818d19792e7cd6e818f1667f95f7e1dbe",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "MIT",
       "original_id": "cursor-plugins__figure-it-out",
       "original_name": "figure-it-out",
@@ -1030,7 +1030,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "obra/superpowers",
-      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "sha": "22f0b463e7a5e579904dd6211a520321035526f7",
       "license": "MIT",
       "original_id": "obra-superpowers__finishing-a-development-branch",
       "original_name": "finishing-a-development-branch",
@@ -1107,7 +1107,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "mattpocock/skills",
-      "sha": "a496f5513d4a4cf889bc48e189e579f4b0bdf6aa",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "MIT",
       "original_id": "mattpocock-skills__git-guardrails-claude-code",
       "original_name": "git-guardrails-claude-code",
@@ -1317,7 +1317,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "pbakaus/impeccable",
-      "sha": "df3a4abe7d0840d5f60324812c432e00b66a4e75",
+      "sha": "500eeb7e655d1916c8d0880d05c8a80b5a8a86fb",
       "license": "Apache-2.0",
       "original_id": "pbakaus-impeccable__impeccable",
       "original_name": "impeccable"
@@ -1337,7 +1337,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "mattpocock/skills",
-      "sha": "a496f5513d4a4cf889bc48e189e579f4b0bdf6aa",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "MIT",
       "original_id": "mattpocock-skills__improve-codebase-architecture",
       "original_name": "improve-codebase-architecture",
@@ -1359,7 +1359,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "cursor/plugins",
-      "sha": "4dd1d05818d19792e7cd6e818f1667f95f7e1dbe",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "MIT",
       "original_id": "cursor-plugins__in-your-own-words",
       "original_name": "in-your-own-words",
@@ -1382,7 +1382,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "anthropics/skills",
-      "sha": "ca45fc496a3436251f191354091d557da31c15b5",
+      "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
       "license": "PER-SKILL",
       "original_id": "anthropics-skills__internal-comms",
       "original_name": "internal-comms",
@@ -1405,7 +1405,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "cursor/plugins",
-      "sha": "4dd1d05818d19792e7cd6e818f1667f95f7e1dbe",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "MIT",
       "original_id": "cursor-plugins__interrogate",
       "original_name": "interrogate",
@@ -1546,7 +1546,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "anthropics/skills",
-      "sha": "ca45fc496a3436251f191354091d557da31c15b5",
+      "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
       "license": "PER-SKILL",
       "original_id": "anthropics-skills__mcp-builder",
       "original_name": "mcp-builder"
@@ -1642,7 +1642,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "vercel-labs/json-render",
-      "sha": "92b273065ba224491ba789f9de6936d32e8a37f8",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "Apache-2.0",
       "original_id": "vercel-labs-json-render__next",
       "original_name": "next",
@@ -1723,7 +1723,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "cursor/plugins",
-      "sha": "4dd1d05818d19792e7cd6e818f1667f95f7e1dbe",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "MIT",
       "original_id": "cursor-plugins__poteto-mode",
       "original_name": "poteto-mode",
@@ -1745,7 +1745,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "morluto/rea",
-      "sha": "8f920bb65b8d8ae669411501b0a3a59a62883ac3",
+      "sha": "c52a9b9d79021d4799c478d73a3fd3ed795b2318",
       "license": "MIT",
       "original_id": "morluto-rea__rea-analysis-optimization",
       "original_name": "rea-analysis-optimization"
@@ -1765,7 +1765,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "morluto/rea",
-      "sha": "8f920bb65b8d8ae669411501b0a3a59a62883ac3",
+      "sha": "c52a9b9d79021d4799c478d73a3fd3ed795b2318",
       "license": "MIT",
       "original_id": "morluto-rea__rea-changelog-update",
       "original_name": "rea-changelog-update"
@@ -1785,7 +1785,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "morluto/rea",
-      "sha": "8f920bb65b8d8ae669411501b0a3a59a62883ac3",
+      "sha": "c52a9b9d79021d4799c478d73a3fd3ed795b2318",
       "license": "MIT",
       "original_id": "morluto-rea__rea-ci-tests-audit",
       "original_name": "rea-ci-tests-audit"
@@ -1805,7 +1805,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "morluto/rea",
-      "sha": "8f920bb65b8d8ae669411501b0a3a59a62883ac3",
+      "sha": "c52a9b9d79021d4799c478d73a3fd3ed795b2318",
       "license": "MIT",
       "original_id": "morluto-rea__rea-tool-design",
       "original_name": "rea-tool-design"
@@ -1824,7 +1824,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "vercel-labs/json-render",
-      "sha": "92b273065ba224491ba789f9de6936d32e8a37f8",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "Apache-2.0",
       "original_id": "vercel-labs-json-render__react",
       "original_name": "react",
@@ -1846,7 +1846,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "obra/superpowers",
-      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "sha": "22f0b463e7a5e579904dd6211a520321035526f7",
       "license": "MIT",
       "original_id": "obra-superpowers__receiving-code-review",
       "original_name": "receiving-code-review",
@@ -1868,7 +1868,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "cursor/plugins",
-      "sha": "4dd1d05818d19792e7cd6e818f1667f95f7e1dbe",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "MIT",
       "original_id": "cursor-plugins__reflect",
       "original_name": "reflect",
@@ -1907,7 +1907,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "obra/superpowers",
-      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "sha": "22f0b463e7a5e579904dd6211a520321035526f7",
       "license": "MIT",
       "original_id": "obra-superpowers__requesting-code-review",
       "original_name": "requesting-code-review",
@@ -1930,7 +1930,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "mattpocock/skills",
-      "sha": "a496f5513d4a4cf889bc48e189e579f4b0bdf6aa",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "MIT",
       "original_id": "mattpocock-skills__research",
       "original_name": "research",
@@ -1953,7 +1953,7 @@
       "requires_consent": true,
       "pack": "",
       "src": "morluto/rea",
-      "sha": "8f920bb65b8d8ae669411501b0a3a59a62883ac3",
+      "sha": "c52a9b9d79021d4799c478d73a3fd3ed795b2318",
       "license": "MIT",
       "original_id": "morluto-rea__reverse-engineer-anything",
       "original_name": "reverse-engineer-anything"
@@ -2053,7 +2053,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "vercel-labs/json-render",
-      "sha": "92b273065ba224491ba789f9de6936d32e8a37f8",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "Apache-2.0",
       "original_id": "vercel-labs-json-render__skill-creator",
       "original_name": "skill-creator",
@@ -2091,7 +2091,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "sha": "4f2dbb67e64969a9a30ab00742f2d55d66ddec2b",
       "license": "MIT",
       "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__slides",
       "original_name": "slides"
@@ -2224,7 +2224,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "obra/superpowers",
-      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "sha": "22f0b463e7a5e579904dd6211a520321035526f7",
       "license": "MIT",
       "original_id": "obra-superpowers__subagent-driven-development",
       "original_name": "subagent-driven-development"
@@ -2263,7 +2263,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "obra/superpowers",
-      "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "sha": "22f0b463e7a5e579904dd6211a520321035526f7",
       "license": "MIT",
       "original_id": "obra-superpowers__systematic-debugging",
       "original_name": "systematic-debugging"
@@ -2321,7 +2321,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "vercel-labs/json-render",
-      "sha": "92b273065ba224491ba789f9de6936d32e8a37f8",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "Apache-2.0",
       "original_id": "vercel-labs-json-render__technical-writer",
       "original_name": "technical-writer",
@@ -2380,7 +2380,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "sha": "4f2dbb67e64969a9a30ab00742f2d55d66ddec2b",
       "license": "MIT",
       "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__ui-styling",
       "original_name": "ui-styling"
@@ -2397,7 +2397,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "nextlevelbuilder/ui-ux-pro-max-skill",
-      "sha": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+      "sha": "4f2dbb67e64969a9a30ab00742f2d55d66ddec2b",
       "license": "MIT",
       "original_id": "nextlevelbuilder-ui-ux-pro-max-skill__ui-ux-pro-max",
       "original_name": "ui-ux-pro-max"
@@ -4677,7 +4677,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__codegen",
       "original_name": "codegen"
@@ -4694,7 +4694,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__core",
       "original_name": "core"
@@ -4711,7 +4711,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__devtools",
       "original_name": "devtools"
@@ -4728,7 +4728,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__devtools-react",
       "original_name": "devtools-react"
@@ -4745,7 +4745,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__devtools-solid",
       "original_name": "devtools-solid"
@@ -4762,7 +4762,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__devtools-svelte",
       "original_name": "devtools-svelte"
@@ -4779,7 +4779,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__devtools-vue",
       "original_name": "devtools-vue"
@@ -4796,7 +4796,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__directives",
       "original_name": "directives"
@@ -4853,7 +4853,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__image",
       "original_name": "image"
@@ -4887,7 +4887,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__jotai",
       "original_name": "jotai"
@@ -4904,7 +4904,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__json-render-shadcn",
       "original_name": "json-render-shadcn"
@@ -4941,7 +4941,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__mcp",
       "original_name": "mcp"
@@ -4958,7 +4958,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__react-email",
       "original_name": "react-email"
@@ -4975,7 +4975,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__react-native",
       "original_name": "react-native"
@@ -4992,7 +4992,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__react-pdf",
       "original_name": "react-pdf"
@@ -5009,7 +5009,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__react-three-fiber",
       "original_name": "react-three-fiber"
@@ -5026,7 +5026,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__redux",
       "original_name": "redux"
@@ -5043,7 +5043,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__remotion",
       "original_name": "remotion"
@@ -5060,7 +5060,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__remotion-best-practices",
       "original_name": "remotion-best-practices"
@@ -5077,7 +5077,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__shadcn-svelte",
       "original_name": "shadcn-svelte"
@@ -5094,7 +5094,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__solid",
       "original_name": "solid"
@@ -5111,7 +5111,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__svelte",
       "original_name": "svelte"
@@ -5128,7 +5128,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__tanstack-start",
       "original_name": "tanstack-start"
@@ -5145,7 +5145,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__vue",
       "original_name": "vue"
@@ -5162,7 +5162,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__xstate",
       "original_name": "xstate"
@@ -5179,7 +5179,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__yaml",
       "original_name": "yaml"
@@ -5196,7 +5196,7 @@
       "requires_consent": false,
       "pack": "coding-extra",
       "src": "",
-      "sha": "",
+      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
       "license": "",
       "original_id": "vercel-labs-json-render__zustand",
       "original_name": "zustand"
@@ -7389,7 +7389,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
       "license": "Complete terms in LICENSE.txt",
       "original_id": "anthropics-skills__academy-guide",
       "original_name": "academy-guide"
@@ -7406,7 +7406,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
       "license": "Complete terms in LICENSE.txt",
       "original_id": "anthropics-skills__algorithmic-art",
       "original_name": "algorithmic-art"
@@ -7423,7 +7423,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__architect",
       "original_name": "architect"
@@ -7440,7 +7440,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__arena",
       "original_name": "arena"
@@ -7457,7 +7457,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__ask-matt",
       "original_name": "ask-matt"
@@ -7474,7 +7474,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__automate-me",
       "original_name": "automate-me"
@@ -7491,7 +7491,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__benchmark-checklist",
       "original_name": "benchmark-checklist"
@@ -7508,7 +7508,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__blast-radius",
       "original_name": "blast-radius"
@@ -7525,7 +7525,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
       "license": "Complete terms in LICENSE.txt",
       "original_id": "anthropics-skills__brand-guidelines",
       "original_name": "brand-guidelines"
@@ -7542,7 +7542,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__bro",
       "original_name": "bro"
@@ -7559,7 +7559,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
       "license": "Complete terms in LICENSE.txt",
       "original_id": "anthropics-skills__canvas-design",
       "original_name": "canvas-design"
@@ -7576,7 +7576,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__chief-of-staff",
       "original_name": "chief-of-staff"
@@ -7593,7 +7593,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
       "license": "Complete terms in LICENSE.txt",
       "original_id": "anthropics-skills__claude-api",
       "original_name": "claude-api"
@@ -7610,7 +7610,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__claude-handoff",
       "original_name": "claude-handoff"
@@ -7627,7 +7627,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__codebase-design",
       "original_name": "codebase-design"
@@ -7644,7 +7644,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__create-formal-verification-skill",
       "original_name": "create-formal-verification-skill"
@@ -7661,7 +7661,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__create-verification-skill",
       "original_name": "create-verification-skill"
@@ -7678,7 +7678,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__diagnosing-bugs",
       "original_name": "diagnosing-bugs"
@@ -7695,7 +7695,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "22f0b463e7a5e579904dd6211a520321035526f7",
       "license": "",
       "original_id": "obra-superpowers__diagnosing-superpowers",
       "original_name": "diagnosing-superpowers"
@@ -7712,7 +7712,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
       "license": "Complete terms in LICENSE.txt",
       "original_id": "anthropics-skills__discernment-nudge",
       "original_name": "discernment-nudge"
@@ -7729,7 +7729,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__domain-modeling",
       "original_name": "domain-modeling"
@@ -7746,7 +7746,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
       "license": "Complete terms in LICENSE.txt",
       "original_id": "anthropics-skills__frontend-design",
       "original_name": "frontend-design"
@@ -7763,7 +7763,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__grill-me",
       "original_name": "grill-me"
@@ -7780,7 +7780,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__grill-with-docs",
       "original_name": "grill-with-docs"
@@ -7797,7 +7797,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__grilling",
       "original_name": "grilling"
@@ -7814,7 +7814,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__handoff",
       "original_name": "handoff"
@@ -7831,7 +7831,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__how",
       "original_name": "how"
@@ -7848,7 +7848,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__implement",
       "original_name": "implement"
@@ -7865,7 +7865,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__implement-spec",
       "original_name": "implement-spec"
@@ -7882,7 +7882,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__ketchup",
       "original_name": "ketchup"
@@ -7899,7 +7899,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__ketchup-video",
       "original_name": "ketchup-video"
@@ -7916,7 +7916,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__loop-me",
       "original_name": "loop-me"
@@ -7933,7 +7933,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__maintain-formal-verification-skill",
       "original_name": "maintain-formal-verification-skill"
@@ -7950,7 +7950,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__maintain-verification-skill",
       "original_name": "maintain-verification-skill"
@@ -7967,7 +7967,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__make-bot-ui",
       "original_name": "make-bot-ui"
@@ -7984,7 +7984,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__migrate-to-shoehorn",
       "original_name": "migrate-to-shoehorn"
@@ -8001,7 +8001,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__no-comments",
       "original_name": "no-comments"
@@ -8018,7 +8018,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__poteto-help",
       "original_name": "poteto-help"
@@ -8035,7 +8035,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__pr",
       "original_name": "pr"
@@ -8052,7 +8052,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-attack-the-premise",
       "original_name": "principle-attack-the-premise"
@@ -8069,7 +8069,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-boundary-discipline",
       "original_name": "principle-boundary-discipline"
@@ -8086,7 +8086,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-build-the-lever",
       "original_name": "principle-build-the-lever"
@@ -8103,7 +8103,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-encode-lessons-in-structure",
       "original_name": "principle-encode-lessons-in-structure"
@@ -8120,7 +8120,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-exhaust-the-design-space",
       "original_name": "principle-exhaust-the-design-space"
@@ -8137,7 +8137,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-experience-first",
       "original_name": "principle-experience-first"
@@ -8154,7 +8154,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-explain-the-number",
       "original_name": "principle-explain-the-number"
@@ -8171,7 +8171,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-fix-root-causes",
       "original_name": "principle-fix-root-causes"
@@ -8188,7 +8188,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-foundational-thinking",
       "original_name": "principle-foundational-thinking"
@@ -8205,7 +8205,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-guard-the-context-window",
       "original_name": "principle-guard-the-context-window"
@@ -8222,7 +8222,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-laziness-protocol",
       "original_name": "principle-laziness-protocol"
@@ -8239,7 +8239,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-make-operations-idempotent",
       "original_name": "principle-make-operations-idempotent"
@@ -8256,7 +8256,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-migrate-callers-then-delete-legacy-apis",
       "original_name": "principle-migrate-callers-then-delete-legacy-apis"
@@ -8273,7 +8273,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-minimize-reader-load",
       "original_name": "principle-minimize-reader-load"
@@ -8290,7 +8290,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-model-the-domain",
       "original_name": "principle-model-the-domain"
@@ -8307,7 +8307,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-never-block-on-the-human",
       "original_name": "principle-never-block-on-the-human"
@@ -8324,7 +8324,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-outcome-oriented-execution",
       "original_name": "principle-outcome-oriented-execution"
@@ -8341,7 +8341,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-prove-it-works",
       "original_name": "principle-prove-it-works"
@@ -8358,7 +8358,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-redesign-from-first-principles",
       "original_name": "principle-redesign-from-first-principles"
@@ -8375,7 +8375,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-separate-before-serializing-shared-state",
       "original_name": "principle-separate-before-serializing-shared-state"
@@ -8392,7 +8392,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-sequence-verifiable-units",
       "original_name": "principle-sequence-verifiable-units"
@@ -8409,7 +8409,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-subtract-before-you-add",
       "original_name": "principle-subtract-before-you-add"
@@ -8426,7 +8426,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-test-behavior-not-implementation",
       "original_name": "principle-test-behavior-not-implementation"
@@ -8443,7 +8443,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__principle-type-system-discipline",
       "original_name": "principle-type-system-discipline"
@@ -8460,7 +8460,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__prototype",
       "original_name": "prototype"
@@ -8477,7 +8477,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__recall",
       "original_name": "recall"
@@ -8494,7 +8494,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__retro",
       "original_name": "retro"
@@ -8511,7 +8511,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__scaffold-exercises",
       "original_name": "scaffold-exercises"
@@ -8528,7 +8528,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__setup-matt-pocock-skills",
       "original_name": "setup-matt-pocock-skills"
@@ -8545,7 +8545,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__setup-pre-commit",
       "original_name": "setup-pre-commit"
@@ -8562,7 +8562,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__setup-pstack",
       "original_name": "setup-pstack"
@@ -8579,7 +8579,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__setup-ts-deep-modules",
       "original_name": "setup-ts-deep-modules"
@@ -8596,7 +8596,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__sharpen",
       "original_name": "sharpen"
@@ -8613,7 +8613,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__show-me-your-work",
       "original_name": "show-me-your-work"
@@ -8630,7 +8630,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
       "license": "Complete terms in LICENSE.txt",
       "original_id": "anthropics-skills__slack-gif-creator",
       "original_name": "slack-gif-creator"
@@ -8647,7 +8647,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__statechart",
       "original_name": "statechart"
@@ -8664,7 +8664,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__swarm",
       "original_name": "swarm"
@@ -8681,7 +8681,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__tdd",
       "original_name": "tdd"
@@ -8698,7 +8698,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__teach",
       "original_name": "teach"
@@ -8715,7 +8715,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__technical-writing",
       "original_name": "technical-writing"
@@ -8732,7 +8732,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "22f0b463e7a5e579904dd6211a520321035526f7",
       "license": "",
       "original_id": "obra-superpowers__test-driven-development",
       "original_name": "test-driven-development"
@@ -8749,7 +8749,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
       "license": "Complete terms in LICENSE.txt",
       "original_id": "anthropics-skills__theme-factory",
       "original_name": "theme-factory"
@@ -8766,7 +8766,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__to-questionnaire",
       "original_name": "to-questionnaire"
@@ -8783,7 +8783,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__to-spec",
       "original_name": "to-spec"
@@ -8800,7 +8800,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__to-tickets",
       "original_name": "to-tickets"
@@ -8817,7 +8817,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__triage",
       "original_name": "triage"
@@ -8834,7 +8834,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__typescript-best-practices",
       "original_name": "typescript-best-practices"
@@ -8851,7 +8851,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__unslop",
       "original_name": "unslop"
@@ -8868,7 +8868,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "22f0b463e7a5e579904dd6211a520321035526f7",
       "license": "",
       "original_id": "obra-superpowers__using-git-worktrees",
       "original_name": "using-git-worktrees"
@@ -8885,7 +8885,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "22f0b463e7a5e579904dd6211a520321035526f7",
       "license": "",
       "original_id": "obra-superpowers__using-superpowers",
       "original_name": "using-superpowers"
@@ -8902,7 +8902,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "22f0b463e7a5e579904dd6211a520321035526f7",
       "license": "",
       "original_id": "obra-superpowers__verification-before-completion",
       "original_name": "verification-before-completion"
@@ -8919,7 +8919,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__wait-what",
       "original_name": "wait-what"
@@ -8936,7 +8936,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__wayfinder",
       "original_name": "wayfinder"
@@ -8953,7 +8953,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
       "license": "Complete terms in LICENSE.txt",
       "original_id": "anthropics-skills__web-artifacts-builder",
       "original_name": "web-artifacts-builder"
@@ -8970,7 +8970,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
       "license": "Complete terms in LICENSE.txt",
       "original_id": "anthropics-skills__webapp-testing",
       "original_name": "webapp-testing"
@@ -8987,7 +8987,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "236e5481d05cbadc315b374a5de54971858c27bb",
       "license": "",
       "original_id": "cursor-plugins__why",
       "original_name": "why"
@@ -9004,7 +9004,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__wizard",
       "original_name": "wizard"
@@ -9021,7 +9021,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__writing-beats",
       "original_name": "writing-beats"
@@ -9038,7 +9038,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__writing-for-agents",
       "original_name": "writing-for-agents"
@@ -9055,7 +9055,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__writing-fragments",
       "original_name": "writing-fragments"
@@ -9072,7 +9072,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "22f0b463e7a5e579904dd6211a520321035526f7",
       "license": "",
       "original_id": "obra-superpowers__writing-plans",
       "original_name": "writing-plans"
@@ -9089,7 +9089,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       "license": "",
       "original_id": "mattpocock-skills__writing-shape",
       "original_name": "writing-shape"
@@ -9106,7 +9106,7 @@
       "requires_consent": false,
       "pack": "misc",
       "src": "",
-      "sha": "",
+      "sha": "22f0b463e7a5e579904dd6211a520321035526f7",
       "license": "",
       "original_id": "obra-superpowers__writing-skills",
       "original_name": "writing-skills"
