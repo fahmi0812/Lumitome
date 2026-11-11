@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.42-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.43-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -40,7 +40,7 @@ While it installs (and uninstalls) you see one status line and one line when it 
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.42.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.43.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
@@ -149,7 +149,7 @@ This is optional. Skip it if you are not sure.
 - **It keeps your secrets in.** It will not read `.env` files or other secret files, and it will not send them anywhere.
 - **It checks its work before saying "done".** It looks at the real result of the last test run. If the tests failed, the task is not done.
 - **It leaves your own OpenCode alone.** Lumitome keeps its own copy of OpenCode in `~/.lumitome`. It does not read or change your OpenCode settings, sessions, or saved logins.
-- **It does not trust a project's own settings by default.** Plugins and settings that come with a cloned project are ignored unless you turn them on with `LUMI_TRUST_PROJECT=1`.
+- **It does not trust a project's own settings by default.** Plugins and settings that come with a cloned project are ignored unless you turn them on with `LUMI_TRUST_PROJECT=1` — in a terminal you must type `ya` every session (logged to the journal, never a permanent approval); a non-TTY run logs a hard warning instead.
 - **Commands can read your home folder, but only write in the current folder.** This is the default (`standard` tier) and has no settings file. Inside the sandbox your home folder and the normal system folders are read-only; the folder you started Lumitome in is the only place commands and file tools can write (plus a temporary `/tmp`), except that a `MEMORY.md` in a parent folder is writable too. Writing anywhere else stops with `LUMI_SANDBOX_OUTSIDE`. Three trust tiers: `strict` adds the Linux container (`bwrap`) and refuses to run shell commands without it; `standard` is the default (same write rules, no container); `trusted` lets the agent write anywhere in the detected project root. Set the tier for a project with `lumitome trust <strict|standard|trusted>`; the setting lives in `~/.lumitome/trust.json`, which the agent cannot read or change. Secret folders stay hidden even though your home folder is readable: `~/.ssh`, `~/.gnupg`, `~/.aws`, `~/.azure`, `~/.kube`, `~/.config/gcloud`, keyrings, browser profiles and cookies, `~/.lumitome/credentials.json`, and `.env` files. SSH to your own server works with a dedicated deploy key (`lumitome trust --deploy-key`); local `sudo` is always blocked. On Windows the same rules apply to file tools and command paths, using your user folder (`%USERPROFILE%`).
 
 ## Uninstall

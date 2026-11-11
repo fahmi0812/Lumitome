@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { pathToFileURL } from "node:url";
+import { pathToFileURL, fileURLToPath } from "node:url";
 
 const SHELL = new Set(["shell", "bash"]);
 const FILE = new Set(["read", "edit", "write", "glob", "grep", "list", "patch", "multiedit", "apply_patch"]);
@@ -26,8 +26,33 @@ export default {
     // Dari salinan di LUMI_HOME/config/plugins, folder harness tiga tingkat di atas tidak ada → engine memantau folder induk terdekat
     // yang ada (mis. /home atau C:\Users) secara rekursif tiap folder dibuka.
     const fallback = ["..", "..", "..", "harness", "lumi-guard.mjs"].join("/");
-    try { g = await import(env.LUMI_HARNESS ? pathToFileURL(env.LUMI_HARNESS).href : new URL(fallback, import.meta.url).href); }
-    catch (e) { closed = `LUMI_GUARD_CLOSED: modul guard gagal dimuat (${String(e)}) — shell & tool tulis ditolak`; }
+    const fallbackPath = fileURLToPath(new URL(fallback, import.meta.url));
+    // P1-2 (4): LUMI_HARNESS hanya boleh menunjuk path di bawah ~/.lumitome/ atau
+    // modul guard bawaan. Cek ini diduplikasi sebaris di sini (bootstrap: validator
+    // resolveHarnessPath tinggal di modul yang sedang divalidasi). Symlink dicek
+    // lewat realpath. Di luar itu: guard tertutup (fail-closed), pesan jelas.
+    const lumiHomeP = env.LUMI_HOME || path.join(env.HOME || os.homedir(), ".lumitome");
+    const withinP = (base: string, p: string) => { const r = path.relative(path.resolve(base), path.resolve(p)); return r === "" || (!r.startsWith("..") && !path.isAbsolute(r)); };
+    const realOf = (p: string) => { try { return fs.realpathSync(p); } catch { return p; } };
+    // Modul guard bawaan: fallback apa adanya + fallback dari lokasi riil plugin
+    // (plugin dimuat lewat symlink LUMI_HOME/config → repo; wrapper menyetel
+    // LUMI_HARNESS ke path repo itu).
+    const pluginRealDir = (() => { try { return path.dirname(fs.realpathSync(fileURLToPath(import.meta.url))); } catch { return ""; } })();
+    const builtinPaths = [fallbackPath, ...(pluginRealDir ? [path.resolve(pluginRealDir, "..", "..", "..", "harness", "lumi-guard.mjs")] : [])];
+    const builtinReal = builtinPaths.map(realOf);
+    let harnessPath: string | null = null;
+    if (env.LUMI_HARNESS) {
+      const raw = String(env.LUMI_HARNESS);
+      const p = raw === "~" ? (env.HOME || os.homedir()) : raw.startsWith("~/") ? path.join(env.HOME || os.homedir(), raw.slice(2)) : path.resolve(raw);
+      const rp = realOf(p);
+      const okH = (x: string) => withinP(lumiHomeP, x) || builtinPaths.includes(x) || builtinReal.includes(x);
+      if (okH(p) && okH(rp)) harnessPath = p;
+      else closed = `LUMI_GUARD_CLOSED: LUMI_HARNESS '${raw}' ditolak — hanya path di bawah ${lumiHomeP}/ (atau modul guard bawaan Lumitome) yang diizinkan; shell & tool tulis ditolak`;
+    }
+    if (!closed) {
+      try { g = await import(harnessPath ? pathToFileURL(harnessPath).href : new URL(fallback, import.meta.url).href); }
+      catch (e) { closed = `LUMI_GUARD_CLOSED: modul guard gagal dimuat (${String(e)}) — shell & tool tulis ditolak`; }
+    }
     const spin = g ? new g.RuntimeSpin({ maxFail: Number(env.LUMI_SPIN_MAX_FAIL || 3), maxRepeat: Number(env.LUMI_SPIN_MAX_REPEAT || 4) }) : null;
     const toolDirs = (env.LUMI_TOOLDIRS || "").split(path.delimiter).filter(Boolean);
     const headless = env.LUMI_HEADLESS === "1";
@@ -37,12 +62,19 @@ export default {
     let SP: any = null; let TIER = "standard"; let SCOPE: any = null;
     if (g) { try { SCOPE = g.buildSandboxScope(WS, { home: env.HOME || os.homedir(), lumiHome: env.LUMI_HOME || path.join(env.HOME || os.homedir(), ".lumitome"), env }); SP = SCOPE.sp; TIER = SCOPE.tier; } catch (e) { closed ||= `LUMI_GUARD_CLOSED: kebijakan sandbox gagal dibuat (${String(e)}) — shell & tool tulis ditolak`; } }
     const sandbox = env.LUMI_SANDBOX || (TIER === "strict" ? "bwrap" : "off");
+    const sandboxSource = env.LUMI_SANDBOX ? "env" : "default";
+    const tierSource = SCOPE?.tierSource || "default";
     if (g && sandbox === "bwrap" && !g.bwrapAvailable()) closed = "SANDBOX_CLOSED: bwrap tidak tersedia/tidak bisa membuat namespace. Shell ditolak (fail-closed). Pasang bubblewrap (apt install bubblewrap), turunkan tier (lumitome trust standard), atau set LUMI_SANDBOX=off secara sadar.";
-    jot({ kind: "guard", status: closed ? "closed" : "ok", sandbox, tier: TIER, ws: WS, root: SCOPE?.root, write: SP?.write, reason: closed || undefined });
+    jot({ kind: "guard", status: closed ? "closed" : "ok", sandbox, sandboxSource, tier: TIER, tierSource, ws: WS, root: SCOPE?.root, write: SP?.write, reason: closed || undefined });
+    // P1-2 (2): tier dari env (bukan file trust) + penurunan sandbox via env — visibilitas, bukan blokir.
+    if (tierSource === "env") jot({ kind: "tier-env", tier: TIER, source: "env", ws: WS, reason: "tier dari env LUMI_TRUST_TIER, bukan file trust (~/.lumitome/trust.json)" });
+    if (sandbox === "off" && TIER === "strict" && sandboxSource === "env") jot({ kind: "sandbox-downgraded", tier: TIER, sandbox, ws: WS, reason: "LUMI_SANDBOX=off menurunkan tier strict (kehilangan bwrap)" });
 
     await ctx.tool.hook("execute.before", (e: any) => {
       const tool = String(e.tool);
-      if (!SHELL.has(tool) && !FILE.has(tool)) return;
+      // P1-2 (3): tool di luar daftar (MCP, webfetch, sub-agent, …) tidak diblokir —
+      // daftar tool OpenCode tidak lengkap — tapi dicatat sebagai unguarded di jurnal.
+      if (!SHELL.has(tool) && !FILE.has(tool)) { jot({ kind: "unguarded", tool }); return; }
       if (!g) {
         // Guard gagal dimuat: fail-closed untuk tulis, baca tetap jalan (urutan ada di g.evaluateTool).
         if (SHELL.has(tool) || (tool !== "read" && tool !== "glob" && tool !== "grep" && tool !== "list")) { jot({ kind: "deny", tool, rule: "closed" }); throw new Error(closed); }

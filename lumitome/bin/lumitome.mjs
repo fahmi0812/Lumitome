@@ -53,7 +53,7 @@ if (sub === "trust") {
   const targs = argv.slice(1);
   const showScope = () => {
     const s = G.buildSandboxScope(cwd, { home, lumiHome: ISO_HOME, env });
-    console.log(`proyek: ${s.root}\ntier: ${s.tier}\ntulis: ${s.write.join(", ")}\nsandbox: ${s.tier === "strict" ? "bwrap (wajib; gagal bila bubblewrap tidak ada)" : "off (guard saja)"}\nssh: ${s.tier === "trusted" ? "bebas (tier trusted)" : "hanya -i kunci deploy (~/.lumitome/<nama>)"}\ntrust file: ${s.trustFile}`);
+    console.log(`proyek: ${s.root}\ntier: ${s.tier}\nsumber tier: ${s.tierSource === "env" ? "env LUMI_TRUST_TIER (bukan file trust)" : s.tierSource === "file" ? "file trust" : "default"}\ntulis: ${s.write.join(", ")}\nsandbox: ${s.tier === "strict" ? "bwrap (wajib; gagal bila bubblewrap tidak ada)" : "off (guard saja)"}\nssh: ${s.tier === "trusted" ? "bebas (tier trusted)" : "hanya -i kunci deploy (~/.lumitome/<nama>)"}\ntrust file: ${s.trustFile}`);
   };
   // --deploy-key [nama]: buat keypair ed25519 khusus deploy di LUMI_HOME (bukan ~/.ssh, bukan id_*)
   if (targs.includes("--deploy-key")) {
@@ -207,6 +207,27 @@ if (sub === "" || sub === "run") {
 // ---------- rakitan config final (seam: lumitome/lib/build-config.mjs) ----------
 // Kepercayaan proyek: default config/plugin/agent proyek TIDAK dimuat (repo asing bisa membawa plugin jahat).
 const TRUST = env.LUMI_TRUST_PROJECT === "1";
+// P1-2 (1): LUMI_TRUST_PROJECT=1 dikonfirmasi interaktif TIAP SESI (bukan sekali di
+// stderr) + dicatat di jurnal dengan alasan. Persetujuan TIDAK PERNAH permanen:
+// tidak ada file persetujuan; sesi baru = konfirmasi baru. Non-TTY (run/pipe/CI):
+// konfirmasi tidak mungkin — dicatat jujur sebagai mode non-tty (bukan pura-pura
+// dikonfirmasi); env yang diset eksplisit tetap jalan supaya otomasi headless tidak patah.
+const jotTrust = (row) => { try { fs.appendFileSync(JOURNAL, JSON.stringify({ t: Date.now(), ...row }) + "\n"); } catch {} };
+if (TRUST) {
+  const TP = await import(pathToFileURL(path.join(ROOT, "lib", "trust-project.mjs")).href);
+  const interactive = !!(process.stdin.isTTY && process.stderr.isTTY);
+  let answer = "";
+  if (interactive) {
+    process.stderr.write("lumitome: LUMI_TRUST_PROJECT=1: config, plugin, agent & MCP proyek di workspace ini akan DIMUAT dan dapat menjalankan kode. Hanya untuk repo tepercaya.\nKetik 'ya' untuk lanjut (berlaku sesi ini saja): ");
+    const rl = await_rl();
+    answer = await new Promise((r) => { rl.once("line", (l) => r(String(l).trim())); rl.once("close", () => r("")); });
+    rl.close();
+  }
+  const d = TP.decideTrustProject({ trust: true, interactive, answer });
+  jotTrust(TP.trustProjectJournalRow({ runId: RUN_ID, workspace: WS, mode: d.mode, reason: d.reason }));
+  if (!d.allowed) die(1, "LUMI_TRUST_PROJECT=1 dibatalkan: tanpa konfirmasi, config proyek tidak dimuat. Jalankan tanpa LUMI_TRUST_PROJECT=1, atau ketik 'ya' di terminal.");
+  if (d.mode === "non-tty") process.stderr.write(`lumitome: PERINGATAN KERAS — LUMI_TRUST_PROJECT=1 tanpa konfirmasi interaktif (non-TTY, bukan terminal); config proyek DIMUAT atas risiko env ini. Dicatat di jurnal (${JOURNAL}), berlaku sesi ini saja.\n`);
+}
 // header 300 s, jeda antar-chunk 900 s, total 1 jam (LUMI_*_TIMEOUT_MS) — dipakai juga retry di bawah
 const TIMEOUTS = PV.providerTimeouts(env);
 const VALUE_FLAGS = new Set(["-m", "--model", "-s", "--session", "--agent", "--format", "-f", "--file", "--title", "--log-level", "--server"]);
@@ -222,6 +243,24 @@ if (sub !== "run") {
 }
 try { fs.chmodSync(path.join(CFG_DIR, "service.json"), 0o600); } catch {}
 if (TRUST) process.stderr.write("lumitome: PERINGATAN — LUMI_TRUST_PROJECT=1: config, plugin, agent & MCP proyek di workspace ini DIMUAT dan dapat menjalankan kode. Pakai hanya untuk repo tepercaya.\n");
+// P1-2 (2): tier dari env (bukan file trust) — peringatan persisten + jurnal.
+// Dicetak untuk TUI/run; plugin juga mencatatnya saat engine jalan, tapi baris
+// wrapper ini yang ada walau engine gagal start. LUMI_SANDBOX=off yang menurunkan
+// tier strict (kehilangan bwrap) ikut diperingatkan + dicatat.
+if (sub === "" || sub === "run") {
+  try {
+    const G = await import(pathToFileURL(path.join(REPO, "harness", "lumi-guard.mjs")).href);
+    const td = G.resolveTrustTierDetailed(WS, { home: os.homedir(), lumiHome: ISO_HOME, env });
+    if (td.source === "env") {
+      process.stderr.write(`lumitome: PERINGATAN — tier sandbox '${td.tier}' berasal dari env LUMI_TRUST_TIER, bukan file trust (~/.lumitome/trust.json). Periksa dengan: lumitome trust\n`);
+      jotTrust({ kind: "tier-env", runId: RUN_ID, tier: td.tier, source: "env", workspace: WS, reason: "tier dari env LUMI_TRUST_TIER, bukan file trust (~/.lumitome/trust.json)" });
+    }
+    if ((env.LUMI_SANDBOX || "") === "off" && td.tier === "strict") {
+      process.stderr.write("lumitome: PERINGATAN — LUMI_SANDBOX=off menurunkan tier strict (kehilangan bwrap).\n");
+      jotTrust({ kind: "sandbox-downgraded", runId: RUN_ID, tier: td.tier, sandbox: "off", workspace: WS, reason: "LUMI_SANDBOX=off menurunkan tier strict (kehilangan bwrap)" });
+    }
+  } catch {}
+}
 // service dipakai ulang hanya bila config/key/versi sama; beda → service lama milik LUMI_HOME dihentikan dulu
 if (sub === "" || sub === "service") {
   const SCX = await import(pathToFileURL(path.join(ROOT, "lib", "service-ctl.mjs")).href);

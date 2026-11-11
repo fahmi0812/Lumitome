@@ -284,13 +284,18 @@ export function normalizeTrustEntry(entry) {
   if (entry && typeof entry === "object") return { tier: entry.tier, write: Array.isArray(entry.write) ? entry.write : [] };
   return { tier: undefined, write: [] };
 }
-/** Tier efektif: env LUMI_TRUST_TIER menang, lalu file trust (kunci = akar proyek), lalu default standard. */
-export function resolveTrustTier(workspace, { home = os.homedir(), lumiHome = path.join(home, ".lumitome"), env = process.env } = {}) {
+/** Tier efektif + sumbernya: env LUMI_TRUST_TIER menang, lalu file trust (kunci = akar proyek), lalu default standard. */
+export function resolveTrustTierDetailed(workspace, { home = os.homedir(), lumiHome = path.join(home, ".lumitome"), env = process.env } = {}) {
   const fromEnv = String(env.LUMI_TRUST_TIER || "").trim();
-  if (TRUST_TIERS.includes(fromEnv)) return fromEnv;
+  if (TRUST_TIERS.includes(fromEnv)) return { tier: fromEnv, source: "env" };
   const root = detectProjectRoot(workspace, { home });
   const entry = normalizeTrustEntry(readTrustFile(lumiHome).projects[root]);
-  return TRUST_TIERS.includes(entry.tier) ? entry.tier : "standard";
+  if (TRUST_TIERS.includes(entry.tier)) return { tier: entry.tier, source: "file" };
+  return { tier: "standard", source: "default" };
+}
+/** Tier efektif (kompatibel lama): hanya tier, tanpa sumber. */
+export function resolveTrustTier(workspace, opts = {}) {
+  return resolveTrustTierDetailed(workspace, opts).tier;
 }
 /** Entri tulis eksplisit dari trust file untuk proyek ini (relatif ke root, absolut, atau ~). */
 export function resolveTrustWrite(workspace, { home = os.homedir(), lumiHome = path.join(home, ".lumitome") } = {}) {
@@ -310,7 +315,7 @@ function resolveTrustWritePath(p, root, home) {
 export function buildSandboxScope(workspace, { home = os.homedir(), lumiHome = path.join(home, ".lumitome"), env = process.env } = {}) {
   const ws = path.resolve(workspace);
   const root = detectProjectRoot(ws, { home });
-  const tier = resolveTrustTier(ws, { home, lumiHome, env });
+  const { tier, source: tierSource } = resolveTrustTierDetailed(ws, { home, lumiHome, env });
   const trustFile = trustFilePath(lumiHome);
   const memoryFiles = findAncestorMemoryFiles(ws, { home });
   const explicit = resolveTrustWrite(ws, { home, lumiHome }).map((p) => resolveTrustWritePath(p, root, home)).filter(Boolean);
@@ -318,7 +323,33 @@ export function buildSandboxScope(workspace, { home = os.homedir(), lumiHome = p
   const covered = (f) => writeRoots.some((w) => within(w, f));
   const extraWrite = [...new Set([...explicit, ...memoryFiles].filter((f) => !covered(f)))];
   const sp = sandboxPaths(ws, { home, extraWrite, extraMasked: [trustFile], writeRoots: tier === "trusted" ? [root] : null });
-  return { sp, tier, root, workspace: ws, memoryFiles, trustFile, write: sp.write };
+  return { sp, tier, tierSource, root, workspace: ws, memoryFiles, trustFile, write: sp.write };
+}
+
+/**
+ * Validasi LUMI_HARNESS (v0.3.43, P1-2): hanya path di bawah ~/.lumitome/
+ * (atau modul guard bawaan = fallback) yang diizinkan; di luar itu → tolak.
+ * Symlink diperiksa lewat realpath: link di dalam ~/.lumitome/ yang menunjuk
+ * ke luar tetap ditolak. `fallback` boleh satu path atau daftar path.
+ * Kembali: { ok, path?, source?, reason? } — tidak pernah throw.
+ * Catatan: wrapper Lumitome selalu menyetel LUMI_HARNESS ke modul guard bawaan
+ * repo (build-config.mjs), jadi jalur normal lolos sebagai "fallback"; yang
+ * ditolak adalah pengalihan ke modul sembarang (mis. saat engine dijalankan
+ * langsung dengan env buatan). Plugin menduplikasi cek ini sebaris (bootstrap:
+ * validator ini tinggal di modul yang sedang divalidasi).
+ */
+export function resolveHarnessPath(raw, { home = os.homedir(), lumiHome = path.join(home, ".lumitome"), fallback = null } = {}) {
+  const fallbacks = [fallback].flat().filter(Boolean).map((f) => path.resolve(f));
+  const realOf = (p) => { try { return fs.realpathSync(p); } catch { return p; } };
+  const fbReal = fallbacks.map(realOf);
+  const s = String(raw || "").trim();
+  if (!s) return { ok: true, path: fallbacks[0] || null, source: "fallback" };
+  let p = s === "~" ? home : (s.startsWith("~/") || s.startsWith("~\\")) ? path.join(home, s.slice(2)) : s;
+  p = path.resolve(p);
+  const rp = realOf(p);
+  const allowed = (x) => within(lumiHome, x) || fallbacks.includes(x) || fbReal.includes(x);
+  if (allowed(p) && allowed(rp)) return { ok: true, path: p, source: within(lumiHome, p) ? "lumitome-home" : "fallback" };
+  return { ok: false, path: p, reason: `LUMI_HARNESS '${s}' ditolak: hanya path di bawah ${lumiHome}/ (atau modul guard bawaan Lumitome) yang diizinkan` };
 }
 
 function expandPath(p, base, home) {
@@ -389,6 +420,9 @@ export function classifyFileTool(tool, input, { workspace = process.cwd(), sandb
 // memfilter hook bahkan saat modul guard gagal dimuat, jadi daftar ini ada di dua tempat.
 export const SHELL_TOOLS = new Set(["shell", "bash"]);
 export const FILE_TOOLS = new Set(["read", "edit", "write", "glob", "grep", "list", "patch", "multiedit", "apply_patch"]);
+/** Tool yang dijaga guard (SHELL + FILE). Di luar itu: allow + unguarded (P1-2). */
+export const GUARDED_TOOLS = new Set([...SHELL_TOOLS, ...FILE_TOOLS]);
+export function isGuardedTool(tool) { return GUARDED_TOOLS.has(String(tool)); }
 
 /**
  * Satu titik penegakan untuk hook tool.execute.before: urutan kebijakan tinggal di guard,
@@ -402,7 +436,11 @@ export const FILE_TOOLS = new Set(["read", "edit", "write", "glob", "grep", "lis
  */
 export function evaluateTool(tool, input, ctx = {}) {
   const t = String(tool);
-  if (!SHELL_TOOLS.has(t) && !FILE_TOOLS.has(t)) return { effect: "allow" };
+  // P1-2: tool di luar daftar (MCP, webfetch/websearch, sub-agent/task, skill, …)
+  // TIDAK diblokir — daftar tool OpenCode tidak lengkap & plugin baru akan patah —
+  // tapi ditandai unguarded supaya plugin mencatatnya di jurnal. Langkah berikut:
+  // perluasan guard ke tool ini (lihat CHANGELOG 0.3.43).
+  if (!isGuardedTool(t)) return { effect: "allow", unguarded: true };
   const { workspace = process.cwd(), sandbox = null, tier = "standard", headless = false, toolDirs = [], argsDir, sandboxMode = "off", spin = null, closed = "", lumiHome = "" } = ctx;
   // 1) fail-closed: guard/sandbox gagal dibangun → tulis ditolak, baca tetap jalan
   if (closed && (SHELL_TOOLS.has(t) || (t !== "read" && t !== "glob" && t !== "grep" && t !== "list"))) {

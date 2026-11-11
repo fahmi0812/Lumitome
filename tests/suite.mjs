@@ -1699,5 +1699,110 @@ ok("ringkasan: skipped terhitung dari skip() (maks. 2 situs di suite ini)",
     evaluateOsv(fx("osv-packs-clean.json")).status === "PASS");
 }
 
+// ---------- v0.3.43 (P1-2): perketat tuas env keamanan — VISIBILITAS dulu, bukan blokir ----------
+// TDD (mattpocock): tes ini ditulis SEBELUM implementasi — harus MERAH dulu.
+{
+  const G = await import("../harness/lumi-guard.mjs");
+  const TP = await import("../lumitome/lib/trust-project.mjs");
+  const osm43 = await import("node:os");
+  const cp43 = await import("node:child_process");
+  const PG43 = fs.readFileSync("lumitome/config/plugins/lumitome-guard.ts", "utf8");
+  const W43 = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
+
+  // (1) LUMI_TRUST_PROJECT=1: konfirmasi interaktif tiap sesi + dicatat di jurnal; non-TTY jujur.
+  ok("P1-2 (1): trust-project mati -> tidak diizinkan, mode off",
+    TP.decideTrustProject({ trust: false, interactive: true, answer: "ya" }).allowed === false
+    && TP.decideTrustProject({ trust: false, interactive: true, answer: "ya" }).mode === "off");
+  ok("P1-2 (1): TTY + jawab 'ya' -> diizinkan mode confirmed; jawab lain -> ditolak",
+    TP.decideTrustProject({ trust: true, interactive: true, answer: "ya" }).allowed === true
+    && TP.decideTrustProject({ trust: true, interactive: true, answer: "ya" }).mode === "confirmed"
+    && TP.decideTrustProject({ trust: true, interactive: true, answer: "" }).allowed === false
+    && TP.decideTrustProject({ trust: true, interactive: true, answer: "tidak" }).allowed === false);
+  ok("P1-2 (1): non-TTY + trust -> diizinkan mode non-tty, alasan jujur (tanpa konfirmasi interaktif)",
+    (() => { const d = TP.decideTrustProject({ trust: true, interactive: false, answer: "" }); return d.allowed === true && d.mode === "non-tty" && /non-TTY/i.test(d.reason) && /tanpa konfirmasi/i.test(d.reason); })());
+  ok("P1-2 (1): baris jurnal trust-project: kind + runId + workspace + mode + alasan; keputusan murni tanpa fs",
+    (() => { const r = TP.trustProjectJournalRow({ runId: "r1", workspace: "/w", mode: "confirmed", reason: "x" }); return r.kind === "trust-project" && r.runId === "r1" && r.workspace === "/w" && r.mode === "confirmed" && typeof r.reason === "string"; })()
+    && !/from "node:fs"|require\("node:fs"\)/.test(fs.readFileSync("lumitome/lib/trust-project.mjs", "utf8")));
+  ok("P1-2 (1): wrapper mencatat trust-project ke jurnal + tanpa file persetujuan permanen",
+    /trustProjectJournalRow/.test(W43) && /jotTrust/.test(W43) && /kind: "trust-project"/.test(fs.readFileSync("lumitome/lib/trust-project.mjs", "utf8")) && !/trust-project-accepted|grant\.json/.test(W43));
+
+  // (2) Tier dari env: sumber dibedakan + peringatan persisten + jurnal.
+  const th43 = fs.realpathSync(fs.mkdtempSync(path.join(osm43.tmpdir(), "lumip12-")));
+  const tp43 = path.join(th43, "Bindo", "P13");
+  fs.mkdirSync(tp43, { recursive: true });
+  fs.writeFileSync(path.join(th43, "Bindo", "MEMORY.md"), "# memori\n");
+  const lh43 = path.join(th43, ".lumitome");
+  const o43 = { home: th43, lumiHome: lh43, env: {} };
+  ok("P1-2 (2): resolveTrustTierDetailed: default/file/env dibedakan; env tak valid -> default",
+    G.resolveTrustTierDetailed(tp43, o43).tier === "standard" && G.resolveTrustTierDetailed(tp43, o43).source === "default"
+    && G.resolveTrustTierDetailed(tp43, { ...o43, env: { LUMI_TRUST_TIER: "strict" } }).source === "env"
+    && G.resolveTrustTierDetailed(tp43, { ...o43, env: { LUMI_TRUST_TIER: "strict" } }).tier === "strict"
+    && G.resolveTrustTierDetailed(tp43, { ...o43, env: { LUMI_TRUST_TIER: "ngawur" } }).tier === "standard"
+    && G.resolveTrustTierDetailed(tp43, { ...o43, env: { LUMI_TRUST_TIER: "ngawur" } }).source === "default"
+    && (() => { fs.mkdirSync(lh43, { recursive: true }); fs.writeFileSync(path.join(lh43, "trust.json"), JSON.stringify({ projects: { [path.join(th43, "Bindo")]: "trusted" } })); const d = G.resolveTrustTierDetailed(tp43, o43); fs.rmSync(path.join(lh43, "trust.json")); return d.tier === "trusted" && d.source === "file"; })());
+  ok("P1-2 (2): buildSandboxScope membawa tierSource (env/file/default)",
+    G.buildSandboxScope(tp43, { ...o43, env: { LUMI_TRUST_TIER: "strict" } }).tierSource === "env"
+    && G.buildSandboxScope(tp43, o43).tierSource === "default"
+    && (() => { fs.writeFileSync(path.join(lh43, "trust.json"), JSON.stringify({ projects: { [path.join(th43, "Bindo")]: "trusted" } })); const s = G.buildSandboxScope(tp43, o43); fs.rmSync(path.join(lh43, "trust.json")); return s.tierSource === "file" && s.tier === "trusted"; })());
+  ok("P1-2 (2): plugin mencatat tierSource + sandbox-downgraded di jurnal",
+    /tierSource/.test(PG43) && /sandbox-downgraded/.test(PG43) && /kind: "tier-env"/.test(PG43));
+  ok("P1-2 (2): wrapper memperingatkan tier dari env (bukan file trust)",
+    /berasal dari env LUMI_TRUST_TIER/.test(W43));
+  {
+    const trust43 = (args, cwd, extra = {}) => cp43.spawnSync(process.execPath, [path.resolve("lumitome/bin/lumitome.mjs"), "trust", ...args], { encoding: "utf8", cwd, env: { ...process.env, LUMI_HOME: lh43, ...extra } });
+    const rEnv = trust43([], tp43, { LUMI_TRUST_TIER: "strict" });
+    const rFile = (() => { fs.writeFileSync(path.join(lh43, "trust.json"), JSON.stringify({ projects: { [path.join(th43, "Bindo")]: "trusted" } })); const r = trust43([], tp43); fs.rmSync(path.join(lh43, "trust.json")); return r; })();
+    ok("P1-2 (2): `lumitome trust` menampilkan sumber tier (env vs file trust)",
+      rEnv.status === 0 && /tier: strict/.test(rEnv.stdout) && /sumber tier: env/.test(rEnv.stdout)
+      && rFile.status === 0 && /tier: trusted/.test(rFile.stdout) && /sumber tier: file trust/.test(rFile.stdout));
+  }
+  fs.rmSync(th43, { recursive: true, force: true });
+
+  // (3) Tool di luar daftar SHELL/FILE: tetap allow (jangan blokir plugin), tapi tercatat unguarded.
+  const evSp43 = G.sandboxPaths(process.cwd(), { home: "/home/u" });
+  const ev43 = (t, i, o = {}) => G.evaluateTool(t, i, { workspace: process.cwd(), sandbox: evSp43, tier: "standard", headless: true, ...o });
+  ok("P1-2 (3): evaluateTool: webfetch/websearch/task/mcp_* -> allow + unguarded; shell/read tetap terjaga",
+    ["webfetch", "websearch", "task", "mcp_github_search"].every((t) => { const r = ev43(t, {}); return r.effect === "allow" && r.unguarded === true; })
+    && ev43("shell", { command: "echo hi" }).unguarded !== true && ev43("read", { path: "a.md" }).unguarded !== true);
+  ok("P1-2 (3): isGuardedTool: shell/file true, webfetch/task/mcp_* false",
+    G.isGuardedTool("shell") === true && G.isGuardedTool("read") === true && G.isGuardedTool("edit") === true
+    && G.isGuardedTool("webfetch") === false && G.isGuardedTool("task") === false && G.isGuardedTool("mcp_x_y") === false);
+  ok("P1-2 (3): plugin mencatat tool di luar daftar sebagai unguarded di jurnal",
+    /kind: "unguarded"/.test(PG43));
+
+  // (4) LUMI_HARNESS hanya boleh menunjuk path di bawah ~/.lumitome/ (atau modul guard bawaan).
+  const hp43 = (raw, o = {}) => G.resolveHarnessPath(raw, { home: "/home/u", lumiHome: "/home/u/.lumitome", fallback: "/repo/harness/lumi-guard.mjs", ...o });
+  ok("P1-2 (4): resolveHarnessPath: kosong -> fallback; di bawah ~/.lumitome -> ok; /tmp/evil -> tolak + pesan jelas",
+    hp43("").ok === true && hp43("").path === "/repo/harness/lumi-guard.mjs"
+    && hp43("/home/u/.lumitome/guard.mjs").ok === true
+    && hp43("~/.lumitome/guard.mjs").ok === true
+    && hp43("/tmp/evil.mjs").ok === false && /hanya path di bawah.*\.lumitome/.test(hp43("/tmp/evil.mjs").reason));
+  ok("P1-2 (4): resolveHarnessPath: fallback bawaan ok; lolos lewat .. dan relatif -> tolak; symlink ke luar -> tolak",
+    hp43("/repo/harness/lumi-guard.mjs").ok === true
+    && hp43("/home/u/.lumitome/../evil.mjs").ok === false
+    && hp43("../evil.mjs").ok === false
+    && (() => { const d = fs.mkdtempSync(path.join(osm43.tmpdir(), "lumihp-")); const lh = path.join(d, ".lumitome"); fs.mkdirSync(lh, { recursive: true }); const evil = path.join(d, "evil.mjs"); fs.writeFileSync(evil, "export default {};"); const link = path.join(lh, "link.mjs"); fs.symlinkSync(evil, link); const r = G.resolveHarnessPath(link, { home: d, lumiHome: lh, fallback: "/repo/harness/lumi-guard.mjs" }); fs.rmSync(d, { recursive: true, force: true }); return r.ok === false; })());
+  ok("P1-2 (4): plugin menolak LUMI_HARNESS di luar ~/.lumitome dengan LUMI_GUARD_CLOSED",
+    /LUMI_HARNESS/.test(PG43) && /ditolak/.test(PG43) && /LUMI_GUARD_CLOSED: LUMI_HARNESS/.test(PG43));
+
+  // Integrasi wrapper (stub opencode): run non-TTY + TRUST + tier env -> jurnal + stderr.
+  {
+    const h43 = fs.mkdtempSync(path.join(osm43.tmpdir(), "lumip12run-"));
+    const stub43 = path.join(h43, "fake-opencode");
+    fs.writeFileSync(stub43, "#!/usr/bin/env node\nconst fs=require('node:fs');\nfor (const r of [{kind:\"guard\",status:\"ok\"}]) fs.appendFileSync(process.env.LUMI_JOURNAL, JSON.stringify(r)+'\\n');\n");
+    fs.chmodSync(stub43, 0o755);
+    const r43 = cp43.spawnSync(process.execPath, ["--experimental-strip-types", "--no-warnings", path.resolve("lumitome/bin/lumitome.mjs"), "run", "tolong jelaskan x"],
+      { encoding: "utf8", timeout: 60000, cwd: h43, input: "",
+        env: { ...process.env, HOME: h43, LUMI_HOME: h43, LUMI_OPENCODE: stub43, LUMI_WORKSPACE: h43, LUMI_AUTO_INDEX: "0", LUMI_PREFLIGHT: "0", NINEROUTER_API_KEY: "fake", LUMI_TRUST_PROJECT: "1", LUMI_TRUST_TIER: "trusted" } });
+    const rows43 = fs.readdirSync(path.join(h43, "runs")).flatMap((f) => fs.readFileSync(path.join(h43, "runs", f), "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l)));
+    ok("P1-2 integrasi: run non-TTY + TRUST=1 + tier env -> jurnal trust-project (non-tty) + tier-env; stderr peringatan keras",
+      r43.status === 0
+      && rows43.some((r) => r.kind === "trust-project" && r.mode === "non-tty")
+      && rows43.some((r) => r.kind === "tier-env" && r.tier === "trusted")
+      && /PERINGATAN/.test(r43.stderr) && /non-TTY/.test(r43.stderr) && /berasal dari env LUMI_TRUST_TIER/.test(r43.stderr));
+    fs.rmSync(h43, { recursive: true, force: true });
+  }
+}
+
 console.log(`\n${summaryLine(pass, fail, skipped)}`);
 process.exit(fail ? 1 : 0);

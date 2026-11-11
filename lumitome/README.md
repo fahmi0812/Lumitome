@@ -14,7 +14,7 @@ lumitome serve --port 4096              # password → $LUMI_HOME/serve.password
 
 | Lapis | Mekanisme | Kenapa config proyek tak bisa mengalahkan |
 |---|---|---|
-| Kepercayaan proyek | default `OPENCODE_DISABLE_PROJECT_CONFIG=1`: `opencode.json(c)`, `.opencode/` (plugin, agent, MCP) di workspace **tidak dimuat**. Opt-in `LUMI_TRUST_PROJECT=1` (+ peringatan) | ditetapkan wrapper sebelum OpenCode start |
+| Kepercayaan proyek | default `OPENCODE_DISABLE_PROJECT_CONFIG=1`: `opencode.json(c)`, `.opencode/` (plugin, agent, MCP) di workspace **tidak dimuat**. Opt-in `LUMI_TRUST_PROJECT=1` (+ konfirmasi `ya` tiap sesi di terminal; non-TTY: peringatan keras + jurnal) | ditetapkan wrapper sebelum OpenCode start |
 | Guard | `config/plugins/lumitome-guard.ts` → `harness/lumi-guard.mjs` di `tool.execute.before` (throw = tolak) | dimuat dari `OPENCODE_CONFIG_DIR`; fail-closed (`LUMI_GUARD_CLOSED`/`SANDBOX_CLOSED`, exit 5) |
 | Sandbox | tiap shell → `bwrap --args 3 …`: FS read-only kecuali workspace, `--clearenv`, `--unshare-pid`, `.env*`/`secrets.env`/kunci di-mask `/dev/null` | opsi di file args (0600), tidak terlihat pola permission |
 | Permission | `OPENCODE_CONFIG_CONTENT` (sumber terakhir, last-match-wins) | dimuat setelah semua config |
@@ -31,7 +31,8 @@ Skill: harness memakai skill & DB router miliknya sendiri (`config/skills` → `
 | `LUMI_9ROUTER_URL` | `http://127.0.0.1:20128/v1` | base URL provider |
 | `LUMI_MODEL` | `9router/ag/gemini-3.8-flash-high` | model `run` (bila tanpa `-m`) |
 | `LUMI_AGENT` | `orchestrator` (TUI) / `build` (`run`) | agent default |
-| `LUMI_TRUST_PROJECT` | `0` | `1` = muat config/plugin/agent/MCP proyek (berbahaya untuk repo asing) |
+| `LUMI_TRUST_PROJECT` | `0` | `1` = muat config/plugin/agent/MCP proyek (berbahaya untuk repo asing); di terminal wajib ketik `ya` tiap sesi (dicatat di jurnal, tanpa persetujuan permanen); non-TTY jalan dengan peringatan keras + jurnal |
+| `LUMI_TRUST_TIER` | — | tier sandbox dari env (menang atas file trust); bila dari env, wrapper memperingatkan + mencatat di jurnal, dan `lumitome trust` menampilkan sumbernya; tier permanen diatur via `lumitome trust <tier>` |
 | `LUMI_MCP` | `codemem,skills` | MCP aktif. `skills` = satu proses untuk semua sektor (tool `<sektor>_skill_search`). Nama lama `skills-coding` dst. masih diterima dan hanya menyalakan sektor itu |
 | `LUMI_CODEMEM` | – | `0` = codemem mati; `1` = aktif juga di luar repo git (default: hanya di repo git) |
 | `LUMI_AUTO_INDEX` | `1` | `0` = jangan indeks folder proyek otomatis |
@@ -48,7 +49,7 @@ Skill: harness memakai skill & DB router miliknya sendiri (`config/skills` → `
 | `LUMI_IDLE_TIMEOUT_MS` | `900000` | batas jeda antar-chunk stream; lewat batas ini muncul "Timed out waiting for response data" |
 | `LUMI_TOTAL_TIMEOUT_MS` | `3600000` | batas total satu permintaan provider |
 | `LUMI_RETRIES` | `2` | retry wrapper bila timeout sebelum ada aksi |
-| `LUMI_SANDBOX` | `bwrap` | `off` hanya untuk debug |
+| `LUMI_SANDBOX` | `bwrap` | `off` hanya untuk debug; `off` + tier strict diperingatkan + dicatat di jurnal (kehilangan bwrap) |
 | `LUMI_DONE_GATE` | `on` | `off` mematikan done-gate |
 | `LUMI_SPIN_MAX_FAIL` / `LUMI_SPIN_MAX_REPEAT` | `3` / `4` | ambang anti-spin |
 | `LUMI_SERVE_PASSWORD_FILE` | `$LUMI_HOME/serve.password` | file password `serve`/`web` (0600) |
@@ -58,7 +59,7 @@ Skill: harness memakai skill & DB router miliknya sendiri (`config/skills` → `
 | `SW_L1_TIMEOUT_MS` / `SW_L1_TOPK` / `SW_L1_CACHE` | `12000` / `12` / `runtime/l1-cache.json` | router L1 (`SW_L1_CACHE=0` matikan cache) |
 | `SW_FALLBACK_MAX` / `SW_FALLBACK_RATIO` | `3` / `0` | fallback deterministik router |
 
-Internal (diset wrapper, jangan diisi manual): `LUMI_WORKSPACE`, `LUMI_JOURNAL`, `LUMI_RUN_ID`, `LUMI_HARNESS`, `LUMI_HEADLESS`, `LUMI_TOOLDIRS`, `LUMI_SBX_DIR`, `LUMI_WRAPPER_PID`, `SW_9ROUTER_URL`, `SW_9ROUTER_KEY`, `OPENCODE_*`.
+Internal (diset wrapper, jangan diisi manual): `LUMI_WORKSPACE`, `LUMI_JOURNAL`, `LUMI_RUN_ID`, `LUMI_HARNESS`, `LUMI_HEADLESS`, `LUMI_TOOLDIRS`, `LUMI_SBX_DIR`, `LUMI_WRAPPER_PID`, `SW_9ROUTER_URL`, `SW_9ROUTER_KEY`, `OPENCODE_*`. `LUMI_HARNESS` hanya boleh menunjuk path di bawah `~/.lumitome/` (atau modul guard bawaan Lumitome) — di luar itu guard tertutup. Tool di luar daftar guard (MCP, webfetch, sub-agent) tidak diblokir, tapi dicatat `unguarded` di jurnal.
 
 ## Exit code (`run`)
 
