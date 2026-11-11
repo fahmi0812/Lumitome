@@ -36,8 +36,10 @@ export function protectedPids(home, { procRoot = "/proc" } = {}) {
   return out;
 }
 
-/** Hentikan service milik LUMI_HOME ini (+ turunan). Return true bila ada yang dihentikan. */
-export function stop(home, { wait = 3000 } = {}) {
+/** Hentikan service milik LUMI_HOME ini (+ turunan). Return true bila ada yang dihentikan.
+ * v0.3.44: tunggu SIGTERM 1 dtk (dulu 3 dtk) — service sehat mati jauh sebelum itu;
+ * yang mengabaikan SIGTERM langsung SIGKILL setelah 1 dtk, bukan menahan startup 3 dtk. */
+export function stop(home, { wait = 1000 } = {}) {
   const st = status(home);
   try { fs.rmSync(fpFile(home), { force: true }); } catch {}
   if (!st.running) return false;

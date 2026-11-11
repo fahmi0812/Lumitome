@@ -19,14 +19,23 @@ function keyFor(home, name, env = process.env) {
   return env[envName(name)] || (name === "9router" ? env.NINEROUTER_API_KEY : undefined) || readJ(files(home).cred)[name];
 }
 
-/** GET daftar model; mengembalikan id terurut. Error → throw (pesan tanpa key). */
+/** GET daftar model; mengembalikan id terurut. Error → throw (pesan tanpa key).
+ * v0.3.44: `timeoutMs` adalah anggaran TOTAL per provider (bukan per halaman) —
+ * paginasi Anthropic yang tadinya bisa 20 halaman x 3 dtk = 60 dtk kini berhenti
+ * saat anggaran habis dan MELEMPAR (bukan mengembalikan daftar parsial — daftar
+ * parsial akan menimpa cache lengkap di refresh() dan menghilangkan model). */
 export async function detectModels(type, base, key, { timeoutMs = 15000 } = {}) {
   const b = base.replace(/\/+$/, "");
   const url0 = type === "anthropic" ? (/\/v1$/.test(b) ? `${b}/models` : `${b}/v1/models`) : `${b}/models`;
   const headers = type === "anthropic" ? { "x-api-key": key, "anthropic-version": "2023-06-01" } : { authorization: `Bearer ${key}` };
+  const deadline = Date.now() + timeoutMs;
   const ids = []; let url = url0;
   for (let page = 0; page < 20 && url; page++) {
-    const r = await fetch(url, { headers: { accept: "application/json", ...headers }, signal: AbortSignal.timeout(timeoutMs) });
+    const left = deadline - Date.now();
+    if (left <= 0) throw new Error(`GET ${url0} → timeout total ${timeoutMs} ms habis (paginasi berhenti di halaman ${page + 1})`);
+    let r;
+    try { r = await fetch(url, { headers: { accept: "application/json", ...headers }, signal: AbortSignal.timeout(left) }); }
+    catch (e) { if (e?.name === "AbortError" || e?.name === "TimeoutError") throw new Error(`GET ${url0} → timeout total ${timeoutMs} ms habis (paginasi berhenti di halaman ${page + 1})`); throw e; }
     if (!r.ok) throw new Error(`GET ${url0} → HTTP ${r.status}`);
     const j = await r.json();
     for (const m of j.data || j.models || []) if (m && (m.id || m.name)) ids.push(String(m.id || m.name));
@@ -54,11 +63,14 @@ export function remove(home, name) {
 }
 export async function refresh(home, only, { timeoutMs, env = process.env } = {}) {
   const F = files(home), all = readJ(F.prov); const out = {};
-  for (const [n, p] of Object.entries(all.providers || {})) {
-    if (only && n !== only) continue;
+  // v0.3.44: PARALEL per provider (dulu satu per satu — N provider lambat = N x
+  // timeout). Anggaran timeout tetap per provider (total, lihat detectModels);
+  // gagal per provider -> cache lama, tidak pernah throw.
+  await Promise.all(Object.entries(all.providers || {}).map(async ([n, p]) => {
+    if (only && n !== only) return;
     try { p.models = await detectModels(p.type, p.baseURL, keyFor(home, n, env), { timeoutMs }); p.updated = new Date().toISOString(); out[n] = p.models.length; }
     catch (e) { out[n] = `gagal: ${e.message}`; }
-  }
+  }));
   writeJ(F.prov, all); return out;
 }
 
@@ -104,12 +116,18 @@ export function opencodeFragment(home, env = process.env) {
 function ask(rl, q) { return new Promise((r) => rl.question(q, r)); }
 async function askHidden(q) { const { askMasked } = await import("./provider-ui.mjs"); return askMasked(q); }
 
-export async function cli({ argv, home, sub, log = console.log, err = (m) => process.stderr.write(m + "\n") }) {
+export async function cli({ argv, home, sub, env = process.env, log = console.log, err = (m) => process.stderr.write(m + "\n") }) {
   const val = (f) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : undefined; }, flag = (f) => argv.includes(f);
   const list = () => { const ps = load(home); if (!Object.keys(ps).length) { log("belum ada provider custom. Tambah: lumitome connect"); return; }
     for (const [n, p] of Object.entries(ps)) log(`${n}\t${p.type}\t${p.baseURL}\t${p.models.length} model\tkey:${keyFor(home, n) ? "ada" : "TIDAK ADA"}`); };
   if (sub === "models") {
-    if (flag("--refresh")) { const r = await refresh(home, val("--refresh")?.startsWith("-") ? undefined : val("--refresh")); for (const [n, v] of Object.entries(r)) log(`${n}: ${v}${typeof v === "number" ? " model" : ""}`); return Object.values(r).some((v) => typeof v !== "number") ? 1 : 0; }
+    if (flag("--refresh")) { const r = await refresh(home, val("--refresh")?.startsWith("-") ? undefined : val("--refresh"), { env }); for (const [n, v] of Object.entries(r)) log(`${n}: ${v}${typeof v === "number" ? " model" : ""}`); return Object.values(r).some((v) => typeof v !== "number") ? 1 : 0; }
+    // v0.3.44: tanpa --refresh pun ikut auto-refresh dulu (best-effort, gagal ->
+    // cache lama; opt-out LUMI_AUTO_REFRESH=0 dihormati). Sebelumnya cabang ini
+    // hanya mencetak cache — model baru dari server tidak pernah muncul di sini.
+    // Catatan: `lumitome models` polos diteruskan ke engine OpenCode, bukan ke sini;
+    // jalur itu sudah auto-refresh di startup wrapper sejak v0.3.38.
+    await autoRefresh(home, { env });
     for (const [n, p] of Object.entries(load(home))) for (const m of p.models) log(`${n}/${m}`); return 0;
   }
   if (flag("--list")) { list(); return 0; }

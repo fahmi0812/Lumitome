@@ -80,9 +80,11 @@ export async function installCbm({ home, log = (m) => process.stderr.write(m + "
 
 export const PROJECT_MARKERS = [".git", "package.json", "pyproject.toml", "setup.py", "requirements.txt", "go.mod", "Cargo.toml", "pom.xml", "build.gradle", "build.gradle.kts", "composer.json", "Gemfile", "mix.exs", "deno.json", "CMakeLists.txt", "Makefile", "pubspec.yaml", "Package.swift", ".hg"];
 const SYSTEM_DIRS = ["/bin", "/boot", "/dev", "/etc", "/lib", "/lib64", "/proc", "/run", "/sbin", "/sys", "/usr", "/var", "/System", "/Library", "/Applications", "/private"];
-/** Alasan auto-index dilewati, atau null bila boleh. */
-export function autoIndexSkip(dir, { home = os.homedir(), platform = process.platform, exists = fs.existsSync, env = process.env } = {}) {
-  if (env.LUMI_AUTO_INDEX === "0") return "LUMI_AUTO_INDEX=0";
+/** Alasan auto-index dilewati, atau null bila boleh. `force` = perintah eksplisit
+ * (`lumitome index --refresh`): opt-out LUMI_AUTO_INDEX=0 dilewati, aturan
+ * keamanan (home/sistem/bukan proyek) tetap berlaku. */
+export function autoIndexSkip(dir, { home = os.homedir(), platform = process.platform, exists = fs.existsSync, env = process.env, force = false } = {}) {
+  if (env.LUMI_AUTO_INDEX === "0" && !force) return "LUMI_AUTO_INDEX=0";
   const p = platform === "win32" ? path.win32 : path.posix;
   const norm = (s) => { const r = p.resolve(s); return platform === "win32" ? r.toLowerCase() : r; };
   const d = norm(dir);
@@ -98,17 +100,54 @@ export function readIndexState(home) { try { return JSON.parse(fs.readFileSync(s
 export function writeIndexState(home, dir, rec) {
   const s = readIndexState(home); s[dir] = { ...s[dir], ...rec }; fs.writeFileSync(stateFile(home), JSON.stringify(s, null, 1));
 }
-/** Mulai indeks di latar (detached, prioritas rendah). Return status singkat. */
-export function maybeAutoIndex({ home, dir, env = process.env, nodeExec = process.execPath, runner }) {
+/**
+ * Sidik proyek untuk re-index (v0.3.44): HEAD git + `git status --porcelain`
+ * (perubahan staged/unstaged) + mtime `.git/index` & `.git/HEAD`. Best-effort:
+ * git gagal/lambat (timeout 10 dtk) -> bagian itu null; semua null -> null
+ * (pemanggil lalu memakai perilaku lama "already"). Di repo ini `git status`
+ * ~0,1 dtk; jangan dipakai di hot path selain pemicu auto-index saat startup.
+ */
+export function projectFingerprint(dir, { run = (c, a, o) => execFileSync(c, a, o) } = {}) {
+  const root = gitRoot(dir); if (!root) return null;
+  let head = null, status = null;
+  try { head = run("git", ["-C", root, "rev-parse", "HEAD"], { encoding: "utf8", timeout: 10000, stdio: ["ignore", "pipe", "ignore"] }).trim(); } catch {}
+  try { status = crypto.createHash("sha256").update(run("git", ["-C", root, "status", "--porcelain", "--untracked-files=no"], { encoding: "utf8", timeout: 10000, stdio: ["ignore", "pipe", "ignore"] })).digest("hex").slice(0, 16); } catch {}
+  let idx = null, hf = null;
+  try { idx = fs.statSync(path.join(root, ".git", "index")).mtimeMs; } catch {}
+  try { hf = fs.statSync(path.join(root, ".git", "HEAD")).mtimeMs; } catch {}
+  if (!head && status === null && idx === null && hf === null) return null;
+  return JSON.stringify({ head, status, idx, hf });
+}
+const pidAlive = (pid) => { if (!Number.isInteger(pid) || pid <= 0) return null; try { process.kill(pid, 0); return true; } catch (e) { return e.code === "EPERM"; } };
+/** Mulai indeks di latar (detached, prioritas rendah). Return status singkat.
+ * v0.3.44: re-index otomatis bila sidik proyek berubah sejak "indexed" (dulu
+ * "already" selamanya — indeks basi tanpa pemicu apa pun); state "indexed" lama
+ * tanpa sidik di-re-index sekali (migrasi), lalu sidik tercatat. "running" yang
+ * PID-nya sudah mati tidak lagi memblokir 30 menit; jendela 30 menit hanya
+ * fallback bila PID tidak tercatat (state lama). `force` (perintah eksplisit
+ * `lumitome index --refresh`): lewati status + opt-out LUMI_AUTO_INDEX=0. */
+export function maybeAutoIndex({ home, dir, env = process.env, nodeExec = process.execPath, runner, force = false }) {
   const bin = cbmBin(home); if (!fs.existsSync(bin)) return "no-binary";
-  const why = autoIndexSkip(dir, { env }); if (why) return `skip:${why}`;
+  const why = autoIndexSkip(dir, { env, force }); if (why) return `skip:${why}`;
   if (!gitRoot(dir)) return "skip:bukan repo git";
   const st = readIndexState(home)[dir];
-  if (st?.status === "indexed") return "already";
-  if (st?.status === "running" && Date.now() - (st.started || 0) < 30 * 60000) return "running";
-  writeIndexState(home, dir, { status: "running", started: Date.now() });
-  const child = spawn(nodeExec, [runner, home, dir, bin], { detached: true, stdio: "ignore", env, windowsHide: true });
+  const fp = projectFingerprint(dir);
+  if (!force && st?.status === "indexed") {
+    if (fp && st.fp && st.fp !== fp) { /* sidik berubah -> re-index di bawah */ }
+    else if (fp && !st.fp) { /* state lama tanpa sidik -> re-index sekali (migrasi) */ }
+    else return "already";
+  }
+  if (!force && st?.status === "running") {
+    const alive = pidAlive(st.pid);
+    if (alive === true) return "running";
+    if (alive === null && Date.now() - (st.started || 0) < 30 * 60000) return "running";
+    // PID mati (atau jendela 30 mnt habis) -> proses index lama sudah tidak ada, re-index
+  }
+  let child;
+  try { child = spawn(nodeExec, [runner, home, dir, bin], { detached: true, stdio: "ignore", env, windowsHide: true }); }
+  catch { return "failed"; }
   try { os.setPriority(child.pid, 19); } catch {}
+  writeIndexState(home, dir, { status: "running", started: Date.now(), pid: child.pid });
   child.unref();
   return "started";
 }

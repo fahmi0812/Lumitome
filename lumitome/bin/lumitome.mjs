@@ -129,6 +129,22 @@ if (sub === "service" && (argv[1] === "stop" || argv[1] === "status")) {
   if (argv[1] === "status") { console.log(st.running ? `service Lumitome: jalan (pid ${st.pid}${st.url ? `, ${st.url}` : ""})` : "service Lumitome: tidak jalan"); process.exit(0); }
   console.log(SC.stop(ISO_HOME) ? `service Lumitome dihentikan (pid ${st.pid})` : "service Lumitome: tidak jalan"); process.exit(0);
 }
+// ---------- codemem index (v0.3.44): status / re-index manual proyek ini ----------
+// Tanpa flag: tampilkan status indeks proyek ini. `--refresh`: paksa re-index
+// sekarang (melewati "already"/"running" + opt-out LUMI_AUTO_INDEX=0 — perintah
+// eksplisit pengguna; aturan skip keamanan tetap berlaku: home/sistem/bukan proyek).
+if (sub === "index") {
+  const CM = await import(pathToFileURL(path.join(ROOT, "lib", "codemem.mjs")).href);
+  const ws = fs.realpathSync(env.LUMI_WORKSPACE || process.cwd());
+  if (argv.includes("--refresh")) {
+    const st = CM.maybeAutoIndex({ home: ISO_HOME, dir: ws, env: { ...process.env }, runner: path.join(ROOT, "lib", "codemem-index-run.mjs"), force: true });
+    console.log(`lumitome: index ${st}`);
+    process.exit(st === "no-binary" || st === "failed" ? 1 : 0);
+  }
+  const cur = CM.readIndexState(ISO_HOME)[ws];
+  console.log(cur ? `lumitome: index ${cur.status}${cur.finished ? ` (${new Date(cur.finished).toISOString()})` : ""}` : "lumitome: index belum pernah jalan di proyek ini (otomatis saat pertama dibuka, atau: lumitome index --refresh)");
+  process.exit(0);
+}
 // `lumitome connect` tanpa flag di terminal → layar provider yang sama; teks hanya untuk non-TTY, --text, atau flag lengkap/--list/--remove
 if (sub === "connect" && process.stdin.isTTY && process.stdout.isTTY && !argv.includes("--text")
   && !["--list", "--remove", "--type", "--name", "--base-url", "--key-env", "--key-stdin"].some((f) => argv.includes(f))) { await providerMenu(); process.exit(0); }
@@ -412,23 +428,21 @@ const TIMEOUT_RE = /timeout|timed out|ETIMEDOUT|headerTimeout|chunkTimeout|Timeo
 
 const DEADLINE = Date.now() + Number(env.LUMI_DEADLINE_MS || 300000); // batas keras run (default 5 menit)
 let deadlineHit = false, stallHit = false;
-// preflight provider (murah, ~0.3 s): GET {baseURL} — status HTTP apa pun (mis. 401) = server hidup.
-// Server diam/hang → gagal cepat 124 tanpa menunggu retry internal OpenCode (~55 s/percobaan).
-async function preflight() {
+// preflight provider (v0.3.44: modul lib/preflight.mjs — server MATI gagal-cepat
+// tanpa retry + diagnosis terpandu; server LAMBAT tetap di-retry, timeout tidak
+// diperpendek). GET {baseURL} — status HTTP apa pun (mis. 401) = server hidup.
+if (sub === "run" && env.LUMI_PREFLIGHT !== "0") {
+  const PF = await import(pathToFileURL(path.join(ROOT, "lib", "preflight.mjs")).href);
   const mi = args.indexOf("-m"), prov = mi >= 0 ? String(args[mi + 1]).split("/")[0] : "9router";
-  const base = FRAG.providers[prov]?.settings.baseURL || env.LUMI_9ROUTER_URL, to = Number(env.LUMI_PREFLIGHT_TIMEOUT_MS || 8000), n = Number(env.LUMI_PREFLIGHT_RETRIES ?? 2);
-  for (let i = 0; i <= n; i++) {
-    const t0 = Date.now();
-    // Promise.race: AbortSignal saja tidak menjamin batas waktu (DNS/TLS di threadpool bisa menggantung)
-    try { await Promise.race([fetch(base, { signal: AbortSignal.timeout(to), headers: { "user-agent": `lumitome/${VERSION}` } }),
-      new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error("timeout"), { name: "TimeoutError" })), to + 250).unref())]); return true; }
-    catch (e) { process.stderr.write(`lumitome: preflight ${base} gagal (${e.name || e.message}, ${Date.now() - t0} ms) ${i < n ? `— ulang ${i + 1}/${n}` : ""}\n`); }
-    if (i < n) await new Promise((r) => setTimeout(r, 2000 * 2 ** i));
+  const base = FRAG.providers[prov]?.settings.baseURL || env.LUMI_9ROUTER_URL;
+  const r = await PF.preflight({ base, timeoutMs: Number(env.LUMI_PREFLIGHT_TIMEOUT_MS || 8000), retries: Number(env.LUMI_PREFLIGHT_RETRIES ?? 2),
+    userAgent: `lumitome/${VERSION}`, log: (m) => process.stderr.write(m + "\n") });
+  if (!r.ok) {
+    const cur = PV.load(ISO_HOME)[prov];
+    process.stderr.write(`lumitome: GAGAL — provider ${MODEL || env.LUMI_9ROUTER_URL} tidak merespons (preflight); tidak menjalankan opencode\n`);
+    process.stderr.write(PF.preflightDiagnosis({ provider: prov, base, kind: r.kind, lastModels: cur ? { updated: cur.updated, count: cur.models?.length } : null }) + "\n");
+    process.exit(124);
   }
-  return false;
-}
-if (sub === "run" && env.LUMI_PREFLIGHT !== "0" && !(await preflight())) {
-  process.stderr.write(`lumitome: GAGAL — provider ${MODEL || env.LUMI_9ROUTER_URL} tidak merespons (preflight); tidak menjalankan opencode\n`); process.exit(124);
 }
 let res; const retries = Number(env.LUMI_RETRIES ?? 2);
 for (let attempt = 0; ; attempt++) {

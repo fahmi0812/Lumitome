@@ -483,6 +483,141 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
 }
 
 {
+  // v0.3.44 (P1-3): startup lebih cepat + diagnosis saat provider mati.
+  // TDD: blok ini ditulis dulu — merah sebelum implementasi (modul preflight belum
+  // ada, refresh masih sekuensial, detectModels timeout per halaman, stop 3 dtk,
+  // codemem "already" selamanya, models --lumitome hanya cache).
+  const os = await import("node:os"), http = await import("node:http");
+  const PV = await import("../lumitome/lib/providers.mjs");
+  const srv = http.createServer((q, r) => {
+    r.setHeader("content-type", "application/json");
+    if (q.url.startsWith("/slow1/v1/models") || q.url.startsWith("/slow2/v1/models"))
+      return setTimeout(() => r.end(JSON.stringify({ data: [{ id: "m1" }] })), 2500);
+    if (q.url.startsWith("/pg/v1/models")) { // anthropic: 20 halaman x 400 ms
+      const after = new URL(q.url, "http://x").searchParams.get("after_id");
+      const n = after ? Number(after.split("-")[1]) + 1 : 1;
+      return setTimeout(() => r.end(JSON.stringify({ data: [{ id: `p-${n}` }], has_more: n < 20, last_id: `p-${n}` })), 400);
+    }
+    if (q.url.startsWith("/grow/v1/models")) return r.end(JSON.stringify({ data: growLive.map((id) => ({ id })) }));
+    r.statusCode = 404; r.end("{}");
+  });
+  await new Promise((r) => srv.listen(0, "127.0.0.1", r));
+  const base = `http://127.0.0.1:${srv.address().port}`;
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "lumip44-"));
+  await PV.add(home, { name: "slow1", type: "openai", baseURL: `${base}/slow1/v1`, key: "k" });
+  await PV.add(home, { name: "slow2", type: "openai", baseURL: `${base}/slow2/v1`, key: "k" });
+  // (1) refresh PARALEL: 2 provider @2,5 dtk harus selesai jauh di bawah 5 dtk sekuensial
+  let t0 = Date.now();
+  const out44 = await PV.refresh(home, undefined, { timeoutMs: 3000, env: {} });
+  const refreshMs = Date.now() - t0;
+  ok("P1-3 (1) refresh paralel: 2 provider lambat @2,5 dtk selesai < 4 dtk, keduanya ter-update",
+    refreshMs < 4000 && out44.slow1 === 1 && out44.slow2 === 1);
+  // (2) detectModels: timeout TOTAL per provider, paginasi berhenti saat anggaran habis
+  // (melempar — daftar parsial tidak boleh menimpa cache lengkap)
+  t0 = Date.now();
+  let pgErr = "";
+  try { await PV.detectModels("anthropic", `${base}/pg`, "k", { timeoutMs: 3000 }); } catch (e) { pgErr = e.message; }
+  const pgMs = Date.now() - t0;
+  ok("P1-3 (2) detectModels timeout total: 20 halaman x 400 ms berhenti < 5 dtk (throw, cache lama aman)",
+    pgMs < 5000 && /timeout total 3000 ms/.test(pgErr));
+  // (3) preflight: server mati gagal-cepat tanpa retry; server lambat tetap di-retry
+  const PF = await import("../lumitome/lib/preflight.mjs");
+  const deadErr = Object.assign(new TypeError("fetch failed"), { cause: Object.assign(new Error("connect ECONNREFUSED 127.0.0.1:1"), { code: "ECONNREFUSED" }) });
+  const slowErr = Object.assign(new Error("timeout"), { name: "TimeoutError" });
+  ok("P1-3 (3a) preflight: ECONNREFUSED = mati, TimeoutError = lambat",
+    PF.classifyPreflightError(deadErr) === "dead" && PF.classifyPreflightError(slowErr) === "slow");
+  let tries = 0;
+  const rDead = await PF.preflight({ base: "http://127.0.0.1:1/v1", timeoutMs: 8000, retries: 2,
+    fetchImpl: async () => { tries++; throw deadErr; }, sleepImpl: () => Promise.resolve() });
+  ok("P1-3 (3b) preflight server mati: 1 percobaan saja, tanpa backoff", !rDead.ok && rDead.kind === "dead" && tries === 1 && rDead.attempts === 1);
+  tries = 0;
+  const rSlow = await PF.preflight({ base: "http://x/v1", timeoutMs: 8000, retries: 2,
+    fetchImpl: async () => { tries++; throw slowErr; }, sleepImpl: () => Promise.resolve() });
+  ok("P1-3 (3c) preflight server lambat: tetap 3 percobaan (retry dipertahankan)", !rSlow.ok && rSlow.kind === "slow" && tries === 3 && rSlow.attempts === 3);
+  const diag = PF.preflightDiagnosis({ provider: "9router", base: "http://127.0.0.1:1/v1", kind: "dead",
+    lastModels: { updated: "2026-11-11T00:00:00.000Z", count: 2 } });
+  ok("P1-3 (3d) diagnosis terpandu: base URL + hasil GET /models terakhir + saran perintah + cek 9router",
+    /http:\/\/127\.0\.0\.1:1\/v1/.test(diag) && /2026-11-11/.test(diag) && /2 model/.test(diag)
+    && /lumitome models --refresh/.test(diag) && /http:\/\/127\.0\.0\.1:20128\/v1\/models/.test(diag));
+  // (4) `lumitome models --lumitome` ikut auto-refresh dulu (bukan sekadar cache)
+  let growLive = ["g-old"];
+  await PV.add(home, { name: "grow", type: "openai", baseURL: `${base}/grow/v1`, key: "k" });
+  growLive = ["g-old", "g-new"];
+  const logs44 = [];
+  await PV.cli({ argv: ["--lumitome"], home, sub: "models", env: {}, log: (m) => logs44.push(m) });
+  ok("P1-3 (4) models tanpa flag me-refresh: model baru dari server muncul di daftar",
+    logs44.some((l) => l.includes("grow/g-new")));
+  // (5) stop() service: tidak menunggu penuh bila service mengabaikan SIGTERM
+  const SC = await import("../lumitome/lib/service-ctl.mjs");
+  const h44s = fs.mkdtempSync(path.join(os.tmpdir(), "lumip44s-"));
+  const svc44 = cp.spawn(process.execPath, ["-e", "process.on('SIGTERM',()=>{});setInterval(()=>{},1e3)"], { stdio: "ignore" });
+  await new Promise((r) => setTimeout(r, 300));
+  fs.mkdirSync(path.join(h44s, "state", "opencode"), { recursive: true });
+  fs.writeFileSync(SC.regFile(h44s), JSON.stringify({ pid: svc44.pid, url: "http://127.0.0.1:50003" }));
+  t0 = Date.now(); SC.stop(h44s); const stopMs = Date.now() - t0;
+  await new Promise((r) => setTimeout(r, 200));
+  ok("P1-3 (5) stop() service bandel: < 2 dtk (bukan 3 dtk) dan proses akhirnya mati",
+    stopMs < 2000 && !SC.alive(svc44.pid));
+  // (6) codemem: HEAD berubah -> re-index; "running" yang prosesnya sudah mati -> re-index
+  const CM = await import("../lumitome/lib/codemem.mjs");
+  const h44c = fs.mkdtempSync(path.join(os.tmpdir(), "lumip44c-"));
+  fs.mkdirSync(path.join(h44c, "bin")); fs.writeFileSync(CM.cbmBin(h44c), "");
+  const repo44 = path.join(h44c, "repo");
+  cp.execFileSync("git", ["init", "-q", repo44]);
+  cp.execFileSync("git", ["-C", repo44, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "c1"]);
+  fs.writeFileSync(path.join(repo44, "package.json"), "{}");
+  const fp1 = CM.projectFingerprint(repo44);
+  CM.writeIndexState(h44c, repo44, { status: "indexed", finished: Date.now(), fp: fp1 });
+  ok("P1-3 (6a) codemem: HEAD sama -> already (tidak re-index sia-sia)",
+    CM.maybeAutoIndex({ home: h44c, dir: repo44, env: {}, runner: "/x" }) === "already");
+  cp.execFileSync("git", ["-C", repo44, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "c2"]);
+  ok("P1-3 (6b) codemem: HEAD berubah -> re-index dimulai",
+    CM.maybeAutoIndex({ home: h44c, dir: repo44, env: {}, runner: "/x" }) === "started");
+  const fp2 = CM.projectFingerprint(repo44);
+  ok("P1-3 (6c) codemem: sidik berubah saat HEAD berubah", fp1 !== null && fp2 !== null && fp1 !== fp2);
+  CM.writeIndexState(h44c, repo44, { status: "running", started: Date.now(), pid: 999999 });
+  ok("P1-3 (6d) codemem: 'running' yang PID-nya sudah mati -> re-index dimulai (tidak diblokir 30 mnt)",
+    CM.maybeAutoIndex({ home: h44c, dir: repo44, env: {}, runner: "/x" }) === "started");
+  // (3e) integrasi bin: `lumitome run` + 9router mati -> exit 124, gagal-cepat + diagnosis
+  {
+    const h44p = fs.mkdtempSync(path.join(os.tmpdir(), "lumip44p-"));
+    const stub44 = path.join(h44p, "fake-opencode");
+    fs.writeFileSync(stub44, "#!/usr/bin/env node\nprocess.exit(0);\n"); fs.chmodSync(stub44, 0o755);
+    fs.writeFileSync(path.join(h44p, "providers.json"), JSON.stringify({ providers: { "9router": { type: "openai", baseURL: "http://127.0.0.1:59998/v1", models: ["m"], updated: "2026-11-11T00:00:00.000Z" } } }));
+    fs.writeFileSync(path.join(h44p, "credentials.json"), JSON.stringify({ "9router": "k9" }));
+    t0 = Date.now();
+    const r44p = cp.spawnSync(process.execPath, ["--experimental-strip-types", "--no-warnings", path.resolve("lumitome/bin/lumitome.mjs"), "run", "halo"],
+      { encoding: "utf8", timeout: 60000, cwd: h44p,
+        env: { ...process.env, HOME: h44p, LUMI_HOME: h44p, LUMI_OPENCODE: stub44, LUMI_WORKSPACE: h44p, LUMI_AUTO_INDEX: "0", NINEROUTER_API_KEY: "fake" } });
+    const binMs = Date.now() - t0;
+    ok("P1-3 (3e) bin preflight server mati: exit 124, tanpa retry, diagnosis berisi base URL + saran + cek 9router",
+      r44p.status === 124 && !/— ulang/.test(r44p.stderr) && /http:\/\/127\.0\.0\.1:59998\/v1/.test(r44p.stderr)
+      && /lumitome models --refresh/.test(r44p.stderr) && /http:\/\/127\.0\.0\.1:20128\/v1\/models/.test(r44p.stderr) && binMs < 15000);
+    // (8) `lumitome index --refresh` (bin): re-index manual dari subcommand
+    const repo44b = path.join(h44p, "repo");
+    cp.execFileSync("git", ["init", "-q", repo44b]);
+    cp.execFileSync("git", ["-C", repo44b, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "c1"]);
+    fs.writeFileSync(path.join(repo44b, "package.json"), "{}");
+    fs.mkdirSync(path.join(h44p, "bin")); fs.writeFileSync(CM.cbmBin(h44p), "");
+    const r44i = cp.spawnSync(process.execPath, ["--experimental-strip-types", "--no-warnings", path.resolve("lumitome/bin/lumitome.mjs"), "index", "--refresh"],
+      { encoding: "utf8", timeout: 60000, cwd: repo44b,
+        env: { ...process.env, HOME: h44p, LUMI_HOME: h44p, LUMI_WORKSPACE: repo44b, LUMI_AUTO_INDEX: "0" } });
+    ok("P1-3 (8) bin `lumitome index --refresh`: subcommand ada, re-index dimulai walau LUMI_AUTO_INDEX=0",
+      r44i.status === 0 && /index started/.test(r44i.stdout + r44i.stderr));
+    fs.rmSync(h44p, { recursive: true, force: true });
+  }
+  // (7) perintah TUI /refresh-models ada + jujur soal restart
+  const cmd44 = fs.readFileSync(".opencode/commands/refresh-models.md", "utf8");
+  ok("P1-3 (7) /refresh-models: perintah TUI ada, refresh + minta restart TUI",
+    /lumitome models --refresh/.test(cmd44) && /restart|mulai ulang/i.test(cmd44));
+  srv.close();
+  try { process.kill(svc44.pid, "SIGKILL"); } catch {}
+  fs.rmSync(home, { recursive: true, force: true });
+  fs.rmSync(h44s, { recursive: true, force: true });
+  fs.rmSync(h44c, { recursive: true, force: true });
+}
+
+{
   // v0.3.3: managed service TUI tidak bentrok dengan `opencode serve --service` milik user (port 49374)
   const os = await import("node:os"), net = await import("node:net"), cp = await import("node:child_process");
   const SP = await import("../lumitome/lib/service-port.mjs");

@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.43-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.44-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -40,7 +40,7 @@ While it installs (and uninstalls) you see one status line and one line when it 
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.43.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.44.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
@@ -93,7 +93,7 @@ lumitome run "fix the failing tests"
 
 - **A main helper that hands work to specialists.** When you open `lumitome`, you talk to a coordinator. It passes each job to the right specialist (coding, research, writing, or security) and checks the result. `lumitome run` uses the plain worker, which is the safest choice when nobody is watching. To pick a different one, set `LUMI_AGENT`, for example `LUMI_AGENT=build lumitome`.
 - **Two tool servers.** Code memory (`codemem`, only inside a git repo) and one `skills` server that covers every sector: coding, research, writing, security, finance, and media. Each sector agent can only search its own sector. Pick servers with `LUMI_MCP`, for example `LUMI_MCP=skills`.
-- **Code memory.** Lumitome remembers how your project fits together, so it finds the right files faster. The first time you open Lumitome in a project folder, it reads the project quietly in the background. You can keep working while it does. It skips your home folder, system folders, and folders that do not look like a project. To turn this off: `LUMI_AUTO_INDEX=0`.
+- **Code memory.** Lumitome remembers how your project fits together, so it finds the right files faster. The first time you open Lumitome in a project folder, it reads the project quietly in the background. You can keep working while it does. It skips your home folder, system folders, and folders that do not look like a project. To turn this off: `LUMI_AUTO_INDEX=0`. The index is refreshed automatically when the project changes (new commit or edited files); to force a re-index by hand: `lumitome index --refresh`.
 
 ## Updating
 
@@ -132,6 +132,8 @@ Models from a provider are saved when you add it with `lumitome connect`. Since 
 lumitome models --refresh
 LUMI_AUTO_REFRESH=0 lumitome
 ```
+
+A running TUI session does not pick up new models until you restart it — the model list is loaded when the TUI starts. Inside the TUI, `/refresh-models` refreshes the list and reminds you to restart. To see the saved list, `lumitome models --lumitome` (it refreshes first, like startup does).
 
 ### Windows: optional Defender exclusion
 
