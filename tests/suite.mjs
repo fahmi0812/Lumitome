@@ -798,6 +798,23 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("update: sudah terbaru → satu baris tenang", r7 === 0 && o7.buf.trim().split("\n").pop() === "Sudah versi terbaru — v0.3.15");
   const o8 = sink(); const r8 = await U.update({ argv: [], version: "0.3.14", repo, home, env: { LUMI_INSTALL: "npm" }, out: o8, tagsImpl: async () => [{ tag: "v0.3.15", sha: "a" }] });
   ok("update non-TTY tanpa --yes: berhenti dengan saran --yes", r8 === 1 && o8.buf.includes("lumitome update --yes"));
+  // v0.3.39: update tanpa git — fallback GitHub API (port pola 0DayExploit v0.9.2).
+  // TDD (mattpocock): tes ini ditulis SEBELUM fix — harus MERAH dulu.
+  const gitEnoent = () => Object.assign(new Error("spawn git ENOENT"), { code: "ENOENT", detail: "spawn git ENOENT" });
+  const runNoGit = (calls) => async (cmd, args, o) => { calls.push([cmd, ...args]); if (cmd === "git") throw gitEnoent(); o?.log?.(`$ ${cmd} ${args.join(" ")}`); return ""; };
+  const releasesLatest = (tag, seen) => async (url) => { seen.push(url); if (!/api\.github\.com\/repos\/fahmi0812\/Lumitome\/releases\/latest/.test(url)) throw new Error(`URL API salah: ${url}`); return { ok: true, status: 200, json: async () => ({ tag_name: tag }) }; };
+  const home39 = fs.mkdtempSync(path.join(osm.tmpdir(), "lumiupd39-")); const repo39 = path.join(home39, "src"); fs.mkdirSync(repo39);
+  const calls39 = []; const o9 = sink();
+  const r9 = await U.update({ argv: ["--yes"], version: "0.3.38", repo: repo39, home: home39, env: { LUMI_INSTALL: "npm" }, out: o9, runImpl: runNoGit(calls39), fetchImpl: releasesLatest("v0.3.39", []) });
+  ok("update npm-mode tanpa git: fallback GitHub API, update jalan", r9 === 0 && calls39.filter((c) => c[0] === "git").length === 1 && calls39.find((c) => c[0] === "npm")?.includes(U.TARBALL("v0.3.39")) && o9.buf.trim().split("\n").pop() === "Selesai — v0.3.39");
+  const o10 = sink();
+  const r10 = await U.update({ argv: ["--check"], version: "0.3.38", repo: repo39, home: home39, env: { LUMI_INSTALL: "npm" }, out: o10, runImpl: runNoGit([]), fetchImpl: async () => { throw new Error("fetch failed"); } });
+  ok("update npm-mode tanpa git + API mati: pesan menyebut git, bukan internet", r10 === 1 && /git tidak ditemukan/i.test(o10.buf) && /npm install -g/.test(o10.buf) && !/Cek koneksi internet/.test(o10.buf));
+  const seen11 = []; const o11 = sink();
+  const r11 = await U.update({ argv: ["--check"], version: "0.3.38", repo: repo39, home: home39, env: {}, out: o11, runImpl: runNoGit([]), fetchImpl: releasesLatest("v0.3.39", seen11) });
+  ok("update git-mode tanpa git: gagal jelas, tanpa fallback API", r11 === 1 && /git tidak ditemukan/i.test(o11.buf) && /Git for Windows/i.test(o11.buf) && seen11.length === 0);
+  ok("update: parseRepoSlug https/git@/ssh + null non-GitHub", typeof U.parseRepoSlug === "function" && U.parseRepoSlug("https://github.com/fahmi0812/Lumitome.git") === "fahmi0812/Lumitome" && U.parseRepoSlug("https://github.com/fahmi0812/Lumitome") === "fahmi0812/Lumitome" && U.parseRepoSlug("git@github.com:fahmi0812/Lumitome.git") === "fahmi0812/Lumitome" && U.parseRepoSlug("ssh://git@github.com/fahmi0812/Lumitome.git") === "fahmi0812/Lumitome" && U.parseRepoSlug("https://example.com/x/y.git") === null);
+  fs.rmSync(home39, { recursive: true, force: true });
   const UPD = fs.readFileSync("lumitome/lib/update.mjs", "utf8");
   ok("update: setelah pasang → migrasi config + stop service LUMI_HOME; engine tidak disentuh", /migrateConfigFile/.test(UPD) && /S\.stop\(home\)/.test(UPD) && !/bin[\\/"', ]+opencode/.test(UPD.replace(/^\s*\*.*$/gm, "")));
   fs.rmSync(home, { recursive: true, force: true });

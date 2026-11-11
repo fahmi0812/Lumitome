@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.38-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.39-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -40,7 +40,7 @@ While it installs (and uninstalls) you see one status line and one line when it 
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.38.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.39.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
@@ -103,7 +103,7 @@ lumitome update             # install it
 lumitome update --rollback  # go back to the version you had before
 ```
 
-This works the same for npm installs: `lumitome update` runs npm for you. You see one status line while it works and one line when it is done. If something goes wrong you get a short message; the full details are in `~/.lumitome/logs/update.log` (Windows: `%USERPROFILE%\.lumitome\logs\update.log`), or add `--verbose` to see them on screen. After updating, Lumitome stops its old background service so the next start uses the new version. `--rollback` is only for git installs.
+This works the same for npm installs: `lumitome update` runs npm for you. You see one status line while it works and one line when it is done. If something goes wrong you get a short message; the full details are in `~/.lumitome/logs/update.log` (Windows: `%USERPROFILE%\.lumitome\logs\update.log`), or add `--verbose` to see them on screen. After updating, Lumitome stops its old background service so the next start uses the new version. `--rollback` is only for git installs. On npm installs, the version check no longer needs Git: if `git` is missing, Lumitome falls back to the GitHub API to find the latest release (if that fails too, the message says Git is missing and shows the manual install command).
 
 Lumitome does not update itself. It only updates when you run `lumitome update`. That command does not change the OpenCode version. On v0.3.1, which has no `update` command, run the install line again once.
 

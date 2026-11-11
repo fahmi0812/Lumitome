@@ -3,6 +3,8 @@
  * Mode git (install.sh): ls-remote tag → clone tag ke staging → verifikasi (commit = sha tag, VERSION = tag, opsional --sha)
  *   → siapkan (node_modules, indeks skill) → swap atomik dengan backup → cek pasca-pasang → gagal = rollback otomatis.
  * Mode npm: `npm install -g <tarball tag>` (output npm hanya ke log).
+ * Bila git tidak ada di PATH (mode npm): cek versi jatuh ke GitHub API `releases/latest` (tanpa git);
+ * bila API juga mati, pesan menyebut "git tidak ditemukan" + perintah update manual (bukan "cek internet").
  * Sesudahnya (diam-diam): migrasi config, service latar milik LUMI_HOME dihentikan (mulai lagi saat lumitome dibuka).
  * Tampilan: lihat update-ui.mjs. Detail teknis hanya di ~/.lumitome/logs/update.log, atau di layar dengan --verbose / LUMI_DEBUG=1.
  * Engine ($LUMI_HOME/bin/opencode) tidak pernah disentuh. Tanpa auto-update.
@@ -33,6 +35,32 @@ export function parseTags(out) {
 /** Daftar tag rilis remote: [{tag, sha(commit)}], urut naik. */
 export function remoteTags(url) { return parseTags(git(["ls-remote", "--tags", url])); }
 
+/** "owner/repo" dari URL repo GitHub (https/git@/ssh), atau null bila bukan GitHub. */
+export function parseRepoSlug(url) {
+  const m = String(url || "").match(/github\.com[/:]([^/\s]+)\/([^/\s.]+?)(?:\.git)?\/?$/);
+  return m ? `${m[1]}/${m[2]}` : null;
+}
+
+/** Tag rilis terbaru via GitHub API (tanpa git) — [{tag, sha:null}]. */
+export async function latestReleaseTag(slug, fetchImpl = fetch) {
+  if (!slug) throw new Error("bukan URL repo GitHub");
+  const res = await fetchImpl(`https://api.github.com/repos/${slug}/releases/latest`, {
+    headers: { accept: "application/vnd.github+json", "user-agent": "lumitome-update" },
+  });
+  if (!res.ok) throw new Error(`GitHub API HTTP ${res.status}`);
+  const data = await res.json().catch(() => ({}));
+  const tag = data?.tag_name || "";
+  if (!/^v\d+\.\d+\.\d+$/.test(tag)) throw new Error(`tag rilis tidak valid: ${tag || "(kosong)"}`);
+  return [{ tag, sha: null }];
+}
+
+/** Apakah error ini berarti `git` tidak ditemukan (bukan jaringan)? */
+export function isGitMissing(e) {
+  if (!e) return false;
+  if (e.code === "ENOENT") return true;
+  return /spawn git ENOENT|ENOENT/.test(`${e.message || ""} ${e.detail || ""}`);
+}
+
 /** Instalasi npm? (tanpa .git, LUMI_INSTALL=npm atau di dalam node_modules) */
 export function isNpmInstall(repo, env = process.env, exists = fs.existsSync) {
   if (exists(path.join(repo, ".git"))) return false;
@@ -40,11 +68,11 @@ export function isNpmInstall(repo, env = process.env, exists = fs.existsSync) {
 }
 
 /** Jalankan perintah async (spinner tetap jalan); stdout+stderr ke log. Reject dengan .detail. */
-export function run(cmd, args, { cwd, env = process.env, log = () => {} } = {}) {
+export function run(cmd, args, { cwd, env = process.env, log = () => {}, timeoutMs } = {}) {
   return new Promise((resolve, reject) => {
     log(`$ ${cmd} ${args.join(" ")}`);
     let out = "", child;
-    try { child = spawn(cmd, args, { cwd, env, stdio: ["ignore", "pipe", "pipe"], windowsHide: true, shell: process.platform === "win32" && /^(npm|npx)$/.test(cmd) }); }
+    try { child = spawn(cmd, args, { cwd, env, stdio: ["ignore", "pipe", "pipe"], windowsHide: true, shell: process.platform === "win32" && /^(npm|npx)$/.test(cmd), signal: timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined }); }
     catch (e) { e.detail = e.message; return reject(e); }
     const take = (b) => { const t = b.toString(); out += t; log(t.replace(/\s+$/, "")); };
     child.stdout.on("data", take); child.stderr.on("data", take);
@@ -75,7 +103,7 @@ async function afterUpdate({ repo, home, log }) {
     if (fs.existsSync(sf)) { const S = await import(pathToFileURL(sf).href); if (S.stop(home)) log("service lama dihentikan"); } } catch (e) { log(`service: ${e.message}`); }
 }
 
-export async function update({ argv, version, repo, home, env = process.env, out = process.stderr, ui, runImpl = run, tagsImpl }) {
+export async function update({ argv, version, repo, home, env = process.env, out = process.stderr, ui, runImpl = run, tagsImpl, fetchImpl = fetch }) {
   const flag = (f) => argv.includes(f), val = (f) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : undefined; };
   const verbose = flag("--verbose") || !!env.LUMI_DEBUG;
   ui ||= createUI({ out, mode: uiMode({ env, isTTY: !!out.isTTY, codepage: await windowsCodepage() }) });
@@ -97,8 +125,22 @@ export async function update({ argv, version, repo, home, env = process.env, out
   url ||= DEFAULT_URL;
   ui.step("Memeriksa");
   let tags;
-  try { tags = tagsImpl ? await tagsImpl(url) : parseTags(await R("git", ["ls-remote", "--tags", url])); }
-  catch (e) { return fail("Tidak bisa memeriksa versi terbaru.", "Cek koneksi internet, lalu coba lagi.", e); }
+  try { tags = tagsImpl ? await tagsImpl(url) : parseTags(await R("git", ["ls-remote", "--tags", url], { timeoutMs: 30000 })); }
+  catch (e) {
+    // git tidak ada di PATH (umum di Windows npm tanpa Git for Windows):
+    // JANGAN salahkan internet. Mode npm jatuh ke GitHub API; mode git
+    // butuh git untuk clone, jadi gagal dengan pesan yang jelas.
+    if (!tagsImpl && isGitMissing(e)) {
+      if (npm) {
+        try { tags = await latestReleaseTag(parseRepoSlug(url), fetchImpl); }
+        catch (e2) { return fail("Tidak bisa memeriksa versi terbaru — git tidak ditemukan dan GitHub API tidak bisa dijangkau.", `Instal Git for Windows (https://git-scm.com/download/win) lalu coba lagi, atau update manual: npm install -g ${TARBALL("v<versi>")}`, e2); }
+      } else {
+        return fail("Tidak bisa memeriksa versi terbaru — git tidak ditemukan di PATH.", "Instal Git for Windows (https://git-scm.com/download/win) lalu coba lagi.", e);
+      }
+    } else {
+      return fail("Tidak bisa memeriksa versi terbaru.", "Cek koneksi internet, lalu coba lagi.", e);
+    }
+  }
   if (!tags.length) return fail("Tidak ada rilis yang ditemukan.");
   const want = val("--to"); const target = want ? tags.find((t) => t.tag === (want.startsWith("v") ? want : `v${want}`)) : tags[tags.length - 1];
   if (!target) return fail(`Versi ${want} tidak ditemukan.`, "Lihat daftar rilis di GitHub.");
