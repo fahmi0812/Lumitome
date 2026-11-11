@@ -43,7 +43,7 @@ export const KEYWORD_RULES = [
   // keamanan + dependensi" L0 miss total (security-audit hanya via BM25;
   // held-sec-03 bahkan miss dari top-32). Spesifik dulu, sebelum rule umum
   // "code audit/SAST" di bawah — SAST/semgrep tanpa CVE/dependensi tetap
-  // code-audit (guard di tests/suite.mjs).
+  // code-audit (guard di tests/suite-guard.mjs).
   { re: /\bcve\b/i, sektor: "security", skillsHint: ["security-audit", "code-audit"] },
   { re: /\b(kerentanan|celah keamanan|audit keamanan|vulnerab\w*)\b/i, sektor: "security", skillsHint: ["security-audit"] },
   { re: /\b(code audit|audit kode|sast|semgrep|codeql|cve)\b/i, sektor: "security", skillsHint: ["code-audit", "security-audit"] },

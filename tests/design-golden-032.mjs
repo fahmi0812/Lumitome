@@ -1,6 +1,6 @@
 // Tes golden / reference-anchored judging (v0.3.32 §2) — standalone:
 //   node tests/design-golden-032.mjs
-// Gaya assertion ok() sama seperti tests/suite.mjs. Dijalankan dari root repo.
+// Gaya assertion ok() sama seperti tests/suite-design.mjs. Dijalankan dari root repo.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -9,7 +9,7 @@ import { loadGolden, goldenDivergence, normalizeHex } from "../harness/design-go
 import { criticInput, evaluateDesign } from "../harness/design-gate.mjs";
 
 // Dijalankan standalone (`node tests/design-golden-032.mjs`) maupun dari
-// tests/suite.mjs (runGoldenTests(ok)) — satu sumber tes, dua runner.
+// tests/suite-design.mjs (runGoldenTests(ok)) — satu sumber tes, dua runner.
 export async function runGoldenTests(ok) {
 let pass = 0, fail = 0;
 const check = (n, c) => { if (c) pass++; else fail++; ok(n, c); };

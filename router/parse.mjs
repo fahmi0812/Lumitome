@@ -3,7 +3,7 @@
  * Dulu ada tiga parser frontmatter + dua stripJsonc dengan semantik beda — celahnya yang
  * bikin insiden v0.3.18 (fallback naif membaca `permissions:` sebagai string, bukan array).
  * Parser tunggal = yang sadar-YAML (satu-satunya dengan error reporting); fallback naif
- * harus terbukti setara di field yang dibaca — lihat tests/suite.mjs (paritas frontmatter).
+ * harus terbukti setara di field yang dibaca — lihat tests/suite-routing.mjs (paritas frontmatter).
  */
 import { createRequire } from "node:module";
 

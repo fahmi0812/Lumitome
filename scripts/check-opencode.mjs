@@ -36,7 +36,7 @@ export function checkConfig(file = "opencode.jsonc", schemaFile = "scripts/schem
   const require = createRequire(import.meta.url);
   let Ajv2020;
   try { Ajv2020 = require("ajv/dist/2020").default; }
-  catch { return ["ajv belum terpasang → jalankan `npm install` (devDependency ajv 8.20.0)"]; }
+  catch { return ["ajv belum terpasang → jalankan `npm install` (dependency ajv 8.20.0)"]; }
   const cfg = JSON.parse(stripJsonc(fs.readFileSync(file, "utf8")));
   const schema = JSON.parse(fs.readFileSync(schemaFile, "utf8"));
   const ajv = new Ajv2020({ strict: false, allErrors: true, validateFormats: false });

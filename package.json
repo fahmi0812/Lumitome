@@ -1,15 +1,16 @@
 {
   "name": "lumitome",
-  "version": "0.3.47",
+  "version": "0.3.48",
   "type": "module",
   "description": "Lumitome — CLI AI coding aman di atas OpenCode v2 (engine terpin) + harness Swanwright",
   "engines": {
     "node": ">=22.6"
   },
   "scripts": {
-    "test": "node --experimental-strip-types tests/suite.mjs",
+    "test": "node --experimental-strip-types tests/run.mjs",
     "scan": "node --experimental-strip-types scripts/scan.ts",
     "validate": "node scripts/validate.mjs",
+    "validate:offline": "node scripts/validate.mjs --offline",
     "enable-pack": "node scripts/enable-pack.mjs",
     "sync-upstream": "node scripts/sync-upstream.mjs",
     "skills:index": "node scripts/skill-index.mjs --if-changed",
@@ -20,7 +21,7 @@
     "doctor": "bash scripts/doctor.sh",
     "postinstall": "node -e \"const f=require('path').resolve('lumitome/bin/postinstall.mjs');require('fs').existsSync(f)&&import(require('url').pathToFileURL(f))\""
   },
-  "devDependencies": {
+  "dependencies": {
     "ajv": "8.20.0",
     "yaml": "2.9.1"
   },

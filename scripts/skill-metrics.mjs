@@ -21,7 +21,7 @@ let l0hit = 0, l0mis = 0, withGold = 0, top1 = 0, sel5 = 0, sel5Frac = 0, cand16
 const lat = [], misses = [];
 for (const c of g) {
   const l0 = layer0(c.prompt);
-  if (l0.hit && l0.sektor && l0.sektor !== c.expect_sektor) l0mis++; // definisi = tests/suite.mjs (strict gate)
+  if (l0.hit && l0.sektor && l0.sektor !== c.expect_sektor) l0mis++; // definisi = tests/suite-routing.mjs (strict gate)
   if (l0.hit) l0hit++;
   const gold = goldOf(c);
   if (!gold.length) continue;

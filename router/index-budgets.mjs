@@ -1,7 +1,7 @@
 /**
  * Budget token (len/4) per seksi router/skills-index.md — TRIAL lepas-dorman.
  *
- * Satu sumber kebenaran untuk cap indeks; dipakai tests/suite.mjs (asersi
+ * Satu sumber kebenaran untuk cap indeks; dipakai tests/suite-routing.mjs (asersi
  * keras) dan scripts/validate.mjs (peringatan). Jangan hardcode angka cap
  * di tempat lain (pelajaran v0.3.20: hitungan hardcode pecah tiap ada
  * skill baru).

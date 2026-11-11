@@ -1,9 +1,30 @@
 import fs from "fs";
 import path from "path";
+import { createRequire } from "node:module";
 import { checkSkillsDir, checkConfig, checkAgents, checkPlugins, checkV2Config, checkMcpPolicy } from "./check-opencode.mjs";
 import { frontmatter } from "../router/parse.mjs";
 import { checkVersionConsistency } from "./version-check.mjs";
 import { INDEX_SECTION_BUDGETS, INDEX_DEFAULT_SECTION_BUDGET, INDEX_TOTAL_BUDGET, indexSectionTokens } from "../router/index-budgets.mjs";
+
+// --- P2-3: mode offline + precheck dependensi ---
+// Validate TIDAK pernah memanggil binary OpenCode/engine (hanya file repo +
+// node_modules); --offline (atau LUMI_VALIDATE_OFFLINE=1) menandainya eksplisit
+// agar bisa dibuktikan di PATH tanpa binary apa pun: `npm run validate:offline`.
+// Precheck di sini, sebelum cek lain: dulu yaml hilang -> fallback naif
+// diam-diam (insiden v0.3.18), ajv hilang -> gagal di tengah setelah [PASS]
+// registry. Kini keduanya gagal jelas di baris pertama.
+const offline = process.argv.includes("--offline") || process.env.LUMI_VALIDATE_OFFLINE === "1";
+if (offline) console.log("[offline] validasi tanpa binary OpenCode/engine — hanya file repo + node_modules");
+{
+  const req = createRequire(import.meta.url);
+  const missing = [];
+  for (const dep of ["yaml", "ajv"]) { try { req.resolve(dep); } catch { missing.push(dep); } }
+  if (missing.length) {
+    console.error(`[FAIL] dependensi validate hilang: ${missing.join(", ")} → jalankan npm install (di root repo) lalu ulangi`);
+    console.error("FAILED 1 (warns 0)");
+    process.exit(1);
+  }
+}
 
 let fails = 0, warns = 0;
 const fail = (m) => { console.error("[FAIL]", m); fails++; };
@@ -106,7 +127,7 @@ if (tok > 600) fail(`orchestrator ~${tok} tok > 600`); else pass(`orchestrator ~
 const idx = fs.readFileSync("router/skills-index.md", "utf8");
 // TRIAL lepas-dorman: budget per seksi (router/index-budgets.mjs), bukan satu
 // cap total 2500 — indeks kini 734 entri / ~17,7k tok. Validate memperingatkan
-// (seperti dulu); asersi kerasnya di tests/suite.mjs.
+// (seperti dulu); asersi kerasnya di tests/suite-routing.mjs.
 const secTok = indexSectionTokens(idx);
 for (const [sec, tok] of Object.entries(secTok)) { if (sec === "total") continue;
   const cap = INDEX_SECTION_BUDGETS[sec] ?? INDEX_DEFAULT_SECTION_BUDGET;

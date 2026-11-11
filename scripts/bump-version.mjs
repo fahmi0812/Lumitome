@@ -4,7 +4,7 @@
  * Pakai: node scripts/bump-version.mjs <x.y.z> ["judul rilis"]
  * Menulis: VERSION, package.json, package-lock.json, README (badge + tarball), CHANGELOG (header + placeholder catatan).
  * TIDAK menulis: lumitome/bin/lumitome.mjs, install.sh (keduanya membaca VERSION saat jalan),
- *   tests/suite.mjs (tes konsistensi membaca VERSION, tanpa hardcode).
+ *   tests/suite-services.mjs (tes konsistensi membaca VERSION, tanpa hardcode).
  * Sesudahnya: isi catatan rilis di CHANGELOG.md, lalu gate (npm run validate && npm test),
  *   baru commit + tag + simulasi updater + GitHub Release.
  */
