@@ -306,4 +306,20 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     pkg.scripts && pkg.scripts["validate:offline"] === "node scripts/validate.mjs --offline");
 }
 
+// (v0.3.49) docs-pack: langkah verifikasi Anthropic — TDD merah dulu.
+// Pola: asersi regex pada isi SKILL.md (seperti tes konten skill di suite-services.mjs).
+{
+  const dp = fs.readFileSync(".opencode/skills/docs-pack/SKILL.md", "utf8");
+  const interviewAt = dp.indexOf("### 1. Interview");
+  const writeAt = dp.indexOf("### 3. Write the files");
+  ok("docs-pack verifikasi: ada langkah verifikasi antara wawancara (1) dan penulisan (2->3)",
+    interviewAt >= 0 && writeAt > interviewAt && /### 2\. Verify/.test(dp.slice(interviewAt, writeAt)));
+  ok("docs-pack verifikasi: tiap klaim/angka/metrik dicek ke sumber; tanpa sumber -> [TODO: ask the user] atau 'belum terverifikasi', jangan dikarang",
+    /every claim|setiap klaim/i.test(dp) && /belum terverifikasi/.test(dp) && /\[TODO: ask the user\]/.test(dp) && /jangan dikarang|never invent|do not invent/i.test(dp));
+  ok("docs-pack verifikasi: angka yang hanya dari ringkasan/metadata sumber diperlakukan belum terverifikasi",
+    /ringkasan|summary/i.test(dp) && /metadata/.test(dp) && /belum terverifikasi/.test(dp));
+  ok("docs-pack: tabel delegasi merujuk cara kerja anthropic-verify-first untuk verifikasi (nama saja, tanpa impor)",
+    /anthropic-verify-first/.test(dp) && !/import.*anthropic-verify-first|require.*anthropic-verify-first/.test(dp));
+}
+
 finish();

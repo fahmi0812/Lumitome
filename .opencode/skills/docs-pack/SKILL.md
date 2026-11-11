@@ -58,7 +58,19 @@ If the project already has code, read it first (10 representative files,
 the code already proves; ask only about the gaps. If the user pastes the
 guide's PDF, read it the same way and use its structure, not its example.
 
-### 2. Write the files, in this order
+### 2. Verify every claim before writing
+
+Before writing each file, check every claim, number, metric, endpoint,
+and table in it against its source: the interview answers, the existing
+code, or a document the user provided. A number that appears only in a
+summary or in a source's metadata — not in the body of the source —
+counts as unverified, not as a fact. If a section has no source, write
+`[TODO: ask the user]` or mark it "belum terverifikasi" — never invent
+it. This is the one verification step borrowed from the
+anthropic-verify-first way of working: verify the claim first, and
+report what is unverified honestly instead of writing it as fact.
+
+### 3. Write the files, in this order
 
 Write PRD first — every other file must agree with it. Then the three
 foundation files, then the four guardrail files, then `AGENTS.md` last
@@ -85,7 +97,7 @@ Keep every file short and specific to this project. Use `[PROJECT]`,
 `[STACK]`, `[COMMAND]` placeholders only when the user has not answered
 yet — never fill them with the guide's example values.
 
-### 3. Done-means checklist (goes in AGENTS.md)
+### 4. Done-means checklist (goes in AGENTS.md)
 
 - Tests, lint, and typecheck pass (see `TESTING.md`).
 - UI uses design tokens only (see `DESIGN_SYSTEM.md`).
@@ -124,6 +136,7 @@ that already knows it:
 | `TESTING.md` test design, bug-fix loop | `tdd-red-green-refactor` |
 | `DATA_MODEL.md` / `API_SPEC.md` shape | `typed-service-contracts`; diagrams via `diagram-design` |
 | `ARCHITECTURE.md` structure | `improve-codebase-architecture` when refactoring an existing codebase |
+| Verifying a claim, number, or metric | anthropic-verify-first way of working: verify against the source, mark what is unverified — a method reference, not an imported skill |
 | Writing the docs themselves | `doc-coauthoring`, `technical-writer` |
 | Drift between docs and code | `.opencode/rules/00-doc-code-drift.md` |
 
@@ -141,5 +154,7 @@ that already knows it:
   values live in `.env` (git-ignored) or the deployment environment.
 - Never invent features, endpoints, tables, or metrics the user did not
   confirm. If a section is unknown, write `[TODO: ask the user]` and say so.
+  Check every number against the body of its source — a figure that
+  appears only in a summary or metadata is unverified, not a fact.
 - If the user asks for a single doc instead of the pack, write only that
   file from its template and skip the interview questions that do not apply.
