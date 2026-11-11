@@ -52,14 +52,27 @@ export function remove(home, name) {
   delete all.providers[name]; writeJ(F.prov, all);
   const cred = readJ(F.cred); delete cred[name]; writeJ(F.cred, cred); return true;
 }
-export async function refresh(home, only) {
+export async function refresh(home, only, { timeoutMs, env = process.env } = {}) {
   const F = files(home), all = readJ(F.prov); const out = {};
   for (const [n, p] of Object.entries(all.providers || {})) {
     if (only && n !== only) continue;
-    try { p.models = await detectModels(p.type, p.baseURL, keyFor(home, n)); p.updated = new Date().toISOString(); out[n] = p.models.length; }
+    try { p.models = await detectModels(p.type, p.baseURL, keyFor(home, n, env), { timeoutMs }); p.updated = new Date().toISOString(); out[n] = p.models.length; }
     catch (e) { out[n] = `gagal: ${e.message}`; }
   }
   writeJ(F.prov, all); return out;
+}
+
+/**
+ * Auto-refresh saat startup (v0.3.38): daftar model di providers.json selama ini
+ * hanya snapshot saat `connect` — provider baru yang ditambah di dashboard 9router
+ * tidak pernah muncul sampai `lumitome models --refresh` manual. Fungsi ini
+ * me-refresh semua provider dari GET {base}/models dengan timeout pendek,
+ * best-effort: gagal per provider → model lama dipertahankan, tidak pernah throw.
+ * Opt-out: LUMI_AUTO_REFRESH=0 atau LUMI_NO_AUTO_REFRESH=1.
+ */
+export async function autoRefresh(home, { env = process.env, timeoutMs = 3000 } = {}) {
+  if (env.LUMI_AUTO_REFRESH === "0" || env.LUMI_NO_AUTO_REFRESH === "1") return {};
+  return refresh(home, undefined, { timeoutMs, env });
 }
 
 /** Timeout HTTP provider untuk engine (ms, bilangan bulat positif). Nilai env tidak valid → default. */

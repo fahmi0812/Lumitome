@@ -151,6 +151,9 @@ export function render(st, cols = 80, rows = 24, G = UNI) {
 
 /** Jalankan menu interaktif. deps: {load, add, remove} dari providers.mjs. Mengembalikan jumlah provider saat keluar. */
 export async function run({ home, PV, input = process.stdin, output = process.stdout, glyphs }) {
+  // v0.3.38: menu provider juga menampilkan daftar model terbaru (mis. model baru
+  // dari 9router) — best-effort, gagal → daftar cache lama yang tampil.
+  try { if (typeof PV.autoRefresh === "function") await PV.autoRefresh(home); } catch {}
   const st = initState(PV.load(home));
   const G = glyphs || pickGlyphs(process.env, process.platform, await windowsCodepage());
   const size = () => [output.columns || 80, output.rows || 24];

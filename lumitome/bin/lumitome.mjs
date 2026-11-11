@@ -135,6 +135,12 @@ if (sub === "connect" && process.stdin.isTTY && process.stdout.isTTY && !argv.in
 if (sub === "connect" || (sub === "models" && argv.includes("--refresh")) || (sub === "models" && argv.includes("--lumitome"))) {
   process.exit(await PV.cli({ argv: argv.slice(1), home: ISO_HOME, sub }));
 }
+// v0.3.38: auto-refresh model saat startup — provider baru yang ditambah di
+// dashboard 9router (GET {base}/models berubah) langsung terbaca tanpa
+// `lumitome models --refresh` manual. Best-effort, timeout pendek, gagal →
+// cache lama dipakai, startup tidak pernah gagal karenanya. Opt-out:
+// LUMI_AUTO_REFRESH=0. (connect/models --refresh/provider menu keluar di atas.)
+try { await PV.autoRefresh(ISO_HOME); } catch (e) { if (env.LUMI_DEBUG) process.stderr.write(`lumitome: auto-refresh provider gagal (${e.message})\n`); }
 const FRAG = PV.opencodeFragment(ISO_HOME, env);
 const HAS_9R_ENV = !!FRAG.env.LUMI_KEY_9ROUTER;
 const HAS_PROVIDER = HAS_9R_ENV || Object.keys(FRAG.providers).length > 0;
@@ -219,7 +225,7 @@ if (TRUST) process.stderr.write("lumitome: PERINGATAN — LUMI_TRUST_PROJECT=1: 
 // service dipakai ulang hanya bila config/key/versi sama; beda → service lama milik LUMI_HOME dihentikan dulu
 if (sub === "" || sub === "service") {
   const SCX = await import(pathToFileURL(path.join(ROOT, "lib", "service-ctl.mjs")).href);
-  const fp = SCX.fingerprint([VERSION, env.OPENCODE_CONFIG_CONTENT, FRAG.env, env.LUMI_SANDBOX || "", env.LUMI_9ROUTER_URL || "", TRUST]);
+  const fp = SCX.fingerprint([VERSION, env.OPENCODE_CONFIG_CONTENT, FRAG.env, env.LUMI_SANDBOX || "", env.LUMI_9ROUTER_URL || "", TRUST, JSON.stringify(Object.fromEntries(Object.entries(FRAG.providers).map(([n, p]) => [n, [...Object.keys(p.models)].sort()]))) ]);
   try { const r = SCX.ensureFresh(HOME, fp); if (env.LUMI_DEBUG) process.stderr.write(`lumitome: service ${r}\n`); } catch (e) { if (env.LUMI_DEBUG) process.stderr.write(`lumitome: cek service gagal (${e.message})\n`); }
 }
 

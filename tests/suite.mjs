@@ -363,7 +363,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const dg = G.doneGateFromJournal([{ kind: "shell", command: "node --test", exit: 1 }, { kind: "shell", command: "ls", exit: 0 }]);
   ok("done-gate runtime: tes terakhir exit 1 → FAIL", dg.ran === 1 && dg.last.exit === 1 && evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], testCommandExitCode: dg.last.exit }).isDone === false);
   ok("L1 parser: JSON biasa, SSE, fence", SD.extractCompletionText('{"choices":[{"message":{"content":"x"}}]}') === "x" && SD.extractCompletionText('data: {"choices":[{"delta":{"content":"{\\"skills\\""}}]}\n\ndata: {"choices":[{"delta":{"content":":[]}"}}]}\n\ndata: [DONE]') === '{"skills":[]}' && SD.parseSelection('```json\n{"skills":["a"],"x":"}"}\n```').skills[0] === "a");
-  ok("L1 key: fallback NINEROUTER_API_KEY", (() => { const o = process.env.SW_9ROUTER_KEY; delete process.env.SW_9ROUTER_KEY; process.env.NINEROUTER_API_KEY ||= "t"; const k = SD.routerKey(); if (o !== undefined) process.env.SW_9ROUTER_KEY = o; return !!k; })());
+  ok("L1 key: fallback NINEROUTER_API_KEY", (() => { const o = process.env.SW_9ROUTER_KEY, n9 = process.env.NINEROUTER_API_KEY; delete process.env.SW_9ROUTER_KEY; process.env.NINEROUTER_API_KEY ||= "t"; const k = SD.routerKey(); if (o !== undefined) process.env.SW_9ROUTER_KEY = o; if (n9 === undefined) delete process.env.NINEROUTER_API_KEY; else process.env.NINEROUTER_API_KEY = n9; return !!k; })());
   ok("guard v3: daftar NAMA .env (ls/find -name/test/stat) → allow; isi via pipe/xargs/-exec/redirect → deny", ["ls -la .env*", "find . -name '.env*'", "test -f .env && echo ada", "stat .env"].every((x) => c(x) === "allow") && ["ls .env | xargs cat", "find . -name .env -exec cat {} ;", "cat < .env", "ls $(cat .env)"].every((x) => c(x) === "deny"));
   ok("guard v3: glob/list pola .env* → allow; read/grep/edit .env → deny", ["glob", "list"].every((t) => G.classifyFileTool(t, { pattern: "**/.env*" }).effect === "allow") && ["read", "grep", "edit", "write"].every((t) => G.classifyFileTool(t, { path: ".env" }).effect === "deny"));
   const sp3 = new G.RuntimeSpin({ maxFail: 3, maxRepeat: 4 });
@@ -426,6 +426,43 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("connect: providers.json & credentials.json 0600; key tidak di providers.json/config", mode(F.prov) === 0o600 && mode(F.cred) === 0o600 && !fs.readFileSync(F.prov, "utf8").includes("k1") && !JSON.stringify(frag.providers).includes("k1") && frag.env.LUMI_KEY_OA === "k1");
   ok("connect: paket SDK sesuai tipe + model muncul di config", frag.providers.oa.package.includes("openai-compatible") && frag.providers.an.package.includes("anthropic") && frag.providers.an.settings.baseURL.endsWith("/an/v1") && !!frag.providers.an.models["c-2"]);
   ok("connect: env LUMI_KEY_<NAMA> menimpa file; hapus provider", PV.opencodeFragment(home, { LUMI_KEY_OA: "envk" }).env.LUMI_KEY_OA === "envk" && PV.remove(home, "an") && !PV.opencodeFragment(home, {}).providers.an);
+  srv.close(); fs.rmSync(home, { recursive: true, force: true });
+}
+
+{
+  // v0.3.38: 9router auto-refresh — model baru yang ditambah di dashboard 9router
+  // harus muncul tanpa `lumitome models --refresh` manual. Seam: PV.autoRefresh +
+  // wiring startup di lumitome.mjs (sebelum opencodeFragment) + sidik service.
+  const os = await import("node:os"), http = await import("node:http");
+  let live = ["ag/old"], up = true;
+  const srv = http.createServer((q, r) => { r.setHeader("content-type", "application/json");
+    if (!up || q.headers.authorization !== "Bearer k9") { r.statusCode = 503; return r.end("{}"); }
+    if (q.url === "/v1/models") return r.end(JSON.stringify({ data: live.map((id) => ({ id })) }));
+    r.statusCode = 404; r.end("{}"); });
+  await new Promise((r) => srv.listen(0, "127.0.0.1", r)); const base = `http://127.0.0.1:${srv.address().port}`;
+  const PV = await import("../lumitome/lib/providers.mjs"); const home = fs.mkdtempSync(path.join(os.tmpdir(), "lumi9r-"));
+  await PV.add(home, { name: "9router", type: "openai", baseURL: `${base}/v1`, key: "k9" });
+  const before = PV.opencodeFragment(home, {});
+  // upstream baru ditambah di 9router → GET /models kini mengembalikan model baru
+  live = ["ag/old", "ag/new-upstream"];
+  // env bersih: tes L1 di atas membocorkan NINEROUTER_API_KEY="t" ke process.env,
+  // dan keyFor("9router") mendahulukan env itu atas credentials.json — tanpa env
+  // bersih, refresh akan memakai key "t" yang salah dan gagal 503.
+  const out = await PV.autoRefresh(home, { env: {} });
+  const after = PV.opencodeFragment(home, {});
+  ok("9router auto-refresh: model baru dari 9router masuk ke config tanpa refresh manual", before.providers["9router"].models["ag/new-upstream"] === undefined && after.providers["9router"].models["ag/new-upstream"] !== undefined && out["9router"] === 2);
+  // 9router mati → auto-refresh tidak throw dan model lama dipertahankan
+  up = false; let threw = false; try { await PV.autoRefresh(home, { env: {} }); } catch { threw = true; }
+  const kept = PV.opencodeFragment(home, {});
+  ok("9router auto-refresh: server mati → tidak throw, model lama dipertahankan", !threw && !!kept.providers["9router"].models["ag/new-upstream"]);
+  // opt-out → tidak ada fetch, model tidak berubah
+  up = true; live = ["ag/old", "ag/new-upstream", "ag/optout-should-not-appear"];
+  await PV.autoRefresh(home, { env: { LUMI_AUTO_REFRESH: "0" } });
+  const skipped = PV.opencodeFragment(home, {});
+  ok("9router auto-refresh: LUMI_AUTO_REFRESH=0 → tidak fetch, model tidak berubah", skipped.providers["9router"].models["ag/optout-should-not-appear"] === undefined);
+  const W = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
+  ok("9router auto-refresh: startup memanggil autoRefresh sebelum opencodeFragment", /await PV\.autoRefresh\(/.test(W) && W.indexOf("autoRefresh") < W.indexOf("PV.opencodeFragment(ISO_HOME"));
+  ok("9router auto-refresh: sidik service ikut berubah bila daftar model berubah", /fingerprint\(\[[\s\S]{0,400}FRAG\.providers/.test(W) || /fingerprint\(\[[\s\S]{0,400}models/.test(W));
   srv.close(); fs.rmSync(home, { recursive: true, force: true });
 }
 

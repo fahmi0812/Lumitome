@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.37-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.38-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -40,7 +40,7 @@ While it installs (and uninstalls) you see one status line and one line when it 
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.37.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.38.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
@@ -79,7 +79,7 @@ Other provider commands:
 
 - `lumitome connect --list` shows your providers.
 - `lumitome connect --remove <name>` removes one.
-- `lumitome models --refresh` looks up the model list again.
+- `lumitome models --refresh` looks up the model list again. Since v0.3.38 the list is also refreshed automatically every time you start `lumitome` (or `lumitome run`), so a provider you add in your 9router dashboard shows up without a manual refresh. If the refresh fails (for example 9router is down), the last known list is kept and startup continues. To turn the automatic refresh off: `LUMI_AUTO_REFRESH=0`.
 
 Your keys are saved in `~/.lumitome/credentials.json`. Only your user can read that file, and Lumitome never prints the keys.
 
@@ -126,10 +126,11 @@ This only touches Lumitome's own service. An OpenCode service you run yourself i
 
 ### Model list
 
-Models from a provider are saved when you add it with `lumitome connect`. If the provider adds new models, refresh the list:
+Models from a provider are saved when you add it with `lumitome connect`. Since v0.3.38 the list is refreshed automatically every time you start `lumitome` (or `lumitome run`), so a model your provider adds later — for example a new upstream connection in your 9router dashboard — shows up on its own. If the automatic refresh fails, the last known list is kept. To refresh by hand, or turn the automatic refresh off:
 
 ```bash
 lumitome models --refresh
+LUMI_AUTO_REFRESH=0 lumitome
 ```
 
 ### Windows: optional Defender exclusion
