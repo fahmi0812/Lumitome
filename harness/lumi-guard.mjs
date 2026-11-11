@@ -570,6 +570,8 @@ export function testOutputFailed(text) {
   return /^not ok \d+/m.test(t) || /^# fail [1-9]/m.test(t) || /\bTests?:\s+\d+ failed\b/.test(t) || /^=+ .*\b[1-9]\d* failed\b/m.test(t) || /^--- FAIL:/m.test(t) || /^FAIL\s/m.test(t);
 }
 /** Ringkas jurnal → input evaluateDoneGate. Bukti = perintah verifikasi terakhir + exit code efektif. */
+/** Tool tulis file (baris jurnal kind:"tool" dari plugin guard; baca saja — read/glob/grep/list — bukan tulis). */
+export const WRITE_TOOLS = new Set(["edit", "write", "patch", "multiedit", "apply_patch"]);
 export function doneGateFromJournal(rows) {
   const tests = rows.filter((r) => r.kind === "shell" && TEST_CMD.test(r.command || "")).map((r) => {
     const masked = MASKED_EXIT.test(r.command || "") || afterTest(r.command || ""), outFail = !!r.failed_output;
@@ -580,5 +582,8 @@ export function doneGateFromJournal(rows) {
   const si = rows.map((r) => r.kind).lastIndexOf("spin");
   const okAfter = si >= 0 && rows.slice(si + 1).some((r) => r.kind === "shell" && TEST_CMD.test(r.command || "") && r.exit === 0);
   const spin = si >= 0 && !okAfter ? rows[si] : null;
-  return { ran: tests.length, last, spin, facts: tests.map((t) => `FACT: \`${t.command}\` exit=${t.exit}`) };
+  // P0-3: ada file diubah? Hanya tool tulis yang selesai (completed) yang tercatat di jurnal;
+  // shell yang menulis file (sed/tee/redirect) tidak terlacak — keterbatasan ini dicatat di CHANGELOG.
+  const wrote = rows.some((r) => r.kind === "tool" && WRITE_TOOLS.has(r.tool) && r.status === "completed");
+  return { ran: tests.length, last, spin, facts: tests.map((t) => `FACT: \`${t.command}\` exit=${t.exit}`), wrote };
 }

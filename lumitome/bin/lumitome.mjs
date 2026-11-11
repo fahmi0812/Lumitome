@@ -424,6 +424,14 @@ if (sub === "run") {
       const r = evaluateDoneGate ? evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], testCommandExitCode: dg.last.exit, facts: dg.facts }) : { isDone: false, failureReason: "tes gagal" };
       process.stderr.write(`lumitome: DONE-GATE FAIL — ${r.failureReason}${dg.last.why ? ` (${dg.last.why})` : ""}; FACT: \`${dg.last.command}\` exit=${dg.last.raw_exit ?? dg.last.exit}\n`); code = 3;
     } else if (dg.ran) process.stderr.write(`lumitome: DONE-GATE PASS — FACT: \`${dg.last.command}\` exit=0\n`);
+    else if (dg.wrote) {
+      // P0-3: kode diubah tapi tidak ada perintah tes di jurnal — gagal (exit 3), bukan lolos diam-diam.
+      // sector/scanGate TIDAK diteruskan: doneGateFromJournal tidak menyediakannya (hanya ran/last/spin/facts/wrote);
+      // evaluateDoneGate tanpa bukti tes sudah fail-closed, jadi pemanggilan tanpa bukti ini gagal sendiri.
+      const { evaluateDoneGate } = await import(pathToFileURL(path.join(REPO, "harness", "done-gate.ts")).href).catch(() => ({}));
+      const r = evaluateDoneGate ? evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], facts: dg.facts }) : { isDone: false, failureReason: "tidak ada bukti tes" };
+      process.stderr.write(`lumitome: DONE-GATE FAIL — ${r.failureReason}; file diubah tapi tidak ada perintah tes di jurnal\n`); code = 3;
+    } else process.stderr.write(`lumitome: DONE-GATE SKIP — tidak ada perintah tes di jurnal dan tidak ada file diubah (tugas tanpa kode); gate tidak relevan\n`);
   }
   if (env.LUMI_DEBUG) process.stderr.write(`lumitome: jurnal ${JOURNAL} ${skillNote}\n`);
 }

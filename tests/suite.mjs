@@ -10,8 +10,11 @@ import swanwrightPlugin, { guardPushMain } from "../.opencode/plugins/swanwright
 import { evaluateOsv, evaluateGitleaks, runScanGate, checkDiffScope, PINNED } from "../harness/scan-gate.ts";
 import { INDEX_SECTION_BUDGETS, INDEX_DEFAULT_SECTION_BUDGET, INDEX_TOTAL_BUDGET, indexSectionTokens } from "../router/index-budgets.mjs";
 
-let pass = 0, fail = 0;
+let pass = 0, fail = 0, skipped = 0;
 const ok = (n, c) => { if (c) { pass++; console.log("[PASS]", n); } else { fail++; console.error("[FAIL]", n); } };
+/** Tes dilewati (bukan gagal): hitung di ringkasan akhir. Format baris tetap "[SKIP] ..." (dibaca scripts/release.mjs). */
+const skip = (msg) => { skipped++; console.log("[SKIP]", msg); };
+const summaryLine = (p, f, s) => `${p} passed, ${f} failed, ${s} skipped`;
 
 const g = JSON.parse(fs.readFileSync("tests/golden-routing.json", "utf8"));
 ok("golden >= 120", g.length >= 120);
@@ -362,6 +365,19 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok("anti-spin: panggilan identik >4x → deny", r2.effect === "deny");
   const dg = G.doneGateFromJournal([{ kind: "shell", command: "node --test", exit: 1 }, { kind: "shell", command: "ls", exit: 0 }]);
   ok("done-gate runtime: tes terakhir exit 1 → FAIL", dg.ran === 1 && dg.last.exit === 1 && evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], testCommandExitCode: dg.last.exit }).isDone === false);
+  // --- v0.3.41 (P0-3): fail-closed — tanpa bukti tes bukan PASS; jurnal tanpa tes membedakan tulis/baca ---
+  const noEv = evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], verificationProfile: "STANDARD", facts: [] });
+  ok("done-gate: tanpa testCommandExitCode/testsGreen -> bukan PASS (fail-closed, alasan 'tidak ada bukti tes')",
+    noEv.isDone === false && noEv.testsPassed === false && /tidak ada bukti tes/i.test(noEv.failureReason || ""));
+  ok("done-gate: testsGreen true -> PASS; testsGreen false -> FAIL",
+    evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], verificationProfile: "STANDARD", testsGreen: true, facts: ["FACT: tes hijau"] }).isDone === true
+    && evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], verificationProfile: "STANDARD", testsGreen: false, facts: [] }).isDone === false);
+  ok("done-gate runtime: jurnal tanpa tes + tool tulis selesai -> wrote; hanya baca / tulis gagal -> tidak wrote",
+    G.doneGateFromJournal([{ kind: "guard", status: "ok" }, { kind: "tool", tool: "edit", status: "completed" }]).wrote === true
+    && G.doneGateFromJournal([{ kind: "tool", tool: "read", status: "completed" }, { kind: "tool", tool: "glob", status: "completed" }]).wrote === false
+    && G.doneGateFromJournal([{ kind: "tool", tool: "write", status: "error" }]).wrote === false
+    && G.doneGateFromJournal([{ kind: "guard", status: "ok" }]).ran === 0
+    && G.doneGateFromJournal([{ kind: "guard", status: "ok" }]).wrote === false);
   ok("L1 parser: JSON biasa, SSE, fence", SD.extractCompletionText('{"choices":[{"message":{"content":"x"}}]}') === "x" && SD.extractCompletionText('data: {"choices":[{"delta":{"content":"{\\"skills\\""}}]}\n\ndata: {"choices":[{"delta":{"content":":[]}"}}]}\n\ndata: [DONE]') === '{"skills":[]}' && SD.parseSelection('```json\n{"skills":["a"],"x":"}"}\n```').skills[0] === "a");
   ok("L1 key: fallback NINEROUTER_API_KEY", (() => { const o = process.env.SW_9ROUTER_KEY, n9 = process.env.NINEROUTER_API_KEY; delete process.env.SW_9ROUTER_KEY; process.env.NINEROUTER_API_KEY ||= "t"; const k = SD.routerKey(); if (o !== undefined) process.env.SW_9ROUTER_KEY = o; if (n9 === undefined) delete process.env.NINEROUTER_API_KEY; else process.env.NINEROUTER_API_KEY = n9; return !!k; })());
   ok("guard v3: daftar NAMA .env (ls/find -name/test/stat) → allow; isi via pipe/xargs/-exec/redirect → deny", ["ls -la .env*", "find . -name '.env*'", "test -f .env && echo ada", "stat .env"].every((x) => c(x) === "allow") && ["ls .env | xargs cat", "find . -name .env -exec cat {} ;", "cat < .env", "ls $(cat .env)"].every((x) => c(x) === "deny"));
@@ -495,7 +511,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
     const port = JSON.parse(fs.readFileSync(path.join(lh, "config", "service.json"), "utf8")).port;
     ok(`service e2e: engine asli 'service start' exit 0 di port sendiri walau 49374 terpakai (held=${held})`, r.status === 0 && !/already in use/.test(r.stderr + r.stdout) && (r.stdout || "").includes(`:${port}`) && port !== 49374);
     fs.rmSync(lh, { recursive: true, force: true });
-  } else console.log("[SKIP] service e2e (set LUMI_TEST_ENGINE=/path/opencode)");
+  } else skip("service e2e (set LUMI_TEST_ENGINE=/path/opencode)");
   if (held) dummy.close(); fs.rmSync(home, { recursive: true, force: true });
 }
 
@@ -764,6 +780,34 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const q2 = run25({ LUMI_VERBOSE: "1" });
   ok("quiet TUI: verbose → baris service engine muncul lagi (filter mati)", q2.status === 0 && /Starting background server/.test(q2.stderr));
   fs.rmSync(h25, { recursive: true, force: true });
+}
+{
+  // v0.3.41 (P0-3): done-gate runtime — `lumitome run` tanpa perintah tes tidak boleh lolos diam-diam.
+  // Stub opencode menulis baris jurnal ke $LUMI_JOURNAL (diteruskan build-config ke anak) lalu exit 0.
+  const osm41 = await import("node:os");
+  const h41 = fs.mkdtempSync(path.join(osm41.tmpdir(), "lumidg41-"));
+  const stub41 = path.join(h41, "fake-opencode");
+  const run41 = (rows, extra = {}) => {
+    fs.writeFileSync(stub41, "#!/usr/bin/env node\nconst fs=require('node:fs');\nfor (const r of " + JSON.stringify(rows) + ") fs.appendFileSync(process.env.LUMI_JOURNAL, JSON.stringify(r)+'\\n');\n");
+    fs.chmodSync(stub41, 0o755);
+    return cp.spawnSync(process.execPath, ["--experimental-strip-types", "--no-warnings", path.resolve("lumitome/bin/lumitome.mjs"), "run", "tolong jelaskan x"],
+      { encoding: "utf8", timeout: 60000, cwd: h41,
+        env: { ...process.env, HOME: h41, LUMI_HOME: h41, LUMI_OPENCODE: stub41, LUMI_WORKSPACE: h41, LUMI_AUTO_INDEX: "0", LUMI_PREFLIGHT: "0", NINEROUTER_API_KEY: "fake", ...extra } });
+  };
+  const guardOk41 = { kind: "guard", status: "ok" };
+  const r41a = run41([guardOk41]);
+  ok("done-gate runtime: run tanpa tes + tanpa tulis -> exit 0 + DONE-GATE SKIP (tugas tanpa kode)",
+    r41a.status === 0 && /DONE-GATE SKIP/.test(r41a.stderr));
+  const r41b = run41([guardOk41, { kind: "tool", tool: "edit", status: "completed" }]);
+  ok("done-gate runtime: run tanpa tes + file diubah -> exit 3 DONE-GATE FAIL",
+    r41b.status === 3 && /DONE-GATE FAIL/.test(r41b.stderr));
+  const r41c = run41([guardOk41, { kind: "shell", command: "npm test", exit: 0, status: "completed" }]);
+  ok("done-gate runtime: run dengan tes hijau -> exit 0 DONE-GATE PASS",
+    r41c.status === 0 && /DONE-GATE PASS/.test(r41c.stderr));
+  const r41d = run41([guardOk41, { kind: "tool", tool: "edit", status: "completed" }], { LUMI_DONE_GATE: "off" });
+  ok("done-gate runtime: LUMI_DONE_GATE=off -> tanpa tes + file diubah tetap exit 0",
+    r41d.status === 0 && !/DONE-GATE FAIL/.test(r41d.stderr));
+  fs.rmSync(h41, { recursive: true, force: true });
 }
 {
   // v0.3.14: tampilan update sederhana (spinner satu baris), non-TTY polos, ASCII, error singkat, mode npm
@@ -1305,7 +1349,7 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
     gInspectClean.pass === true && gFigClean.pass === true && gInspectClean.findings.length === 0 && gFigClean.findings.length === 0);
   // RED-TEST integrasi di browser sungguhan (skip bila Chrome tidak ada — jangan fake pass)
   if (!DM.resolveChromePath()) {
-    console.log("[SKIP] design-gate red-test (Chrome tidak ditemukan, set CHROME_PATH)");
+    skip("design-gate red-test (Chrome tidak ditemukan, set CHROME_PATH)");
   } else {
     const slop = await DM.measureAndGate("tests/fixtures/design/slop.html");
     const slopChecks = new Set(slop.findings.map((f) => f.check));
@@ -1572,5 +1616,12 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
     ok("release gate: --include mengizinkan file slice + tercetak di laporan", rc === 0 && /scripts\/release\.mjs/.test(f.out.buf)); }
 }
 
-console.log(`\n${pass} passed, ${fail} failed`);
+// v0.3.41 (P0-3): ringkasan menghitung skipped — format diuji lewat summaryLine (dipakai baris akhir),
+// kedua situs [SKIP] wajib lewat skip() (bukan console.log bebas) agar hitungan = baris tercetak.
+ok("ringkasan: format 'N passed, N failed, N skipped'",
+  summaryLine(382, 0, 2) === "382 passed, 0 failed, 2 skipped" && summaryLine(0, 1, 0) === "0 passed, 1 failed, 0 skipped");
+ok("ringkasan: skipped terhitung dari skip() (maks. 2 situs di suite ini)",
+  skipped >= 0 && skipped <= 2 && (() => { const src = fs.readFileSync("tests/suite.mjs", "utf8"); return (src.match(/skip\(/g) || []).length >= 2 && (src.match(/console\.log\("\[SKIP\]"/g) || []).length === 1; })());
+
+console.log(`\n${summaryLine(pass, fail, skipped)}`);
 process.exit(fail ? 1 : 0);

@@ -62,7 +62,7 @@ Internal (diset wrapper, jangan diisi manual): `LUMI_WORKSPACE`, `LUMI_JOURNAL`,
 
 ## Exit code (`run`)
 
-0 ok · 1 error OpenCode · 2 argumen salah (`-m` ganda, tanpa pesan, tanpa key) · 3 DONE-GATE FAIL (tes terakhir exit≠0) · 4 ANTI-SPIN (trip tanpa verifikasi lulus sesudahnya) · 5 guard tak termuat / sandbox tertutup · 124 provider diam / timeout / deadline.
+0 ok · 1 error OpenCode · 2 argumen salah (`-m` ganda, tanpa pesan, tanpa key) · 3 DONE-GATE FAIL (tes terakhir exit≠0, atau file diubah tanpa perintah tes di jurnal) · 4 ANTI-SPIN (trip tanpa verifikasi lulus sesudahnya) · 5 guard tak termuat / sandbox tertutup · 124 provider diam / timeout / deadline. Tanpa tes + tanpa file diubah → DONE-GATE SKIP, tetap 0 (tugas tanpa kode).
 
 ## Server di latar (serve)
 

@@ -103,11 +103,16 @@ export function evaluateDoneGate(input: DoneGateInput): DoneGateResult {
 
   const artifactsExist = missingArtifacts.length === 0;
 
-  let testsPassed = true;
+  // Fail-closed (P0-3): tanpa bukti tes (exit code perintah tes ATAU testsGreen),
+  // testsPassed = false — "tidak ada bukti" bukan PASS. Dibedakan dari "tes gagal" di failureReason.
+  let testsPassed = false;
+  let testsEvidence = false;
   if (input.testCommandExitCode !== undefined && input.testCommandExitCode !== null) {
     testsPassed = input.testCommandExitCode === 0;
+    testsEvidence = true;
   } else if (input.testsGreen !== undefined) {
     testsPassed = input.testsGreen;
+    testsEvidence = true;
   }
 
   const extra = [...pushBlocks(input), ...releaseBlocks(input), ...scanBlocks(input)];
@@ -123,7 +128,7 @@ export function evaluateDoneGate(input: DoneGateInput): DoneGateResult {
     const reasons: string[] = [];
     if (!exitCodeOk) reasons.push(`Command exit code was ${input.commandExitCode} (expected 0)`);
     if (!artifactsExist) reasons.push(`Missing or empty target artifacts: [${missingArtifacts.join(", ")}]`);
-    if (!testsPassed) reasons.push("Test suite did not pass (testsGreen is false)");
+    if (!testsPassed) reasons.push(testsEvidence ? "Test suite did not pass (testsGreen is false)" : "Tidak ada bukti tes: testCommandExitCode/testsGreen tidak diisi (UNRUN bukan PASS)");
     reasons.push(...extra);
     failureReason = reasons.join("; ");
   }
