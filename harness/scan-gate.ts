@@ -2,7 +2,9 @@
  * Swanwright - Scan Gate (CVE + secret) dan Diff-Scope.
  * osv-scanner (lockfile/manifest) + gitleaks (diff/staging).
  * Biner tidak ada → UNRUN (bukan PASS) + instruksi instalasi.
- * FAIL: CVE CRITICAL/HIGH yang punya fix, atau secret apa pun. MEDIUM ke bawah → WARN.
+ * FAIL: CVE CRITICAL/HIGH yang punya fix, CVE CRITICAL/HIGH tanpa fix dan
+ * tanpa catatan mitigasi, atau secret apa pun. MEDIUM ke bawah → WARN.
+ * P1-1 (v0.3.42): `packs/` + `.opencode/skills/` ikut dipindai OSV.
  */
 import { spawnSync } from "child_process";
 
@@ -15,7 +17,7 @@ export const INSTALL_HINT = {
 
 export type ScanStatus = "PASS" | "WARN" | "FAIL" | "UNRUN";
 export interface ToolResult { tool: string; status: ScanStatus; findings: string[]; warnings: string[]; note?: string }
-export interface ScanGateResult { status: ScanStatus; tools: ToolResult[]; blocks: string[]; warnings: string[] }
+export interface ScanGateResult { status: ScanStatus; tools: ToolResult[]; blocks: string[]; warnings: string[]; secretOnly?: boolean }
 
 export interface ExecResult { status: number | null; stdout: string; stderr: string; error?: unknown }
 export type Exec = (cmd: string, args: string[]) => ExecResult;
@@ -36,28 +38,39 @@ function sevFromScore(score: number): string {
   return "LOW";
 }
 
-/** Parse JSON osv-scanner v2 (`--format json`). */
-/** Skill vendored Swanwright (`packs/`, `.opencode/skills/`) bukan dependensi proyek → dilewati. */
-export const OSV_SKIP = /(^|\/)(packs|\.opencode\/skills)\//;
-
-export function evaluateOsv(json: any): ToolResult {
+/** Parse JSON osv-scanner v2 (`--format json`).
+ * P1-1 (v0.3.42): skill vendored (`packs/`, `.opencode/skills/`) TIDAK lagi
+ * dilewati — skrip di dalamnya dieksekusi agen, jadi dependensinya dipindai
+ * seperti dependensi proyek. Satu-satunya penekanan per temuan adalah
+ * `osv-scanner.toml` [[IgnoredVulns]] dengan `reason` (dicek validate).
+ * @param mitigations catatan mitigasi (mis. baris `FACT: mitigasi <ID>: ...`):
+ *   CVE CRITICAL/HIGH TANPA fix hanya boleh jadi WARN bila ID-nya (atau
+ *   alias CVE-nya) disebut di salah satu catatan; tanpa catatan -> FAIL. */
+export function evaluateOsv(json: any, mitigations: string[] = []): ToolResult {
   const findings: string[] = [];
   const warnings: string[] = [];
   for (const res of json?.results ?? []) {
-    if (OSV_SKIP.test(String(res.source?.path ?? ""))) continue;
     for (const pkg of res.packages ?? []) {
       const name = `${pkg.package?.ecosystem ?? "?"}/${pkg.package?.name ?? "?"}@${pkg.package?.version ?? "?"}`;
       const groupSev = new Map<string, string>();
+      const aliases = new Map<string, string[]>();
       for (const g of pkg.groups ?? []) {
         const s = parseFloat(g.max_severity);
-        for (const id of g.ids ?? []) if (!Number.isNaN(s)) groupSev.set(id, sevFromScore(s));
+        for (const id of g.ids ?? []) {
+          if (!Number.isNaN(s)) groupSev.set(id, sevFromScore(s));
+          aliases.set(id, [...(g.aliases ?? [])]);
+        }
       }
       for (const v of pkg.vulnerabilities ?? []) {
         const sev = String(v.database_specific?.severity ?? groupSev.get(v.id) ?? "UNKNOWN").toUpperCase();
         const hasFix = (v.affected ?? []).some((a: any) =>
           (a.ranges ?? []).some((rg: any) => (rg.events ?? []).some((e: any) => e.fixed)));
+        const ids = [String(v.id ?? ""), ...(aliases.get(String(v.id ?? "")) ?? [])].filter(Boolean);
+        const mitigated = ids.some((id) => mitigations.some((m) => m.toLowerCase().includes(id.toLowerCase())));
         const line = `${v.id} ${sev}${hasFix ? " (fix tersedia)" : " (tanpa fix)"} di ${name}`;
         if ((sev === "CRITICAL" || sev === "HIGH") && hasFix) findings.push(line);
+        else if ((sev === "CRITICAL" || sev === "HIGH") && !hasFix && mitigated) warnings.push(`${line} (mitigasi tercatat)`);
+        else if ((sev === "CRITICAL" || sev === "HIGH") && !hasFix) findings.push(`${line} (tanpa catatan mitigasi — catat mitigasi, mis. FACT: mitigasi ${v.id}: <rencana>)`);
         else warnings.push(line);
       }
     }
@@ -78,7 +91,7 @@ function safeJson(s: string, fallback: any): any {
   try { return JSON.parse(t); } catch { return undefined; }
 }
 
-export function runOsv(dir: string, exec: Exec = realExec): ToolResult {
+export function runOsv(dir: string, exec: Exec = realExec, mitigations: string[] = []): ToolResult {
   // osv-scanner.toml di root proyek dibaca otomatis (IgnoredVulns + reason).
   const r = exec("osv-scanner", ["scan", "source", "-r", "--format", "json", dir]);
   if (missing(r)) return { tool: "osv-scanner", status: "UNRUN", findings: [], warnings: [], note: INSTALL_HINT["osv-scanner"] };
@@ -87,7 +100,7 @@ export function runOsv(dir: string, exec: Exec = realExec): ToolResult {
   if (j === undefined || (r.status !== 0 && r.status !== 1)) {
     return { tool: "osv-scanner", status: "UNRUN", findings: [], warnings: [], note: `osv-scanner exit ${r.status}: ${r.stderr.slice(0, 300)}` };
   }
-  return evaluateOsv(j);
+  return evaluateOsv(j, mitigations);
 }
 
 export function runGitleaks(dir: string, exec: Exec = realExec): ToolResult {
@@ -120,8 +133,15 @@ export function combine(tools: ToolResult[]): ScanGateResult {
   return { status, tools, blocks, warnings };
 }
 
-export function runScanGate(dir = ".", exec: Exec = realExec): ScanGateResult {
-  return combine([runOsv(dir, exec), runGitleaks(dir, exec)]);
+export function runScanGate(dir = ".", exec: Exec = realExec, opts: { mitigations?: string[] } = {}): ScanGateResult {
+  return combine([runOsv(dir, exec, opts.mitigations ?? []), runGitleaks(dir, exec)]);
+}
+
+/** Secret-scan saja (gitleaks, tanpa OSV/CVE) — jalur murah untuk sektor
+ * non-coding yang mengubah file. Hasilnya ditandai `secretOnly: true` agar
+ * done-gate tahu CVE belum dipindai (WARN, bukan PASS penuh). */
+export function runSecretScanGate(dir = ".", exec: Exec = realExec): ScanGateResult {
+  return { ...combine([runGitleaks(dir, exec)]), secretOnly: true };
 }
 
 /** Diff-scope: file berubah di luar scope tugas → WARN (bukan blok). */

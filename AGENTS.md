@@ -7,7 +7,7 @@ Lapisan non-invasif di atas OpenCode. Jangan patch core OpenCode. Model hanya vi
 ## Perintah
 - `npm run validate` — cek skill, registry, JSONC
 - `npm test` — suite (Node ≥ 22)
-- `npm run scan` — osv-scanner v2.7.0 + gitleaks v8.30.1 (UNRUN bila biner tidak ada)
+- `npm run scan` — osv-scanner v2.7.0 + gitleaks v8.30.1 (UNRUN bila biner tidak ada); `--secret-only` untuk secret scan saja (non-coding), `--mitigations-file <path>` untuk catatan mitigasi CVE tanpa fix
 - `npm run enable-pack -- <nama>` — salin pack ke `.opencode/skills` + validasi (`-- <nama> --disable` untuk mencabut)
 - `npm run sync-upstream` — re-fetch skill dari SHA ter-pin
 

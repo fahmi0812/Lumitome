@@ -1,5 +1,8 @@
 # Allowlist osv-scanner (dibaca otomatis dari root proyek).
 # Setiap entri WAJIB punya `reason` (dicek `npm run validate`) dan sebaiknya `ignoreUntil`.
+# Sejak v0.3.42 (P1-1): `packs/` dan `.opencode/skills/` IKUT dipindai — skrip di
+# dalamnya dieksekusi agen. Satu-satunya penekanan per temuan adalah [[IgnoredVulns]]
+# ber-`reason` di bawah (bukan pengecualian path diam-diam).
 # Contoh:
 # [[IgnoredVulns]]
 # id = "GHSA-xxxx-xxxx-xxxx"

@@ -66,10 +66,12 @@ export interface DoneGateInput {
   releaseGates?: Record<string, GateStatus>;
   /** Ledger rows. Only lines starting with `FACT:` are blocking evidence. */
   facts?: string[];
-  /** Sektor executor. `coding` mewajibkan scan-gate (osv-scanner+gitleaks). */
+  /** Sektor executor. Scan wajib bila ada file berubah (sektor apa pun) atau sektor `coding`. */
   sector?: string;
-  /** Hasil harness/scan-gate.ts. FAIL/UNRUN memblok; WARN hanya peringatan. */
-  scanGate?: { status: "PASS" | "WARN" | "FAIL" | "UNRUN"; blocks?: string[]; warnings?: string[] };
+  /** Hasil harness/scan-gate.ts. FAIL/UNRUN memblok; WARN hanya peringatan.
+   * `secretOnly: true` = hanya secret scan (gitleaks); cukup untuk non-coding,
+   * tidak cukup untuk `coding`. */
+  scanGate?: { status: "PASS" | "WARN" | "FAIL" | "UNRUN"; blocks?: string[]; warnings?: string[]; secretOnly?: boolean };
   /** Diff-scope: file berubah vs glob scope tugas. Di luar scope → WARN, bukan blok. */
   changedFiles?: string[];
   taskScope?: string[];
@@ -92,6 +94,9 @@ export interface DoneGateResult {
   failureReason?: string;
   /** Peringatan non-blok (diff-scope, CVE MEDIUM ke bawah). */
   warnings: string[];
+  /** Gate yang dilewati lewat waiver NOT_CONFIGURED beralasan + bukti
+   * (dicatat sebagai `waived`, BUKAN `passed` — lihat `notConfiguredWaiver`). */
+  waived: string[];
   /** Bagian laporan "Doc-Code Drift" (FACT ber-file:baris). */
   docCodeDrift: string[];
 }

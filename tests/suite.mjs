@@ -2,12 +2,12 @@ import path from "node:path";
 import fs from "fs";
 import cp from "node:child_process";
 import { layer0 } from "../router/layer0-regex.mjs";
-import { evaluateDoneGate } from "../harness/done-gate.ts";
+import { evaluateDoneGate, notConfiguredWaiver } from "../harness/done-gate.ts";
 import { detectDocCodeDrift, loadProject, checkRewriteToDocs, driftSection } from "../harness/doc-drift.ts";
 import { checkSkillsDir, checkConfig, checkAgents, checkPlugins, checkV2Config, NAME_RE } from "../scripts/check-opencode.mjs";
 import { frontmatter, frontmatterNaive, stripJsonc } from "../router/parse.mjs";
 import swanwrightPlugin, { guardPushMain } from "../.opencode/plugins/swanwright.ts";
-import { evaluateOsv, evaluateGitleaks, runScanGate, checkDiffScope, PINNED } from "../harness/scan-gate.ts";
+import { evaluateOsv, evaluateGitleaks, runScanGate, runSecretScanGate, checkDiffScope, PINNED } from "../harness/scan-gate.ts";
 import { INDEX_SECTION_BUDGETS, INDEX_DEFAULT_SECTION_BUDGET, INDEX_TOTAL_BUDGET, indexSectionTokens } from "../router/index-budgets.mjs";
 
 let pass = 0, fail = 0, skipped = 0;
@@ -1622,6 +1622,82 @@ ok("ringkasan: format 'N passed, N failed, N skipped'",
   summaryLine(382, 0, 2) === "382 passed, 0 failed, 2 skipped" && summaryLine(0, 1, 0) === "0 passed, 1 failed, 0 skipped");
 ok("ringkasan: skipped terhitung dari skip() (maks. 2 situs di suite ini)",
   skipped >= 0 && skipped <= 2 && (() => { const src = fs.readFileSync("tests/suite.mjs", "utf8"); return (src.match(/skip\(/g) || []).length >= 2 && (src.match(/console\.log\("\[SKIP\]"/g) || []).length === 1; })());
+
+// ---------- v0.3.42 (P1-1): tutup celah waiver & scan ----------
+// TDD (mattpocock): tes ini ditulis SEBELUM implementasi — harus MERAH dulu.
+{
+  // (1) Scan wajib untuk semua sektor bila ada file berubah (bukan hanya coding).
+  const ncBase = { commandExitCode: 0, expectedArtifacts: [], testCommandExitCode: 0, facts: ["FACT: npm test exit 0"], sector: "research", changedFiles: ["docs/paper.md"] };
+  ok("P1-1 (1): riset + file berubah + tanpa scan -> bukan DONE",
+    evaluateDoneGate(ncBase).isDone === false);
+  ok("P1-1 (1): riset + file berubah + scan PASS -> DONE",
+    evaluateDoneGate({ ...ncBase, scanGate: sPass }).isDone === true);
+  ok("P1-1 (1): riset + tanpa file berubah + tanpa scan -> tetap DONE (tugas tanpa kode)",
+    evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], testCommandExitCode: 0, facts: ["FACT: npm test exit 0"], sector: "research" }).isDone === true);
+  // Secret-scan-dulu: secret-only PASS cukup untuk non-coding (CVE dicatat sebagai langkah berikut, WARN),
+  // tapi TIDAK cukup untuk coding.
+  const secretOnlyPass = { status: "PASS", tools: [], blocks: [], warnings: [], secretOnly: true };
+  const dSecret = evaluateDoneGate({ ...ncBase, scanGate: secretOnlyPass });
+  ok("P1-1 (1): secret-only PASS untuk riset -> DONE + WARN CVE belum dijalankan",
+    dSecret.isDone === true && dSecret.warnings.some((w) => /secret-only|CVE.*belum/i.test(w)));
+  ok("P1-1 (1): secret-only TIDAK cukup untuk coding",
+    evaluateDoneGate({ ...base, scanGate: secretOnlyPass }).isDone === false);
+  const sSecret = runSecretScanGate(".", mock(out([]), out(fx("gitleaks-leak.json"))));
+  ok("P1-1 (1): runSecretScanGate: gitleaks bersih -> PASS + secretOnly; ada secret -> FAIL",
+    runSecretScanGate(".", mock(out(fx("osv-clean.json")), out([]))).status === "PASS"
+    && runSecretScanGate(".", mock(out(fx("osv-clean.json")), out([]))).secretOnly === true
+    && sSecret.status === "FAIL");
+
+  // (2) FACT NOT_CONFIGURED wajib beralasan + bukti perintah, tercatat waived (bukan passed).
+  const waiver = (name) => `FACT: ${name} NOT_CONFIGURED — alasan: tidak ada CI di repo ini; bukti: perintah \`ls .github/workflows\` output: tidak ada direktori tersebut`;
+  ok("P1-1 (2): waiver valid dikenali (alasan + bukti perintah)",
+    notConfiguredWaiver(["FACT: x"], "typecheck").waived === false
+    && notConfiguredWaiver([waiver("typecheck")], "typecheck").waived === true
+    && notConfiguredWaiver(["FACT: typecheck NOT_CONFIGURED"], "typecheck").waived === false
+    && notConfiguredWaiver(["FACT: typecheck NOT_CONFIGURED — alasan: tidak ada"], "typecheck").waived === false);
+  const relBase = { commandExitCode: 0, expectedArtifacts: [], testCommandExitCode: 0, facts: ["FACT: npm test exit 0"], verificationProfile: "RELEASE", releaseGates: { typecheck: "NOT_CONFIGURED", tests: "PASS", build: "PASS", scanner: "PASS" } };
+  ok("P1-1 (2): RELEASE gate NOT_CONFIGURED + FACT telanjang -> bukan DONE",
+    evaluateDoneGate({ ...relBase, facts: ["FACT: npm test exit 0", "FACT: typecheck NOT_CONFIGURED"] }).isDone === false);
+  const dWaived = evaluateDoneGate({ ...relBase, facts: ["FACT: npm test exit 0", waiver("typecheck")] });
+  ok("P1-1 (2): RELEASE gate NOT_CONFIGURED + waiver beralasan -> DONE + tercatat waived (bukan passed)",
+    dWaived.isDone === true && dWaived.waived.some((w) => /typecheck/i.test(w)) && dWaived.warnings.some((w) => /waived/i.test(w)));
+  const pushBase = { commandExitCode: 0, expectedArtifacts: [], testCommandExitCode: 0, verificationProfile: "STANDARD", pushRequested: true, remoteShaOk: true, ciStatus: "NOT_CONFIGURED" };
+  ok("P1-1 (2): push ciStatus NOT_CONFIGURED + FACT telanjang -> blok; + waiver beralasan -> lolos + waived",
+    evaluateDoneGate({ ...pushBase, facts: ["FACT: npm test exit 0", "FACT: remote abc123", "FACT: ci NOT_CONFIGURED"] }).isDone === false
+    && (() => { const r = evaluateDoneGate({ ...pushBase, facts: ["FACT: npm test exit 0", "FACT: remote abc123", waiver("ci")] }); return r.isDone === true && r.waived.some((w) => /ci/i.test(w)); })());
+  ok("P1-1 (2): scan UNRUN + FACT scan NOT_CONFIGURED telanjang -> blok; + waiver beralasan -> DONE + waived",
+    evaluateDoneGate({ ...ncBase, scanGate: sUnrun, facts: ["FACT: npm test exit 0", "FACT: scan NOT_CONFIGURED"] }).isDone === false
+    && (() => { const r = evaluateDoneGate({ ...ncBase, scanGate: sUnrun, facts: ["FACT: npm test exit 0", waiver("scan")] }); return r.isDone === true && r.waived.some((w) => /scan/i.test(w)); })());
+
+  // (3) CVE CRITICAL/HIGH tanpa fix: tanpa catatan mitigasi -> FAIL; dengan catatan -> WARN.
+  const nofix = fx("osv-high-nofix.json");
+  ok("P1-1 (3): CVE HIGH+CRITICAL tanpa fix + tanpa mitigasi -> FAIL",
+    evaluateOsv(nofix).status === "FAIL" && evaluateOsv(nofix).findings.length === 2);
+  ok("P1-1 (3): CVE tanpa fix + mitigasi satu ID saja -> tetap FAIL (yang lain belum termitigasi)",
+    evaluateOsv(nofix, ["FACT: mitigasi GHSA-35jh-r3h4-6jhm: pin lodash, tidak panggil fungsi rentan"]).status === "FAIL");
+  const mitigated = evaluateOsv(nofix, [
+    "FACT: mitigasi GHSA-35jh-r3h4-6jhm: pin lodash 4.17.15, fungsi rentan tidak dipanggil",
+    "FACT: mitigasi GHSA-crit-nofix-0001: isolasi di sandbox, tidak terekspos ke jaringan",
+  ]);
+  ok("P1-1 (3): CVE tanpa fix + mitigasi semua ID -> WARN (bukan FAIL), catatan terbaca di warnings",
+    mitigated.status === "WARN" && mitigated.warnings.every((w) => /mitigasi tercatat/.test(w)));
+  ok("P1-1 (3): runScanGate tanpa mitigasi -> FAIL; dengan mitigasi -> WARN",
+    runScanGate(".", mock(out(nofix), out([]))).status === "FAIL"
+    && runScanGate(".", mock(out(nofix), out([])), { mitigations: [
+      "FACT: mitigasi GHSA-35jh-r3h4-6jhm: pin lodash",
+      "FACT: mitigasi GHSA-crit-nofix-0001: isolasi sandbox",
+    ] }).status === "WARN");
+  const warnUnmit = { status: "WARN", tools: [], blocks: [], warnings: ["osv-scanner: GHSA-35jh-r3h4-6jhm HIGH (tanpa fix) di npm/lodash@4.17.15"] };
+  ok("P1-1 (3): done-gate: scan WARN berisi HIGH tanpa fix + tanpa FACT mitigasi -> blok; + FACT mitigasi -> DONE",
+    evaluateDoneGate({ ...base, scanGate: warnUnmit }).isDone === false
+    && evaluateDoneGate({ ...base, scanGate: warnUnmit, facts: ["FACT: npm test exit 0", "FACT: mitigasi GHSA-35jh-r3h4-6jhm: pin lodash"] }).isDone === true);
+
+  // (4) OSV kini memindai packs/ dan .opencode/skills/ (OSV_SKIP dihapus).
+  ok("P1-1 (4): OSV HIGH ber-fix di packs/ -> FAIL (tidak lagi dilewati)",
+    evaluateOsv(fx("osv-packs-high-fixable.json")).status === "FAIL");
+  ok("P1-1 (4): OSV bersih di packs/ -> PASS",
+    evaluateOsv(fx("osv-packs-clean.json")).status === "PASS");
+}
 
 console.log(`\n${summaryLine(pass, fail, skipped)}`);
 process.exit(fail ? 1 : 0);
