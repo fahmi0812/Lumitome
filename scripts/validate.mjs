@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { checkSkillsDir, checkConfig, checkAgents, checkPlugins, checkV2Config, checkMcpPolicy } from "./check-opencode.mjs";
 import { frontmatter } from "../router/parse.mjs";
+import { checkVersionConsistency } from "./version-check.mjs";
 import { INDEX_SECTION_BUDGETS, INDEX_DEFAULT_SECTION_BUDGET, INDEX_TOTAL_BUDGET, indexSectionTokens } from "../router/index-budgets.mjs";
 
 let fails = 0, warns = 0;
@@ -83,11 +84,20 @@ const mcpErr = checkMcpPolicy(); mcpErr.forEach(fail); if (!mcpErr.length) pass(
   try { execFileSync(process.execPath, ["scripts/gen-policy.mjs", "--check"], { stdio: "pipe" }); pass("permissions agent = hasil gen-policy (skill+MCP per sektor)"); }
   catch (e) { fail(`permissions agent basi: ${String(e.stdout || e.message).trim()} → npm run policy`); }
   const act = fs.readdirSync(".opencode/skills").filter((d) => fs.existsSync(`.opencode/skills/${d}/SKILL.md`));
-  if (act.length !== 127) fail(`folder skill aktif ${act.length} != 127`); else pass("folder skill aktif = 127");
-  // Jumlah skill pack TIDAK di-hardcode di sini (pelajaran v0.3.20) —
-  // sudah dijamin dinamis oleh cek registry == folder aktif+pack di atas.
+  // P2-2: jumlah skill aktif TIDAK di-hardcode (pelajaran v0.3.20 untuk pack,
+  // kini berlaku juga untuk aktif — dulu `act.length !== 127` di sini).
+  // Kanoniknya registry: folder aktif harus sama dengan entri aktif registry;
+  // selisih tetap gagal, tapi menambah skill ke-128 tidak lagi mematahkan gate.
+  const expectedActive = reg.skills.filter((s) => !s.pack).length;
+  if (act.length !== expectedActive) fail(`folder skill aktif ${act.length} != registry aktif ${expectedActive}`); else pass(`folder skill aktif = ${act.length} (registry aktif)`);
   for (const n of ["api-security", "llm-security"]) if (act.includes(n)) fail(`${n} tidak boleh aktif`);
 }
+// --- Konsistensi versi single-source (P2-2): VERSION vs package.json vs README vs CHANGELOG ---
+// Sebagian sudah dicek bump-version saat menaikkan versi; di sini ditegakkan
+// tiap validate agar drift (mis. README/CHANGELOG lupa ikut) gagal cepat.
+const verErrs = checkVersionConsistency(".");
+for (const e of verErrs) fail(`versi tidak konsisten: ${e}`);
+if (verErrs.length === 0) pass(`versi konsisten (VERSION = package.json = README = CHANGELOG: ${fs.readFileSync("VERSION", "utf8").trim()})`);
 const g = JSON.parse(fs.readFileSync("tests/golden-routing.json", "utf8"));
 if (g.length < 120) fail(`golden ${g.length} < 120`); else pass(`golden ${g.length}`);
 const orch = fs.readFileSync(".opencode/agents/orchestrator.md", "utf8");

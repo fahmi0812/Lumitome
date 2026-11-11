@@ -13,8 +13,8 @@
   "candidate_recall_at32": 1,
   "mrr_at32": 0.9152,
   "zero_load_rate": 0,
-  "retrieval_ms_p50": 0.91,
-  "retrieval_ms_p95": 2.87,
+  "retrieval_ms_p50": 0.96,
+  "retrieval_ms_p95": 3.26,
   "misses_at5": 0,
   "miss_examples": [],
   "note": "Tanpa Layer-1 (9router). selected@5 = top-5 retrieval deterministik."

@@ -3,7 +3,8 @@ import fs from "fs";
 import cp from "node:child_process";
 import { layer0 } from "../router/layer0-regex.mjs";
 import { evaluateDoneGate, notConfiguredWaiver } from "../harness/done-gate.ts";
-import { detectDocCodeDrift, loadProject, checkRewriteToDocs, driftSection } from "../harness/doc-drift.ts";
+import { detectDocCodeDrift, detectVersionDrift, loadProject, checkRewriteToDocs, driftSection } from "../harness/doc-drift.ts";
+import { checkVersionConsistency } from "../scripts/version-check.mjs";
 import { checkSkillsDir, checkConfig, checkAgents, checkPlugins, checkV2Config, NAME_RE } from "../scripts/check-opencode.mjs";
 import { frontmatter, frontmatterNaive, stripJsonc } from "../router/parse.mjs";
 import swanwrightPlugin, { guardPushMain } from "../.opencode/plugins/swanwright.ts";
@@ -156,7 +157,9 @@ ok("perubahan fitur biasa -> tanpa WARN drift", checkRewriteToDocs({ changedFile
 
 // --- v0.1.3: kompatibilitas OpenCode ---
 const act = checkSkillsDir(".opencode/skills");
-ok("127 folder skill aktif (.opencode/skills) valid (nama=folder, regex, deskripsi)", act.errors.length === 0 && act.names.length === 127);
+// P2-2: jumlah folder aktif TIDAK di-hardcode — harus sama dengan registry aktif (dulu 127 di sini dan di validate).
+const regActiveCount = JSON.parse(fs.readFileSync("router/skills-registry.json", "utf8")).skills.filter((s) => !s.pack).length;
+ok("folder skill aktif (.opencode/skills) valid, jumlah = registry aktif (nama=folder, regex, deskripsi)", act.errors.length === 0 && act.names.length === regActiveCount);
 ok("semua pack skill valid", fs.readdirSync("packs").every((p) => checkSkillsDir(`packs/${p}/skills`).errors.length === 0));
 const bad = checkSkillsDir("tests/fixtures/opencode/bad-skills");
 ok("fixture: folder foo__bar / name beda -> FAIL", bad.errors.some((e) => e.includes("foo__bar")) && !bad.errors.some((e) => e.includes("good-one")));
@@ -2161,6 +2164,94 @@ ok("ringkasan: skipped terhitung dari skip() (maks. 2 situs di suite ini)",
   srv.close(); fs.rmSync(home, { recursive: true, force: true });
   fs.rmSync(sb14, { recursive: true, force: true });
   for (const b of bins14) fs.rmSync(b, { recursive: true, force: true });
+}
+
+{
+  // --- v0.3.47: P2-2 — drift dokumen & proses: hitungan aktif dinamis + cek konsistensi versi ---
+  const os = await import("node:os");
+  // (4) checkVersionConsistency: VERSION vs package.json vs README vs CHANGELOG (unit, dir fixture kecil)
+  const mkVerDir = (over = {}) => {
+    const d = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-ver-"));
+    const v = over.VERSION ?? "0.3.47";
+    fs.writeFileSync(path.join(d, "VERSION"), v + "\n");
+    fs.writeFileSync(path.join(d, "package.json"), JSON.stringify({ version: over.packageJson ?? v }));
+    fs.writeFileSync(path.join(d, "README.md"), `![Version](https://img.shields.io/badge/version-${over.readme ?? v}-e8c266.svg)\nunduh https://github.com/fahmi0812/Lumitome/archive/refs/tags/v${over.readme ?? v}.tar.gz\n`);
+    fs.writeFileSync(path.join(d, "CHANGELOG.md"), over.changelog ?? `# Changelog\n\n## ${v} — tes\n\n- catatan rilis\n`);
+    return d;
+  };
+  const vd = mkVerDir();
+  ok("versi konsisten: VERSION=package.json=README=CHANGELOG cocok -> tanpa error", checkVersionConsistency(vd).length === 0);
+  fs.rmSync(vd, { recursive: true, force: true });
+  const vd2 = mkVerDir({ packageJson: "0.3.46" });
+  ok("versi drift: package.json != VERSION -> error menyebut package.json", checkVersionConsistency(vd2).some((e) => /package\.json/.test(e) && /0\.3\.46/.test(e)));
+  fs.rmSync(vd2, { recursive: true, force: true });
+  const vd3 = mkVerDir({ readme: "0.3.46" });
+  ok("versi drift: README badge/tarball basi -> error menyebut README", checkVersionConsistency(vd3).some((e) => /README/.test(e)));
+  fs.rmSync(vd3, { recursive: true, force: true });
+  const vd4 = mkVerDir({ changelog: "# Changelog\n\n## 0.3.46 — lama\n\n- x\n" });
+  ok("versi drift: CHANGELOG tanpa entri versi kini -> error menyebut CHANGELOG", checkVersionConsistency(vd4).some((e) => /CHANGELOG/.test(e)));
+  fs.rmSync(vd4, { recursive: true, force: true });
+  const vd5 = mkVerDir({ changelog: "# Changelog\n\n## 0.3.47 — tes\n\n- TODO: isi catatan rilis\n" });
+  ok("versi drift: CHANGELOG entri masih placeholder TODO -> error", checkVersionConsistency(vd5).some((e) => /TODO/.test(e)));
+  fs.rmSync(vd5, { recursive: true, force: true });
+
+  // (4) detectVersionDrift (harness/doc-drift.ts): pasangan in-memory untuk done-gate/pelaporan
+  ok("doc-drift versi: satu sumber basi -> finding menyebut sumbernya", detectVersionDrift({ VERSION: "0.3.47", "package.json": "0.3.47", README: "0.3.46", CHANGELOG: "0.3.47" }).some((f) => f.source === "README" && /0\.3\.46/.test(f.fact) && /0\.3\.47/.test(f.fact)));
+  ok("doc-drift versi: semua cocok -> kosong", detectVersionDrift({ VERSION: "0.3.47", "package.json": "0.3.47", README: "0.3.47", CHANGELOG: "0.3.47" }).length === 0);
+  ok("doc-drift versi: tanpa VERSION kanonik -> kosong (bukan false positive)", detectVersionDrift({ "package.json": "0.3.47" }).length === 0);
+
+  // (4) loadProject kini membaca ARCHITECTURE.md + docs/*.md juga, bukan hanya AGENTS/CLAUDE/CONTRIBUTING/README
+  const lp = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-lp-"));
+  fs.writeFileSync(path.join(lp, "ARCHITECTURE.md"), "# Arsitektur\npakai print() di contoh\n");
+  fs.mkdirSync(path.join(lp, "docs"), { recursive: true });
+  fs.writeFileSync(path.join(lp, "docs", "PRD.md"), "# PRD\n");
+  fs.mkdirSync(path.join(lp, "src"), { recursive: true });
+  fs.writeFileSync(path.join(lp, "src", "a.py"), "import logging\n");
+  const proj2 = loadProject(lp);
+  const drift2 = detectDocCodeDrift(proj2.docs, proj2.code);
+  ok("loadProject: ARCHITECTURE.md + docs/PRD.md ikut dibaca sebagai dokumen", "ARCHITECTURE.md" in proj2.docs && path.join("docs", "PRD.md") in proj2.docs);
+  ok("doc-drift: konvensi di ARCHITECTURE.md vs kode terdeteksi dgn file:baris", drift2.some((d) => d.id === "print-vs-logging" && d.doc === "ARCHITECTURE.md:2" && d.code === "src/a.py:1"));
+  fs.rmSync(lp, { recursive: true, force: true });
+
+  // (3) e2e: skill aktif ke-128 (fixture) -> validate tetap lolos; tanpa entri registry -> validate gagal.
+  // Salinan hardlink (cp -al) murah; file yang diubah di salinan di-rm dulu agar tidak menembus ke repo asli.
+  const FIXTURE = "zz-fixture-p22";
+  const fixtureSkillMd = `---\nname: ${FIXTURE}\ndescription: Fixture tes P2-2 — skill aktif ke-128 untuk uji hitungan dinamis validate.\n---\n\n# ${FIXTURE}\n\nSkill tiruan untuk tes saja; bukan skill sungguhan.\n`;
+  const addFixture = (root, withRegistry) => {
+    fs.mkdirSync(path.join(root, ".opencode/skills", FIXTURE), { recursive: true });
+    fs.writeFileSync(path.join(root, ".opencode/skills", FIXTURE, "SKILL.md"), fixtureSkillMd);
+    if (withRegistry) {
+      const regPath = path.join(root, "router/skills-registry.json");
+      const reg = JSON.parse(fs.readFileSync(regPath, "utf8"));
+      // Sisip di akhir blok aktif (terurut; 'zz-...' > 'web-sims' terakhir) — sebelum entri pack pertama.
+      const firstPack = reg.skills.findIndex((s) => s.pack);
+      reg.skills.splice(firstPack === -1 ? reg.skills.length : firstPack, 0, {
+        id: FIXTURE, name: FIXTURE, sektor: "misc",
+        description: "Fixture tes P2-2 — skill aktif ke-128 untuk uji hitungan dinamis validate.",
+        triggers: [], champion: false, fallback: null, cost: "low", requires_consent: false,
+        pack: "", src: "fixture/p2-2", sha: "0000000000000000000000000000000000000000",
+        license: "MIT", original_id: `fixture__${FIXTURE}`, original_name: FIXTURE,
+      });
+      fs.rmSync(regPath); fs.writeFileSync(regPath, JSON.stringify(reg, null, 1) + "\n");
+      const idxPath = path.join(root, "router/skills-index.md");
+      const idx = fs.readFileSync(idxPath, "utf8");
+      fs.rmSync(idxPath);
+      fs.writeFileSync(idxPath, idx.replace("## misc\n", `## misc\n- ${FIXTURE}: Fixture tes P2-2 — skill aktif ke-128 untuk uji hitungan dinamis validate.\n`));
+    }
+  };
+  const runValidateCopy = (withRegistry) => {
+    const tmp = fs.mkdtempSync(path.join("..", "p22-e2e-"));
+    try {
+      cp.execFileSync("cp", ["-al", ".", tmp + "/"], { timeout: 120000 });
+      addFixture(tmp, withRegistry);
+      const r = cp.spawnSync(process.execPath, ["scripts/validate.mjs"], { cwd: tmp, encoding: "utf8", timeout: 120000 });
+      return { status: r.status, out: (r.stdout || "") + (r.stderr || "") };
+    } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+  };
+  const v128 = runValidateCopy(true);
+  ok("validate dinamis: skill aktif ke-128 (fixture + registry + indeks) -> validate lolos", v128.status === 0 && /OK \(warns 0\)/.test(v128.out));
+  const vNoReg = runValidateCopy(false);
+  ok("validate dinamis: folder ke-128 tanpa entri registry -> validate tetap gagal (bukan lolos diam-diam)", vNoReg.status !== 0 && /registry/.test(vNoReg.out));
 }
 
 console.log(`\n${summaryLine(pass, fail, skipped)}`);

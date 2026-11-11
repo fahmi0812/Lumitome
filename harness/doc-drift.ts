@@ -24,6 +24,20 @@ function firstLine(text: string, re: RegExp): number {
 
 export interface DriftFinding { id: string; doc: string; code: string; fact: string }
 
+/** Drift versi/angka (P2-2): kanonik = file VERSION; sumber lain harus sama persis.
+ * Pasangan in-memory dari scripts/version-check.mjs (yang membaca file dan
+ * ditegakkan validate) — logika bandingnya sama, hanya sumber datanya beda
+ * (validate jalan di node polos .mjs, detektor ini di harness TS). */
+export interface VersionDriftFinding { source: string; version: string; expected: string; fact: string }
+
+export function detectVersionDrift(versions: Record<string, string>): VersionDriftFinding[] {
+  const expected = versions["VERSION"];
+  if (!expected) return [];
+  return Object.entries(versions)
+    .filter(([k, v]) => k !== "VERSION" && v !== expected)
+    .map(([k, v]) => ({ source: k, version: v, expected, fact: `FACT: drift versi ${k} ${v} vs VERSION ${expected} — samakan ke VERSION` }));
+}
+
 export function detectDocCodeDrift(docs: Record<string, string>, code: Record<string, string>): DriftFinding[] {
   const out: DriftFinding[] = [];
   for (const c of CONVENTIONS) {
@@ -39,13 +53,20 @@ export function detectDocCodeDrift(docs: Record<string, string>, code: Record<st
 export function loadProject(root: string): { docs: Record<string, string>; code: Record<string, string> } {
   const docs: Record<string, string> = {};
   const code: Record<string, string> = {};
+  // P2-2: detektor dulu hanya membaca AGENTS|CLAUDE|CONTRIBUTING|README.md —
+  // drift di ARCHITECTURE.md / docs/*.md / CHANGELOG.md tidak pernah terlihat.
+  // Dokumen yang dibaca kini: keempat itu + ARCHITECTURE.md + CHANGELOG.md +
+  // semua *.md di bawah docs/ (termasuk PRD.md).
+  const isDoc = (rel: string, name: string) =>
+    /^(AGENTS|CLAUDE|CONTRIBUTING|README|ARCHITECTURE|CHANGELOG)\.md$/i.test(name)
+    || (rel.startsWith(`docs${path.sep}`) && name.endsWith(".md"));
   const walk = (d: string) => {
     for (const e of fs.readdirSync(d, { withFileTypes: true })) {
       if (e.name === "node_modules" || e.name === ".git" || e.name === "packs") continue;
       const p = path.join(d, e.name);
       const rel = path.relative(root, p);
       if (e.isDirectory()) walk(p);
-      else if (/^(AGENTS|CLAUDE|CONTRIBUTING|README)\.md$/i.test(e.name)) docs[rel] = fs.readFileSync(p, "utf8");
+      else if (isDoc(rel, e.name)) docs[rel] = fs.readFileSync(p, "utf8");
       else if (/\.(py|ts|js|mjs)$/.test(e.name) && !/(^|\/)tests?\//.test(rel)) code[rel] = fs.readFileSync(p, "utf8");
     }
   };
