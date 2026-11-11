@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.44-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.45-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -40,7 +40,7 @@ While it installs (and uninstalls) you see one status line and one line when it 
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.44.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.45.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
@@ -70,7 +70,9 @@ lumitome connect
 
 Choose OpenAI or Anthropic (compatible), then fill in a name, the base URL, and your API key. The key shows as dots (•) while you type or paste it. Press Enter to save. Lumitome looks up the provider's models and tells you how many it found. Pick one with `/model`. To remove a saved provider, move to it and press Del, then `y`. Esc closes the screen.
 
-Any service that works like the OpenAI API or the Anthropic API will do.
+For a local 9router, pick the **9router preset** on that screen (Tab to it, Enter) — it fills in the name and the local address `http://127.0.0.1:20128/v1`; you only type the API key. The same preset works without the screen: `lumitome connect --preset 9router --key-env NINEROUTER_API_KEY`.
+
+Any service that works like the OpenAI API or the Anthropic API will do. If the server answers but has no models yet (for example a 9router dashboard that is still empty), the provider is still saved with an empty list and Lumitome warns you instead of failing — the models show up on their own once you add them in the dashboard, thanks to the automatic refresh.
 
 Other provider commands:
 
@@ -126,7 +128,7 @@ This only touches Lumitome's own service. An OpenCode service you run yourself i
 
 ### Model list
 
-Models from a provider are saved when you add it with `lumitome connect`. Since v0.3.38 the list is refreshed automatically every time you start `lumitome` (or `lumitome run`), so a model your provider adds later — for example a new upstream connection in your 9router dashboard — shows up on its own. If the automatic refresh fails, the last known list is kept. To refresh by hand, or turn the automatic refresh off:
+Models from a provider are saved when you add it with `lumitome connect`. Since v0.3.38 the list is refreshed automatically every time you start `lumitome` (or `lumitome run`), so a model your provider adds later — for example a new upstream connection in your 9router dashboard — shows up on its own. If the automatic refresh fails, the last known list is kept. If a refresh finds no models at all, the last known list is kept too (an empty answer never wipes the models you already had). To refresh by hand, or turn the automatic refresh off:
 
 ```bash
 lumitome models --refresh

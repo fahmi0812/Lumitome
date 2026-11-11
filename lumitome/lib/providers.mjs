@@ -10,6 +10,11 @@ import path from "node:path";
 import readline from "node:readline";
 
 export const NAME_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
+// v0.3.45 (P1-4): preset 9router sekali-klik — nama + tipe + base URL lokal.
+// Key TIDAK PERNAH diisi preset (tetap diminta manual); URL lokal adalah default
+// yang benar (bukan server jarak jauh).
+export const NINEROUTER_PRESET = { name: "9router", type: "openai", baseURL: "http://127.0.0.1:20128/v1" };
+export const PROVIDER_PRESETS = { "9router": NINEROUTER_PRESET };
 const envName = (n) => `LUMI_KEY_${n.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`;
 const readJ = (f) => { try { return JSON.parse(fs.readFileSync(f, "utf8")); } catch { return {}; } };
 const writeJ = (f, o) => { fs.mkdirSync(path.dirname(f), { recursive: true, mode: 0o700 }); fs.writeFileSync(f + ".tmp", JSON.stringify(o, null, 2) + "\n", { mode: 0o600 }); fs.renameSync(f + ".tmp", f); fs.chmodSync(f, 0o600); };
@@ -28,15 +33,28 @@ export async function detectModels(type, base, key, { timeoutMs = 15000 } = {}) 
   const b = base.replace(/\/+$/, "");
   const url0 = type === "anthropic" ? (/\/v1$/.test(b) ? `${b}/models` : `${b}/v1/models`) : `${b}/models`;
   const headers = type === "anthropic" ? { "x-api-key": key, "anthropic-version": "2023-06-01" } : { authorization: `Bearer ${key}` };
+  // v0.3.45 (P1-4): pesan error membedakan penyebab + menyarankan coba tipe lain
+  // bila tipe tertukar (header/URL /models berbeda per tipe).
+  const other = type === "anthropic" ? "openai" : "anthropic";
   const deadline = Date.now() + timeoutMs;
   const ids = []; let url = url0;
   for (let page = 0; page < 20 && url; page++) {
     const left = deadline - Date.now();
-    if (left <= 0) throw new Error(`GET ${url0} → timeout total ${timeoutMs} ms habis (paginasi berhenti di halaman ${page + 1})`);
+    // v0.3.45: timeout menyebut server tidak merespons + apa yang diperiksa.
+    const timeoutMsg = () => `GET ${url0} → timeout total ${timeoutMs} ms habis (paginasi berhenti di halaman ${page + 1}) — server tidak merespons; periksa server berjalan di ${b} dan base URL benar`;
+    if (left <= 0) throw new Error(timeoutMsg());
     let r;
     try { r = await fetch(url, { headers: { accept: "application/json", ...headers }, signal: AbortSignal.timeout(left) }); }
-    catch (e) { if (e?.name === "AbortError" || e?.name === "TimeoutError") throw new Error(`GET ${url0} → timeout total ${timeoutMs} ms habis (paginasi berhenti di halaman ${page + 1})`); throw e; }
-    if (!r.ok) throw new Error(`GET ${url0} → HTTP ${r.status}`);
+    catch (e) {
+      if (e?.name === "AbortError" || e?.name === "TimeoutError") throw new Error(timeoutMsg());
+      // v0.3.45: koneksi gagal dibungkus dengan base URL + saran (bukan "fetch failed" mentah).
+      throw new Error(`GET ${url0} → tidak bisa terhubung (${e?.cause?.message || e?.message || e}) — periksa server berjalan di ${b} dan base URL benar`);
+    }
+    if (!r.ok) {
+      if (r.status === 401 || r.status === 403) throw new Error(`GET ${url0} → HTTP ${r.status} (API key ditolak — periksa key; bila server ini tipe '${other}', coba tipe '${other}')`);
+      if (r.status === 404) throw new Error(`GET ${url0} → HTTP 404 (endpoint /models tidak ditemukan — periksa base URL; bila tipe tertukar, coba tipe '${other}')`);
+      throw new Error(`GET ${url0} → HTTP ${r.status}`);
+    }
     const j = await r.json();
     for (const m of j.data || j.models || []) if (m && (m.id || m.name)) ids.push(String(m.id || m.name));
     url = type === "anthropic" && j.has_more && j.last_id ? `${url0}?after_id=${encodeURIComponent(j.last_id)}` : null;
@@ -50,11 +68,17 @@ export async function add(home, { name, type, baseURL, key }) {
   if (!/^https?:\/\//.test(baseURL || "")) throw new Error("base URL harus http(s)://");
   if (!key) throw new Error("API key kosong");
   const models = await detectModels(type, baseURL, key);
-  if (!models.length) throw new Error("server tidak mengembalikan model");
+  // v0.3.45 (P1-4): PERUBAHAN INVARIAN — 0 model BUKAN lagi gagal. Dulu baris ini
+  // melempar "server tidak mengembalikan model", jadi 9router yang hidup tapi
+  // dashboard-nya masih kosong tidak bisa disimpan sama sekali. Kini provider
+  // TERSIMPAN dengan models: [] + peringatan; model masuk lewat auto-refresh
+  // begitu dashboard diisi. Mengembalikan { models, warning } (warning null bila ada model).
+  const warning = models.length ? null
+    : "server tidak mengembalikan model (0 model) — provider tersimpan tanpa model; isi model di dashboard server lalu `lumitome models --refresh` (atau mulai ulang lumitome — auto-refresh akan mengisi daftar)";
   const F = files(home), all = readJ(F.prov); all.providers ||= {};
   all.providers[name] = { type, baseURL: baseURL.replace(/\/+$/, ""), models, updated: new Date().toISOString() };
   const cred = readJ(F.cred); cred[name] = key; writeJ(F.cred, cred); writeJ(F.prov, all);
-  return models;
+  return { models, warning };
 }
 export function remove(home, name) {
   const F = files(home), all = readJ(F.prov); if (!all.providers?.[name]) return false;
@@ -68,7 +92,17 @@ export async function refresh(home, only, { timeoutMs, env = process.env } = {})
   // gagal per provider -> cache lama, tidak pernah throw.
   await Promise.all(Object.entries(all.providers || {}).map(async ([n, p]) => {
     if (only && n !== only) return;
-    try { p.models = await detectModels(p.type, p.baseURL, keyFor(home, n, env), { timeoutMs }); p.updated = new Date().toISOString(); out[n] = p.models.length; }
+    try {
+      const fresh = await detectModels(p.type, p.baseURL, keyFor(home, n, env), { timeoutMs });
+      // v0.3.45 (P1-4): daftar kosong TIDAK menimpa cache (server yang tadinya
+      // berisi model lalu menjawab 0 model — dashboard dikosongkan/glitch —
+      // tidak boleh menghilangkan model tersimpan; lihat juga timeout total
+      // di detectModels yang melempar demi cache). Provider yang memang masih
+      // kosong tetap kosong sampai dashboard diisi.
+      if (fresh.length) { p.models = fresh; p.updated = new Date().toISOString(); out[n] = fresh.length; }
+      else if ((p.models || []).length) out[n] = `gagal: server tidak mengembalikan model (cache lama dipertahankan: ${p.models.length} model)`;
+      else out[n] = "gagal: server tidak mengembalikan model (belum ada model tersimpan)";
+    }
     catch (e) { out[n] = `gagal: ${e.message}`; }
   }));
   writeJ(F.prov, all); return out;
@@ -133,6 +167,13 @@ export async function cli({ argv, home, sub, env = process.env, log = console.lo
   if (flag("--list")) { list(); return 0; }
   if (flag("--remove")) { const n = val("--remove"); const ok = remove(home, n); (ok ? log : err)(ok ? `provider '${n}' dihapus (config + key)` : `provider '${n}' tidak ada`); return ok ? 0 : 1; }
   let type = val("--type"), name = val("--name"), baseURL = val("--base-url"), key;
+  if (val("--preset")) {
+    // v0.3.45 (P1-4): --preset 9router mengisi nama/tipe/base URL lokal; flag
+    // eksplisit menang atas preset; key tetap manual (--key-env/--key-stdin).
+    const preset = PROVIDER_PRESETS[val("--preset")];
+    if (!preset) { err(`preset tidak dikenal: '${val("--preset")}' (yang ada: ${Object.keys(PROVIDER_PRESETS).join(", ")})`); return 2; }
+    type ??= preset.type; name ??= preset.name; baseURL ??= preset.baseURL;
+  }
   if (val("--key-env")) key = process.env[val("--key-env")];
   if (flag("--key-stdin")) key = fs.readFileSync(0, "utf8").trim();
   argv = argv.filter((a) => a !== "--text");
@@ -148,7 +189,8 @@ export async function cli({ argv, home, sub, env = process.env, log = console.lo
     if (!key) key = (await askHidden("API key (tampil sebagai •): ")).trim();
   }
   try {
-    const models = await add(home, { name, type, baseURL, key });
+    const { models, warning } = await add(home, { name, type, baseURL, key });
+    if (!models.length) { log(`OK: provider '${name}' (${type}) tersimpan tanpa model — ${warning}`); return 0; }
     log(`OK: provider '${name}' (${type}) — ${models.length} model terdeteksi. Contoh: ${models.slice(0, 5).map((m) => `${name}/${m}`).join(", ")}${models.length > 5 ? ", …" : ""}`);
     const pref = models.includes("ag/gemini-3.8-flash-high") ? "ag/gemini-3.8-flash-high" : models[0];
     log(`Pilih di TUI lewat /model, atau: lumitome run -m ${name}/${pref} "…"`);

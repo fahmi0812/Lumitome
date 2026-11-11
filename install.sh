@@ -112,12 +112,36 @@ if [ -n "$_src" ] && [ -f "$_src" ]; then PROJECT="$(cd "$(dirname "$_src")" && 
 case " $* " in *" --uninstall "*) _UN=1;; *) _UN=0;; esac
 if [ "$_UN" = 0 ] && { [ -z "$PROJECT" ] || [ ! -f "$PROJECT/opencode.jsonc" ] || [ ! -f "$PROJECT/scripts/doctor.sh" ]; }; then
   SW_SRC="${SW_SRC:-$SW_HOME/src}"
-  command -v git >/dev/null 2>&1 || die "butuh 'git' untuk mode remote" "Pasang git lewat package manager: apt/brew install git"
   log "mode remote: menyiapkan sumber di $SW_SRC"
   case " $* " in *" -h "*|*" --help "*) ;; *) ui_step "Menyiapkan sumber";; esac
-  if [ -d "$SW_SRC/.git" ]; then git -C "$SW_SRC" pull --ff-only origin main >>"$LOG_FILE" 2>&1 || true
-  else mkdir -p "$(dirname "$SW_SRC")"; git clone --depth 1 "$SW_REPO_URL" "$SW_SRC" >>"$LOG_FILE" 2>&1 || die "unduh sumber gagal" "Cek koneksi internet, lalu coba lagi."; fi
+  PULL_FAILED=0
+  if command -v git >/dev/null 2>&1; then
+    if [ -d "$SW_SRC/.git" ]; then
+      # v0.3.45 (P1-4, d): pull gagal TIDAK lagi diam-diam (dulu `|| true`) —
+      # instalasi lanjut dengan sumber lama + peringatan ke layar di bawah.
+      git -C "$SW_SRC" pull --ff-only origin main >>"$LOG_FILE" 2>&1 || PULL_FAILED=1
+      [ "$PULL_FAILED" = 1 ] && log "WARN: git pull gagal di $SW_SRC — lanjut dengan sumber lama"
+    else mkdir -p "$(dirname "$SW_SRC")"; git clone --depth 1 "$SW_REPO_URL" "$SW_SRC" >>"$LOG_FILE" 2>&1 || die "unduh sumber gagal" "Cek koneksi internet, lalu coba lagi."; fi
+  else
+    # v0.3.45 (P1-4, c): tanpa git, mode remote TIDAK lagi mati di "butuh 'git'" —
+    # fallback tarball via curl (unduh main.tar.gz GitHub, ekstrak ke $SW_SRC).
+    # Key/URL default tidak berubah; tarball hanya sumber kode, bukan kredensial.
+    command -v curl >/dev/null 2>&1 || die "butuh 'git' atau 'curl' untuk mode remote" "Pasang git atau curl lewat package manager: apt/brew install git curl"
+    command -v tar >/dev/null 2>&1 || die "butuh 'tar' untuk mode remote tanpa git" "Pasang tar lewat package manager."
+    _repo="${SW_REPO_URL%.git}"
+    case "$_repo" in https://github.com/*) ;; *) die "fallback tarball hanya untuk repo GitHub (LUMI_REPO_URL bukan GitHub)" "Pasang git, lalu coba lagi.";; esac
+    _tb="$_repo/archive/refs/heads/main.tar.gz"
+    if [ -d "$SW_SRC" ] && [ -n "$(ls -A "$SW_SRC" 2>/dev/null)" ]; then die "sumber sudah ada di $SW_SRC tapi git tidak ada untuk memperbaruinya" "Hapus $SW_SRC, atau pasang git, lalu coba lagi."; fi
+    _td="$(mktemp -d "${TMPDIR:-/tmp}/lumi-tarball.XXXXXX")"
+    log "mode remote tanpa git: unduh tarball $_tb"
+    curl -fsSL --retry 3 -o "$_td/main.tar.gz" "$_tb" >>"$LOG_FILE" 2>&1 || die "unduh tarball gagal: $_tb" "Cek koneksi internet, lalu coba lagi."
+    mkdir -p "$SW_SRC"
+    tar --no-same-owner -xzf "$_td/main.tar.gz" -C "$SW_SRC" --strip-components=1 >>"$LOG_FILE" 2>&1 || die "ekstrak tarball gagal" "Coba lagi; bila terus gagal, pasang git."
+    rm -rf "$_td"
+    [ -f "$SW_SRC/install.sh" ] || die "tarball tidak berisi install.sh" "Coba lagi; bila terus gagal, pasang git."
+  fi
   _spin_stop
+  if [ "$PULL_FAILED" = 1 ]; then printf '  WARN git pull gagal — memakai sumber lama di %s (detail: %s)\n' "$SW_SRC" "$LOG_FILE" >&2; fi
   exec bash "$SW_SRC/install.sh" "$@"
 fi
 UNINSTALL=0 DRY=0 DO_NODE=1 DO_CBM=1 DO_UV=1 DO_NPM=1 DOCTOR=0 BROWSERS=0

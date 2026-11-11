@@ -4,6 +4,10 @@
  * API key ditampilkan sebagai • per karakter (paste didukung, termasuk bracketed paste & CRLF dari Windows).
  */
 export const GOLD = { left: "#C9962E", right: "#F3D27A" };
+// v0.3.45 (P1-4): preset 9router sekali-klik — konstanta tinggal di providers.mjs
+// (satu sumber; provider-ui tidak menduplikasi URL lokal).
+import { NINEROUTER_PRESET } from "./providers.mjs";
+export { NINEROUTER_PRESET };
 // sama dengan wordmark engine (engine/patches/logo.patch): LUMI + TOME
 export const LOGO = {
   left: ["█    █  █ █▀▄▀█ ▀█▀", "█    █  █ █   █  █ ", "▀▀▀▀ ▀▀▀▀ ▀   ▀ ▀▀▀"],
@@ -68,7 +72,14 @@ export function initState(providers = {}) {
   const list = Object.entries(providers).map(([name, p]) => ({ name, models: (p.models || []).length }));
   return { list, focus: list.length ? "form:name" : "form:name", type: 0, name: "", baseURL: "", key: "", status: null, confirm: null, busy: false, done: false };
 }
-const focusOrder = (st) => [...st.list.map((_, i) => `list:${i}`), ...FIELDS.map((f) => `form:${f}`)];
+/** v0.3.45 (P1-4): isi form dari preset (sekali Enter di baris preset). Key TIDAK
+ * pernah diisi preset — pengguna mengetiknya sendiri; fokus pindah ke API key. */
+export function applyPreset(st, preset = NINEROUTER_PRESET) {
+  const i = TYPES.findIndex(([t]) => t === preset.type);
+  st.type = i >= 0 ? i : 0; st.name = preset.name; st.baseURL = preset.baseURL; st.focus = "form:key"; st.status = null;
+  return st;
+}
+const focusOrder = (st) => [...st.list.map((_, i) => `list:${i}`), "preset:9router", ...FIELDS.map((f) => `form:${f}`)];
 function move(st, d) { const o = focusOrder(st); const i = Math.max(0, o.indexOf(st.focus)); st.focus = o[(i + d + o.length) % o.length]; }
 
 /** Reducer murni: (state, token) → aksi {save} | {remove: name} | {exit} | null. State dimutasi. */
@@ -83,6 +94,7 @@ export function reduce(st, k) {
   if (k.t === "tab" || k.t === "down") { move(st, 1); return null; }
   if (k.t === "shift-tab" || k.t === "up") { move(st, -1); return null; }
   const [kind, f] = st.focus.split(":");
+  if (kind === "preset") { if (k.t === "enter") applyPreset(st); return null; }
   if (kind === "list") {
     const row = st.list[Number(f)]; if (!row) return null;
     if (k.t === "delete" || k.t === "enter" || k.t === "backspace" || (k.t === "char" && (k.v === "x" || k.v === "×"))) { st.confirm = row.name; }
@@ -125,6 +137,8 @@ export function render(st, cols = 80, rows = 24, G = UNI) {
   if (st.confirm) L.push(`  Hapus '${st.confirm}'? y = ya, tombol lain = batal`);
   L.push(`${DIM}${G.rule.repeat(W)}${RST}${BG}`);
   L.push(`${DIM}Tambah provider${RST}${BG}`);
+  const pon = st.focus === "preset:9router";
+  L.push(`${pon ? G.arrow : " "} ${"Preset".padEnd(9)} ${G.arrow} 9router (lokal) ${G.dot} ${NINEROUTER_PRESET.baseURL}${pon ? `  ${DIM}(Enter isi)${RST}${BG}` : ""}`);
   const field = (f, label, val) => {
     const on = st.focus === `form:${f}`;
     return `${on ? G.arrow : " "} ${label.padEnd(9)} ${G.arrow} ${val}${on && f !== "type" ? G.cur : ""}`;
@@ -181,9 +195,10 @@ export async function run({ home, PV, input = process.stdin, output = process.st
           const type = TYPES[st.type][0];
           st.busy = true; draw();
           try {
-            const models = await PV.add(home, { name: st.name.trim(), type, baseURL: st.baseURL.trim(), key: st.key.trim() });
+            const { models, warning } = await PV.add(home, { name: st.name.trim(), type, baseURL: st.baseURL.trim(), key: st.key.trim() });
             st.list = st.list.filter((p) => p.name !== st.name.trim()).concat({ name: st.name.trim(), models: models.length });
-            st.status = `✓ Terhubung · ${models.length} model terdeteksi`;
+            // v0.3.45 (P1-4): 0 model tetap tersimpan — tampilkan peringatan, bukan ✗.
+            st.status = models.length ? `✓ Terhubung · ${models.length} model terdeteksi` : `✓ Tersimpan · 0 model — ${warning || "server tidak mengembalikan model"}`;
             st.name = ""; st.baseURL = ""; st.key = ""; st.focus = "form:name";
           } catch (e) { st.status = `✗ ${String(e.message || e).replace(st.key, "•••")}`; }
           st.busy = false;

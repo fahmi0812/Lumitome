@@ -438,7 +438,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   let bad = ""; try { await PV.add(home, { name: "x", type: "openai", baseURL: `${base}/v1`, key: "salah" }); } catch (e) { bad = e.message; }
   const F = PV.files(home), mode = (f) => fs.statSync(f).mode & 0o777;
   const frag = PV.opencodeFragment(home, {});
-  ok("connect: deteksi model OpenAI (Bearer) & Anthropic (x-api-key, paginasi)", m1.join() === "m-a,m-b" && m2.join() === "c-1,c-2" && /401/.test(bad));
+  ok("connect: deteksi model OpenAI (Bearer) & Anthropic (x-api-key, paginasi)", m1.models.join() === "m-a,m-b" && m2.models.join() === "c-1,c-2" && /401/.test(bad));
   ok("connect: providers.json & credentials.json 0600; key tidak di providers.json/config", mode(F.prov) === 0o600 && mode(F.cred) === 0o600 && !fs.readFileSync(F.prov, "utf8").includes("k1") && !JSON.stringify(frag.providers).includes("k1") && frag.env.LUMI_KEY_OA === "k1");
   ok("connect: paket SDK sesuai tipe + model muncul di config", frag.providers.oa.package.includes("openai-compatible") && frag.providers.an.package.includes("anthropic") && frag.providers.an.settings.baseURL.endsWith("/an/v1") && !!frag.providers.an.models["c-2"]);
   ok("connect: env LUMI_KEY_<NAMA> menimpa file; hapus provider", PV.opencodeFragment(home, { LUMI_KEY_OA: "envk" }).env.LUMI_KEY_OA === "envk" && PV.remove(home, "an") && !PV.opencodeFragment(home, {}).providers.an);
@@ -1055,12 +1055,12 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   fs.rmSync(sb, { recursive: true, force: true });
 }
 
-// ---------- v0.3.31: install.sh tar --no-same-owner + guard (4 titik) ----------
+// ---------- v0.3.31: install.sh tar --no-same-owner + guard (5 titik sejak v0.3.45: + fallback tarball) ----------
 {
   const INST31 = fs.readFileSync("install.sh", "utf8");
   const tarLines = INST31.split("\n").filter((l) => l.includes("tar ") && l.includes("-xzf"));
-  ok("install tar: --no-same-owner di SEMUA 4 titik ekstraksi + guard (|| die, atau run yang sudah die)",
-    tarLines.length === 4 && tarLines.every((l) => l.includes("tar --no-same-owner")) &&
+  ok("install tar: --no-same-owner di SEMUA 5 titik ekstraksi + guard (|| die, atau run yang sudah die)",
+    tarLines.length === 5 && tarLines.every((l) => l.includes("tar --no-same-owner")) &&
     tarLines.every((l) => l.includes("|| die") || l.includes("run tar")));
 }
 
@@ -1937,6 +1937,161 @@ ok("ringkasan: skipped terhitung dari skip() (maks. 2 situs di suite ini)",
       && /PERINGATAN/.test(r43.stderr) && /non-TTY/.test(r43.stderr) && /berasal dari env LUMI_TRUST_TIER/.test(r43.stderr));
     fs.rmSync(h43, { recursive: true, force: true });
   }
+}
+
+// ---------- v0.3.45 (P1-4): onboarding 9router sekali-klik + error yang membantu ----------
+// TDD (mattpocock): tes ini ditulis SEBELUM implementasi — harus MERAH dulu.
+{
+  const os = await import("node:os"), http = await import("node:http");
+  const PV = await import("../lumitome/lib/providers.mjs");
+  const UI = await import("../lumitome/lib/provider-ui.mjs");
+  let live = ["m-ok"];
+  const srv = http.createServer((q, r) => {
+    r.setHeader("content-type", "application/json");
+    if (q.url === "/v1/models") {
+      if (q.headers.authorization !== "Bearer k9") { r.statusCode = 401; return r.end("{}"); }
+      return r.end(JSON.stringify({ data: live.map((id) => ({ id })) }));
+    }
+    if (q.url.startsWith("/e401/")) { r.statusCode = 401; return r.end("{}"); }
+    if (q.url.startsWith("/e404/")) { r.statusCode = 404; return r.end("{}"); }
+    if (q.url.startsWith("/slow/")) return setTimeout(() => r.end(JSON.stringify({ data: [{ id: "m-slow" }] })), 2000);
+    r.statusCode = 404; r.end("{}");
+  });
+  await new Promise((r) => srv.listen(0, "127.0.0.1", r));
+  const base = `http://127.0.0.1:${srv.address().port}`;
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "lumip14-"));
+
+  // (1) preset 9router sekali Enter di menu provider
+  ok("P1-4 (1a) preset 9router: nama/type/baseURL lokal tetap (bukan server jarak jauh)",
+    UI.NINEROUTER_PRESET?.name === "9router" && UI.NINEROUTER_PRESET?.type === "openai"
+    && UI.NINEROUTER_PRESET?.baseURL === "http://127.0.0.1:20128/v1");
+  const pst = UI.initState({});
+  UI.applyPreset(pst);
+  ok("P1-4 (1a) applyPreset: isi nama+type+baseURL, fokus pindah ke API key (key TIDAK terisi)",
+    pst.name === "9router" && pst.type === 0 && pst.baseURL === "http://127.0.0.1:20128/v1" && pst.key === "" && pst.focus === "form:key");
+  const pst2 = UI.initState({}); pst2.focus = "preset:9router";
+  const actP = UI.reduce(pst2, { t: "enter" });
+  ok("P1-4 (1b) menu: Enter di baris preset mengisi form (bukan simpan), lalu fokus ke key",
+    actP?.save !== true && pst2.name === "9router" && pst2.baseURL === "http://127.0.0.1:20128/v1" && pst2.focus === "form:key");
+  const frP = UI.render(UI.initState({}), 100, 30);
+  ok("P1-4 (1b) menu: baris preset 9router tampil dengan URL lokal",
+    /9router \(lokal\)/.test(frP) && frP.includes("http://127.0.0.1:20128/v1"));
+  // (1c) --preset 9router di CLI teks: nama/type/baseURL terisi dari preset (key tetap manual)
+  {
+    process.env.LUMI_P14_KEY = "k9";
+    const errs = [];
+    const rc = await PV.cli({ argv: ["--preset", "9router", "--key-env", "LUMI_P14_KEY"], home, sub: "connect", env: {}, log: () => {}, err: (m) => errs.push(m) });
+    delete process.env.LUMI_P14_KEY;
+    ok("P1-4 (1c) CLI --preset 9router: memakai base URL lokal preset (gagal karena 9router tidak jalan di VM, bukan karena preset salah)",
+      rc === 1 && /127\.0\.0\.1:20128\/v1/.test(errs.join("\n")));
+    const errs2 = [];
+    const rc2 = await PV.cli({ argv: ["--preset", "ngawur", "--key-env", "LUMI_P14_KEY"], home, sub: "connect", env: {}, log: () => {}, err: (m) => errs2.push(m) });
+    ok("P1-4 (1c) CLI --preset tak dikenal: ditolak (exit 2)",
+      rc2 === 2 && /preset tidak dikenal/i.test(errs2.join("\n")));
+  }
+
+  // (2) connect dengan 0 model: tersimpan + peringatan (bukan gagal)
+  live = [];
+  const empty = await PV.add(home, { name: "kosong", type: "openai", baseURL: `${base}/v1`, key: "k9" });
+  const saved = PV.load(home);
+  ok("P1-4 (2a) connect 0 model: tersimpan dengan models [] + peringatan (bukan throw)",
+    Array.isArray(empty.models) && empty.models.length === 0 && typeof empty.warning === "string"
+    && /0 model/.test(empty.warning) && /refresh/i.test(empty.warning)
+    && Array.isArray(saved.kosong?.models) && saved.kosong.models.length === 0
+    && PV.opencodeFragment(home, {}).env.LUMI_KEY_KOSONG === "k9");
+  // CLI teks: connect 0 model juga sukses (exit 0) + peringatan di log
+  {
+    process.env.LUMI_P14_KEY = "k9";
+    const logs = [];
+    const rcEmpty = await PV.cli({ argv: ["--type", "openai", "--name", "kosong2", "--base-url", `${base}/v1`, "--key-env", "LUMI_P14_KEY"], home, sub: "connect", env: {}, log: (m) => logs.push(m), err: () => {} });
+    delete process.env.LUMI_P14_KEY;
+    ok("P1-4 (2a) CLI connect 0 model: exit 0 + peringatan di log, provider tersimpan",
+      rcEmpty === 0 && /0 model/.test(logs.join("\n")) && Array.isArray(PV.load(home).kosong2?.models));
+  }
+  live = ["m-ok"];
+  await PV.add(home, { name: "tumbuh", type: "openai", baseURL: `${base}/v1`, key: "k9" });
+  // server kosong lagi → refresh TIDAK menimpa cache berisi model
+  live = [];
+  const outEmpty = await PV.refresh(home, "tumbuh", { env: {} });
+  ok("P1-4 (2b) refresh 0 model: cache lama dipertahankan (tidak ditimpa daftar kosong)",
+    PV.load(home).tumbuh.models.join() === "m-ok" && typeof outEmpty.tumbuh === "string" && /cache lama/i.test(outEmpty.tumbuh));
+  // dashboard diisi → auto-refresh mengisi provider yang tadinya kosong
+  live = ["m-baru"];
+  await PV.autoRefresh(home, { env: {} });
+  ok("P1-4 (2b) auto-refresh: provider 0-model terisi begitu dashboard diisi",
+    PV.load(home).kosong.models.join() === "m-baru" && PV.load(home).tumbuh.models.join() === "m-baru");
+
+  // (3) pesan error deteksi: 401 vs 404 vs timeout vs koneksi ditolak — berbeda + saran tipe lain
+  let e401 = ""; try { await PV.detectModels("openai", `${base}/e401`, "salah", { timeoutMs: 5000 }); } catch (e) { e401 = e.message; }
+  let e401an = ""; try { await PV.detectModels("anthropic", `${base}/e401`, "salah", { timeoutMs: 5000 }); } catch (e) { e401an = e.message; }
+  let e404 = ""; try { await PV.detectModels("openai", `${base}/e404`, "k", { timeoutMs: 5000 }); } catch (e) { e404 = e.message; }
+  let eTo = ""; const t0 = Date.now(); try { await PV.detectModels("openai", `${base}/slow`, "k", { timeoutMs: 500 }); } catch (e) { eTo = e.message; } const toMs = Date.now() - t0;
+  let eConn = ""; try { await PV.detectModels("openai", "http://127.0.0.1:59998/v1", "k", { timeoutMs: 3000 }); } catch (e) { eConn = e.message; }
+  ok("P1-4 (3a) error 401: menyebut key salah + saran coba tipe lain",
+    /401/.test(e401) && /key/i.test(e401) && /coba tipe 'anthropic'/.test(e401)
+    && /401/.test(e401an) && /coba tipe 'openai'/.test(e401an));
+  ok("P1-4 (3b) error 404: menyebut base URL + saran coba tipe lain",
+    /404/.test(e404) && /base URL/i.test(e404) && /coba tipe 'anthropic'/.test(e404));
+  ok("P1-4 (3c) timeout: pesan timeout + saran periksa server, berhenti < 2 dtk",
+    /timeout/.test(eTo) && /server/i.test(eTo) && toMs < 2000);
+  ok("P1-4 (3d) koneksi ditolak: pesan 'tidak bisa terhubung' + base URL (bukan 'fetch failed' mentah)",
+    /tidak bisa terhubung/.test(eConn) && /127\.0\.0\.1:59998/.test(eConn) && !/^fetch failed$/.test(eConn));
+
+  // (4) install.sh: fallback tarball bila git tidak ada; pull gagal → WARN ke layar
+  const BASH14 = "/bin/bash";
+  const sb14 = fs.mkdtempSync(path.join(os.tmpdir(), "lumiinst14-"));
+  fs.mkdirSync(path.join(sb14, "tmp"), { recursive: true });
+  const bins14 = [];
+  const mkBin14 = (exclude = []) => { const d = fs.mkdtempSync(path.join(os.tmpdir(), "lumibin14-")); bins14.push(d);
+    for (const dir of ["/usr/bin", "/bin"]) { try { for (const f of fs.readdirSync(dir)) { if (exclude.includes(f)) continue; try { fs.symlinkSync(path.join(dir, f), path.join(d, f)); } catch {} } } catch {} } return d; };
+  const remoteCopy14 = (name) => { const d = path.join(sb14, name); fs.mkdirSync(d, { recursive: true }); fs.copyFileSync("install.sh", path.join(d, "install.sh")); return d; };
+  ok("P1-4 (4) install.sh: fallback tarball (archive/refs/heads/main.tar.gz) + peringatan pull gagal di sumber",
+    fs.readFileSync("install.sh", "utf8").includes("archive/refs/heads/main.tar.gz")
+    && /git pull gagal/.test(fs.readFileSync("install.sh", "utf8")));
+  // (4a) tanpa git + curl stub → tarball diunduh, diekstrak, install.sh hasil ekstrak dieksekusi
+  {
+    const d = remoteCopy14("remote-tarball");
+    const bin = mkBin14(["git", "curl"]);
+    const curlLog = path.join(sb14, "curl.log");
+    const stub = `#!/bin/bash\nout=""; url=""; prev="";\nfor a in "$@"; do if [ "$prev" = "-o" ]; then out="$a"; fi; prev="$a"; url="$a"; done\necho "$url" >> "${curlLog}"\nstage="$(mktemp -d)"; mkdir -p "$stage/Lumitome-main/scripts"\nprintf '#!/usr/bin/env bash\\necho "TARBALL-INSTALL-OK"\\nexit 0\\n' > "$stage/Lumitome-main/install.sh"\nprintf 'x' > "$stage/Lumitome-main/opencode.jsonc"\nprintf '#!/usr/bin/env bash\\nexit 0\\n' > "$stage/Lumitome-main/scripts/doctor.sh"\nprintf '0.3.45\\n' > "$stage/Lumitome-main/VERSION"\ntar -czf "$out" -C "$stage" Lumitome-main\n`;
+    fs.writeFileSync(path.join(bin, "curl"), stub); fs.chmodSync(path.join(bin, "curl"), 0o755);
+    const h = path.join(sb14, "h-tarball"); fs.mkdirSync(h, { recursive: true });
+    const r = cp.spawnSync(BASH14, [path.join(d, "install.sh")], { encoding: "utf8", timeout: 60000, env: { ...process.env, HOME: h, LUMI_HOME: path.join(h, ".lumitome"), TMPDIR: path.join(sb14, "tmp"), PATH: bin } });
+    const out = r.stdout + r.stderr;
+    ok("P1-4 (4a) install tanpa git: fallback tarball via curl → ekstrak + exec install.sh hasil unduhan",
+      r.status === 0 && /TARBALL-INSTALL-OK/.test(out) && fs.existsSync(curlLog)
+      && fs.readFileSync(curlLog, "utf8").includes("archive/refs/heads/main.tar.gz") && !/butuh 'git'/.test(out));
+  }
+  // (4b) tanpa git + tanpa curl → gagal jelas, menyebut keduanya
+  {
+    const d = remoteCopy14("remote-nogit-nocurl");
+    const bin = mkBin14(["git", "curl"]);
+    const h = path.join(sb14, "h-nogit"); fs.mkdirSync(h, { recursive: true });
+    const r = cp.spawnSync(BASH14, [path.join(d, "install.sh")], { encoding: "utf8", timeout: 60000, env: { ...process.env, HOME: h, LUMI_HOME: path.join(h, ".lumitome"), TMPDIR: path.join(sb14, "tmp"), PATH: bin } });
+    const out = r.stdout + r.stderr;
+    ok("P1-4 (4b) install tanpa git + tanpa curl: gagal jelas, menyebut git dan curl",
+      r.status !== 0 && /FAIL/.test(out) && /butuh 'git'/.test(out) && /curl/.test(out));
+  }
+  // (4c) git ada, pull gagal (origin mati) → WARN ke layar + lanjut dengan sumber lama
+  {
+    const d = remoteCopy14("remote-pull");
+    const h = path.join(sb14, "h-pull"); fs.mkdirSync(h, { recursive: true });
+    const lumiHome = path.join(h, ".lumitome");
+    const src = path.join(lumiHome, "src");
+    fs.mkdirSync(src, { recursive: true });
+    fs.writeFileSync(path.join(lumiHome, ".lumitome-home"), "");
+    cp.execFileSync("git", ["init", "-q", "-b", "main", src]);
+    cp.execFileSync("git", ["-C", src, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "c1"]);
+    cp.execFileSync("git", ["-C", src, "remote", "add", "origin", path.join(sb14, "tidak-ada.git")]);
+    fs.writeFileSync(path.join(src, "install.sh"), "#!/usr/bin/env bash\necho \"PULL-OLD-SRC-OK\"\nexit 0\n");
+    const r = cp.spawnSync(BASH14, [path.join(d, "install.sh")], { encoding: "utf8", timeout: 60000, env: { ...process.env, HOME: h, LUMI_HOME: lumiHome, TMPDIR: path.join(sb14, "tmp") } });
+    const out = r.stdout + r.stderr;
+    ok("P1-4 (4c) install: git pull gagal -> WARN ke layar + lanjut dengan sumber lama (bukan diam-diam)",
+      r.status === 0 && /WARN/.test(out) && /git pull gagal/.test(out) && /PULL-OLD-SRC-OK/.test(out));
+  }
+  srv.close(); fs.rmSync(home, { recursive: true, force: true });
+  fs.rmSync(sb14, { recursive: true, force: true });
+  for (const b of bins14) fs.rmSync(b, { recursive: true, force: true });
 }
 
 console.log(`\n${summaryLine(pass, fail, skipped)}`);
