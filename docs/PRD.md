@@ -25,12 +25,12 @@ Fahmi (pemilik). Agen coding OpenCode mengeksekusi di branch; Fahmi review & buk
 6. `/pentest` wajib consent+scope.
 
 ## Non-fungsional
-- Node ≥ 22. Indeks aktif target ≤ ~3k token. Single-writer progress files.
+- Node ≥ 22. Indeks aktif target ≤ ~22,4k token (estimasi chars/4; terukur 17.735 token pada 734 entri, v0.3.46 — cap per seksi di `router/index-budgets.mjs`, total 22.400). Target lama ≤ ~3k token sudah tidak berlaku sejak katalog tumbuh ke 734 skill (dilepas-dorman) dan dicabut di v0.3.46. Single-writer progress files.
 
 ## Metrik sukses
 | Metrik | Target |
 |---|---|
-| Token prompt indeks aktif | ≤ 3000 (estimasi chars/4) |
+| Token prompt indeks aktif | ≤ 22400 (estimasi chars/4; terukur 17735 pada 734 entri) |
 | Routing top-1 sektor | ≥ 95% pada golden ≥120 |
 | Recall@3 skill | ≥ 90% |
 | Done-gate false-positive | 0 pada set eval |

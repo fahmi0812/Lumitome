@@ -10,7 +10,7 @@ import path from "node:path";
 // kamus sinonim dwibahasa (kata → padanan); diterapkan ke token alias/deskripsi
 export const SYN = {
   laporan: ["report"], report: ["laporan"], kode: ["code"], code: ["kode"], tes: ["test", "uji"], test: ["tes", "uji"], uji: ["test", "tes"],
-  keamanan: ["security"], security: ["keamanan"], dokumen: ["document", "doc"], document: ["dokumen"], dokumentasi: ["documentation", "docs"],
+  keamanan: ["security"], security: ["keamanan"], dependensi: ["dependency"], dependency: ["dependensi"], celah: ["vulnerability", "kerentanan"], dokumen: ["document", "doc"], document: ["dokumen"], dokumentasi: ["documentation", "docs"],
   documentation: ["dokumentasi"], desain: ["design"], design: ["desain"], arsitektur: ["architecture"], architecture: ["arsitektur"], arsitek: ["architect"], architect: ["arsitek"], riset: ["research"], research: ["riset", "penelitian"],
   keuangan: ["finance", "financial"], finance: ["keuangan"], pajak: ["tax"], tax: ["pajak"], anggaran: ["budget"], budget: ["anggaran"],
   utang: ["debt", "hutang"], debt: ["utang"], tabungan: ["savings"], pembukuan: ["bookkeeping"], neraca: ["balance sheet"],

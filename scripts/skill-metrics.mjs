@@ -10,7 +10,8 @@ import { openDb, searchSkills, buildQueries, buildIndex, indexState, hintMatch, 
 import { layer0 } from "../router/layer0-regex.mjs";
 
 if (!indexState().fresh) await buildIndex({ quiet: true });
-const g = JSON.parse(fs.readFileSync("tests/golden-routing.json", "utf8"));
+const gi = process.argv.indexOf("--golden");
+const g = JSON.parse(fs.readFileSync(gi >= 0 ? process.argv[gi + 1] : "tests/golden-routing.json", "utf8"));
 const db = openDb("runtime/skills.db", { readOnly: true });
 const active = db.prepare("SELECT name FROM skill WHERE status='active'").all().map((r) => r.name);
 const meta = Object.fromEntries(db.prepare("SELECT k,v FROM meta").all().map((r) => [r.k, r.v]));

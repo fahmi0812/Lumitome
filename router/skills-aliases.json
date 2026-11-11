@@ -58,7 +58,7 @@
   "magic-ui": {"id": ["komponen magic ui"], "en": ["magic ui", "shadcn registry", "animated components"]},
   "gsap-core": {"id": ["animasi gsap", "tween"], "en": ["gsap", "tween", "easing", "stagger animation"]},
   "gsap-scrolltrigger": {"id": ["animasi scroll", "parallax", "efek gulir"], "en": ["scrolltrigger", "scroll animation", "parallax", "pin scrub"]},
-  "security-audit": {"id": ["audit keamanan", "celah keamanan", "kerentanan", "pentest kode"], "en": ["security audit", "vulnerability", "sql injection", "xss", "security review"]},
+  "security-audit": {"id": ["audit keamanan", "celah keamanan", "kerentanan", "pentest kode", "dependensi"], "en": ["security audit", "vulnerability", "sql injection", "xss", "security review", "dependency", "cve"]},
   "reverse-engineer-anything": {"id": ["rekayasa balik", "bongkar aplikasi", "apk"], "en": ["reverse engineer", "decompile", "apk", "firmware", "electron app"]},
   "rea-tool-design": {"id": ["desain tool investigasi"], "en": ["rea tool design", "investigation tool"]},
   "rea-analysis-optimization": {"id": ["optimasi analisis rea"], "en": ["rea analysis optimization"]},

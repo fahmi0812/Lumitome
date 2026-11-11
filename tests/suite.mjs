@@ -61,6 +61,14 @@ ok("layer0: rangkum paper -> riset", layer0("rangkum 3 paper tentang RAG").sekto
 // Tetap spesifik: "diagram arsitektur" tidak boleh ikut (penulisan), "rencana arsitektur" tetap riset.
 const ar = layer0("kerjakan review arsitektur API");
 ok("layer0: review arsitektur -> coding + architect/grill", ar.hit && ar.sektor === "coding" && ar.skillsHint.includes("architect") && ar.skillsHint.includes("grill"));
+// v0.3.46 P2-1 §2 — miss keamanan (pola v0.3.33: rule L0 + alias + sinonim ID↔EN).
+// Frasa natural tanpa kata "CVE" harus: sebelum fix, L0 miss total (sektor null).
+ok("layer0: kerentanan dependensi -> security + security-audit", (() => { const r = layer0("cek kerentanan dependensi"); return r.hit && r.sektor === "security" && r.skillsHint.includes("security-audit"); })());
+ok("layer0: celah keamanan dependensi -> security + security-audit", (() => { const r = layer0("scan dependensi cari celah keamanan"); return r.hit && r.sektor === "security" && r.skillsHint.includes("security-audit"); })());
+ok("layer0: audit keamanan dependensi -> security + security-audit", (() => { const r = layer0("tolong audit keamanan dependensi"); return r.hit && r.sektor === "security" && r.skillsHint.includes("security-audit"); })());
+ok("layer0: vulnerability CVE -> security + security-audit", (() => { const r = layer0("periksa library pihak ketiga, adakah vulnerability CVE-nya"); return r.hit && r.sektor === "security" && r.skillsHint.includes("security-audit"); })());
+ok("layer0: CVE -> security-audit hint pertama (bukan code-audit)", layer0("cek CVE dependency").skillsHint[0] === "security-audit");
+ok("layer0: SAST semgrep tetap code-audit (guard)", layer0("jalankan code audit SAST pakai semgrep di repo ini").skillsHint[0] === "code-audit");
 ok("layer0: diagram/rencana arsitektur tidak dibajak coding", layer0("bantu buat diagram arsitektur").sektor !== "coding" && layer0("interrogate rencana arsitektur ini, cari blind spot").sektor === "riset");
 const v014 = g.filter((c) => c.expect_skill);
 const v014Bad = v014.filter((c) => { const r = layer0(c.prompt); return !r.hit || r.sektor !== c.expect_sektor || !r.skillsHint.includes(c.expect_skill); });
@@ -87,6 +95,9 @@ ok("karpathy-guidelines di registry utama (pack=coding-extra), champion false, d
 const secTok = indexSectionTokens(idx);
 ok(`indeks: tiap seksi <= budget, total <= ${INDEX_TOTAL_BUDGET} (${Object.entries(secTok).filter(([k]) => k !== "total").map(([k, v]) => `${k} ${v}/${INDEX_SECTION_BUDGETS[k] ?? INDEX_DEFAULT_SECTION_BUDGET}`).join(", ")})`,
   Object.entries(secTok).filter(([k]) => k !== "total").every(([k, v]) => v <= (INDEX_SECTION_BUDGETS[k] ?? INDEX_DEFAULT_SECTION_BUDGET)) && secTok.total <= INDEX_TOTAL_BUDGET);
+// v0.3.46 P2-1 §5 — target anggaran realistis: total terukur ~17,7k tok (734 entri),
+// bukan 3k di PRD lama; budget 22,4k menampung realita (terukur x1,25).
+ok(`indeks: total terukur ~17,7k dalam budget realistis 22,4k (total ${secTok.total})`, secTok.total > 10000 && secTok.total <= INDEX_TOTAL_BUDGET);
 
 // --- v0.1.1: scan gate (fixture/mock, tanpa jaringan) ---
 const fx = (n) => JSON.parse(fs.readFileSync(`tests/fixtures/scan/${n}`, "utf8"));
@@ -313,13 +324,71 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   ok(`golden architect/grill: 4 miss lunas (misses_at5=${met.misses_at5})`, met.misses_at5 === 0);
   const ar2 = await SD.route("kerjakan review arsitektur API", { useL1: false, log: false });
   ok("route: review arsitektur API -> architect + grill-* terpilih", ar2.l0.hit && ar2.l0.sektor === "coding" && ar2.picked.includes("architect") && ar2.picked.some((p) => p.startsWith("grill")));
+  // v0.3.46 P2-1 §2+§3 — retrieval keamanan + pelebaran sektor saat kandidat lemah.
+  {
+    const L0m = await import("../router/l0.mjs");
+    const L0r = await import("../router/layer0-regex.mjs");
+    const sdb = SD.openDb("runtime/skills.db", { readOnly: true });
+    // Sektor + hint diambil dari layer0() asli (bukan di-hardcode): tes ini
+    // merah sebelum fix karena L0 memberi hint code-audit duluan / miss total.
+    const l0a = L0r.layer0("cek CVE dependency");
+    const s1 = L0m.searchL0(sdb, "cek CVE dependency", { sectors: l0a.sektor ? [l0a.sektor] : [], hints: l0a.skillsHint || [], n: 5 });
+    ok("P2-1: cek CVE dependency -> security-audit top-1", s1.candidates[0]?.name === "security-audit");
+    const l0b = L0r.layer0("scan dependensi dan laporkan celah keamanan yang diketahui");
+    const s2 = L0m.searchL0(sdb, "scan dependensi dan laporkan celah keamanan yang diketahui", { sectors: l0b.sektor ? [l0b.sektor] : [], hints: l0b.skillsHint || [], n: 5 });
+    ok("P2-1: celah keamanan dependensi -> security-audit top-5", s2.candidates.slice(0, 5).some((c) => c.name === "security-audit"));
+    const w1 = L0m.searchL0(sdb, "cek CVE dependency", { sectors: ["media"], hints: [], n: 5 });
+    ok("P2-1: sektor salah + kandidat lemah -> dilebarkan, security-audit top-5", w1.widened === true && w1.candidates.slice(0, 5).some((c) => c.name === "security-audit"));
+    const w2 = L0m.searchL0(sdb, "tulis unit test untuk parseDate", { sectors: ["coding"], hints: ["tdd"], n: 5 });
+    ok("P2-1: sektor benar + kandidat kuat -> tidak dilebarkan", w2.widened === false);
+    sdb.close();
+  }
+  // v0.3.46 P2-1 §4 — cache L1: TTL 7 hari + fetch kalah race dibatalkan.
+  {
+    const l1dir = fs.mkdtempSync(path.join(os.tmpdir(), "l1-"));
+    const l1file = path.join(l1dir, "l1-cache.json");
+    process.env.SW_L1_CACHE = l1file;
+    const origFetch = globalThis.fetch;
+    let calls = 0;
+    globalThis.fetch = async () => { calls++; return { ok: true, text: async () => JSON.stringify({ choices: [{ message: { content: JSON.stringify({ skills: ["security-audit"], confidence: 0.9 }) } }] }) }; };
+    const cands = [{ name: "security-audit", description: "review kerentanan" }, { name: "code-audit", description: "audit kode" }];
+    const rFresh = await SD.selectL1("cek CVE dependency", cands, { root: "." });
+    ok("L1: fetch pertama ok + tersimpan", rFresh.status === "ok" && rFresh.skills[0] === "security-audit" && calls === 1);
+    const rHit = await SD.selectL1("cek CVE dependency", cands, { root: "." });
+    ok("L1: entri segar -> cache hit tanpa fetch", rHit.cached === true && calls === 1);
+    const cache = JSON.parse(fs.readFileSync(l1file, "utf8"));
+    for (const k of Object.keys(cache)) cache[k].ts = Date.now() - 8 * 86400 * 1000;
+    fs.writeFileSync(l1file, JSON.stringify(cache));
+    const rStale = await SD.selectL1("cek CVE dependency", cands, { root: "." });
+    ok("L1: entri kedaluwarsa (8 hari > TTL 7 hari) -> fetch ulang", rStale.cached !== true && rStale.status === "ok" && calls === 2);
+    let seenSignal = null;
+    globalThis.fetch = (_u, opts) => new Promise((_res, rej) => { seenSignal = opts.signal; opts.signal.addEventListener("abort", () => rej(Object.assign(new Error("aborted"), { name: "AbortError" })), { once: true }); });
+    const ac = new AbortController();
+    // timeout internal 30 dtk: bila sinyal luar TIDAK diteruskan ke fetch,
+    // tes ini menggantung 30 dtk (bukan ~50 mdtk) dan gagal di asersi waktu.
+    const tAb = Date.now();
+    const p = SD.selectL1("cek CVE dependency lain", cands, { root: ".", timeoutMs: 30000, signal: ac.signal });
+    await new Promise((r) => setTimeout(r, 50)); ac.abort();
+    const rAb = await p;
+    ok("L1: sinyal luar diabort -> fetch dibatalkan (bukan gantung)", seenSignal?.aborted === true && rAb.status === "unavailable" && Date.now() - tAb < 5000);
+    globalThis.fetch = origFetch;
+    delete process.env.SW_L1_CACHE;
+    fs.rmSync(l1dir, { recursive: true, force: true });
+  }
   // §4 v0.3.33: metrik golden DIPIN PERSIS pada baseline BARU v0.3.33
   // (bukan ambang longgar) — optimasi latensi dilarang mengubah semantik
   // ranking. Pin diperbarui dari v0.3.32 (recall@5 0,9643, MRR 0,8795,
   // miss 4) ke angka pasca-§5 yang sah: §5 melunasi 4 miss architect/grill
   // (coding-04/09/14/19) → recall@5 1,0, MRR 0,8973, miss 0.
-  ok(`metrik identik baseline v0.3.33: recall@5=${met.selected_recall_at5_any} top-1=${met.top1_accuracy} MRR=${met.mrr_at32} miss=${met.misses_at5} L0-mismatch=${met.layer0_mismatch}`,
-    met.selected_recall_at5_any === 1 && met.top1_accuracy === 0.7946 && met.mrr_at32 === 0.8973 && met.misses_at5 === 0 && met.layer0_mismatch === 0);
+  // v0.3.46 P2-1: pin diperbarui lagi ke angka pasca-tuning keamanan yang
+  // sah (bukan dilemahkan): rule L0 CVE/kerentanan + alias dependensi/cve
+  // + sinonim dependensi/celah membuat 4 kasus "cek CVE dependency"
+  // (security-04/09/14/19) top-1 security-audit (dulu code-audit) →
+  // top-1 0,7946 → 0,8304, MRR 0,8973 → 0,9152; recall@5 tetap 1,0,
+  // miss 0, L0-mismatch 0. Held-out 24 (tidak dipakai saat tuning):
+  // top-1 0,6667 → 0,8333, recall@5 0,9583 → 1,0, MRR 0,7847 → 0,9028.
+  ok(`metrik identik baseline v0.3.46: recall@5=${met.selected_recall_at5_any} top-1=${met.top1_accuracy} MRR=${met.mrr_at32} miss=${met.misses_at5} L0-mismatch=${met.layer0_mismatch}`,
+    met.selected_recall_at5_any === 1 && met.top1_accuracy === 0.8304 && met.mrr_at32 === 0.9152 && met.misses_at5 === 0 && met.layer0_mismatch === 0);
   // §4 v0.3.33: latensi route() — median 30 prompt golden pertama (warmup 3x).
   // Baseline v0.3.32: median ~62ms; sesudah optimasi trigram + vocab-cache:
   // ~8–12ms. Ambang 40ms memberi headroom noise VM tapi gagal pada kecepatan lama.

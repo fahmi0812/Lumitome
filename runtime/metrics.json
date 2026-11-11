@@ -1,102 +1,21 @@
 {
   "golden_total": 154,
   "layer0_mismatch": 0,
-  "layer0_hit": 91,
-  "cases_with_gold": 96,
+  "layer0_hit": 111,
+  "cases_with_gold": 112,
   "embed": "none",
   "dim": 0,
   "vec": "v0.1.9",
-  "top1_accuracy": 0.7813,
-  "selected_recall_at5_any": 0.9167,
-  "selected_recall_at5_frac": 0.8264,
-  "candidate_recall_at16": 0.9167,
-  "candidate_recall_at32": 0.9167,
-  "mrr_at32": 0.842,
+  "top1_accuracy": 0.8304,
+  "selected_recall_at5_any": 1,
+  "selected_recall_at5_frac": 0.8255,
+  "candidate_recall_at16": 1,
+  "candidate_recall_at32": 1,
+  "mrr_at32": 0.9152,
   "zero_load_rate": 0,
-  "retrieval_ms_p50": 0.33,
-  "retrieval_ms_p95": 0.72,
-  "misses_at5": 8,
-  "miss_examples": [
-    {
-      "id": "security-04",
-      "gold": [
-        "security-audit"
-      ],
-      "top": [
-        "smartdoc",
-        "unified-done-gate",
-        "humanizer-indonesia"
-      ]
-    },
-    {
-      "id": "security-09",
-      "gold": [
-        "security-audit"
-      ],
-      "top": [
-        "smartdoc",
-        "unified-done-gate",
-        "humanizer-indonesia"
-      ]
-    },
-    {
-      "id": "security-14",
-      "gold": [
-        "security-audit"
-      ],
-      "top": [
-        "smartdoc",
-        "unified-done-gate",
-        "humanizer-indonesia"
-      ]
-    },
-    {
-      "id": "security-19",
-      "gold": [
-        "security-audit"
-      ],
-      "top": [
-        "smartdoc",
-        "unified-done-gate",
-        "humanizer-indonesia"
-      ]
-    },
-    {
-      "id": "riset-04",
-      "gold": [
-        "deep-research"
-      ],
-      "top": [
-        "research"
-      ]
-    },
-    {
-      "id": "riset-09",
-      "gold": [
-        "deep-research"
-      ],
-      "top": [
-        "research"
-      ]
-    },
-    {
-      "id": "riset-14",
-      "gold": [
-        "deep-research"
-      ],
-      "top": [
-        "research"
-      ]
-    },
-    {
-      "id": "riset-19",
-      "gold": [
-        "deep-research"
-      ],
-      "top": [
-        "research"
-      ]
-    }
-  ],
+  "retrieval_ms_p50": 0.91,
+  "retrieval_ms_p95": 2.87,
+  "misses_at5": 0,
+  "miss_examples": [],
   "note": "Tanpa Layer-1 (9router). selected@5 = top-5 retrieval deterministik."
 }

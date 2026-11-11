@@ -27,9 +27,9 @@ Alur (`route()` di `router/skill-db.mjs`):
 8. **skill_search** (MCP stdio, read-only, DB `readOnly`) — satu server `skills` untuk semua sektor (sejak v0.3.13), hanya allowlist sektor itu.
 9. **Rebuild**: `scripts/skill-index.mjs --if-changed` — hash = SHA-256(registry + layer0 + tiap SKILL.md + status + provider embed + versi skema).
 
-Metrik (`npm run skills:metrics`, golden 154, 112 kasus punya gold skill, tanpa L1, BM25-only, TRIAL lepas-dorman 8 Nov 2026; baseline v0.3.26: 96 kasus, top-1 0,7396, recall@5 0,9167):
-top-1 **0,6696** · recall@5 (any) **0,7857** · recall@5 (fraksi) **0,6446** · candidate-recall@16/@32 **0,8214** · MRR **0,7277** · zero-load **0,0357** · retrieval p50 **1,89 ms** / p95 **6,89 ms**. Regresi vs baseline = dilusi katalog 110 → 624 skill (kasus gold lama saja: recall@5 0,8750); menaikkan kembali angka = tugas tuning, bukan trial ini.
-Catatan jujur: golden berisi banyak prompt templat berulang ("kasus N") → angka optimistis; miss utama "cek CVE dependency" (tanpa hit Layer-0) tidak menemukan `security-audit`.
+Metrik (`npm run skills:metrics`, golden 154, 112 kasus punya gold skill, tanpa L1, BM25-only; baseline v0.3.26: 96 kasus, top-1 0,7396, recall@5 0,9167):
+top-1 **0,8304** · recall@5 (any) **1,0** · recall@5 (fraksi) **0,8255** · candidate-recall@16/@32 **1,0** · MRR **0,9152** · zero-load **0** · retrieval p50 **~1 ms** / p95 **~3 ms** (v0.3.46, katalog 734). Sebelum tuning v0.3.46: top-1 0,7946, MRR 0,8973, recall@5 1,0. Trial lepas-dorman 8 Nov 2026 (katalog 624, BM25-only tanpa L1) sempat top-1 0,6696 / recall@5 0,7857 / MRR 0,7277 — regresi vs baseline = dilusi katalog 110 → 624 skill; tuning 3 putaran + v0.3.33 + v0.3.46 mengembalikannya.
+Catatan jujur: golden berisi banyak prompt templat berulang ("kasus N") → angka optimistis; held-out 24 kasus prompt natural (`tests/golden-routing-heldout.json`, TIDAK dipakai saat tuning) v0.3.46: top-1 0,8333, recall@5 1,0, MRR 0,9028 (sebelum tuning: top-1 0,6667, recall@5 0,9583, MRR 0,7847, 1 miss). Miss lama "cek CVE dependency" (tanpa hit Layer-0) lunas di v0.3.46: 6/6 kasus keamanan held-out kini top-1 `security-audit`.
 
 ## 3. MCP per sektor
 | Sektor | Server (selain `skills`, `gw-<sektor>`) |

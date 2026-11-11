@@ -394,7 +394,11 @@ export function parseSelection(txt) {
   throw new SyntaxError("objek JSON tidak tertutup");
 }
 export function routerKey() { return process.env.SW_9ROUTER_KEY || process.env.NINEROUTER_API_KEY || process.env.LUMI_9ROUTER_KEY || ""; }
-export async function selectL1(prompt, candidates, { root = ".", timeoutMs } = {}) {
+/** TTL cache L1 (detik; default 7 hari, sama seperti route-cache) — v0.3.46 P2-1 §4.
+ * Dulu tanpa TTL: pilihan model lama bisa awet selamanya. Entri tanpa `ts`
+ * (dibuat sebelum TTL ada) dianggap kedaluwarsa dan di-fetch ulang. */
+export function l1CacheTtlMs() { return Number(process.env.SW_L1_CACHE_TTL_S || 604800) * 1000; }
+export async function selectL1(prompt, candidates, { root = ".", timeoutMs, signal } = {}) {
   const base = process.env.SW_9ROUTER_URL || process.env.LUMI_9ROUTER_URL || "http://127.0.0.1:20128/v1";
   const model = process.env.SW_ROUTER_MODEL || "ag/gemini-3.8-flash-high";
   const key = routerKey();
@@ -407,16 +411,27 @@ export async function selectL1(prompt, candidates, { root = ".", timeoutMs } = {
   const ckey = sha256(`${model}\n${user}`).slice(0, 32);
   const cfile = process.env.SW_L1_CACHE || path.join(root, "runtime/l1-cache.json");
   let cache = {}; try { cache = JSON.parse(fs.readFileSync(cfile, "utf8")); } catch {}
-  if (process.env.SW_L1_CACHE !== "0" && cache[ckey]) return { ...cache[ckey], ms: 0, cached: true };
+  const ttlMs = l1CacheTtlMs();
+  if (process.env.SW_L1_CACHE !== "0") {
+    const hit = cache[ckey];
+    if (hit && hit.ts && Date.now() - hit.ts <= ttlMs) { const { ts: _ts, ...rest } = hit; return { ...rest, ms: 0, cached: true }; }
+  }
   const save = (res) => { if (process.env.SW_L1_CACHE === "0" || res.status !== "ok") return res;
-    try { cache[ckey] = { ...res }; const ks = Object.keys(cache); for (const k of ks.slice(0, Math.max(0, ks.length - 500))) delete cache[k];
+    try { cache[ckey] = { ts: Date.now(), ...res };
+      for (const k of Object.keys(cache)) { const e = cache[k]; if (!e.ts || Date.now() - e.ts > ttlMs) delete cache[k]; }
+      const ks = Object.keys(cache); for (const k of ks.slice(0, Math.max(0, ks.length - 500))) delete cache[k];
       fs.mkdirSync(path.dirname(cfile), { recursive: true }); fs.writeFileSync(cfile + ".tmp", JSON.stringify(cache), { mode: 0o600 }); fs.renameSync(cfile + ".tmp", cfile); } catch {}
     return res; };
   candidates = cands;
   const t0 = performance.now();
   try {
+    // v0.3.46 P2-1 §4 — sinyal luar (dari route() saat race timeout menang)
+    // digabung dengan timeout internal: fetch yang kalah race dibatalkan,
+    // bukan dibiarkan jalan sampai timeout-nya sendiri.
+    const timeoutSignal = AbortSignal.timeout(timeoutMs || Number(process.env.SW_L1_TIMEOUT_MS || 3000));
+    const sig = signal ? AbortSignal.any([timeoutSignal, signal]) : timeoutSignal;
     const r = await fetch(`${base}/chat/completions`, {
-      method: "POST", signal: AbortSignal.timeout(timeoutMs || Number(process.env.SW_L1_TIMEOUT_MS || 3000)),
+      method: "POST", signal: sig,
       headers: { "content-type": "application/json", accept: "application/json", "user-agent": "swanwright-router/0.2", authorization: `Bearer ${key || "9router"}` },
       body: JSON.stringify({ model, stream: false, temperature: 0, max_tokens: 400, response_format: { type: "json_object" }, messages: [{ role: "system", content: sys }, { role: "user", content: user }] }),
     });
@@ -460,8 +475,11 @@ export async function route(prompt, { root = ".", file = DEFAULT_DB, useL1 = tru
   let l1 = { status: "skipped", reason: low ? "no-candidates" : "confident" };
   if (res.candidates.length && (mode === "always" || (mode === "auto" && low))) {
     const tk = Number(process.env.SW_L1_TOPK || 8), ms = Number(process.env.SW_L1_TIMEOUT_MS || 3000);
-    let timer; const to = new Promise((r) => { timer = setTimeout(() => r({ status: "timeout", ms }), ms); });
-    l1 = await Promise.race([selectL1(prompt, res.candidates.slice(0, tk), { root, timeoutMs: ms }), to]); clearTimeout(timer);
+    // v0.3.46 P2-1 §4 — timeout race membatalkan fetch L1 (AbortController),
+    // bukan hanya mengabaikan hasilnya sementara fetch jalan terus.
+    const ac = new AbortController();
+    let timer; const to = new Promise((r) => { timer = setTimeout(() => { ac.abort(); r({ status: "timeout", ms }); }, ms); });
+    l1 = await Promise.race([selectL1(prompt, res.candidates.slice(0, tk), { root, timeoutMs: ms, signal: ac.signal }), to]); clearTimeout(timer);
   }
   const picked = l1.status === "ok" && l1.skills.length ? l1.skills : pickL0(res.candidates);
   const out = { l0: L0, candidates: res.candidates, picked, l1, conf: res.conf, fixes: res.fixes, retr_ms: res.retr_ms };

@@ -101,7 +101,20 @@ export function searchL0(db, prompt, { sectors = [], hints = [], n = 12 } = {}) 
     return { fused: rrf(lists, 60, weights), bm, fixes, lists: lists.length };
   };
   let res = run(sectors), widened = false;
-  if (sectors.length && !res.fused.length) { res = run([]); widened = true; }
+  // v0.3.46 P2-1 §3 — dulu hanya bila fusi kosong. Bila L0 salah sektor tapi
+  // kandidatnya lemah (skor fusi rendah DAN BM25 teratas rendah), lebarkan
+  // juga: terukur di golden 154, gabungan ambang ini menangkap 56/112 kasus
+  // sektor-salah dengan false-widen 9/112 kasus sektor-benar. BM25 saja
+  // tidak memisahkan (median sektor-benar 17,3 vs sektor-salah 11,1);
+  // skor fusi saja juga tidak (median 0,042 vs 0,026, rentang tumpang tindih).
+  // Ambang via env SW_WIDEN_SCORE (0,03) / SW_WIDEN_BM25 (12).
+  const weak = (r) => {
+    if (!r.fused.length) return true;
+    const topScore = r.fused[0][1];
+    const topBm = r.bm.get(r.fused[0][0]) || 0;
+    return topScore < Number(process.env.SW_WIDEN_SCORE || 0.03) && topBm < Number(process.env.SW_WIDEN_BM25 || 12);
+  };
+  if (sectors.length && weak(res)) { res = run([]); widened = true; }
   const info = db.prepare("SELECT sector, short, description, requires_consent FROM skill WHERE name = ?");
   const candidates = res.fused.slice(0, n).map(([name, score], i) => { const r = info.get(name); return { rank: i + 1, name, sector: r.sector, score: +score.toFixed(5), bm25: +(res.bm.get(name) || 0).toFixed(3), ask: !!r.requires_consent, description: sanitize(r.short || r.description, 200) }; });
   const b = [...res.bm.values()].sort((x, y) => y - x);

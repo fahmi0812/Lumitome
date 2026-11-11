@@ -37,6 +37,15 @@ export const KEYWORD_RULES = [
   { re: /\b(interrogate|adversarial review|blind spots?|stress test (kode|code|rencana|ide))\b/i, sektor: "riset", skillsHint: ["interrogate"] },
   { re: /\b(figure it out|playbook (migrasi|perubahan)|migrasi besar)\b/i, sektor: "riset", skillsHint: ["figure-it-out"] },
   { re: /\b(riset|research|sumber primer)\b(?!.*\b(tulis|naskah)\b)/i, sektor: "riset", skillsHint: ["research", "deep-research"] },
+  // v0.3.46 P2-1 §2 — miss keamanan, pola v0.3.33 (rule L0 spesifik dulu +
+  // alias kurasi + sinonim ID↔EN): "cek CVE dependency" dulu top-1 code-audit
+  // (hint code-audit duluan) dan frasa natural "kerentanan/celah/audit
+  // keamanan + dependensi" L0 miss total (security-audit hanya via BM25;
+  // held-sec-03 bahkan miss dari top-32). Spesifik dulu, sebelum rule umum
+  // "code audit/SAST" di bawah — SAST/semgrep tanpa CVE/dependensi tetap
+  // code-audit (guard di tests/suite.mjs).
+  { re: /\bcve\b/i, sektor: "security", skillsHint: ["security-audit", "code-audit"] },
+  { re: /\b(kerentanan|celah keamanan|audit keamanan|vulnerab\w*)\b/i, sektor: "security", skillsHint: ["security-audit"] },
   { re: /\b(code audit|audit kode|sast|semgrep|codeql|cve)\b/i, sektor: "security", skillsHint: ["code-audit", "security-audit"] },
   // v0.3.33 — review arsitektur = architect (sketsa/validasi struktur sebelum
   // kode) + grill-* (interogasi desain sampai tajam). Jendela 2 kata menutup
