@@ -285,4 +285,66 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
   }
 }
 
+// --- v0.3.51: mode auto jadi default (flag --auto engine; deny tetap berlaku) ---
+{
+  const AM = await import("../lumitome/lib/auto-mode.mjs");
+  const G = await import("../harness/lumi-guard.mjs");
+  ok("auto-mode: default (tanpa env/flag) = auto aktif, sumber default",
+    AM.resolveAutoMode({ env: {}, argv: [] }).auto === true && AM.resolveAutoMode({ env: {}, argv: [] }).source === "default");
+  ok("auto-mode: LUMI_AUTO_MODE=0 mematikan; =1 / tidak diset menyalakan",
+    AM.resolveAutoMode({ env: { LUMI_AUTO_MODE: "0" }, argv: [] }).auto === false
+    && AM.resolveAutoMode({ env: { LUMI_AUTO_MODE: "1" }, argv: [] }).auto === true
+    && AM.resolveAutoMode({ env: { LUMI_AUTO_MODE: "false" }, argv: [] }).auto === false
+    && AM.resolveAutoMode({ env: { LUMI_AUTO_MODE: "off" }, argv: [] }).auto === false);
+  ok("auto-mode: flag --no-auto mematikan dan menang atas env =1",
+    AM.resolveAutoMode({ env: {}, argv: ["--no-auto"] }).auto === false
+    && AM.resolveAutoMode({ env: { LUMI_AUTO_MODE: "1" }, argv: ["run", "--no-auto", "x"] }).auto === false
+    && AM.resolveAutoMode({ env: {}, argv: ["--no-auto"] }).source === "flag");
+  ok("auto-mode: stripNoAuto membuang --no-auto, argumen lain utuh",
+    JSON.stringify(AM.stripNoAuto(["run", "--no-auto", "kerjakan x"])) === JSON.stringify(["run", "kerjakan x"])
+    && JSON.stringify(AM.stripNoAuto(["--no-auto"])) === JSON.stringify([]));
+  ok("auto-mode: withAutoFlag menaruh --auto di depan (TUI) / sesudah run, tanpa duplikat",
+    JSON.stringify(AM.withAutoFlag([])) === JSON.stringify(["--auto"])
+    && JSON.stringify(AM.withAutoFlag(["run", "--standalone", "-m", "m", "x"])) === JSON.stringify(["run", "--auto", "--standalone", "-m", "m", "x"])
+    && JSON.stringify(AM.withAutoFlag(["--auto"])) === JSON.stringify(["--auto"]));
+  ok("auto-mode: baris start menyebut status + cara mematikan/menyalakan",
+    /mode auto aktif/.test(AM.autoStartLine({ auto: true })) && /LUMI_AUTO_MODE=0/.test(AM.autoStartLine({ auto: true }))
+    && /mode auto mati/.test(AM.autoStartLine({ auto: false })) && /LUMI_AUTO_MODE=1/.test(AM.autoStartLine({ auto: false })));
+  ok("auto-mode: deny guard TETAP berlaku walau auto default (push main, .env, sudo, rm luar)",
+    AM.resolveAutoMode({ env: {}, argv: [] }).auto === true
+    && G.classifyShell("git push origin main", { workspace: "/workspace/x", headless: false, branch: "feat/a" }).effect === "deny"
+    && G.classifyShell("cat .env", { workspace: "/workspace/x", headless: false }).effect === "deny"
+    && G.classifyShell("sudo rm -rf /", { workspace: "/workspace/x", headless: false }).effect === "deny"
+    && G.classifyShell("rm -rf /workspace/other", { workspace: "/workspace/x", headless: false }).effect === "deny");
+  ok("auto-mode: guard tetap mengembalikan ask untuk push branch (bukan allow) — yang mengubahnya jadi jalan adalah flag --auto engine",
+    G.classifyShell("git push origin feat/a", { workspace: "/workspace/x", headless: false, branch: "feat/a" }).effect === "ask"
+    && G.classifyShell("git push origin feat/a", { workspace: "/workspace/x", headless: true, branch: "feat/a" }).effect === "deny");
+  // Integrasi wrapper (stub opencode): `lumitome run` meneruskan --auto + mencetak baris start.
+  {
+    const osm51 = await import("node:os");
+    const cp51 = await import("node:child_process");
+    const h51 = fs.mkdtempSync(path.join(osm51.tmpdir(), "lumiauto51-"));
+    const stub51 = path.join(h51, "fake-opencode");
+    const argvFile = path.join(h51, "argv.json");
+    fs.writeFileSync(stub51, "#!/usr/bin/env node\nconst fs=require('node:fs');\nfs.writeFileSync(process.env.LUMI_ARGV_FILE, JSON.stringify(process.argv.slice(2)));\nfor (const r of [{kind:\"guard\",status:\"ok\"}]) fs.appendFileSync(process.env.LUMI_JOURNAL, JSON.stringify(r)+'\\n');\n");
+    fs.chmodSync(stub51, 0o755);
+    const run51 = (extraEnv, extraArgs = []) => cp51.spawnSync(process.execPath, ["--experimental-strip-types", "--no-warnings", path.resolve("lumitome/bin/lumitome.mjs"), "run", ...extraArgs, "tolong jelaskan x"],
+      { encoding: "utf8", timeout: 60000, cwd: h51, input: "",
+        env: { ...process.env, HOME: h51, LUMI_HOME: h51, LUMI_OPENCODE: stub51, LUMI_WORKSPACE: h51, LUMI_AUTO_INDEX: "0", LUMI_PREFLIGHT: "0", NINEROUTER_API_KEY: "fake", LUMI_ARGV_FILE: argvFile, ...extraEnv } });
+    const r51a = run51({});
+    const a51a = JSON.parse(fs.readFileSync(argvFile, "utf8"));
+    ok("auto-mode integrasi: `lumitome run` default meneruskan --auto (run --auto ...) + baris start aktif",
+      r51a.status === 0 && a51a[0] === "run" && a51a[1] === "--auto" && /mode auto aktif/.test(r51a.stderr) && /LUMI_AUTO_MODE=0/.test(r51a.stderr));
+    const r51b = run51({ LUMI_AUTO_MODE: "0" });
+    const a51b = JSON.parse(fs.readFileSync(argvFile, "utf8"));
+    ok("auto-mode integrasi: LUMI_AUTO_MODE=0 → tanpa --auto + baris start mati",
+      r51b.status === 0 && !a51b.includes("--auto") && /mode auto mati/.test(r51b.stderr));
+    const r51c = run51({}, ["--no-auto"]);
+    const a51c = JSON.parse(fs.readFileSync(argvFile, "utf8"));
+    ok("auto-mode integrasi: flag --no-auto → tanpa --auto dan tanpa --no-auto diteruskan ke engine",
+      r51c.status === 0 && !a51c.includes("--auto") && !a51c.includes("--no-auto"));
+    fs.rmSync(h51, { recursive: true, force: true });
+  }
+}
+
 finish();

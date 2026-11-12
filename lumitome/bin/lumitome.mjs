@@ -3,7 +3,8 @@
  * lumitome — CLI harness Lumitome di atas OpenCode v2.
  *  - config dasar: OPENCODE_CONFIG_DIR=lumitome/config (berisi plugin guard)
  *  - override final (menang atas config proyek): OPENCODE_CONFIG_CONTENT
- *  - run: --standalone, model default, headless (ask → deny), jurnal, done-gate, anti-spin, retry timeout, cleanup proses
+ *  - run: --standalone + --auto (default; LUMI_AUTO_MODE=0 / --no-auto mematikan), model default, headless (deny tetap berlaku), jurnal, done-gate, anti-spin, retry timeout, cleanup proses
+ *  - TUI polos: --auto default (sama seperti `opencode --auto`) — agent jalan sendiri tanpa konfirmasi tiap aksi rutin
  * Exit: 0 ok | 1 error opencode | 2 argumen salah | 3 DONE-GATE FAIL | 4 ANTI-SPIN trip | 5 guard tidak termuat | 124 timeout provider
  */
 import { spawn, spawnSync, execFileSync } from "node:child_process";
@@ -342,7 +343,12 @@ const keepPids = () => { try { return SC.protectedPids(HOME); } catch { return n
 const reaped = reapOrphans();
 if (reaped && env.LUMI_DEBUG) process.stderr.write(`lumitome: reaper membersihkan ${reaped} proses yatim\n`);
 // ---------- argumen ----------
-let args = argv.slice();
+// v0.3.51: mode auto default — flag --auto engine OpenCode (auto-approve yang
+// bukan deny; deny tetap berlaku, guard tetap termuat). Opt-out:
+// LUMI_AUTO_MODE=0 atau --no-auto (flag dibuang di sini, jangan sampai ke engine).
+const AM = await import(pathToFileURL(path.join(ROOT, "lib", "auto-mode.mjs")).href);
+const AUTO = AM.resolveAutoMode({ env, argv });
+let args = AM.stripNoAuto(argv.slice());
 if (sub === "run") {
   const rest = args.slice(1);
   const mIdx = rest.flatMap((a, i) => (a === "-m" || a === "--model" || a.startsWith("--model=") ? [i] : []));
@@ -355,6 +361,10 @@ if (sub === "run") {
 } else if (["session", "debug", "mcp", "models", "stats"].includes(sub) && !args.includes("--standalone") && !args.includes("--server")) {
   args = [...args, "--standalone"];
 }
+// v0.3.51: --auto hanya untuk TUI polos + run (subcommand lain tidak diubah).
+if (AUTO.auto && (sub === "" || sub === "run")) args = AM.withAutoFlag(args);
+// Satu baris status saat start (Bahasa Indonesia, tanpa jargon); bukan banner.
+if (sub === "" || sub === "run") process.stderr.write(`lumitome: ${AM.autoStartLine(AUTO)}\n`);
 
 // ---------- jalankan + cleanup ----------
 function descendantsByRunId() {

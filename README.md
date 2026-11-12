@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.50-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.51-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -40,7 +40,7 @@ While it installs (and uninstalls) you see one status line and one line when it 
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.50.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.51.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
@@ -94,6 +94,7 @@ lumitome run "fix the failing tests"
 ### What is turned on for you
 
 - **A main helper that hands work to specialists.** When you open `lumitome`, you talk to a coordinator. It passes each job to the right specialist (coding, research, writing, or security) and checks the result. `lumitome run` uses the plain worker, which is the safest choice when nobody is watching. To pick a different one, set `LUMI_AGENT`, for example `LUMI_AGENT=build lumitome`.
+- **Auto mode is on by default.** When you open `lumitome` (or run `lumitome run`), the agent works on its own without asking you to approve every step — you can leave it running overnight, just like plain `opencode --auto`. Things that are blocked stay blocked (secrets, destructive commands, pushing to main). To turn it off for one run: `LUMI_AUTO_MODE=0 lumitome` or `lumitome --no-auto`.
 - **Two tool servers.** Code memory (`codemem`, only inside a git repo) and one `skills` server that covers every sector: coding, research, writing, security, finance, and media. Each sector agent can only search its own sector. Pick servers with `LUMI_MCP`, for example `LUMI_MCP=skills`.
 - **Code memory.** Lumitome remembers how your project fits together, so it finds the right files faster. The first time you open Lumitome in a project folder, it reads the project quietly in the background. You can keep working while it does. It skips your home folder, system folders, and folders that do not look like a project. To turn this off: `LUMI_AUTO_INDEX=0`. The index is refreshed automatically when the project changes (new commit or edited files); to force a re-index by hand: `lumitome index --refresh`.
 
