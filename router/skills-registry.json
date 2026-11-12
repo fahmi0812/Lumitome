@@ -1477,6 +1477,23 @@
       "original_name": "large-file-refactor"
     },
     {
+      "id": "latency-optimization",
+      "name": "latency-optimization",
+      "sektor": "coding",
+      "description": "Make a latency-critical event-driven hot path as fast as possible: measure the baseline, move all I/O after the critical action, send the raw request, deduplicate by stable ID, and verify with timing tests.",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/Lumitome",
+      "sha": "7db8a1a2ddf12bbfe5a9b89b763a547f7b7eaae9",
+      "license": "MIT",
+      "original_id": "lumitome__latency-optimization",
+      "original_name": "latency-optimization"
+    },
+    {
       "id": "logo-design",
       "name": "logo-design",
       "sektor": "coding",

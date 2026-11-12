@@ -180,6 +180,7 @@ permissions:
   - { action: "skill", resource: "json-render-shadcn", effect: allow }
   - { action: "skill", resource: "karpathy-guidelines", effect: allow }
   - { action: "skill", resource: "large-file-refactor", effect: allow }
+  - { action: "skill", resource: "latency-optimization", effect: allow }
   - { action: "skill", resource: "level-design", effect: allow }
   - { action: "skill", resource: "logo-design", effect: allow }
   - { action: "skill", resource: "loopdesign", effect: allow }

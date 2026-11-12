@@ -322,4 +322,30 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     /anthropic-verify-first/.test(dp) && !/import.*anthropic-verify-first|require.*anthropic-verify-first/.test(dp));
 }
 
+// (v0.3.50) latency-optimization: skill baru optimasi latensi jalur kritis — TDD merah dulu.
+// Pola: asersi regex pada isi SKILL.md (seperti tes konten skill di suite-services.mjs).
+{
+  const p = ".opencode/skills/latency-optimization/SKILL.md";
+  const lo = fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "";
+  ok("latency-optimization: file skill ada, frontmatter name + description menyebut latency dan critical/hot path",
+    /name: latency-optimization/.test(lo) && /description:.*latency/i.test(lo) && /critical path|hot path/i.test(lo));
+  const measureAt = lo.search(/measure.*baseline|baseline.*measure/i);
+  const moveAt = lo.search(/after the critical action/i);
+  const rawAt = lo.search(/raw request/i);
+  const verifyAt = lo.search(/timing test|verify.*timing/i);
+  ok("latency-optimization: workflow urut — ukur baseline dulu, pindah I/O ke setelah aksi kritis, request mentah, verifikasi dengan tes waktu",
+    measureAt >= 0 && moveAt > measureAt && rawAt > moveAt && verifyAt > rawAt);
+  ok("latency-optimization: guardrails — tanpa disk I/O/print/notifikasi blocking sebelum aksi kritis; dedup pakai ID stabil, bukan hasil parse; tanpa klaim optimal tanpa angka ukur",
+    /no .*disk I\/O|never .*disk I\/O/i.test(lo) && /stable id/i.test(lo) && /parsed value/i.test(lo) && /without measured numbers/i.test(lo));
+  ok("latency-optimization: umum, bukan skill claim — tanpa kata telegram/sondev/referral/claim",
+    !/telegram|sondev|referral|\bclaim\b/i.test(lo));
+  const reg = JSON.parse(fs.readFileSync("router/skills-registry.json", "utf8"));
+  const entry = reg.skills.find((s) => s.id === "latency-optimization");
+  ok("latency-optimization: terdaftar di registry, sektor coding",
+    !!entry && entry.sektor === "coding" && /latency/i.test(entry.description || ""));
+  const SDB = await import("../router/skill-db.mjs");
+  ok("latency-optimization: terdeteksi router (collectSkills aktif)",
+    SDB.collectSkills(".").some((x) => x.name === "latency-optimization" && x.status === "active"));
+}
+
 finish();
