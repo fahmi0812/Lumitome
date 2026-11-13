@@ -2,11 +2,10 @@
 name: google-ads-landing
 description: Score and diagnose Google Ads landing pages. Use when asked to audit a landing page, check landing page quality, diagnose high-CTR but low-conversion-rate ad groups, improve Quality Score's Landing Page Experience component, or compare an ad group's messaging against its landing page. Trigger on "landing page audit", "landing page score", "landing page quality", "why is my conversion rate low", "LPX", "landing page experience", "ad to page match", or when `/google-ads-audit` surfaces a high-CTR / low-CVR ad group.
 license: MIT
-argument-hint: <landing page URL or ad group name>
 metadata:
   swanwright_sector: penulisan
   swanwright_src: nowork-studio/notfair-plugin
-  swanwright_sha: f70e36082a50db00c18a7752ba97ffa1052d3472
+  swanwright_sha: 8035315b959379d0a0df0c8f7d30c0defc5be576
   swanwright_original_id: nowork-studio-notfair-plugin__google-ads-landing
   swanwright_original_name: google-ads-landing
 ---

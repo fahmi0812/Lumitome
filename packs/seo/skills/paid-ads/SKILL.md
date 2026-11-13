@@ -2,11 +2,10 @@
 name: paid-ads
 description: Coordinate safe, evidence-based paid-media work across Google Ads, Meta Ads, X Ads, LinkedIn Ads, Reddit Ads, TikTok Ads, Amazon, and ChatGPT Ads. Use for broad ads questions, multi-channel strategy, budgets, CPA or ROAS, campaign requests, spend, ad performance, or when routing to the right NotFair paid-ads skill.
 license: MIT
-argument-hint: <goal, platform, or 'review my ads'>
 metadata:
   swanwright_sector: penulisan
   swanwright_src: nowork-studio/notfair-plugin
-  swanwright_sha: f70e36082a50db00c18a7752ba97ffa1052d3472
+  swanwright_sha: 8035315b959379d0a0df0c8f7d30c0defc5be576
   swanwright_original_id: nowork-studio-notfair-plugin__paid-ads
   swanwright_original_name: paid-ads
 ---

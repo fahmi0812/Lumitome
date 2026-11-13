@@ -87,7 +87,7 @@
         "command": [
           "npx",
           "-y",
-          "@upstash/context7-mcp@4.4.4"
+          "@upstash/context7-mcp@4.7.0"
         ],
         "timeout": {
           "startup": 120000,
@@ -111,7 +111,7 @@
         "command": [
           "npx",
           "-y",
-          "@next-ai-drawio/mcp-server@0.4.11"
+          "@next-ai-drawio/mcp-server@0.4.14"
         ],
         "disabled": true,
         "timeout": {
@@ -138,7 +138,7 @@
         "command": [
           "npx",
           "-y",
-          "@playwright/mcp@0.0.83",
+          "@playwright/mcp@0.0.85",
           "--headless",
           "--isolated"
         ],
@@ -152,7 +152,7 @@
         "command": [
           "npx",
           "-y",
-          "chrome-devtools-mcp@1.12.0",
+          "chrome-devtools-mcp@1.13.0",
           "--headless",
           "--isolated",
           "--usageStatistics=false"

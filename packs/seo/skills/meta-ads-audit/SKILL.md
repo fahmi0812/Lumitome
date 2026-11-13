@@ -2,11 +2,10 @@
 name: meta-ads-audit
 description: Meta Ads (Facebook + Instagram) account audit and business context setup. Use for account-health audits and business-context setup. Trigger on "audit my Meta ads", "audit my Facebook ads", "Meta ads audit", "set up my Meta ads", "onboard Meta", "Meta account overview", "how's my Meta account", "Meta health check", "what should I fix in my Facebook ads", or when the user is new to NotFair Meta and hasn't run an audit before.
 license: MIT
-argument-hint: <account name or 'audit my Meta ads'>
 metadata:
   swanwright_sector: penulisan
   swanwright_src: nowork-studio/notfair-plugin
-  swanwright_sha: f70e36082a50db00c18a7752ba97ffa1052d3472
+  swanwright_sha: 8035315b959379d0a0df0c8f7d30c0defc5be576
   swanwright_original_id: nowork-studio-notfair-plugin__meta-ads-audit
   swanwright_original_name: meta-ads-audit
 ---

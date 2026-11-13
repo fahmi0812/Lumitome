@@ -1,14 +1,11 @@
 ---
 name: changelog-video
 description: Turn a weekly changelog .md into a finished branded changelog video (square 1080, ~45-60s, Annie VO, animated brand background, mock-UI visualizations, lowkey captions). Use when the user provides a changelog/digest markdown and wants the weekly video, or says "changelog video". Self-contained — fonts, background, lexicon, and scripts ship in this skill.
-license: Apache-2.0
 metadata:
-  swanwright_sector: media
-  swanwright_src: heygen-com/hyperframes
-  swanwright_sha: 2927fe615581f03258205a876fada7d6f3111dc8
-  swanwright_original_id: heygen-com-hyperframes__changelog-video
-  swanwright_original_name: changelog-video
   internal: true
+  swanwright_src: heygen-com/hyperframes
+  swanwright_sha: d208281091b1c00db1724a2ee3db0055955eb41b
+license: Apache-2.0
 ---
 
 # Changelog → Branded Video
@@ -161,7 +158,7 @@ scaffold.
    truth for the composition contract this skill produces against.
 2. `seam-gate.mjs verify` — 0 fail.
 3. Restart the preview server (it caches the bundle), spot-check 3-4 beats
-   via `__player.seek` on the raw comp page.
+   via `await __player.seek(t)` on the raw comp page (it resolves async).
 4. Do NOT render unless the user asks. After a requested render, verify
    frames from the MP4 (`ffmpeg -ss <t> … -frames:v 1`): captions present,
    background video not black, no tiny/frozen frames.

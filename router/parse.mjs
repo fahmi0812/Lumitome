@@ -105,10 +105,15 @@ function parseNaiveBlock(block) {
         break;
       }
       // Skalar terlipat yang dikutip (`description:` + `"..."` di baris berikut):
-      // buang kutip luar seperti YAML. Chomping skalar blok: `|` (clip) simpan
-      // satu newline akhir, `>-` buang.
+      // buang kutip luar seperti YAML. Chomping skalar blok (clip = default):
+      // `|` dan `>` simpan satu newline akhir; `|-`/`>-` (strip) buang;
+      // `|+`/`>+` (keep) simpan newline akhir + tiap baris kosong di ujung blok.
       let v = mode === "list" ? items : mode === "map" ? sub : mode === "fold" ? unquote(folded) : "";
-      if (blockMatch && mode === "fold" && blockMatch[0][0] === "|" && (blockMatch[0][1] || "") !== "-") v += "\n";
+      if (blockMatch && mode === "fold") {
+        const ind = blockMatch[0][1] || "";
+        if (ind === "+") v += "\n".repeat(pendingBlank + 1);
+        else if (ind !== "-") v += "\n";
+      }
       fm[key] = v;
       continue;
     }

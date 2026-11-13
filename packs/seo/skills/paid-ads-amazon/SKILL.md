@@ -2,11 +2,10 @@
 name: paid-ads-amazon
 description: Plan and review Amazon Ads with margin-aware ACoS, product, and search-term guardrails. Use for Amazon advertising, Sponsored Products, Sponsored Brands, Sponsored Display, ASIN targeting, Amazon ACoS, or Amazon Ads performance exports.
 license: MIT
-argument-hint: <ASIN, product line, target ACoS, or Amazon export>
 metadata:
   swanwright_sector: penulisan
   swanwright_src: nowork-studio/notfair-plugin
-  swanwright_sha: f70e36082a50db00c18a7752ba97ffa1052d3472
+  swanwright_sha: 8035315b959379d0a0df0c8f7d30c0defc5be576
   swanwright_original_id: nowork-studio-notfair-plugin__paid-ads-amazon
   swanwright_original_name: paid-ads-amazon
 ---

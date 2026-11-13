@@ -5,10 +5,9 @@ license: Apache-2.0
 metadata:
   swanwright_sector: media
   swanwright_src: heygen-com/hyperframes
-  swanwright_sha: 2927fe615581f03258205a876fada7d6f3111dc8
+  swanwright_sha: d208281091b1c00db1724a2ee3db0055955eb41b
   swanwright_original_id: heygen-com-hyperframes__style-sampling
   swanwright_original_name: style-sampling
-
 ---
 
 **Plugin installs:** Inside a HyperFrames plugin, follow [plugin execution rules](../hyperframes/references/plugin-installation.md).
@@ -34,6 +33,8 @@ Style templates are a HyperFrames Pro feature. The CLI pulls them and the server
 ## Which template
 
 The person named a template, or their topic fits only one: go on with it. Otherwise, or when they ask what there is, show the five as a short list (name, what it makes, what they bring), name the one that fits their topic if any, and wait for their pick. Nothing is checked, pulled or paid before it.
+
+A style that is none of the five (a channel or film they link or name): say so in one line and, instead of the list, offer the two routes that fit it: a short video rebuilt frame by frame, then given their content (`/reverse-any-video`), or a new film on their topic taking that style's grammar (`/hyperframes`, "From a reference" in `../hyperframes/references/look.md`). Both need a video, so a style they only name gets a request for one example. They pick; nothing is pulled.
 
 ## Start
 

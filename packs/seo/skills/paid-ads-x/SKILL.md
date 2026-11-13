@@ -2,11 +2,10 @@
 name: paid-ads-x
 description: Audit, diagnose, and safely operate connected X Ads (Twitter Ads) accounts through the NotFair MCP. Use for X Ads performance, campaign or line-item analysis, spend, conversions, targeting, promoted posts, audiences, budgets, bids, creative, campaign setup, or approved X Ads changes.
 license: MIT
-argument-hint: <account, campaign, date range, or X Ads goal>
 metadata:
   swanwright_sector: penulisan
   swanwright_src: nowork-studio/notfair-plugin
-  swanwright_sha: f70e36082a50db00c18a7752ba97ffa1052d3472
+  swanwright_sha: 8035315b959379d0a0df0c8f7d30c0defc5be576
   swanwright_original_id: nowork-studio-notfair-plugin__paid-ads-x
   swanwright_original_name: paid-ads-x
 ---

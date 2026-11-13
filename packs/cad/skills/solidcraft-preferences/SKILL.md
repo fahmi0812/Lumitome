@@ -1,11 +1,11 @@
 ---
 name: solidcraft-preferences
-description: Use when a SolidCraft change alters a default behaviour, an existing shortcut or the look users already have, or adds a setting in Preferences. Covers keeping the old behaviour behind a preference and the PR's 'Changes a default' line.
+description: "Use when a SolidCraft change alters a default behaviour, an existing shortcut or the look users already have, or adds a setting in Preferences. Covers keeping the old behaviour behind a preference and the PR's 'Changes a default' line."
 license: Apache-2.0
 metadata:
   swanwright_sector: coding
   swanwright_src: tangency-labs/solidcraft
-  swanwright_sha: c7fb4f7cab28392965e44dc5b419690eed18c783
+  swanwright_sha: b8d554ca35ad54ed6ab3e28bdb7dce98375c838f
   swanwright_original_id: tangency-labs-solidcraft__solidcraft-preferences
   swanwright_original_name: solidcraft-preferences
 ---
@@ -30,4 +30,4 @@ Settings live in the `preference_settings!` table in `crates/ui-egui/src/prefs.r
 - Test it in a UI scenario or a `*_tests.rs` file next to the setting (`skills/solidcraft-tests/SKILL.md`).
 
 ## What counts as a default
-Anything a user sees or does differently on first launch after the update: a changed shortcut, camera or navigation behaviour, unit, naming, theme or autosave behaviour, or a tool that appears unasked. A fix that makes the app do what it already claimed is not a default change; say so on the line.
+Anything a user sees or does differently on first launch after the update: a changed shortcut, camera or navigation behaviour, unit, naming, theme or autosave behaviour, or a tool that appears unasked. A changed default is when something people already rely on in the UI changes for everyone who didn't opt in: an existing control, interaction or setting value. Not defaults: bug fixes and more correct results, kernel or geometry result changes (write `Changes a default: no`), new options that are off by default, and CI or tooling config. A fix that makes the app do what it already claimed is not a default change; say so on the line.

@@ -1,12 +1,12 @@
 ---
 name: antislop-human
-description: 'Human and accessibility skill for antislop. Contrast, keyboard, focus, states, and interaction affordances for real people. Includes the contrast checker.'
+description: "Human and accessibility skill for antislop. Contrast, keyboard, focus, states, and interaction affordances for real people. Includes the contrast checker."
+allowed-tools: Bash(python *), Bash(python3 *), Read, Write, Edit, Glob, Grep
 license: MIT
-allowed-tools: Bash(python *) Bash(python3 *) Read Write Edit Glob Grep
 metadata:
   swanwright_sector: coding
   swanwright_src: miqdadbadjuber/anti-slop
-  swanwright_sha: 9504989f162a92b1996853eccbb3d8a86e73df68
+  swanwright_sha: 54e39872aeba6a699b40f6a68f51307c3eea2901
   swanwright_original_id: miqdadbadjuber-anti-slop__antislop-human
   swanwright_original_name: antislop-human
 ---

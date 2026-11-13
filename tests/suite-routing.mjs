@@ -91,6 +91,11 @@ for (const f of parseFiles) {
 }
 ok(`frontmatter YAML vs naive sama di ${parseFiles.length} file (${parseBad.slice(0, 3).join(" | ") || "tanpa beda"})`, parseBad.length === 0);
 ok("frontmatter: tanpa blok -> null; YAML rusak -> __error", frontmatter("tanpa frontmatter") === null && frontmatterNaive("tanpa frontmatter") === null && frontmatter("---\nname: [\n---\n").__error !== undefined);
+// Chomping skalar blok (v0.3.56): `>` clip simpan satu \n akhir seperti YAML —
+// regresi paritas dari sync notfair (deskripsi `description: >`); `>-` buang,
+// `|` clip simpan, `|+` keep simpan ujung blok.
+const CHOMP = (s) => `---\nname: x\n${s}\n---\n`;
+ok("frontmatter: skalar blok `>` clip vs `>-` strip vs `|` clip", frontmatterNaive(CHOMP("description: >\n  satu dua\n  tiga empat")).description === "satu dua tiga empat\n" && frontmatter(CHOMP("description: >\n  satu dua\n  tiga empat")).description === "satu dua tiga empat\n" && frontmatterNaive(CHOMP("description: >-\n  satu dua\n  tiga empat")).description === "satu dua tiga empat" && frontmatterNaive(CHOMP("description: |\n  satu\n  dua")).description === "satu\ndua\n");
 const sj = JSON.parse(stripJsonc(`{\n// k\n"a": "http://x", /* b */\n"b": [1, 2,],\n"c": { "d": 1, },\n}`));
 ok("stripJsonc: komentar + koma trailing + string berisi //", sj.a === "http://x" && sj.b.length === 2 && sj.c.d === 1);
 const registered = [];

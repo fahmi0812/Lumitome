@@ -6,7 +6,7 @@ metadata:
   internal: true
   swanwright_sector: coding
   swanwright_src: tt-a1i/archify
-  swanwright_sha: 11b0d6031853bdae89eed57e7979aabbf0034097
+  swanwright_sha: 7e45f36c66de1254d5ad6ba1d878f6499ea269fd
   swanwright_original_id: tt-a1i-archify__archify-tuning
   swanwright_original_name: archify-tuning
 ---

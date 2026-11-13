@@ -1,12 +1,24 @@
 ---
 name: sxo
-argument-hint: <page or site URL, e.g. https://example.com/landing>
-description: 'Search Experience Optimization (SXO), the bridge between SEO and UX/CRO. Audits the journey from the SERP click to the on-page goal: click-through factors (title, meta, rich results), then post-click signals that keep users and drive conversions: above-the-fold relevance and intent match, page speed / Core Web Vitals, readability, clear CTAs, mobile usability, and what causes pogo-sticking back to Google. Use when the user has decent rankings but poor CTR or poor on-page conversion, wants better dwell time / engagement, less bounce, or a page experience aligned with search intent. Trigger on: "SXO", "search experience optimization", "good rankings but low CTR", "high bounce rate from search", "pogo-sticking", "improve dwell time", "SEO and conversion", "ranking but not converting", "engagement signals", "make this page convert search traffic". For pure landing-page conversion in ads use /google-ads-landing; for content quality use /seo-page.'
+description: >
+  Search Experience Optimization (SXO), the bridge between SEO and UX/CRO. Audits
+  the journey from the SERP click to the on-page goal: click-through factors (title,
+  meta, rich results), then post-click signals that keep users and drive
+  conversions: above-the-fold relevance and intent match, page speed / Core Web
+  Vitals, readability, clear CTAs, mobile usability, and what causes pogo-sticking
+  back to Google. Use when the user has decent rankings but poor CTR or poor on-page
+  conversion, wants better dwell time / engagement, less bounce, or a page
+  experience aligned with search intent. Trigger on: "SXO", "search experience
+  optimization", "good rankings but low CTR", "high bounce rate from search",
+  "pogo-sticking", "improve dwell time", "SEO and conversion", "ranking but not
+  converting", "engagement signals", "make this page convert search traffic". For
+  pure landing-page conversion in ads use /google-ads-landing; for content quality
+  use /seo-page.
 license: MIT
 metadata:
   swanwright_sector: penulisan
   swanwright_src: nowork-studio/notfair-plugin
-  swanwright_sha: f70e36082a50db00c18a7752ba97ffa1052d3472
+  swanwright_sha: 8035315b959379d0a0df0c8f7d30c0defc5be576
   swanwright_original_id: nowork-studio-notfair-plugin__sxo
   swanwright_original_name: sxo
 ---

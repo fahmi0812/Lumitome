@@ -7,14 +7,14 @@ Pola tiap agent: `{"action":"*_*","effect":"deny"}` → `external_directory: ask
 
 | Server | Jenis | Default | Pin | Sektor | Catatan |
 |---|---|---|---|---|---|
-| context7 | local npx | ON | `@upstash/context7-mcp@4.4.4` | coding, riset, penulisan, security, elephant | docs library |
+| context7 | local npx | ON | `@upstash/context7-mcp@4.7.0` | coding, riset, penulisan, security, elephant | docs library; tool baru `query-code` |
 | codemem | local biner | ON | codebase-memory-mcp **v0.12.1** (SHA256 + checksums.txt) | coding, security, elephant, goldfish | didaftarkan manual; `install`/`update` diblok (permissions + plugin); `delete_project`, `manage_adr` = **ask** |
-| playwright | local npx | ON | `@playwright/mcp@0.0.83 --headless --isolated` | coding, media, riset | browser: `bash install.sh --with-browsers` |
-| chromedev | local npx | ON | `chrome-devtools-mcp@1.12.0 --headless --isolated --usageStatistics=false` | coding, media | butuh Google Chrome stable terpasang |
+| playwright | local npx | ON | `@playwright/mcp@0.0.85 --headless --isolated` | coding, media, riset | browser: `bash install.sh --with-browsers` |
+| chromedev | local npx | ON | `chrome-devtools-mcp@1.13.0 --headless --isolated --usageStatistics=false` | coding, media | butuh Google Chrome stable terpasang |
 | markitdown | local uvx | ON | `markitdown-mcp==0.0.1a8` | riset, penulisan, finance | konversi dokumen → Markdown |
 | figma | remote | **OFF** | `https://mcp.figma.com/mcp` (resmi) | media | OAuth: set `disabled:false`, lalu `opencode mcp auth figma`; butuh seat Dev/Full |
 | stitch | remote | **OFF** | `https://stitch.googleapis.com/mcp` | media | API key `X-Goog-Api-Key: {env:STITCH_API_KEY}` (Stitch Settings > API Keys); tool tulis/generate = ask |
-| figcraft | local AppImage/CLI | **OFF** | `figcraft-cli` v0.16.0 (storytold/figcraft) | media | headless `figcraft-cli mcp` atau attach `--attach <port>`; confinement `--automation-read-root/write-root` = folder sesi; nyalakan `LUMI_MCP=<default>,figcraft` |
+| figcraft | local AppImage/CLI | **OFF** | `figcraft-cli` v0.18.1 (storytold/figcraft) | media | headless `figcraft-cli mcp` atau attach `--attach <port>`; confinement `--automation-read-root/write-root` = folder sesi; nyalakan `LUMI_MCP=<default>,figcraft`; v0.18.1: server key tidak lagi dikirim via plain ws |
 | github | remote | **OFF** | `https://api.githubcopilot.com/mcp/` | coding (devops) | `Authorization: Bearer {env:GITHUB_PERSONAL_ACCESS_TOKEN}`; tool tulis = ask |
 | skills | local node | ON | `router/skill-search-mcp.mjs` | semua sektor | `skill_search` read-only, allowlist sektor |
 | gw-&lt;sektor&gt; (6) | remote | **OFF** | `http://127.0.0.1:8811..8816/mcp` | sektornya saja | gateway opsional, lihat `docs/MCP-GATEWAY.md` |

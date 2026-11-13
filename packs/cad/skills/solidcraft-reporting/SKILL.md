@@ -5,7 +5,7 @@ license: Apache-2.0
 metadata:
   swanwright_sector: coding
   swanwright_src: tangency-labs/solidcraft
-  swanwright_sha: c7fb4f7cab28392965e44dc5b419690eed18c783
+  swanwright_sha: b8d554ca35ad54ed6ab3e28bdb7dce98375c838f
   swanwright_original_id: tangency-labs-solidcraft__solidcraft-reporting
   swanwright_original_name: solidcraft-reporting
 ---

@@ -6,6 +6,8 @@ version: 2.0.0
 metadata:
   opencode/slash: 'true'
   swanwright_original_id: nutlope-hallmark__hallmark
+  swanwright_src: Nutlope/hallmark
+  swanwright_sha: 04977e15f3dfd6ee4b74c887dac3eb52665d6c92
 ---
 
 # Hallmark

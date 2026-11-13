@@ -3,7 +3,8 @@ name: magic-ui
 description: Use this skill when users want to add, customize, or troubleshoot Magic UI components in React/Next.js projects. It covers component selection, shadcn registry installation (`@magicui/*`), integration patterns, and practical quality checks for accessibility and maintainability.
 metadata:
   short-description: Build and customize UIs with Magic UI components
-  swanwright_original_id: magicuidesign-magicui__magic-ui
+  swanwright_src: magicuidesign/magicui
+  swanwright_sha: 2712647e193295d2fd85b65e58095fb2009736d7
 ---
 
 # Magic UI
@@ -65,7 +66,7 @@ npx shadcn@latest add @magicui/magic-card
 - Hero visual impact: `globe`, `warp-background`, `animated-grid-pattern`
 - Text animation: `blur-fade`, `text-animate`, `word-rotate`, `sparkles-text`
 - CTA emphasis: `shiny-button`, `shimmer-button`, `rainbow-button`
-- Ambient backgrounds: `grid-pattern`, `dot-pattern`, `particles`, `flickering-grid`
+- Ambient backgrounds: `grid-pattern`, `dot-pattern`, `particles`, `flickering-grid`, `dither-field`
 
 Start with 1 core component + 1 supporting effect, then expand only if needed.
 

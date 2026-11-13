@@ -1,12 +1,12 @@
 ---
 name: antislop
-description: 'Anti Slop: Rules for AI Coding Agents. The core filter. Load always to stop generic AI slop.'
+description: "Anti Slop: Rules for AI Coding Agents. The core filter. Load always to stop generic AI slop."
+allowed-tools: Read, Write, Edit, Glob, Grep
 license: MIT
-allowed-tools: Read Write Edit Glob Grep
 metadata:
   swanwright_sector: coding
   swanwright_src: miqdadbadjuber/anti-slop
-  swanwright_sha: 9504989f162a92b1996853eccbb3d8a86e73df68
+  swanwright_sha: 54e39872aeba6a699b40f6a68f51307c3eea2901
   swanwright_original_id: miqdadbadjuber-anti-slop__antislop
   swanwright_original_name: antislop
 ---

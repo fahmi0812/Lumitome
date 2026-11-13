@@ -2,34 +2,10 @@
 name: meta-ads
 description: Manage Meta Ads (Facebook + Instagram) — performance, ROAS, CPM, frequency, audience overlap, learning phase, creative fatigue, budgets, ad sets, campaigns, ads. Use for any mention of Meta Ads, Facebook Ads, Instagram Ads, ROAS, CPM, ad spend, or campaign settings on Meta.
 license: MIT
-argument-hint: <campaign / ad set name, or 'show performance'>
-triggers:
-- meta ads
-- facebook ads
-- instagram ads
-- meta campaigns
-- ad sets
-- ROAS
-- CPM
-- link CTR
-- frequency
-- creative fatigue
-- audience overlap
-- learning phase
-- learning limited
-- CBO
-- ABO
-- advantage shopping
-- advantage plus
-- lookalike
-- retargeting
-- prospecting
-- pause campaign
-- update budget
 metadata:
   swanwright_sector: penulisan
   swanwright_src: nowork-studio/notfair-plugin
-  swanwright_sha: f70e36082a50db00c18a7752ba97ffa1052d3472
+  swanwright_sha: 8035315b959379d0a0df0c8f7d30c0defc5be576
   swanwright_original_id: nowork-studio-notfair-plugin__meta-ads
   swanwright_original_name: meta-ads
 ---

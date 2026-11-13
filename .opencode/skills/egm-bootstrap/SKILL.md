@@ -1,11 +1,11 @@
 ---
 name: egm-bootstrap
-description: Bootstrap directory README.md files across a repository subtree.
 license: Apache-2.0
 disable-model-invocation: true
+description: Bootstrap directory README.md files across a repository subtree.
 metadata:
   swanwright_src: google/elephant-goldfish-model
-  swanwright_sha: bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31
+  swanwright_sha: 270b10326bf366d823bc76fd662cf83808d5781e
   swanwright_original_id: google-elephant-goldfish-model__egm-bootstrap
 ---
 
@@ -82,6 +82,7 @@ If your harness has no subagent tool, run the scout steps inline.
     *   Rust: `Cargo.toml` -> `cargo test`
     *   Go: `go.mod` -> `go test ./...`
     *   Python: `pyproject.toml` / `pytest.ini` / `setup.py` -> `pytest`
+    *   .NET / C#: `*.sln` / `*.slnx` / `*.csproj` -> `dotnet test`
     *   C/C++ / Make: `Makefile` -> `make test`
     *   Bazel: `BUILD` / `BUILD.bazel` -> `bazel test //...`
     *   None found: `<test-command>`
@@ -110,8 +111,8 @@ If your harness has no subagent tool, run the scout steps inline.
         `venv`, `dist`, `build`, `third_party`).
     *   Read `.gitignore` and `.egmignore` (if present) and ignore matching glob patterns.
     *   Preserve package and build manifests (`package.json`, `Cargo.toml`,
-        `go.mod`, `pyproject.toml`, `Makefile`, `BUILD`) in the discovery map
-        to extract verification targets later.
+        `go.mod`, `pyproject.toml`, `*.sln`, `*.csproj`, `Makefile`, `BUILD`) in
+        the discovery map to extract verification targets later.
 
 2.  **Safety Gate & Unbounded Spawning Approval (CRITICAL)**: During the BFS
     loop, if the total running count of discovered directories exceeds **15**,
@@ -136,7 +137,8 @@ If your harness has no subagent tool, run the scout steps inline.
         - Systems & Compiled: `.c`, `.cc`, `.cpp`, `.cxx`, `.h`, `.hh`, `.hpp`,
           `.rs`, `.go`, `.zig`, `.lean`, `.f`, `.f90`, `.f95`, `.f03`, `.f08`,
           `.hs`
-        - Managed & Enterprise: `.java`, `.kt`, `.scala`, `.cs`, `.fs`, `.vb`
+        - Managed & Enterprise: `.java`, `.kt`, `.scala`, `.cs`, `.razor`,
+          `.cshtml`, `.fs`, `.vb`
         - Scripting & Dynamic: `.py`, `.rb`, `.php`, `.lua`, `.sh`, `.bash`,
           `.ps1`, `.psm1`, `.psd1`, `.r`, `.R`, `.ex`, `.exs`
         - Web & Mobile: `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.swift`,
@@ -295,8 +297,9 @@ If your harness has no subagent tool, run the scout steps inline.
             `//[package_path]:...`). Use `bazel run` for interactive runner
             targets.
         *   If the project uses other manifests (`package.json`, `Cargo.toml`,
-            `go.mod`, `pyproject.toml`, `Makefile`), populate with the corresponding
-            test runner command.
+            `go.mod`, `pyproject.toml`, `*.sln`, `*.csproj`, `Makefile`), populate
+            with the corresponding test runner command (.NET: `dotnet test` on
+            the nearest `*.csproj`).
         *   If no verification command is identified, omit or use a placeholder.
 
     *   **Directory Classification & Template Generation**: Generate or correct

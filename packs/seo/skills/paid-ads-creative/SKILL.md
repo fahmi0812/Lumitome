@@ -2,11 +2,10 @@
 name: paid-ads-creative
 description: Create grounded paid-media creative concepts, copy angles, refresh hypotheses, and measurable test briefs across advertising platforms. Use for ad copy, creative briefs, UGC concepts, headlines, creative fatigue, asset ideas, or a creative refresh.
 license: MIT
-argument-hint: <platform, audience, or campaign>
 metadata:
   swanwright_sector: penulisan
   swanwright_src: nowork-studio/notfair-plugin
-  swanwright_sha: f70e36082a50db00c18a7752ba97ffa1052d3472
+  swanwright_sha: 8035315b959379d0a0df0c8f7d30c0defc5be576
   swanwright_original_id: nowork-studio-notfair-plugin__paid-ads-creative
   swanwright_original_name: paid-ads-creative
 ---

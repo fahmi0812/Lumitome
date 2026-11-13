@@ -2,11 +2,10 @@
 name: paid-ads-setup
 description: Connect NotFair paid-ad accounts and establish reusable campaign context. Use when setting up paid media in a new workspace, connecting Google, Meta, X, LinkedIn, Reddit, or TikTok Ads, refreshing brand context, or preparing an agent to work on ads safely.
 license: MIT
-argument-hint: <connect accounts, workspace, or brand>
 metadata:
   swanwright_sector: penulisan
   swanwright_src: nowork-studio/notfair-plugin
-  swanwright_sha: f70e36082a50db00c18a7752ba97ffa1052d3472
+  swanwright_sha: 8035315b959379d0a0df0c8f7d30c0defc5be576
   swanwright_original_id: nowork-studio-notfair-plugin__paid-ads-setup
   swanwright_original_name: paid-ads-setup
 ---

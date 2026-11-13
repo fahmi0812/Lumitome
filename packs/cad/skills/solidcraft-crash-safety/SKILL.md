@@ -1,11 +1,11 @@
 ---
 name: solidcraft-crash-safety
-description: Use when writing or reviewing non-test Rust in SolidCraft, handling design files, command parameters or control-channel input, calling the kernel, or investigating a crash report. A crash loses someone's work, so this outranks feature work.
+description: "Use when writing or reviewing non-test Rust in SolidCraft, handling design files, command parameters or control-channel input, calling the kernel, or investigating a crash report. A crash loses someone's work, so this outranks feature work."
 license: Apache-2.0
 metadata:
   swanwright_sector: coding
   swanwright_src: tangency-labs/solidcraft
-  swanwright_sha: c7fb4f7cab28392965e44dc5b419690eed18c783
+  swanwright_sha: b8d554ca35ad54ed6ab3e28bdb7dce98375c838f
   swanwright_original_id: tangency-labs-solidcraft__solidcraft-crash-safety
   swanwright_original_name: solidcraft-crash-safety
 ---
@@ -35,4 +35,4 @@ The desktop app writes every panic and every unclean exit to a local crash folde
 - `solidcraft-cli crashes`, `solidcraft-cli crashes show <id>`, `solidcraft-cli crashes replay <id>`
 - the `diagnostics.crash_reports` command, or the MCP `crash_reports` tool
 
-Crashes and data loss are taken as issues even while kernel work is paused (CONTRIBUTING.md, "Kernel work is paused").
+Crashes and data loss are taken first, including in kernel code, which lives in `solidcore/` (CONTRIBUTING.md, "Kernel work goes in solidcore/").

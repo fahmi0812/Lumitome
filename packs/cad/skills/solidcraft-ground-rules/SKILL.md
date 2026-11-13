@@ -1,11 +1,11 @@
 ---
 name: solidcraft-ground-rules
-description: Use before adding any dependency, icon, image, font, test reference data or product wording to SolidCraft, or when unsure whether something may be copied, read or named. Covers independence from other CAD products, GPL code, asset attribution and the product name.
+description: "Use before adding any dependency, icon, image, font, test reference data or product wording to SolidCraft, or when unsure whether something may be copied, read or named. Covers independence from other CAD products, GPL code, asset attribution and the product name."
 license: Apache-2.0
 metadata:
   swanwright_sector: coding
   swanwright_src: tangency-labs/solidcraft
-  swanwright_sha: c7fb4f7cab28392965e44dc5b419690eed18c783
+  swanwright_sha: b8d554ca35ad54ed6ab3e28bdb7dce98375c838f
   swanwright_original_id: tangency-labs-solidcraft__solidcraft-ground-rules
   swanwright_original_name: solidcraft-ground-rules
 ---
@@ -31,8 +31,8 @@ The rules that cannot be broken in a PR. `AGENTS.md` lists them in one line each
 ## Assets: the most serious rule
 - SolidCraft contains no iconography, images, fonts or artwork from commercial CAD products, ever. Screenshots of commercial CAD software are never committed.
 - Every file asset is original or openly licensed and has a row in ATTRIBUTION.md. `cargo xtask assets` enforces it.
-- Command icons are the original SVG masters in `assets/icons/ui/design/svg/`, compiled through `crates/ui-egui/src/icon_svg.rs`.
-- Before any icon, icon assignment or media edit, read `assets/AGENTS.md`, `assets/icons/ui/AGENTS.md` and `assets/icons/ui/STYLE_GUIDE.md`. Use the canonical bases and named finished references there; never invent a parallel icon style. `cargo xtask icons` validates them.
+- Command icons are the original SVG masters in `crates/look/icons/design/svg/`, compiled by the look crate (`crates/look/build.rs`, `crates/look/src/icons.rs`).
+- Before any icon, icon assignment or media edit, read `assets/AGENTS.md`, `crates/look/icons/AGENTS.md` and `crates/look/icons/STYLE_GUIDE.md`. Use the canonical bases and named finished references there; never invent a parallel icon style. `cargo xtask icons` validates them.
 
 ## The name
 - SolidCraft everywhere: crates `solidcraft-*`, binaries `solidcraft` and `solidcraft-cli`, `.sc` designs (`.solidcraft` still opens), the `solidcraft/N` format tag, `SOLIDCRAFT_*` environment variables, settings and recovery folders, the MCP server name, docs, CI and packaging.

@@ -1,12 +1,11 @@
 ---
 name: content-planner
-argument-hint: <site URL or 'plan from GSC'>
-description: GSC-driven content calendar. Pulls real Search Console data, finds the highest click-potential opportunities (striking-distance queries at positions 5-20, unanswered query intent, related-keyword expansions), and produces a dated, prioritized content calendar — ready to hand to /content-writer. Use when the user asks "plan my content", "what should I write next", "content calendar", "content plan", "content roadmap", "editorial calendar", "what topics will rank", "find quick-win SEO topics", "click-potential analysis", or "schedule my SEO content".
+description: "Build a dated editorial calendar from connected or supplied Search Console data. Prioritize striking-distance queries, content gaps, CTR refreshes, and cannibalization issues. Return Markdown and optional JSON without a local viewer or automatic publishing. Use for content planning, editorial calendars, or choosing what to write next."
 license: MIT
 metadata:
   swanwright_sector: penulisan
   swanwright_src: nowork-studio/notfair-plugin
-  swanwright_sha: f70e36082a50db00c18a7752ba97ffa1052d3472
+  swanwright_sha: 8035315b959379d0a0df0c8f7d30c0defc5be576
   swanwright_original_id: nowork-studio-notfair-plugin__content-planner
   swanwright_original_name: content-planner
 ---

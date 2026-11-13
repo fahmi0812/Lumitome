@@ -9,7 +9,7 @@ metadata:
   version: 1.0.0
   swanwright_sector: penulisan
   swanwright_src: genspark-ai/genoffice
-  swanwright_sha: 0ac588ffc435f103658feafc1c963bc64c81ad6d
+  swanwright_sha: d751696166e1d93ab4b9e7319d3b0233a70bf984
   swanwright_original_id: genspark-ai-genoffice__course-slides
   swanwright_original_name: course-slides
 ---

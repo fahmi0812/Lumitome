@@ -5,7 +5,7 @@ license: Apache-2.0
 disable-model-invocation: true
 metadata:
   swanwright_src: google/elephant-goldfish-model
-  swanwright_sha: bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31
+  swanwright_sha: 270b10326bf366d823bc76fd662cf83808d5781e
   swanwright_original_id: google-elephant-goldfish-model__egm-brainstorm
 ---
 

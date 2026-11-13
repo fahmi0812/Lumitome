@@ -14,7 +14,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__brand-copy",
       "original_name": "brand-copy"
@@ -31,7 +31,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__budget-planner",
       "original_name": "budget-planner"
@@ -48,7 +48,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__business-plan",
       "original_name": "business-plan"
@@ -65,7 +65,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__business-report",
       "original_name": "business-report"
@@ -82,7 +82,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__campaign-planner",
       "original_name": "campaign-planner"
@@ -99,7 +99,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__contract-drafter",
       "original_name": "contract-drafter"
@@ -116,7 +116,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__course-slides",
       "original_name": "course-slides"
@@ -133,7 +133,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__data-analyst",
       "original_name": "data-analyst"
@@ -150,7 +150,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__data-cleaning",
       "original_name": "data-cleaning"
@@ -167,7 +167,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__email-drafter",
       "original_name": "email-drafter"
@@ -184,7 +184,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__executive-deck",
       "original_name": "executive-deck"
@@ -201,7 +201,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__expense-report",
       "original_name": "expense-report"
@@ -218,7 +218,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__financial-statement-analysis",
       "original_name": "financial-statement-analysis"
@@ -235,7 +235,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__genoffice",
       "original_name": "genoffice"
@@ -252,7 +252,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__interview-coach",
       "original_name": "interview-coach"
@@ -269,7 +269,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__invoice-tax-checklist",
       "original_name": "invoice-tax-checklist"
@@ -286,7 +286,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__job-description",
       "original_name": "job-description"
@@ -303,7 +303,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__kpi-dashboard",
       "original_name": "kpi-dashboard"
@@ -320,7 +320,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__labor-contract",
       "original_name": "labor-contract"
@@ -337,7 +337,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__lesson-plan",
       "original_name": "lesson-plan"
@@ -354,7 +354,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__meeting-minutes",
       "original_name": "meeting-minutes"
@@ -371,7 +371,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__nda-drafter",
       "original_name": "nda-drafter"
@@ -388,7 +388,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__okr-planner",
       "original_name": "okr-planner"
@@ -405,7 +405,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__onboarding-plan",
       "original_name": "onboarding-plan"
@@ -422,7 +422,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__performance-review",
       "original_name": "performance-review"
@@ -439,7 +439,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__personal-finance",
       "original_name": "personal-finance"
@@ -456,7 +456,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__policy-compliance",
       "original_name": "policy-compliance"
@@ -490,7 +490,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__product-launch",
       "original_name": "product-launch"
@@ -507,7 +507,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__proposal-writer",
       "original_name": "proposal-writer"
@@ -524,7 +524,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__quiz-maker",
       "original_name": "quiz-maker"
@@ -541,7 +541,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__resume-polisher",
       "original_name": "resume-polisher"
@@ -558,7 +558,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__sales-forecast",
       "original_name": "sales-forecast"
@@ -575,7 +575,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__slide-planner",
       "original_name": "slide-planner"
@@ -592,7 +592,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__social-media",
       "original_name": "social-media"
@@ -609,7 +609,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__sop-writer",
       "original_name": "sop-writer"
@@ -626,7 +626,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__study-plan",
       "original_name": "study-plan"
@@ -643,7 +643,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__survey-analyst",
       "original_name": "survey-analyst"
@@ -660,7 +660,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__swot-strategy",
       "original_name": "swot-strategy"
@@ -677,7 +677,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__terms-of-service",
       "original_name": "terms-of-service"
@@ -694,7 +694,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__thesis-advisor",
       "original_name": "thesis-advisor"
@@ -711,7 +711,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__weekly-report",
       "original_name": "weekly-report"

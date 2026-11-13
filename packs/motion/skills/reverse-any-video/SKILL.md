@@ -1,14 +1,13 @@
 ---
 name: reverse-any-video
-description: Rebuild any video file as an editable HyperFrames project - motion graphics, talking heads, live action or AI-generated footage. Measure and watch it, rebuild every layer, then check the render against the original frame by frame. Use to reverse, recreate, replicate or copy a video.
+description: Rebuild any video file as an editable HyperFrames project - motion graphics, talking heads, live action or AI-generated footage - checked against the original frame by frame. Use to reverse, recreate, remake, replicate or copy a video, or 「复刻这个视频」「照着这个视频做一个」.
 license: Apache-2.0
 metadata:
   swanwright_sector: media
   swanwright_src: heygen-com/hyperframes
-  swanwright_sha: 2927fe615581f03258205a876fada7d6f3111dc8
+  swanwright_sha: d208281091b1c00db1724a2ee3db0055955eb41b
   swanwright_original_id: heygen-com-hyperframes__reverse-any-video
   swanwright_original_name: reverse-any-video
-
 ---
 
 **Plugin installs:** Inside a HyperFrames plugin, follow [plugin execution rules](../hyperframes/references/plugin-installation.md).

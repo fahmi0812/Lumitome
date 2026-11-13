@@ -1,12 +1,12 @@
 ---
 name: antislop-copywriting
-description: 'Copy and text skill for antislop. Use when writing or editing prose: headlines, tone, CTAs, and anti-AI-writing patterns. Load with the core.'
+description: "Copy and text skill for antislop. Use when writing or editing prose: headlines, tone, CTAs, and anti-AI-writing patterns. Load with the core."
+allowed-tools: Read, Write, Edit, Glob, Grep
 license: MIT
-allowed-tools: Read Write Edit Glob Grep
 metadata:
   swanwright_sector: penulisan
   swanwright_src: miqdadbadjuber/anti-slop
-  swanwright_sha: 9504989f162a92b1996853eccbb3d8a86e73df68
+  swanwright_sha: 54e39872aeba6a699b40f6a68f51307c3eea2901
   swanwright_original_id: miqdadbadjuber-anti-slop__antislop-copywriting
   swanwright_original_name: antislop-copywriting
 ---

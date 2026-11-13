@@ -5,10 +5,9 @@ license: Apache-2.0
 metadata:
   swanwright_sector: media
   swanwright_src: heygen-com/hyperframes
-  swanwright_sha: 2927fe615581f03258205a876fada7d6f3111dc8
+  swanwright_sha: d208281091b1c00db1724a2ee3db0055955eb41b
   swanwright_original_id: heygen-com-hyperframes__frost-sequence-camera-orbit
   swanwright_original_name: frost-sequence-camera-orbit
-
 ---
 
 # Frost Sequence Camera Orbit

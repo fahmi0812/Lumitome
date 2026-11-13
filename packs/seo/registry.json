@@ -592,7 +592,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__backlink-audit",
       "original_name": "backlink-audit"
@@ -601,7 +601,7 @@
       "id": "broken-link-checker",
       "name": "broken-link-checker",
       "sektor": "penulisan",
-      "description": "Scans a website to find broken links (404s, 500s). Crawls internal pages, identifies broken outbound links, and reports source pages for easy fixing. Use this when the user asks to \"check for broken links\", \"find 404s\", \"audit my links\", or \"is my site healthy\".",
+      "description": "Inspect public page links or a supplied crawl report for confirmed broken links and redirect issues. Report source URLs, evidence, and coverage limits; no crawler is bundled. Use for broken-link checks, 404 diagnosis, link audits, or website health reviews.",
       "triggers": [],
       "champion": false,
       "fallback": null,
@@ -609,7 +609,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__broken-link-checker",
       "original_name": "broken-link-checker"
@@ -626,7 +626,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__competitor-pages",
       "original_name": "competitor-pages"
@@ -635,7 +635,7 @@
       "id": "content-planner",
       "name": "content-planner",
       "sektor": "penulisan",
-      "description": "GSC-driven content calendar. Pulls real Search Console data, finds the highest click-potential opportunities (striking-distance queries at positions 5-20, unanswered query intent, related-keyword expansions), and produces a dated, prioritized content calendar — ready to hand to /content-writer. Use ",
+      "description": "Build a dated editorial calendar from connected or supplied Search Console data. Prioritize striking-distance queries, content gaps, CTR refreshes, and cannibalization issues. Return Markdown and optional JSON without a local viewer or automatic publishing. Use for content planning, editorial calend",
       "triggers": [],
       "champion": false,
       "fallback": null,
@@ -643,7 +643,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__content-planner",
       "original_name": "content-planner"
@@ -660,7 +660,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__content-writer",
       "original_name": "content-writer"
@@ -677,7 +677,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__ecommerce-seo",
       "original_name": "ecommerce-seo"
@@ -703,7 +703,7 @@
       "id": "geo-optimizer",
       "name": "geo-optimizer",
       "sektor": "penulisan",
-      "description": "Generative Engine Optimization (GEO) — make content rank in AI search answers from ChatGPT, Claude, Perplexity, Gemini, and Google AI Overviews. Audits existing content, rewrites for AI citation, and produces per-engine strategy. Use when asked to \"optimize for AI search\", \"rank in ChatGPT\", \"GEO au",
+      "description": "Audit, improve, and measure visibility in AI search answers from ChatGPT, Claude, Perplexity, Gemini, and Google AI Overviews. Use for GEO, AEO, LLM SEO, AI citation and search crawler audits, AI visibility strategy, buyer-question baselines, brand mentions and fact checks in AI answers, or analysis",
       "triggers": [],
       "champion": false,
       "fallback": null,
@@ -711,7 +711,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__geo-optimizer",
       "original_name": "geo-optimizer"
@@ -728,7 +728,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__gohighlevel",
       "original_name": "gohighlevel"
@@ -745,7 +745,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__google-ads",
       "original_name": "google-ads"
@@ -762,7 +762,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__google-ads-assets",
       "original_name": "google-ads-assets"
@@ -779,7 +779,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__google-ads-audit",
       "original_name": "google-ads-audit"
@@ -796,7 +796,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__google-ads-copy",
       "original_name": "google-ads-copy"
@@ -813,7 +813,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__google-ads-landing",
       "original_name": "google-ads-landing"
@@ -830,7 +830,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__google-analytics",
       "original_name": "google-analytics"
@@ -847,7 +847,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__hreflang-international",
       "original_name": "hreflang-international"
@@ -864,7 +864,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__image-seo",
       "original_name": "image-seo"
@@ -881,7 +881,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__keyword-research",
       "original_name": "keyword-research"
@@ -898,7 +898,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__local-seo",
       "original_name": "local-seo"
@@ -915,7 +915,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__meta-ads",
       "original_name": "meta-ads"
@@ -932,7 +932,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__meta-ads-audit",
       "original_name": "meta-ads-audit"
@@ -949,7 +949,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__meta-ads-creative",
       "original_name": "meta-ads-creative"
@@ -966,7 +966,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__meta-tags-optimizer",
       "original_name": "meta-tags-optimizer"
@@ -983,7 +983,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads",
       "original_name": "paid-ads"
@@ -1000,7 +1000,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-amazon",
       "original_name": "paid-ads-amazon"
@@ -1017,7 +1017,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-chatgpt",
       "original_name": "paid-ads-chatgpt"
@@ -1034,7 +1034,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-creative",
       "original_name": "paid-ads-creative"
@@ -1051,7 +1051,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-guide",
       "original_name": "paid-ads-guide"
@@ -1068,7 +1068,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-integrations",
       "original_name": "paid-ads-integrations"
@@ -1085,7 +1085,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-launch",
       "original_name": "paid-ads-launch"
@@ -1102,7 +1102,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-linkedin",
       "original_name": "paid-ads-linkedin"
@@ -1119,7 +1119,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-optimize",
       "original_name": "paid-ads-optimize"
@@ -1136,7 +1136,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-reddit",
       "original_name": "paid-ads-reddit"
@@ -1153,7 +1153,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-review",
       "original_name": "paid-ads-review"
@@ -1170,7 +1170,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-setup",
       "original_name": "paid-ads-setup"
@@ -1187,7 +1187,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-tiktok",
       "original_name": "paid-ads-tiktok"
@@ -1204,7 +1204,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-x",
       "original_name": "paid-ads-x"
@@ -1221,7 +1221,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__programmatic-seo",
       "original_name": "programmatic-seo"
@@ -1230,7 +1230,7 @@
       "id": "schema-markup-generator",
       "name": "schema-markup-generator",
       "sektor": "penulisan",
-      "description": "Generate JSON-LD structured data markup for rich results in Google Search. Supports FAQ, HowTo, Article, Product, LocalBusiness, and multi-type schemas. Validates against Google requirements and provides implementation guidance. Use when asked to \"add schema markup\", \"generate structured data\", \"JSO",
+      "description": "Generate and validate Schema.org JSON-LD, and assess Google rich result eligibility where applicable. Supports FAQ, HowTo, Article, Product, LocalBusiness, and multi-type schemas. Use when asked to \"add schema markup\", \"generate structured data\", \"JSON-LD\", \"rich snippets\", \"FAQ schema\", \"product ma",
       "triggers": [],
       "champion": false,
       "fallback": null,
@@ -1238,7 +1238,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__schema-markup-generator",
       "original_name": "schema-markup-generator"
@@ -1255,7 +1255,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__search-console",
       "original_name": "search-console"
@@ -1315,7 +1315,7 @@
       "id": "seo-analysis",
       "name": "seo-analysis",
       "sektor": "penulisan",
-      "description": "Full SEO audit combining Google Search Console, URL Inspection API, PageSpeed Insights, a technical crawl, keyword research, and metadata, schema, search intent and Core Web Vitals checks. Surfaces quick wins, diagnoses traffic drops and content gaps, and produces an actionable 30-day plan. Use when",
+      "description": "Audit site SEO using connected Search Console data, public page inspections, and supplied crawl or performance reports. Diagnose traffic drops, indexing, metadata, schema, content gaps, and Core Web Vitals with explicit evidence and coverage limits. Use for site-wide SEO audits, organic traffic chan",
       "triggers": [],
       "champion": false,
       "fallback": null,
@@ -1323,7 +1323,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__seo-analysis",
       "original_name": "seo-analysis"
@@ -1875,7 +1875,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__sitemap-audit",
       "original_name": "sitemap-audit"
@@ -1892,7 +1892,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__sxo",
       "original_name": "sxo"
@@ -1926,7 +1926,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__wordpress",
       "original_name": "wordpress"

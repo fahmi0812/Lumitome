@@ -3,7 +3,7 @@ name: rea-tool-design
 description: Audit, investigate, design, or change REA investigation tools, CLI/MCP contracts, provider capabilities, and Evidence semantics.
 metadata:
   swanwright_src: morluto/rea
-  swanwright_sha: c52a9b9d79021d4799c478d73a3fd3ed795b2318
+  swanwright_sha: 5cddc69c51a0fb18d021417199046314581ba9c2
   swanwright_original_id: morluto-rea__rea-tool-design
 ---
 
@@ -29,6 +29,13 @@ reproduced bugs, supported limitations, design opportunities and unverified
 claims. Check relevant rendered MCP prompts, guided workflows and packaged skill
 advice against the live contracts and exercise their suggested handoffs. Report
 working alternatives and evidence limits as well as findings.
+
+For wording audits and agent trials, use
+[focused tool-description trials](../../../docs/development/client-verification.md#focused-tool-description-trials).
+Start with representative workflow boundaries and repeat failures or ambiguous
+outcomes; keep actual arguments and supported final claims separate. Reuse the
+repository's evaluation tooling and report actual runtime/model versions and
+synthetic versus production coverage rather than copying a harness into a skill.
 
 For a design request, return the proposed boundary, input/result shape, Evidence
 semantics, nearest alternative, and verification approach. Implement when

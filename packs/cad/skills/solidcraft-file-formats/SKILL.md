@@ -1,11 +1,11 @@
 ---
 name: solidcraft-file-formats
-description: Use when a SolidCraft change saves something new in a design (a field, a feature type, a kind of name) or changes what older designs mean, and when touching STEP, IGES, 3MF, STL, OBJ, DXF or URDF import and export.
+description: "Use when a SolidCraft change saves something new in a design (a field, a feature type, a kind of name) or changes what older designs mean, and when touching STEP, IGES, 3MF, STL, OBJ, DXF or URDF import and export."
 license: Apache-2.0
 metadata:
   swanwright_sector: coding
   swanwright_src: tangency-labs/solidcraft
-  swanwright_sha: c7fb4f7cab28392965e44dc5b419690eed18c783
+  swanwright_sha: b8d554ca35ad54ed6ab3e28bdb7dce98375c838f
   swanwright_original_id: tangency-labs-solidcraft__solidcraft-file-formats
   swanwright_original_name: solidcraft-file-formats
 ---
@@ -29,7 +29,7 @@ Drawings follow the same rules with their own numbers, from 1: a drawing-format 
 - Imported files are untrusted: sizes, entity counts and nesting are capped, and every kernel call is guarded (`skills/solidcraft-crash-safety/SKILL.md`). What cannot be read becomes a warning on the feature.
 - STEP is read by our own reader in `crates/kernel/src/step_in`, written from the public standards, with no third-party STEP code. The reader and what it supports: `docs/step-import.md`.
 - Imported assemblies are rigid by default; Unlock Contents releases them.
-- Kernel work (booleans, STEP/IGES import and export, tessellation) is paused except crashes and data loss: CONTRIBUTING.md, "Kernel work is paused".
+- Kernel work (booleans, STEP/IGES import and export, tessellation) goes in `solidcore/`: CONTRIBUTING.md, "Kernel work goes in solidcore/".
 
 ## Export
 - STEP, 3MF, STL, OBJ and URDF go through `file.export` and `file.save_mesh`; the MCP `export` tool calls them. URDF: `docs/urdf.md`. 3MF face tags: `docs/formats/3mf-face-tags.md`.

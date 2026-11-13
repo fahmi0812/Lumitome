@@ -65,7 +65,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__canopy-part-title",
       "original_name": "canopy-part-title"
@@ -99,7 +99,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__changelog-video",
       "original_name": "changelog-video"
@@ -116,7 +116,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__code-slice-hero",
       "original_name": "code-slice-hero"
@@ -150,7 +150,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__cuboid-carousel",
       "original_name": "cuboid-carousel"
@@ -269,7 +269,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__frost-sequence-camera-orbit",
       "original_name": "frost-sequence-camera-orbit"
@@ -320,7 +320,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__glass-shard-title",
       "original_name": "glass-shard-title"
@@ -490,7 +490,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "lemomo-ai/lemo-opuscar",
-      "sha": "5c05490cc55dfb54f8f4c333f0f0e79cb6500564",
+      "sha": "3a7132b996be0241c1ea0ab180d519f06e6f10b6",
       "license": "MIT",
       "original_id": "lemomo-ai-lemo-opuscar__lemo-opuscar",
       "original_name": "lemo-opuscar"
@@ -626,7 +626,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__orbit-card",
       "original_name": "orbit-card"
@@ -907,7 +907,7 @@
       "id": "reverse-any-video",
       "name": "reverse-any-video",
       "sektor": "media",
-      "description": "Rebuild any video file as an editable HyperFrames project - motion graphics, talking heads, live action or AI-generated footage. Measure and watch it, rebuild every layer, then check the render against the original frame by frame. Use to reverse, recreate, replicate or copy a video.",
+      "description": "Rebuild any video file as an editable HyperFrames project - motion graphics, talking heads, live action or AI-generated footage - checked against the original frame by frame. Use to reverse, recreate, remake, replicate or copy a video, or 「复刻这个视频」「照着这个视频做一个」.",
       "triggers": [],
       "champion": false,
       "fallback": null,
@@ -915,7 +915,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__reverse-any-video",
       "original_name": "reverse-any-video"
@@ -966,7 +966,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__style-sampling",
       "original_name": "style-sampling"
@@ -1051,7 +1051,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__wireframe-portal-title",
       "original_name": "wireframe-portal-title"

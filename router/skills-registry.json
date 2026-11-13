@@ -146,7 +146,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "miqdadbadjuber/anti-slop",
-      "sha": "9504989f162a92b1996853eccbb3d8a86e73df68",
+      "sha": "54e39872aeba6a699b40f6a68f51307c3eea2901",
       "license": "MIT",
       "original_id": "miqdadbadjuber-anti-slop__antislop",
       "original_name": "antislop"
@@ -163,7 +163,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "miqdadbadjuber/anti-slop",
-      "sha": "9504989f162a92b1996853eccbb3d8a86e73df68",
+      "sha": "54e39872aeba6a699b40f6a68f51307c3eea2901",
       "license": "MIT",
       "original_id": "miqdadbadjuber-anti-slop__antislop-code",
       "original_name": "antislop-code"
@@ -180,7 +180,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "miqdadbadjuber/anti-slop",
-      "sha": "9504989f162a92b1996853eccbb3d8a86e73df68",
+      "sha": "54e39872aeba6a699b40f6a68f51307c3eea2901",
       "license": "MIT",
       "original_id": "miqdadbadjuber-anti-slop__antislop-copywriting",
       "original_name": "antislop-copywriting"
@@ -197,7 +197,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "miqdadbadjuber/anti-slop",
-      "sha": "9504989f162a92b1996853eccbb3d8a86e73df68",
+      "sha": "54e39872aeba6a699b40f6a68f51307c3eea2901",
       "license": "MIT",
       "original_id": "miqdadbadjuber-anti-slop__antislop-human",
       "original_name": "antislop-human"
@@ -214,7 +214,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "miqdadbadjuber/anti-slop",
-      "sha": "9504989f162a92b1996853eccbb3d8a86e73df68",
+      "sha": "54e39872aeba6a699b40f6a68f51307c3eea2901",
       "license": "MIT",
       "original_id": "miqdadbadjuber-anti-slop__antislop-layoutmobile",
       "original_name": "antislop-layoutmobile"
@@ -231,7 +231,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "miqdadbadjuber/anti-slop",
-      "sha": "9504989f162a92b1996853eccbb3d8a86e73df68",
+      "sha": "54e39872aeba6a699b40f6a68f51307c3eea2901",
       "license": "MIT",
       "original_id": "miqdadbadjuber-anti-slop__antislop-ui",
       "original_name": "antislop-ui"
@@ -248,7 +248,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "tt-a1i/archify",
-      "sha": "11b0d6031853bdae89eed57e7979aabbf0034097",
+      "sha": "7e45f36c66de1254d5ad6ba1d878f6499ea269fd",
       "license": "Apache-2.0",
       "original_id": "tt-a1i-archify__archify",
       "original_name": "archify"
@@ -265,7 +265,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "tt-a1i/archify",
-      "sha": "11b0d6031853bdae89eed57e7979aabbf0034097",
+      "sha": "7e45f36c66de1254d5ad6ba1d878f6499ea269fd",
       "license": "Apache-2.0",
       "original_id": "tt-a1i-archify__archify-review",
       "original_name": "archify-review"
@@ -282,7 +282,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "tt-a1i/archify",
-      "sha": "11b0d6031853bdae89eed57e7979aabbf0034097",
+      "sha": "7e45f36c66de1254d5ad6ba1d878f6499ea269fd",
       "license": "Apache-2.0",
       "original_id": "tt-a1i-archify__archify-tuning",
       "original_name": "archify-tuning"
@@ -301,7 +301,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "pbakaus/impeccable",
-      "sha": "500eeb7e655d1916c8d0880d05c8a80b5a8a86fb",
+      "sha": "c4cd1924c389f68d37c687d9c2bbf13f12547c41",
       "license": "Apache-2.0",
       "original_id": "pbakaus-impeccable__audit",
       "original_name": "audit"
@@ -691,7 +691,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "cathrynlavery/diagram-design",
-      "sha": "0cf73c3fcc56667ad91a9a04c439ac6ccfabc9d1",
+      "sha": "f6db0decea96de66b901331a0f79a8d4b147ebae",
       "license": "MIT",
       "original_id": "cathrynlavery-diagram-design__diagram-design",
       "original_name": "diagram-design"
@@ -793,7 +793,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "google/elephant-goldfish-model",
-      "sha": "bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31",
+      "sha": "270b10326bf366d823bc76fd662cf83808d5781e",
       "license": "Apache-2.0",
       "original_id": "google-elephant-goldfish-model__egm-bootstrap",
       "original_name": "egm-bootstrap"
@@ -812,7 +812,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "google/elephant-goldfish-model",
-      "sha": "bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31",
+      "sha": "270b10326bf366d823bc76fd662cf83808d5781e",
       "license": "Apache-2.0",
       "original_id": "google-elephant-goldfish-model__egm-brainstorm",
       "original_name": "egm-brainstorm"
@@ -831,7 +831,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "google/elephant-goldfish-model",
-      "sha": "bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31",
+      "sha": "270b10326bf366d823bc76fd662cf83808d5781e",
       "license": "Apache-2.0",
       "original_id": "google-elephant-goldfish-model__egm-draft",
       "original_name": "egm-draft"
@@ -851,7 +851,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "google/elephant-goldfish-model",
-      "sha": "bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31",
+      "sha": "270b10326bf366d823bc76fd662cf83808d5781e",
       "license": "Apache-2.0",
       "original_id": "google-elephant-goldfish-model__egm-drift-report",
       "original_name": "egm-drift-report"
@@ -870,7 +870,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "google/elephant-goldfish-model",
-      "sha": "bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31",
+      "sha": "270b10326bf366d823bc76fd662cf83808d5781e",
       "license": "Apache-2.0",
       "original_id": "google-elephant-goldfish-model__egm-resolve",
       "original_name": "egm-resolve"
@@ -889,7 +889,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "google/elephant-goldfish-model",
-      "sha": "bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31",
+      "sha": "270b10326bf366d823bc76fd662cf83808d5781e",
       "license": "Apache-2.0",
       "original_id": "google-elephant-goldfish-model__egm-review",
       "original_name": "egm-review"
@@ -909,7 +909,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "google/elephant-goldfish-model",
-      "sha": "bdcfe8cdaee99699c4b2cb7ad4e3b2c1a6b56a31",
+      "sha": "270b10326bf366d823bc76fd662cf83808d5781e",
       "license": "Apache-2.0",
       "original_id": "google-elephant-goldfish-model__egm-review-loop",
       "original_name": "egm-review-loop"
@@ -929,7 +929,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "emilkowalski/skills",
-      "sha": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "sha": "f7ce8c02d6e3c8f0d980a44c57bcc41a40254349",
       "license": "MIT",
       "original_id": "emilkowalski-skills__emil-design-eng",
       "original_name": "emil-design-eng",
@@ -1049,7 +1049,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "haydenschmitty/floorplan",
-      "sha": "70be3f40f9c2e061290b76027f180d9ff892edd6",
+      "sha": "5e3eaac9639705f52e5e31b620a0d20550acd9dd",
       "license": "MIT",
       "original_id": "haydenschmitty-floorplan__floorplan",
       "original_name": "floorplan"
@@ -1172,7 +1172,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "Nutlope/hallmark",
-      "sha": "4f6a46c6dc325d40ab268c93e25c7b96676ebccd",
+      "sha": "04977e15f3dfd6ee4b74c887dac3eb52665d6c92",
       "license": "MIT",
       "original_id": "nutlope-hallmark__hallmark",
       "original_name": "hallmark",
@@ -1298,7 +1298,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "adhiprib/humanizer-indonesia",
-      "sha": "14e19a018d3b39f07a460388237ea4b167c8d70b",
+      "sha": "62fe1aed5932c26cfcfc7ed096415e59aae5b0db",
       "license": "MIT",
       "original_id": "adhiprib-humanizer-indonesia__humanizer-indonesia",
       "original_name": "humanizer-indonesia"
@@ -1317,7 +1317,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "pbakaus/impeccable",
-      "sha": "500eeb7e655d1916c8d0880d05c8a80b5a8a86fb",
+      "sha": "c4cd1924c389f68d37c687d9c2bbf13f12547c41",
       "license": "Apache-2.0",
       "original_id": "pbakaus-impeccable__impeccable",
       "original_name": "impeccable"
@@ -1542,7 +1542,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "magicuidesign/magicui",
-      "sha": "efe76fc5755eca1142dd4f74c1d6f0ace2887e3c",
+      "sha": "2712647e193295d2fd85b65e58095fb2009736d7",
       "license": "MIT",
       "original_id": "magicuidesign-magicui__magic-ui",
       "original_name": "magic-ui",
@@ -1659,7 +1659,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "vercel-labs/json-render",
-      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
+      "sha": "5e30a6f9425cd5ffb5038ba44352ab4b1feb3fc7",
       "license": "Apache-2.0",
       "original_id": "vercel-labs-json-render__next",
       "original_name": "next",
@@ -1762,7 +1762,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "morluto/rea",
-      "sha": "c52a9b9d79021d4799c478d73a3fd3ed795b2318",
+      "sha": "5cddc69c51a0fb18d021417199046314581ba9c2",
       "license": "MIT",
       "original_id": "morluto-rea__rea-analysis-optimization",
       "original_name": "rea-analysis-optimization"
@@ -1782,7 +1782,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "morluto/rea",
-      "sha": "c52a9b9d79021d4799c478d73a3fd3ed795b2318",
+      "sha": "5cddc69c51a0fb18d021417199046314581ba9c2",
       "license": "MIT",
       "original_id": "morluto-rea__rea-changelog-update",
       "original_name": "rea-changelog-update"
@@ -1802,7 +1802,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "morluto/rea",
-      "sha": "c52a9b9d79021d4799c478d73a3fd3ed795b2318",
+      "sha": "5cddc69c51a0fb18d021417199046314581ba9c2",
       "license": "MIT",
       "original_id": "morluto-rea__rea-ci-tests-audit",
       "original_name": "rea-ci-tests-audit"
@@ -1822,7 +1822,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "morluto/rea",
-      "sha": "c52a9b9d79021d4799c478d73a3fd3ed795b2318",
+      "sha": "5cddc69c51a0fb18d021417199046314581ba9c2",
       "license": "MIT",
       "original_id": "morluto-rea__rea-tool-design",
       "original_name": "rea-tool-design"
@@ -1841,7 +1841,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "vercel-labs/json-render",
-      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
+      "sha": "5e30a6f9425cd5ffb5038ba44352ab4b1feb3fc7",
       "license": "Apache-2.0",
       "original_id": "vercel-labs-json-render__react",
       "original_name": "react",
@@ -1970,7 +1970,7 @@
       "requires_consent": true,
       "pack": "",
       "src": "morluto/rea",
-      "sha": "c52a9b9d79021d4799c478d73a3fd3ed795b2318",
+      "sha": "5cddc69c51a0fb18d021417199046314581ba9c2",
       "license": "MIT",
       "original_id": "morluto-rea__reverse-engineer-anything",
       "original_name": "reverse-engineer-anything"
@@ -2050,7 +2050,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "tt-a1i/archify",
-      "sha": "11b0d6031853bdae89eed57e7979aabbf0034097",
+      "sha": "7e45f36c66de1254d5ad6ba1d878f6499ea269fd",
       "license": "MIT",
       "original_id": "tt-a1i-archify__simplify-codebase",
       "original_name": "simplify-codebase"
@@ -2070,7 +2070,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "vercel-labs/json-render",
-      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
+      "sha": "5e30a6f9425cd5ffb5038ba44352ab4b1feb3fc7",
       "license": "Apache-2.0",
       "original_id": "vercel-labs-json-render__skill-creator",
       "original_name": "skill-creator",
@@ -2203,7 +2203,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "caru-ini/stack-diagram",
-      "sha": "1ed53e3e9525364ae5d82e0430f2bb3f7ef4c838",
+      "sha": "9175bde8449cc8f5390d6eb72ecc2e1f5bfe21f3",
       "license": "MIT",
       "original_id": "caru-ini-stack-diagram__stack-diagram",
       "original_name": "stack-diagram"
@@ -2338,7 +2338,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "vercel-labs/json-render",
-      "sha": "18194121c8f087afacd9a8ef65fbda18374ee039",
+      "sha": "5e30a6f9425cd5ffb5038ba44352ab4b1feb3fc7",
       "license": "Apache-2.0",
       "original_id": "vercel-labs-json-render__technical-writer",
       "original_name": "technical-writer",
@@ -2357,7 +2357,7 @@
       "requires_consent": false,
       "pack": "",
       "src": "tt-a1i/archify",
-      "sha": "11b0d6031853bdae89eed57e7979aabbf0034097",
+      "sha": "7e45f36c66de1254d5ad6ba1d878f6499ea269fd",
       "license": "MIT",
       "original_id": "tt-a1i-archify__test-value",
       "original_name": "test-value"
@@ -4300,7 +4300,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-agent-tools",
       "original_name": "solidcraft-agent-tools"
@@ -4317,7 +4317,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-checking",
       "original_name": "solidcraft-checking"
@@ -4334,7 +4334,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-commands",
       "original_name": "solidcraft-commands"
@@ -4351,7 +4351,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-crash-safety",
       "original_name": "solidcraft-crash-safety"
@@ -4368,7 +4368,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-editing",
       "original_name": "solidcraft-editing"
@@ -4385,7 +4385,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-file-formats",
       "original_name": "solidcraft-file-formats"
@@ -4402,7 +4402,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-ground-rules",
       "original_name": "solidcraft-ground-rules"
@@ -4419,7 +4419,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-layers",
       "original_name": "solidcraft-layers"
@@ -4436,7 +4436,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-mechanisms",
       "original_name": "solidcraft-mechanisms"
@@ -4453,7 +4453,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-modeling",
       "original_name": "solidcraft-modeling"
@@ -4470,7 +4470,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-packaging",
       "original_name": "solidcraft-packaging"
@@ -4487,7 +4487,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-performance",
       "original_name": "solidcraft-performance"
@@ -4504,7 +4504,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-preferences",
       "original_name": "solidcraft-preferences"
@@ -4521,7 +4521,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-reporting",
       "original_name": "solidcraft-reporting"
@@ -4538,7 +4538,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-tests",
       "original_name": "solidcraft-tests"
@@ -4555,7 +4555,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-ui",
       "original_name": "solidcraft-ui"
@@ -4572,7 +4572,7 @@
       "requires_consent": false,
       "pack": "cad",
       "src": "tangency-labs/solidcraft",
-      "sha": "c7fb4f7cab28392965e44dc5b419690eed18c783",
+      "sha": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
       "license": "Apache-2.0",
       "original_id": "tangency-labs-solidcraft__solidcraft-ui-text",
       "original_name": "solidcraft-ui-text"
@@ -9191,7 +9191,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__canopy-part-title",
       "original_name": "canopy-part-title"
@@ -9225,7 +9225,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__changelog-video",
       "original_name": "changelog-video"
@@ -9242,7 +9242,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__code-slice-hero",
       "original_name": "code-slice-hero"
@@ -9276,7 +9276,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__cuboid-carousel",
       "original_name": "cuboid-carousel"
@@ -9395,7 +9395,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__frost-sequence-camera-orbit",
       "original_name": "frost-sequence-camera-orbit"
@@ -9446,7 +9446,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__glass-shard-title",
       "original_name": "glass-shard-title"
@@ -9616,7 +9616,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "lemomo-ai/lemo-opuscar",
-      "sha": "5c05490cc55dfb54f8f4c333f0f0e79cb6500564",
+      "sha": "3a7132b996be0241c1ea0ab180d519f06e6f10b6",
       "license": "MIT",
       "original_id": "lemomo-ai-lemo-opuscar__lemo-opuscar",
       "original_name": "lemo-opuscar"
@@ -9752,7 +9752,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__orbit-card",
       "original_name": "orbit-card"
@@ -10033,7 +10033,7 @@
       "id": "reverse-any-video",
       "name": "reverse-any-video",
       "sektor": "media",
-      "description": "Rebuild any video file as an editable HyperFrames project - motion graphics, talking heads, live action or AI-generated footage. Measure and watch it, rebuild every layer, then check the render against the original frame by frame. Use to reverse, recreate, replicate or copy a video.",
+      "description": "Rebuild any video file as an editable HyperFrames project - motion graphics, talking heads, live action or AI-generated footage - checked against the original frame by frame. Use to reverse, recreate, remake, replicate or copy a video, or 「复刻这个视频」「照着这个视频做一个」.",
       "triggers": [],
       "champion": false,
       "fallback": null,
@@ -10041,7 +10041,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__reverse-any-video",
       "original_name": "reverse-any-video"
@@ -10092,7 +10092,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__style-sampling",
       "original_name": "style-sampling"
@@ -10177,7 +10177,7 @@
       "requires_consent": false,
       "pack": "motion",
       "src": "heygen-com/hyperframes",
-      "sha": "2927fe615581f03258205a876fada7d6f3111dc8",
+      "sha": "d208281091b1c00db1724a2ee3db0055955eb41b",
       "license": "Apache-2.0",
       "original_id": "heygen-com-hyperframes__wireframe-portal-title",
       "original_name": "wireframe-portal-title"
@@ -10211,7 +10211,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__brand-copy",
       "original_name": "brand-copy"
@@ -10228,7 +10228,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__budget-planner",
       "original_name": "budget-planner"
@@ -10245,7 +10245,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__business-plan",
       "original_name": "business-plan"
@@ -10262,7 +10262,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__business-report",
       "original_name": "business-report"
@@ -10279,7 +10279,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__campaign-planner",
       "original_name": "campaign-planner"
@@ -10296,7 +10296,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__contract-drafter",
       "original_name": "contract-drafter"
@@ -10313,7 +10313,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__course-slides",
       "original_name": "course-slides"
@@ -10330,7 +10330,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__data-analyst",
       "original_name": "data-analyst"
@@ -10347,7 +10347,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__data-cleaning",
       "original_name": "data-cleaning"
@@ -10364,7 +10364,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__email-drafter",
       "original_name": "email-drafter"
@@ -10381,7 +10381,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__executive-deck",
       "original_name": "executive-deck"
@@ -10398,7 +10398,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__expense-report",
       "original_name": "expense-report"
@@ -10415,7 +10415,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__financial-statement-analysis",
       "original_name": "financial-statement-analysis"
@@ -10432,7 +10432,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__genoffice",
       "original_name": "genoffice"
@@ -10449,7 +10449,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__interview-coach",
       "original_name": "interview-coach"
@@ -10466,7 +10466,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__invoice-tax-checklist",
       "original_name": "invoice-tax-checklist"
@@ -10483,7 +10483,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__job-description",
       "original_name": "job-description"
@@ -10500,7 +10500,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__kpi-dashboard",
       "original_name": "kpi-dashboard"
@@ -10517,7 +10517,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__labor-contract",
       "original_name": "labor-contract"
@@ -10534,7 +10534,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__lesson-plan",
       "original_name": "lesson-plan"
@@ -10551,7 +10551,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__meeting-minutes",
       "original_name": "meeting-minutes"
@@ -10568,7 +10568,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__nda-drafter",
       "original_name": "nda-drafter"
@@ -10585,7 +10585,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__okr-planner",
       "original_name": "okr-planner"
@@ -10602,7 +10602,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__onboarding-plan",
       "original_name": "onboarding-plan"
@@ -10619,7 +10619,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__performance-review",
       "original_name": "performance-review"
@@ -10636,7 +10636,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__personal-finance",
       "original_name": "personal-finance"
@@ -10653,7 +10653,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__policy-compliance",
       "original_name": "policy-compliance"
@@ -10687,7 +10687,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__product-launch",
       "original_name": "product-launch"
@@ -10704,7 +10704,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__proposal-writer",
       "original_name": "proposal-writer"
@@ -10721,7 +10721,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__quiz-maker",
       "original_name": "quiz-maker"
@@ -10738,7 +10738,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__resume-polisher",
       "original_name": "resume-polisher"
@@ -10755,7 +10755,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__sales-forecast",
       "original_name": "sales-forecast"
@@ -10772,7 +10772,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__slide-planner",
       "original_name": "slide-planner"
@@ -10789,7 +10789,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__social-media",
       "original_name": "social-media"
@@ -10806,7 +10806,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__sop-writer",
       "original_name": "sop-writer"
@@ -10823,7 +10823,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__study-plan",
       "original_name": "study-plan"
@@ -10840,7 +10840,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__survey-analyst",
       "original_name": "survey-analyst"
@@ -10857,7 +10857,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__swot-strategy",
       "original_name": "swot-strategy"
@@ -10874,7 +10874,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__terms-of-service",
       "original_name": "terms-of-service"
@@ -10891,7 +10891,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__thesis-advisor",
       "original_name": "thesis-advisor"
@@ -10908,7 +10908,7 @@
       "requires_consent": false,
       "pack": "penulisan",
       "src": "genspark-ai/genoffice",
-      "sha": "0ac588ffc435f103658feafc1c963bc64c81ad6d",
+      "sha": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
       "license": "Apache-2.0",
       "original_id": "genspark-ai-genoffice__weekly-report",
       "original_name": "weekly-report"
@@ -14325,7 +14325,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__backlink-audit",
       "original_name": "backlink-audit"
@@ -14334,7 +14334,7 @@
       "id": "broken-link-checker",
       "name": "broken-link-checker",
       "sektor": "penulisan",
-      "description": "Scans a website to find broken links (404s, 500s). Crawls internal pages, identifies broken outbound links, and reports source pages for easy fixing. Use this when the user asks to \"check for broken links\", \"find 404s\", \"audit my links\", or \"is my site healthy\".",
+      "description": "Inspect public page links or a supplied crawl report for confirmed broken links and redirect issues. Report source URLs, evidence, and coverage limits; no crawler is bundled. Use for broken-link checks, 404 diagnosis, link audits, or website health reviews.",
       "triggers": [],
       "champion": false,
       "fallback": null,
@@ -14342,7 +14342,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__broken-link-checker",
       "original_name": "broken-link-checker"
@@ -14359,7 +14359,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__competitor-pages",
       "original_name": "competitor-pages"
@@ -14368,7 +14368,7 @@
       "id": "content-planner",
       "name": "content-planner",
       "sektor": "penulisan",
-      "description": "GSC-driven content calendar. Pulls real Search Console data, finds the highest click-potential opportunities (striking-distance queries at positions 5-20, unanswered query intent, related-keyword expansions), and produces a dated, prioritized content calendar — ready to hand to /content-writer. Use ",
+      "description": "Build a dated editorial calendar from connected or supplied Search Console data. Prioritize striking-distance queries, content gaps, CTR refreshes, and cannibalization issues. Return Markdown and optional JSON without a local viewer or automatic publishing. Use for content planning, editorial calend",
       "triggers": [],
       "champion": false,
       "fallback": null,
@@ -14376,7 +14376,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__content-planner",
       "original_name": "content-planner"
@@ -14393,7 +14393,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__content-writer",
       "original_name": "content-writer"
@@ -14410,7 +14410,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__ecommerce-seo",
       "original_name": "ecommerce-seo"
@@ -14436,7 +14436,7 @@
       "id": "geo-optimizer",
       "name": "geo-optimizer",
       "sektor": "penulisan",
-      "description": "Generative Engine Optimization (GEO) — make content rank in AI search answers from ChatGPT, Claude, Perplexity, Gemini, and Google AI Overviews. Audits existing content, rewrites for AI citation, and produces per-engine strategy. Use when asked to \"optimize for AI search\", \"rank in ChatGPT\", \"GEO au",
+      "description": "Audit, improve, and measure visibility in AI search answers from ChatGPT, Claude, Perplexity, Gemini, and Google AI Overviews. Use for GEO, AEO, LLM SEO, AI citation and search crawler audits, AI visibility strategy, buyer-question baselines, brand mentions and fact checks in AI answers, or analysis",
       "triggers": [],
       "champion": false,
       "fallback": null,
@@ -14444,7 +14444,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__geo-optimizer",
       "original_name": "geo-optimizer"
@@ -14461,7 +14461,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__gohighlevel",
       "original_name": "gohighlevel"
@@ -14478,7 +14478,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__google-ads",
       "original_name": "google-ads"
@@ -14495,7 +14495,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__google-ads-assets",
       "original_name": "google-ads-assets"
@@ -14512,7 +14512,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__google-ads-audit",
       "original_name": "google-ads-audit"
@@ -14529,7 +14529,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__google-ads-copy",
       "original_name": "google-ads-copy"
@@ -14546,7 +14546,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__google-ads-landing",
       "original_name": "google-ads-landing"
@@ -14563,7 +14563,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__google-analytics",
       "original_name": "google-analytics"
@@ -14580,7 +14580,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__hreflang-international",
       "original_name": "hreflang-international"
@@ -14597,7 +14597,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__image-seo",
       "original_name": "image-seo"
@@ -14614,7 +14614,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__keyword-research",
       "original_name": "keyword-research"
@@ -14631,7 +14631,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__local-seo",
       "original_name": "local-seo"
@@ -14648,7 +14648,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__meta-ads",
       "original_name": "meta-ads"
@@ -14665,7 +14665,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__meta-ads-audit",
       "original_name": "meta-ads-audit"
@@ -14682,7 +14682,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__meta-ads-creative",
       "original_name": "meta-ads-creative"
@@ -14699,7 +14699,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__meta-tags-optimizer",
       "original_name": "meta-tags-optimizer"
@@ -14716,7 +14716,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads",
       "original_name": "paid-ads"
@@ -14733,7 +14733,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-amazon",
       "original_name": "paid-ads-amazon"
@@ -14750,7 +14750,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-chatgpt",
       "original_name": "paid-ads-chatgpt"
@@ -14767,7 +14767,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-creative",
       "original_name": "paid-ads-creative"
@@ -14784,7 +14784,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-guide",
       "original_name": "paid-ads-guide"
@@ -14801,7 +14801,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-integrations",
       "original_name": "paid-ads-integrations"
@@ -14818,7 +14818,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-launch",
       "original_name": "paid-ads-launch"
@@ -14835,7 +14835,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-linkedin",
       "original_name": "paid-ads-linkedin"
@@ -14852,7 +14852,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-optimize",
       "original_name": "paid-ads-optimize"
@@ -14869,7 +14869,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-reddit",
       "original_name": "paid-ads-reddit"
@@ -14886,7 +14886,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-review",
       "original_name": "paid-ads-review"
@@ -14903,7 +14903,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-setup",
       "original_name": "paid-ads-setup"
@@ -14920,7 +14920,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-tiktok",
       "original_name": "paid-ads-tiktok"
@@ -14937,7 +14937,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__paid-ads-x",
       "original_name": "paid-ads-x"
@@ -14954,7 +14954,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__programmatic-seo",
       "original_name": "programmatic-seo"
@@ -14963,7 +14963,7 @@
       "id": "schema-markup-generator",
       "name": "schema-markup-generator",
       "sektor": "penulisan",
-      "description": "Generate JSON-LD structured data markup for rich results in Google Search. Supports FAQ, HowTo, Article, Product, LocalBusiness, and multi-type schemas. Validates against Google requirements and provides implementation guidance. Use when asked to \"add schema markup\", \"generate structured data\", \"JSO",
+      "description": "Generate and validate Schema.org JSON-LD, and assess Google rich result eligibility where applicable. Supports FAQ, HowTo, Article, Product, LocalBusiness, and multi-type schemas. Use when asked to \"add schema markup\", \"generate structured data\", \"JSON-LD\", \"rich snippets\", \"FAQ schema\", \"product ma",
       "triggers": [],
       "champion": false,
       "fallback": null,
@@ -14971,7 +14971,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__schema-markup-generator",
       "original_name": "schema-markup-generator"
@@ -14988,7 +14988,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__search-console",
       "original_name": "search-console"
@@ -15048,7 +15048,7 @@
       "id": "seo-analysis",
       "name": "seo-analysis",
       "sektor": "penulisan",
-      "description": "Full SEO audit combining Google Search Console, URL Inspection API, PageSpeed Insights, a technical crawl, keyword research, and metadata, schema, search intent and Core Web Vitals checks. Surfaces quick wins, diagnoses traffic drops and content gaps, and produces an actionable 30-day plan. Use when",
+      "description": "Audit site SEO using connected Search Console data, public page inspections, and supplied crawl or performance reports. Diagnose traffic drops, indexing, metadata, schema, content gaps, and Core Web Vitals with explicit evidence and coverage limits. Use for site-wide SEO audits, organic traffic chan",
       "triggers": [],
       "champion": false,
       "fallback": null,
@@ -15056,7 +15056,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__seo-analysis",
       "original_name": "seo-analysis"
@@ -15600,7 +15600,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__sitemap-audit",
       "original_name": "sitemap-audit"
@@ -15617,7 +15617,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__sxo",
       "original_name": "sxo"
@@ -15651,7 +15651,7 @@
       "requires_consent": false,
       "pack": "seo",
       "src": "nowork-studio/notfair-plugin",
-      "sha": "f70e36082a50db00c18a7752ba97ffa1052d3472",
+      "sha": "8035315b959379d0a0df0c8f7d30c0defc5be576",
       "license": "MIT",
       "original_id": "nowork-studio-notfair-plugin__wordpress",
       "original_name": "wordpress"

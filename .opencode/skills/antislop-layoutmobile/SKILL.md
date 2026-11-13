@@ -1,12 +1,12 @@
 ---
 name: antislop-layoutmobile
-description: 'Mobile layout skill for antislop. Use for layouts that reflow across screen sizes, phone to desktop: grids, overflow, tap targets. Load with the core.'
+description: "Mobile layout skill for antislop. Use for layouts that reflow across screen sizes, phone to desktop: grids, overflow, tap targets. Load with the core."
+allowed-tools: Read, Write, Edit, Glob, Grep
 license: MIT
-allowed-tools: Read Write Edit Glob Grep
 metadata:
   swanwright_sector: coding
   swanwright_src: miqdadbadjuber/anti-slop
-  swanwright_sha: 9504989f162a92b1996853eccbb3d8a86e73df68
+  swanwright_sha: 54e39872aeba6a699b40f6a68f51307c3eea2901
   swanwright_original_id: miqdadbadjuber-anti-slop__antislop-layoutmobile
   swanwright_original_name: antislop-layoutmobile
 ---
