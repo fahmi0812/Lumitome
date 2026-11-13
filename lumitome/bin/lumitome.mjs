@@ -363,8 +363,8 @@ if (sub === "run") {
 }
 // v0.3.51: --auto hanya untuk TUI polos + run (subcommand lain tidak diubah).
 if (AUTO.auto && (sub === "" || sub === "run")) args = AM.withAutoFlag(args);
-// Satu baris status saat start (Bahasa Indonesia, tanpa jargon); bukan banner.
-if (sub === "" || sub === "run") process.stderr.write(`lumitome: ${AM.autoStartLine(AUTO)}\n`);
+// v0.3.53: tidak ada lagi baris status mode auto saat start (Fahmi: jelek) —
+// mode auto tetap aktif default; indikator `auto` tetap terlihat di TUI OpenCode.
 
 // ---------- jalankan + cleanup ----------
 function descendantsByRunId() {

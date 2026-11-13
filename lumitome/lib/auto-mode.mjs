@@ -57,10 +57,3 @@ export function withAutoFlag(args) {
   if (args[0] === "run") return ["run", "--auto", ...args.slice(1)];
   return ["--auto", ...args];
 }
-
-/** Satu baris status saat start (Bahasa Indonesia, tanpa jargon). */
-export function autoStartLine({ auto }) {
-  return auto
-    ? "mode auto aktif — agent jalan sendiri tanpa minta konfirmasi; yang dilarang tetap dilarang. Matikan: LUMI_AUTO_MODE=0 lumitome"
-    : "mode auto mati — agent akan minta konfirmasi dulu. Nyalakan: LUMI_AUTO_MODE=1 lumitome";
-}
