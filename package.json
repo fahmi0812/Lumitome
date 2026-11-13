@@ -1,6 +1,6 @@
 {
   "name": "lumitome",
-  "version": "0.3.53",
+  "version": "0.3.54",
   "type": "module",
   "description": "Lumitome — CLI AI coding aman di atas OpenCode v2 (engine terpin) + harness Swanwright",
   "engines": {
@@ -11,6 +11,7 @@
     "scan": "node --experimental-strip-types scripts/scan.ts",
     "validate": "node scripts/validate.mjs",
     "validate:offline": "node scripts/validate.mjs --offline",
+    "lint": "node scripts/lint.mjs",
     "enable-pack": "node scripts/enable-pack.mjs",
     "sync-upstream": "node scripts/sync-upstream.mjs",
     "skills:index": "node scripts/skill-index.mjs --if-changed",

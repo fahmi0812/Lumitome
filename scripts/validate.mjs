@@ -146,5 +146,16 @@ for (const b of osvToml.split(/\[\[IgnoredVulns\]\]/).slice(1)) if (!/^\s*reason
 const glToml = fs.existsSync(".gitleaks.toml") ? strip(fs.readFileSync(".gitleaks.toml", "utf8")) : "";
 for (const b of glToml.split(/\[\[allowlists\]\]|\[allowlist\]/).slice(1)) if (!/^\s*description\s*=\s*['"][^'"]{8,}/m.test(b)) fail(".gitleaks.toml: allowlist tanpa description");
 pass("allowlist scanner beralasan");
+// --- Lint gate (v0.3.54, Poteto Pyramid lapis Static Analysis) ---
+// Fail-closed: pelanggaran lint menggagalkan validate. Murni baca file
+// (tanpa binary/network/stdin), jadi aman untuk --offline dan tidak
+// pernah bertanya apa pun. Prinsip: koreksi baru jadi aturan lint,
+// bukan skill/prompt baru.
+{
+  const { lintRepo } = await import("./lint.mjs");
+  const lr = lintRepo(".");
+  for (const v of lr.violations) fail(`lint: ${v.file}:${v.line} ${v.rule} ${v.message}`);
+  if (!lr.violations.length) pass(`lint OK (${lr.files} file, ${lr.ms} ms)`);
+}
 console.log(fails ? `FAILED ${fails} (warns ${warns})` : `OK (warns ${warns})`);
 process.exit(fails ? 1 : 0);

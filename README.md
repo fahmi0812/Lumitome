@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.53-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.54-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -40,7 +40,7 @@ While it installs (and uninstalls) you see one status line and one line when it 
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.53.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.54.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
@@ -198,7 +198,10 @@ If you installed with npm: `npm uninstall -g lumitome`, then delete the `.lumito
 npm install
 npm test
 npm run validate
+npm run lint
 ```
+
+Lint gate (`scripts/lint.mjs`, zero-dependency, non-interactive — it never reads stdin or asks anything): LINT-001 no hardcoded catalog counts (`.length ===/!==` a literal ≥ 10 — count dynamically, lesson of v0.3.47); LINT-002 no `process.exit` in `lumitome/lib/` (allowlist with reasons: `codemem-mcp-shim.mjs`, `provider-ui.mjs`); LINT-003 no `console.*(` calls in `lumitome/lib/`; LINT-004 layer boundaries (router/ imports nothing outside itself; `harness/lumi-guard.mjs` imports only `node:*`). `npm run validate` runs lint fail-closed. Principle: a new correction becomes a lint rule, not a new skill or prompt addition.
 
 Releasing a new version: bump with `node scripts/bump-version.mjs <x.y.z> "<title>"`, fill in the CHANGELOG entry (never leave the `- TODO: isi catatan rilis` placeholder), then run the release gate: `node scripts/release.mjs <x.y.z> [--include <file> ...]`. It checks the changelog, git status, `npm run validate`, `npm test` (refusing to release when tests are skipped unless `--allow-skipped "reason"` is given), and a pre-tag updater check in a staging copy. It never commits, tags, or pushes — those steps are printed at the end for a human. The full updater simulation can only run after the tag exists; its command is printed by the gate.
 
