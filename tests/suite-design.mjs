@@ -176,6 +176,23 @@ import { ok, skip, finish } from "./harness.mjs";
       const v = BH.stuckVerdict(dir);
       fs.rmSync(dir, { recursive: true, force: true });
       return JSON.stringify(counts) === "[21,21,21]" && v.stuck === true && v.verdict === "mentok di 21 findings"; })());
+  // penanda MWG per iterasi (v0.3.55, R1): pengukuran dengan vs tanpa MWG.
+  ok("design-behavior: recordLoopIteration + readLoopMwg — penanda mwg cli tercatat dan terbaca",
+    (() => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-loop-"));
+      BH.recordLoopIteration(dir, { iteration: 1, findings: 5, pass: false, mwg: { consulted: true, guides: ["progress"], source: "cli" } });
+      BH.recordLoopIteration(dir, { iteration: 2, findings: 0, pass: true, mwg: { consulted: false, guides: [], source: "fallback" } });
+      const m = BH.readLoopMwg(dir);
+      fs.rmSync(dir, { recursive: true, force: true });
+      return m.length === 2 && m[0].consulted === true && JSON.stringify(m[0].guides) === '["progress"]' && m[0].source === "cli" &&
+        m[1].consulted === false && m[1].source === "fallback"; })());
+  ok("design-behavior: recordLoopIteration tanpa mwg — readLoopMwg consulted:false/source:none; readLoopCounts tidak berubah",
+    (() => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-loop-"));
+      BH.recordLoopIteration(dir, { iteration: 1, findings: 7, pass: false });
+      const m = BH.readLoopMwg(dir);
+      const counts = BH.readLoopCounts(dir);
+      fs.rmSync(dir, { recursive: true, force: true });
+      return m.length === 1 && m[0].consulted === false && m[0].source === "none" && JSON.stringify(m[0].guides) === "[]" &&
+        JSON.stringify(counts) === "[7]"; })());
   ok("design-gate: parseDesignFile baca arah + token + tipografi + signature + fonts",
     (() => { const d = DM.parseDesignFile("tests/fixtures/design/DESIGN.md");
       return d.direction === "Hangat artisanal" && JSON.stringify(d.tokens) === JSON.stringify(["#2C1A14", "#A0591E", "#FFF8F0", "#FFFFFF"]) && d.typography === "Fraunces (display), Inter (body)" && d.signature === "cangkir SVG berasap" && JSON.stringify(d.fonts) === '["fraunces","inter"]'; })());

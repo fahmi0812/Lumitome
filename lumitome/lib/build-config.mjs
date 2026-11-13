@@ -71,6 +71,9 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
     permissions: [
       // pola diawali "*" karena string yang dicek OpenCode = `bwrap --args 3 bash -c '<perintah>' …`
       { action: "shell", resource: "*git push *", effect: "ask" },
+      // v0.3.55: konsultasi modern-web-guidance di Maker loopdesign/stitch-ui —
+      // hanya perintah persis ini yang di-allowlist; JANGAN pernah `npx *` telanjang.
+      { action: "shell", resource: "*npx -y modern-web-guidance@latest *", effect: "allow" },
       // .env: isi ditolak lapis-1 (guard) + di-mask /dev/null oleh bwrap; daftar nama (ls/find/glob) diizinkan
       ...["*id_rsa*", "*id_ed25519*", "*.ssh/*", "*rm -rf /*", "*rm -rf ~*", "*rm -fr /*", "*rm -rf ..*", "*sudo *",
         "*git push *-f*", "*git push *--force*", "*git push *main*", "*git push *master*", "*git push *+*", "*printenv*", "*NINEROUTER_API_KEY*", "*LUMI_KEY_*"].map(DENY),

@@ -146,22 +146,64 @@ sumbernya (lihat `design-assets` § "verify"). Pre-mortem ini adalah jangkar
 niat desain — kritikus tidak boleh menyerang niat yang sudah disetujui
 Fahmi (mis. lavender lembut + maskot MotionSense) seolah itu cacat.
 
+**Konsultasi modern-web-guidance (MWG) SEBELUM coding (oleh Maker).**
+
+Design-Gate mengukur *hasil* (kontras, tap target, overflow), tapi tidak
+tahu *cara* modern memperbaikinya — Maker yang menebak dari bobot training
+akan mengulang pola legacy (persis masalah yang dinyatakan
+modern-web-guidance di README-nya: data training berisi pola legacy dalam
+jumlah besar). Sebelum menulis kode, untuk tiap kemampuan yang dibutuhkan
+halaman itu (progress bar, form, navigasi, dsb.), Maker WAJIB berkonsultasi
+ke modern-web-guidance (GoogleChrome — panduan web modern + status Baseline
++ strategi fallback) mengikuti 4 langkah ini:
+
+1. **Search** — `node harness/mwg-consult.mjs search "<kemampuan 2–5 kata>"`
+   (mis. `search "progress determinate"`). Mengembalikan ID panduan.
+2. **Retrieve** — `node harness/mwg-consult.mjs retrieve <id[,id...]>`
+   (atau `consult "<query>"` untuk search + retrieve sekaligus, maks 3
+   panduan). CLI MWG menyimpan panduan ke file sementara dan mencetak
+   lokasinya — baca file itu dengan file tool, jangan `cat`/`head`.
+   Jangan panggil `npx` langsung: helper menjalankan persis
+   `npx -y modern-web-guidance@latest ...` (dengan `-y`, tanpa prompt).
+   `npx` telanjang / tanpa `-y` / paket lain DILARANG.
+3. **Verify** — terapkan panduan itu, lalu periksa implementasi terhadap
+   panduan sebelum selesai (langkah verifikasi MWG).
+4. **Disclose** — tulis seksi `### Modern Web Guidance` di `DESIGN.md`:
+   ID + nama tiap panduan yang dipakai dan jebakan yang dihindari.
+
+**Fallback offline (bukan gagal):** bila CLI MWG tidak tersedia (tanpa
+jaringan, `npx` tidak ada, timeout) helper mengembalikan fallback —
+Maker lanjut dengan perilaku sekarang (tanpa MWG) dan mencatat
+`source: "fallback"` di penanda loop. Loop TIDAK PERNAH gagal hanya
+karena MWG tidak tersedia. **Tidak ada file MWG yang diimpor ke repo** —
+konsultasi runtime saja; jangan salin SKILL.md/panduan MWG ke mana pun
+di repo.
+
+**Penanda pengukuran:** tiap iterasi dicatat ke `loop-history.jsonl`
+(`recordLoopIteration`) beserta penanda MWG — `mwg: { consulted:
+true/false, guides: ["progress"], source: "cli"|"fallback" }` — supaya
+hasil dengan dan tanpa MWG bisa dibandingkan (findings per iterasi).
+
 ## 2 — Loop
 
 | Langkah | Yang dilakukan |
 |---|---|
 | 1. Maker bangun | Sektor agent pemilik skill desain itu: desain UI = coding (`design-taste-frontend`, `impeccable`, `hallmark`, `ui-ux-pro-max`, `stitch-ui`); motion/video = media (`motion-design`, `review-loop`, `web-sims`). Per iterasi router pilih **≤5 skill** yang relevan buat iterasi itu; set-nya boleh ganti antar iterasi. Tidak pernah >5 dalam satu konteks. |
 | 2. Render | Figcraft export (desain Figcraft, `figcraft-cli export`) atau screenshot browser (web, via `.opencode/skills/design-taste-frontend/scripts/inspect.mjs` / playwright / chromedev). Dua renderer, satu gate: desain yang sama harus dapat vonis yang sama dari renderer mana pun. **Mode input situs live (v0.3.36 §5):** untuk mendesain ulang situs yang sudah tayang, simpan dulu salinannya dengan `node harness/design-snapshot.mjs <url\|file> <out.html> [--dark\|--light] [--width 1440]` — menyimpan HTML halaman + screenshot `<out>.live.png`, scroll dulu agar lazy-load ketangkap. **Caveat:** background animasi dari script tidak selamat — hasil snapshot adalah salinan statis; perilaku dibangun ulang dari kontrak. **File sementara/scratch SELALU di dalam workspace (`<workspace>/.tmp/` atau subdir tugas), JANGAN `/tmp`** — guard menolak `rm` di luar workspace. |
-| 3. Gate ukur | `harness/design-gate.mjs` + Design Stress-Test: viewport ekstrem 1440/768/390 (overflow, elemen bertumpuk, teks terpotong), edge-case data & teks (teks sangat panjang, empty state, loading, error, data tidak konsisten = finding), aksesibilitas (rasio kontras dihitung dari piksel, minimal 4,5:1 WCAG AA; tombol sentuh <44px langsung gagal; font/gambar gagal muat — gambar yang gagal di browser dicek HTTP-nya dulu: 200 + byte gambar valid = warn artefak lingkungan, bukan fail), kesetiaan token (warna render vs token DESIGN.md — solid di luar token = finding bernama + bersaran), anti-slop `purple-gradient`: gagal hanya bila SATU gradien mengandung stop ungu DAN stop cyan/biru (AND, v0.3.33 — gradien ungu murni kini lolos; dulu OR), due diligence (aksesibilitas, lisensi aset, konsistensi data). **Tiap iterasi juga menjalankan behavior gate — SELALU, tidak bisa dilewati**: `probeBehavior` menjalankan kontrak interaksi dari `DESIGN.md` (keadaan awal + hasil klik); bila tidak ada kontrak, gate menurunkan kontrak default otomatis dari DOM (`deriveDefaultContract`) dan probe tetap jalan; bila tidak ada check yang bisa diturunkan, hasilnya finding warn "tidak ada interaksi yang bisa diprobe" — bukan skip diam-diam. Hasilnya findings `behavior`/`probe-gagal` yang ikut menentukan vonis gate. Jumlah findings tiap iterasi dicatat ke `<workspace>/.tmp/loopdesign/loop-history.jsonl` (`recordLoopIteration`) untuk aturan mentok (§4). |
+| 3. Gate ukur | `harness/design-gate.mjs` + Design Stress-Test: viewport ekstrem 1440/768/390 (overflow, elemen bertumpuk, teks terpotong), edge-case data & teks (teks sangat panjang, empty state, loading, error, data tidak konsisten = finding), aksesibilitas (rasio kontras dihitung dari piksel, minimal 4,5:1 WCAG AA; tombol sentuh <44px langsung gagal; font/gambar gagal muat — gambar yang gagal di browser dicek HTTP-nya dulu: 200 + byte gambar valid = warn artefak lingkungan, bukan fail), kesetiaan token (warna render vs token DESIGN.md — solid di luar token = finding bernama + bersaran), anti-slop `purple-gradient`: gagal hanya bila SATU gradien mengandung stop ungu DAN stop cyan/biru (AND, v0.3.33 — gradien ungu murni kini lolos; dulu OR), due diligence (aksesibilitas, lisensi aset, konsistensi data). **Tiap iterasi juga menjalankan behavior gate — SELALU, tidak bisa dilewati**: `probeBehavior` menjalankan kontrak interaksi dari `DESIGN.md` (keadaan awal + hasil klik); bila tidak ada kontrak, gate menurunkan kontrak default otomatis dari DOM (`deriveDefaultContract`) dan probe tetap jalan; bila tidak ada check yang bisa diturunkan, hasilnya finding warn "tidak ada interaksi yang bisa diprobe" — bukan skip diam-diam. Hasilnya findings `behavior`/`probe-gagal` yang ikut menentukan vonis gate. Jumlah findings tiap iterasi dicatat ke `<workspace>/.tmp/loopdesign/loop-history.jsonl` (`recordLoopIteration`, beserta penanda MWG `mwg: { consulted, guides, source }` — lihat §1) untuk aturan mentok (§4). |
 | 4. Kritikus menyerang | §3 — red team + pairwise (iterasi sekarang vs sebelumnya, dua urutan presentasi). Pairwise MENGINFORMASIKAN, never-gate. |
 | 5. Maker perbaiki | Dari findings gate + kritik. Perbaiki dalam **9 pass
 berurutan** (v0.3.36, diadaptasi dari unslop — instruksi Maker, BUKAN
 aturan gate; gate tidak memeriksa urutan pass): **spacing → color →
 icons → copy → type → layout → details → visuals → motion**. Selesaikan
 satu pass menyeluruh sebelum pass berikutnya. Spacing dulu karena
+satu pass menyeluruh sebelum pass berikutnya. Spacing dulu karena
 semuanya terbaca berbeda begitu ritmenya benar. Copy sebelum type/layout
 karena panjang headline menentukan ukuran dan letaknya. Visuals + motion
-terakhir karena harus muat di layar yang sudah jalan tanpanya. Lalu
+terakhir karena harus muat di layar yang sudah jalan tanpanya. Bila
+findings gate menyangkut pola web modern (kontras, tap target, progress,
+form, dsb.), konsultasi ulang MWG untuk kategori itu (4 langkah di §1)
+sebelum memperbaiki — jangan menebak pola dari bobot training. Lalu
 kembali ke langkah 2. |
 
 ## 3 — Kritikus Red-Team / Devil's Advocate (sub-agent terpisah)
@@ -264,6 +306,7 @@ default N = 3.
 | Kualitas visual, anti-slop, arah artistik | `design-taste-frontend`, `impeccable`, `hallmark` |
 | Motion / simulasi interaktif | `motion-design`, `web-sims` |
 | Screenshot + inspeksi browser | `design-taste-frontend/scripts/inspect.mjs` |
+| Panduan web modern (Baseline + fallback) | `modern-web-guidance` — konsultasi runtime via `harness/mwg-consult.mjs`, BUKAN skill impor |
 
 ## Guardrails
 

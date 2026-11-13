@@ -571,13 +571,46 @@ export async function measureAndGateWithBehavior(target, opts = {}) {
 
 // ---------- state loop (§5) ----------
 
-/** Simpan satu iterasi loop ke <stateDir>/loop-history.jsonl (append JSONL). */
-export function recordLoopIteration(stateDir, { iteration, findings, pass } = {}) {
+/** Simpan satu iterasi loop ke <stateDir>/loop-history.jsonl (append JSONL).
+ *  mwg opsional (v0.3.55, R1): penanda konsultasi modern-web-guidance —
+ *  { consulted, guides:[id], source:"cli"|"fallback" } — supaya hasil
+ *  dengan vs tanpa MWG bisa dibandingkan (findings per iterasi). */
+export function recordLoopIteration(stateDir, { iteration, findings, pass, mwg } = {}) {
   const dir = resolve(stateDir);
   mkdirSync(dir, { recursive: true });
-  const line = JSON.stringify({ iteration, findings: Number(findings), pass: !!pass, at: new Date().toISOString() });
+  const rec = { iteration, findings: Number(findings), pass: !!pass, at: new Date().toISOString() };
+  if (mwg !== undefined) {
+    rec.mwg = {
+      consulted: !!mwg.consulted,
+      guides: Array.isArray(mwg.guides) ? mwg.guides.map(String) : [],
+      source: mwg.source === "cli" ? "cli" : mwg.source === "fallback" ? "fallback" : "none",
+    };
+  }
+  const line = JSON.stringify(rec);
   appendFileSync(join(dir, "loop-history.jsonl"), line + "\n", "utf8");
   return line;
+}
+
+/** Penanda MWG per iterasi, urut — dibaca dari loop-history.jsonl.
+ *  Baris lama tanpa mwg -> { consulted:false, guides:[], source:"none" }. */
+export function readLoopMwg(stateDir) {
+  const file = join(resolve(stateDir), "loop-history.jsonl");
+  if (!existsSync(file)) return [];
+  const out = [];
+  for (const line of readFileSync(file, "utf8").split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const rec = JSON.parse(line);
+      const m = rec.mwg && typeof rec.mwg === "object" ? rec.mwg : {};
+      out.push({
+        iteration: rec.iteration,
+        consulted: !!m.consulted,
+        guides: Array.isArray(m.guides) ? m.guides.map(String) : [],
+        source: m.source === "cli" ? "cli" : m.source === "fallback" ? "fallback" : "none",
+      });
+    } catch { /* baris rusak dilewati */ }
+  }
+  return out;
 }
 
 /** Jumlah findings per iterasi, urut — dibaca dari loop-history.jsonl. */

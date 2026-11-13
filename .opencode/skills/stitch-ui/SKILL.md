@@ -93,6 +93,24 @@ Aturan audit:
 - Simpan artefak di folder kerja pengguna (mis. `design/design.md`,
   `design/stitch-prompt.md`, `design/index.html`), bukan di repo Lumitome.
 
+### Konsultasi modern-web-guidance (MWG) sebelum menulis `index.html`
+
+Pola yang terlihat di gambar referensi belum tentu pola modern — gambar
+bisa saja memakai pola legacy. Untuk tiap komponen di gambar (progress,
+form, navigasi, dsb.), konsultasi modern-web-guidance (GoogleChrome —
+panduan web modern + status Baseline + strategi fallback) mengikuti
+4 langkah yang sama seperti `loopdesign` §1: **search**
+(`node harness/mwg-consult.mjs search "<kemampuan 2–5 kata>"`) →
+**retrieve** (`retrieve <id[,id...]>` atau `consult "<query>"`) →
+terapkan ke `index.html` dan **verifikasi** terhadap panduan →
+**disclose** di `design.md` (seksi `### Modern Web Guidance`: ID + nama
+panduan yang dipakai dan jebakan yang dihindari). Fallback offline =
+lanjut tanpa MWG (catat `source: "fallback"` di seksi disclose);
+jangan panggil `npx` langsung — helper menjalankan persis
+`npx -y modern-web-guidance@latest ...` (dengan `-y`, tanpa prompt).
+Tidak ada file MWG yang diimpor ke repo. Prompt Stitch sendiri tidak
+mengutip MWG — disclose hanya di `design.md`.
+
 ### Langkah 4 — Motion dari HTML statis
 
 `index.html` dari langkah 3 bisa ditingkatkan jadi materi pitching: animasi

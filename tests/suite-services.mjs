@@ -196,6 +196,15 @@ import { frontmatter } from "../router/parse.mjs";
   const r2 = await BC.buildFinalConfig({ env: env2, ...base, HOME: h2, CFG_DIR: c2, JOURNAL: path.join(h2, "j.jsonl"), RUN_ID: "t2", sub: "run", prompt: "buat REST API" });
   ok("buildFinalConfig run: skill router membatasi skill yang terlihat", r2.skillNote.startsWith("skills=") && r2.finalCfg.default_agent === "build" && r2.finalCfg.permissions.some((p) => p.action === "skill" && p.resource === "*" && p.effect === "deny") && r2.finalCfg.permissions.some((p) => p.action === "skill" && p.effect === "allow"));
   fs.rmSync(h2, { recursive: true, force: true });
+  // v0.3.55: konsultasi MWG di Maker loopdesign/stitch-ui — npx hanya
+  // di-allowlist spesifik untuk MWG, tidak pernah npx telanjang.
+  const { h: h3, c: c3 } = mk();
+  const env3 = { LUMI_MCP: "skills", LUMI_ROUTER_L1: "0" };
+  const r3 = await BC.buildFinalConfig({ env: env3, ...base, HOME: h3, CFG_DIR: c3, JOURNAL: path.join(h3, "j.jsonl"), RUN_ID: "t3", sub: "run", prompt: "buat landing page" });
+  ok("buildFinalConfig MWG: shell allow persis 'npx -y modern-web-guidance@latest *'; tanpa allow npx telanjang",
+    r3.finalCfg.permissions.some((p) => p.action === "shell" && p.resource === "*npx -y modern-web-guidance@latest *" && p.effect === "allow") &&
+    !r3.finalCfg.permissions.some((p) => p.action === "shell" && (p.resource === "*npx *" || p.resource === "npx *") && p.effect === "allow"));
+  fs.rmSync(h3, { recursive: true, force: true });
 }
 
 {
