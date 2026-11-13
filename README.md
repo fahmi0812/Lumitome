@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.51-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.52-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -40,11 +40,36 @@ While it installs (and uninstalls) you see one status line and one line when it 
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.51.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.52.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
 ```
+
+**Windows: if PowerShell blocks `npm`**
+
+If you see this error:
+
+```
+npm : File C:\Program Files\nodejs\npm.ps1 cannot be loaded because running scripts is disabled on this system.
+```
+
+PowerShell is blocking script files (its default execution policy). Fix it in one of these two ways — no administrator needed:
+
+Option A (recommended) — allow scripts for your user, then run the install again:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
+```
+
+Option B (without changing anything) — use the `npm.cmd` shim instead, or run the same command in Command Prompt (`cmd.exe`):
+
+```powershell
+npm.cmd install -g https://github.com/fahmi0812/Lumitome/tarball/main
+```
+
+One more thing: type the command yourself — do not paste the terminal's output back into the prompt. Lines like `Windows PowerShell`, `Copyright (C) ...`, or `Install the latest PowerShell ...` are not commands, and PowerShell will only show errors for them.
 
 The npm install downloads OpenCode 2.2.4 for your system, checks its SHA256 hash, and keeps it in `~/.lumitome` (on Windows: `%USERPROFILE%\.lumitome`). If that download fails, it tries again the first time you run `lumitome`.
 
