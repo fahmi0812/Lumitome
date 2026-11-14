@@ -1,6 +1,8 @@
 /**
  * Migrasi config dasar Lumitome yang tersalin di $LUMI_HOME/config/opencode.jsonc (Windows tanpa symlink → salinan).
- * - compaction.buffer: engine 2.2.4 hanya menerima integer token; "20%" (format 2.2.5) diganti BUFFER_TOKENS.
+ * - compaction.buffer: engine 2.3.0 menerima integer token MAUPUN "20%"
+ *   (format persen sejak 2.2.5); migrasi lama "20%" → BUFFER_TOKENS dipertahankan
+ *   supaya salinan config lama tetap konsisten dengan config dasar (integer).
  * - apiKey 9router: {env:NINEROUTER_API_KEY} → {env:LUMI_KEY_9ROUTER} (variabel yang selalu di-set wrapper).
  * Symlink tidak ditulis (target-nya file sumber paket). Tidak pernah menulis key mentah.
  */
