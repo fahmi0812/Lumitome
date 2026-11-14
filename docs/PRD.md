@@ -9,7 +9,7 @@
 > `swanwright.ts`) — itu peninggalan, bukan nama produk.
 
 ## Latar
-Lumitome: asisten coding terminal di atas OpenCode 2.2.4 (vanilla, tanpa patch
+Lumitome: asisten coding terminal di atas OpenCode 2.3.0 (vanilla, tanpa patch
 core). Model hanya via 9router; tanpa LiteLLM / proxy lain. Satu registry
 900 skill (734 bisa ter-route; 166 pack red-team tetap disabled), routing
 2 lapis + lazy-load.
