@@ -252,7 +252,9 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
   const runValidateCopy = (withRegistry) => {
     const tmp = fs.mkdtempSync(path.join("..", "p22-e2e-"));
     try {
-      cp.execFileSync("cp", ["-al", ".", tmp + "/"], { timeout: 120000 });
+      // --no-preserve=ownership: chown gagal (EPERM) di FS yang menolak preservasi ownership
+      // (badai EPERM 15 Nov 2026); kepemilikan salinan tidak relevan untuk validate.
+      cp.execFileSync("cp", ["-al", "--no-preserve=ownership", ".", tmp + "/"], { timeout: 120000 });
       addFixture(tmp, withRegistry);
       const r = cp.spawnSync(process.execPath, ["scripts/validate.mjs"], { cwd: tmp, encoding: "utf8", timeout: 120000 });
       return { status: r.status, out: (r.stdout || "") + (r.stderr || "") };
@@ -275,7 +277,9 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
   const runValidateCopy = ({ offline = false, withDeps = true, scrubPath = false, offlineEnv = false } = {}) => {
     const tmp = fs.mkdtempSync(path.join("..", "p23-val-"));
     try {
-      cp.execFileSync("cp", ["-al", ".", tmp + "/"], { timeout: 120000 });
+      // --no-preserve=ownership: chown gagal (EPERM) di FS yang menolak preservasi ownership
+      // (badai EPERM 15 Nov 2026); kepemilikan salinan tidak relevan untuk validate.
+      cp.execFileSync("cp", ["-al", "--no-preserve=ownership", ".", tmp + "/"], { timeout: 120000 });
       if (!withDeps) fs.rmSync(path.join(tmp, "node_modules"), { recursive: true, force: true });
       const env = { ...process.env };
       if (scrubPath) { const empty = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-nobin-")); env.PATH = empty; }

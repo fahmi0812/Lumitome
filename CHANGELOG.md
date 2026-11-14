@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.58 — perbaiki tes e2e: cp tanpa preservasi ownership
+
+- Akar masalah: dua tes e2e di `tests/suite-gates.mjs` (P2-2 `p22-e2e-`, P2-3 `p23-val-`) menyalin repo dengan `cp -al` (hardlink, murah). Di bawah badai EPERM (filesystem menolak `chown` sejak 15 Nov 2026 04:22 WIB), `cp` mati dengan "failed to preserve ownership: Operation not permitted" → `execFileSync` melempar → seluruh file `suite-gates.mjs` crash → suite jadi 756 passed / 1 failed / 2 skipped (2.351 baris EPERM di log).
+- Perbaikan: `cp -al --no-preserve=ownership` di kedua helper. Kepemilikan salinan tidak relevan untuk `validate`; maksud tes (salinan hardlink murah) tetap sama.
+- Verifikasi: `suite-gates.mjs` 78 passed / 0 failed; suite penuh **834 passed, 0 failed, 2 skipped** (exit 0), 0 baris EPERM. Koreksi catatan: angka 834 sama dengan yang didokumentasikan v0.3.56 — klaim "863/0/1" di entri v0.3.57 keliru (v0.3.57 tidak menambah tes, hanya pin/label di `suite-providers`/`suite-services`), jadi 834 adalah jumlah sebenarnya.
+
 ## 0.3.57 — Upgrade engine OpenCode 2.2.4 ke 2.3.0
 
 - Engine terpin naik 2.2.4 → **2.3.0** (rilis upstream 13 Nov 2026): pin SHA256 di `lumitome/lib/engine.mjs` + `install.sh` diganti ke SHA256SUMS resmi anomalyco/opencode v2.3.0 (6 platform, diverifikasi dari file checksum rilis); `scripts/doctor.sh`, README, NOTICE, ARCHITECTURE, PRD ikut naik.
