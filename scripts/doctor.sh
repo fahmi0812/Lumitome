@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Swanwright doctor — cek pemasangan nyata terhadap OpenCode v2 (via opencode serve + HTTP API proyek).
-# Wajib (FAIL→exit 1): opencode v2.2.4, node>=22.6, indeks skill FRESH, policy, skill proyek = 86,
+# Wajib (FAIL→exit 1): opencode v2.3.0, node>=22.6, indeks skill FRESH, policy, skill proyek = 86,
 #   MCP context7 + codemem + skills connected, plugin swanwright active, agents, skill_search waras.
 # Info/WARN: playwright, chromedev, markitdown, 9router.  Pakai: bash scripts/doctor.sh [dir-proyek]
 set -uo pipefail
@@ -8,7 +8,7 @@ DIR="$(cd "${1:-.}" && pwd)"; cd "$DIR"
 [ -f "${SW_HOME:-$HOME/.swanwright}/env.sh" ] && . "${SW_HOME:-$HOME/.swanwright}/env.sh"
 FAILS=0; WARNS=0
 pass(){ printf '[PASS] %s\n' "$*"; }; fail(){ printf '[FAIL] %s\n' "$*"; FAILS=$((FAILS+1)); }; warn(){ printf '[WARN] %s\n' "$*"; WARNS=$((WARNS+1)); }
-OCV="$(opencode --version 2>/dev/null)"; [ "$OCV" = "opencode v2.2.4" ] && pass "$OCV" || fail "opencode v2.2.4 dibutuhkan (dapat: ${OCV:-tidak ada})"
+OCV="$(opencode --version 2>/dev/null)"; [ "$OCV" = "opencode v2.3.0" ] && pass "$OCV" || fail "opencode v2.3.0 dibutuhkan (dapat: ${OCV:-tidak ada})"
 node -e 'const [a,b]=process.versions.node.split(".").map(Number);process.exit(a>22||(a===22&&b>=6)?0:1)' 2>/dev/null && pass "node $(node -v)" || fail "node >= 22.6 dibutuhkan"
 command -v codebase-memory-mcp >/dev/null && pass "$(codebase-memory-mcp --version)" || fail "codebase-memory-mcp tidak di PATH"
 command -v uvx >/dev/null && pass "uvx ada" || warn "uvx tidak ada (markitdown)"
