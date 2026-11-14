@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Lumitome — installer (Linux / macOS / Windows via WSL2). Idempoten. Terisolasi dari OpenCode milik user:
-#   engine OpenCode v2.2.4 terpin (SHA256) di $LUMI_HOME/bin (default ~/.lumitome) — TIDAK ditaruh di PATH global,
+#   engine OpenCode v2.3.0 terpin (SHA256) di $LUMI_HOME/bin (default ~/.lumitome) — TIDAK ditaruh di PATH global,
 #   tidak menyentuh ~/.config/opencode, ~/.local/share/opencode (auth.json, sesi) atau `opencode` global.
 #   Satu-satunya file di luar $LUMI_HOME: launcher $LUMI_BIN_DIR/lumitome (default ~/.local/bin).
 # Pakai:  curl -fsSL https://raw.githubusercontent.com/fahmi0812/Lumitome/main/install.sh | bash
 #   atau: bash install.sh [--doctor] [--dry-run] [--uninstall] [--no-node] [--no-cbm] [--no-uv] [--skip-npm] [--with-browsers] [--project DIR]
 set -euo pipefail
 
-OC_VERSION=2.2.4
+OC_VERSION=2.3.0
 CBM_VERSION=0.12.1
 UV_VERSION=0.13.6
 NODE_VERSION=22.23.4
@@ -207,19 +207,19 @@ fetch() {
 }
 mkdir -p "$BIN"; [ "$DRY" = 1 ] || touch "$SW_HOME/.lumitome-home"
 
-# ---------- OpenCode v2.2.4 ----------
-# default: build Lumitome (OpenCode v2.2.4, hanya logo diganti; engine/patches/logo.patch). LUMI_ENGINE=upstream → binary resmi.
-LUMI_ENGINE_TAG=engine-2.2.4-lumi.1
+# ---------- OpenCode v2.3.0 ----------
+# default: build Lumitome (OpenCode v2.3.0, hanya logo diganti; engine/patches/logo.patch). LUMI_ENGINE=upstream → binary resmi.
+LUMI_ENGINE_TAG=engine-2.3.0-lumi.1
 oc_asset() { case "$OS-$ARCH" in
-  linux-x64) echo "opencode-linux-x64.tar.gz 1b70ce4a88e27c3643c2bb61c757dfe173b4e3629926ce808d45f3774d87826e";;
-  linux-arm64) echo "opencode-linux-arm64.tar.gz 81edcae078f36356cde3cf57d0cc6627896b18d1bddf47317cb025c56fcffd93";;
-  darwin-x64) echo "opencode-darwin-x64.zip 2be9b7671f94a9636b85ff31fcfce613f197c5204ec90291982d692010d072fd";;
-  darwin-arm64) echo "opencode-darwin-arm64.zip 4e093cae2931773c354896d98e7da0cfa3607c110aeaf255ba07f9c2d2238219";; esac; }
+  linux-x64) echo "opencode-linux-x64.tar.gz fc0f81522aceeabac47693d88389efa2bc517ce74c2c38fd6967819fcc6e4d3b";;
+  linux-arm64) echo "opencode-linux-arm64.tar.gz 3207fb5cdec448d479242c0f1a14f4f7bdfcad3a79209b5eb8f9003725e93711";;
+  darwin-x64) echo "opencode-darwin-x64.zip 79a4841925e3344d5bb4b000acf6c50b11de301e9047aa9bea9e288e77fe4249";;
+  darwin-arm64) echo "opencode-darwin-arm64.zip 7907df2b12720a840fbb49c5b978b9b82925b6bf75479a5fd216afa8932b6702";; esac; }
 lumi_asset() { case "$OS-$ARCH" in
-  linux-x64) echo "opencode-linux-x64.tar.gz be6d3d72ee5de8e8db2fa3409ecf690b41590b5b639838e81ad6d5f9e4c2d0cb";;
-  linux-arm64) echo "opencode-linux-arm64.tar.gz 47a0a48a23a37d5976aa4ca354ed83a1bc9c8d633991e4075f1d4124598508e6";;
-  darwin-x64) echo "opencode-darwin-x64.zip 14c6d9a29be862112417fec61e3413105e619783af4c44c3c55c6d38df1e7482";;
-  darwin-arm64) echo "opencode-darwin-arm64.zip ce0b62ac9baad5bd7146c53892d879832bd3fcc9e0e579b81ba5e0d76b0e5284";; esac; }
+  linux-x64) echo "opencode-linux-x64.tar.gz 0e8328e8b307795065a87263c196c03ff36dd6f7fe366cb420603b3b8758df72";;
+  linux-arm64) echo "opencode-linux-arm64.tar.gz ea3a63340b9d82bd6cbb7ab8566f0bb8bba79426840482050d9d020c5515d594";;
+  darwin-x64) echo "opencode-darwin-x64.zip de1cf6c6344079f69e2323feb6fec21ac078fd79daf97825672624dff0a2af80";;
+  darwin-arm64) echo "opencode-darwin-arm64.zip 1be236bce5fe504372f3966efeb24bd43f37f0221fc737ace141b6b698b515c5";; esac; }
 if [ "${LUMI_ENGINE:-}" = upstream ] || [ -z "$(lumi_asset)" ]; then
   OC_FLAVOR=upstream; OC_BASE="https://github.com/anomalyco/opencode/releases/download/v$OC_VERSION"; OC_PICK="$(oc_asset)"
 else

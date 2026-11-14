@@ -1,6 +1,6 @@
 # Arsitektur Lumitome v0.3.47
 
-Target: **OpenCode v2.2.4** (rilis GitHub anomalyco/opencode). Model hanya via **9router**. 900 skill di satu registry (734 bisa ter-route; 166 pack red-team tetap disabled, termasuk `api-security` & `llm-security`). Sejak v0.3.27 (satu korpus): tidak ada lagi pack nonaktif/dorman.
+Target: **OpenCode v2.3.0** (rilis GitHub anomalyco/opencode). Model hanya via **9router**. 900 skill di satu registry (734 bisa ter-route; 166 pack red-team tetap disabled, termasuk `api-security` & `llm-security`). Sejak v0.3.27 (satu korpus): tidak ada lagi pack nonaktif/dorman.
 Diagram: `docs/diagrams/arsitektur-final.png` (sistem) · `docs/diagrams/orchestrator-final.png` (alur orchestrator). Sumber Mermaid di sebelahnya.
 
 ![Arsitektur final](docs/diagrams/arsitektur-final.png)
@@ -9,7 +9,7 @@ Diagram: `docs/diagrams/arsitektur-final.png` (sistem) · `docs/diagrams/orchest
 
 | # | Lapisan | Path | Inti |
 |---|---|---|---|
-| ① | Pemasangan | `install.sh`, `scripts/doctor.sh` | OpenCode v2.2.4 / Node 22.23.4 / codebase-memory-mcp v0.12.1 / uv 0.13.6 — SHA256 terpin **dan** cocok file checksum rilis; ke `~/.swanwright`; idempoten; tidak menyentuh `~/.config/opencode` |
+| ① | Pemasangan | `install.sh`, `scripts/doctor.sh` | OpenCode v2.3.0 / Node 22.23.4 / codebase-memory-mcp v0.12.1 / uv 0.13.6 — SHA256 terpin **dan** cocok file checksum rilis; ke `~/.swanwright`; idempoten; tidak menyentuh `~/.config/opencode` |
 | ② | OpenCode + `.opencode/` | `opencode.jsonc`, `.opencode/agents`, `rules`, `plugins`, `skills` | Orchestrator (primary) → sub-agen sektor (depth=1) → Elephant/Goldfish/Synthesizer. Code Mode v2 tetap aktif |
 | ③ | Skill Query Layer | `router/skill-db.mjs`, `scripts/skill-index.mjs`, `scripts/skill-query.mjs`, `router/skill-search-mcp.mjs`, `runtime/skills.db` | SQLite FTS5 BM25 (+sqlite-vec opsional), filter SQL sebelum ranking, RRF, dedup, top-24, 1 panggilan 9router pilih-saja ≤5, `route_log` |
 | ④ | MCP per sektor | `router/mcp-sectors.json`, `scripts/gen-policy.mjs`, `docs/MCP.md`, `docs/MCP-GATEWAY.md`, `config/mcp-gateway/` | deny-by-default `*_*` → allow server sektor sendiri; gateway opsional (mati) |

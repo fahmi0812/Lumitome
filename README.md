@@ -9,12 +9,12 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.56-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.57-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
 
-Lumitome is a coding assistant that runs in your terminal. It is built on OpenCode, locked to version 2.2.4, and it runs separately from any OpenCode you already have installed.
+Lumitome is a coding assistant that runs in your terminal. It is built on OpenCode, locked to version 2.3.0, and it runs separately from any OpenCode you already have installed.
 
 You give it a task, such as "fix the failing tests". It reads your code, edits files, and runs commands to get it done.
 
@@ -40,7 +40,7 @@ While it installs (and uninstalls) you see one status line and one line when it 
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.56.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.57.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
@@ -71,7 +71,7 @@ npm.cmd install -g https://github.com/fahmi0812/Lumitome/tarball/main
 
 One more thing: type the command yourself — do not paste the terminal's output back into the prompt. Lines like `Windows PowerShell`, `Copyright (C) ...`, or `Install the latest PowerShell ...` are not commands, and PowerShell will only show errors for them.
 
-The npm install downloads OpenCode 2.2.4 for your system, checks its SHA256 hash, and keeps it in `~/.lumitome` (on Windows: `%USERPROFILE%\.lumitome`). If that download fails, it tries again the first time you run `lumitome`.
+The npm install downloads OpenCode 2.3.0 for your system, checks its SHA256 hash, and keeps it in `~/.lumitome` (on Windows: `%USERPROFILE%\.lumitome`). If that download fails, it tries again the first time you run `lumitome`.
 
 On Windows, commands are not run inside a sandbox, because the Linux sandbox tool (`bwrap`) does not exist there. Lumitome's safety rules still apply: dangerous commands and secret files are still blocked.
 
@@ -137,9 +137,9 @@ Lumitome does not update itself. It only updates when you run `lumitome update`.
 
 ### About the OpenCode copy
 
-Lumitome runs OpenCode 2.2.4. The only change we made is the logo on the start screen: it says LUMITOME in gold instead of "opencode". Everything else, including the colors, is plain OpenCode 2.2.4.
+Lumitome runs OpenCode 2.3.0. The only change we make to it is the logo on the start screen: it says LUMITOME in gold instead of "opencode". Everything else, including the colors, is plain OpenCode 2.3.0.
 
-We built it from the official 2.2.4 source with OpenCode's own build script. The change is in [`engine/patches/logo.patch`](engine/patches/logo.patch), and the files are on the [engine-2.2.4-lumi.1](https://github.com/fahmi0812/Lumitome/releases/tag/engine-2.2.4-lumi.1) release page with their SHA256 hashes. If you want the unchanged official OpenCode instead, set `LUMI_ENGINE=upstream` before you install or run Lumitome.
+We build it from the official 2.3.0 source with OpenCode's own build script. The change is in [`engine/patches/logo.patch`](engine/patches/logo.patch), and the files are on the [engine-2.3.0-lumi.1](https://github.com/fahmi0812/Lumitome/releases/tag/engine-2.3.0-lumi.1) release page with their SHA256 hashes. If you want the unchanged official OpenCode instead, set `LUMI_ENGINE=upstream` before you install or run Lumitome.
 
 ### Background service
 
@@ -209,7 +209,7 @@ More detail: [`lumitome/README.md`](lumitome/README.md) (all commands and settin
 
 ## Bahasa Indonesia
 
-Lumitome adalah asisten coding yang berjalan di terminal. Dibangun di atas OpenCode versi 2.2.4 yang dikunci, dan terpisah dari OpenCode yang sudah Anda pasang.
+Lumitome adalah asisten coding yang berjalan di terminal. Dibangun di atas OpenCode versi 2.3.0 yang dikunci, dan terpisah dari OpenCode yang sudah Anda pasang.
 
 **Pasang:** Linux/macOS: jalankan baris `curl ... install.sh | bash` di atas. Windows (atau OS apa pun yang punya npm): `npm install -g https://github.com/fahmi0812/Lumitome/tarball/main` (butuh Node.js 22.6+). Setelah terbit di npm: `npm install -g lumitome`.
 

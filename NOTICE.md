@@ -10,7 +10,7 @@ Sintesis/parafrase (bukan salinan) dari: multica-ai/andrej-karpathy-skills @2c60
 
 ## OpenCode (engine)
 - Sumber: https://github.com/anomalyco/opencode — Lisensi: MIT, Copyright (c) 2025 opencode.
-- Tidak di-vendor: installer mengunduh binary rilis v2.2.4 (SHA256 terpin) ke `~/.lumitome/bin/opencode`.
+- Tidak di-vendor: installer mengunduh binary rilis v2.3.0 (SHA256 terpin) ke `~/.lumitome/bin/opencode`.
 Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin SHA di bawah.
 
 ## AgriciDaniel/claude-seo
