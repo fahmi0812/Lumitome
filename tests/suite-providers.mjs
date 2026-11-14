@@ -292,7 +292,7 @@ import { ok, finish } from "./harness.mjs";
   const base = fs.readFileSync("lumitome/config/opencode.jsonc", "utf8");
   const sch = JSON.parse(fs.readFileSync("scripts/schema/opencode-config.schema.json", "utf8")).properties.compaction.properties.buffer;
   const buf = (base.match(/"buffer"\s*:\s*([^,}\s]+)/) || [])[1];
-  ok("config dasar: compaction.buffer integer sesuai schema 2.2.4; apiKey 9router = {env:LUMI_KEY_9ROUTER}", sch.type === "integer" && /^\d+$/.test(buf) && Number.isSafeInteger(Number(buf)) && base.includes('"apiKey": "{env:LUMI_KEY_9ROUTER}"') && !base.includes("NINEROUTER_API_KEY"));
+  ok("config dasar: compaction.buffer integer sesuai schema 2.3.0; apiKey 9router = {env:LUMI_KEY_9ROUTER}", sch.type === "integer" && /^\d+$/.test(buf) && Number.isSafeInteger(Number(buf)) && base.includes('"apiKey": "{env:LUMI_KEY_9ROUTER}"') && !base.includes("NINEROUTER_API_KEY"));
   const W12 = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
   ok("wrapper: env key dari FRAG di-inject untuk semua sub-perintah (serve juga)", /\.\.\.FRAG\.env,/.test(fs.readFileSync("lumitome/lib/build-config.mjs", "utf8")) && /migrateConfigFile/.test(W12) && /migrateConfigFile/.test(fs.readFileSync("lumitome/lib/update.mjs", "utf8")));
   const cf = path.join(h, "opencode.jsonc");
