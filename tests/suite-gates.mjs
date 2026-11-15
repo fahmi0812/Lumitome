@@ -633,4 +633,73 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     /\/subagent/.test(fm("README.md")) && /tabel/.test(fm("README.md")) && /plugin/.test(fm("README.md")));
 }
 
+// (v0.3.64) /subagent — perbaiki gagal JSON saat buka popup.
+// Akar masalah (terverifikasi ke sumber opencode v2.3.0 + log server):
+// `SubagentRpc` tidak punya field `events` (wajib menurut tipe
+// `Definition`), sementara engine memanggil `Object.entries(
+// definition.events)` saat registrasi RPC dan saat klien dibuat —
+// tanpa field itu registrasi melempar "Object.entries requires that
+// input parameter not be null or undefined", RPC tidak terdaftar, dan
+// semua panggilan gagal `RPC is unavailable` (HTTP 400; di mesin
+// Fahmi toast-nya terbaca "Expected JSON value"). `Rpc.define`
+// TIDAK memberi default `events: {}`. Perbaikan: `events: {}` +
+// argumen `{}` eksplisit untuk method tanpa argumen + retry saat
+// RPC belum termuat (lazy-load) + toast on/off dipersingkat.
+{
+  const fm = (p) => fs.readFileSync(p, "utf8");
+  const PLUG = "lumitome/config/plugins/subagent";
+  const rpc = fm(`${PLUG}/rpc.ts`);
+  ok("/subagent v0.3.64: definisi RPC memuat field events: {} (wajib — tanpanya engine melempar Object.entries di registrasi)",
+    /Rpc\.define\(\{\s*id: "lumitome\.subagent",\s*events: \{\}/.test(rpc));
+  ok("/subagent v0.3.64: komentar rpc.ts menyebut penyebab benar (events hilang), bukan lagi skema {} kosong",
+    /field `events` WAJIB ada/.test(rpc) && !/Nilai `\{\}` kosong membuat registrasi RPC/.test(rpc));
+  const tui = fm(`${PLUG}/tui.tsx`);
+  ok("/subagent v0.3.64: TUI memanggil getPreset/getLiveModels dengan argumen {} eksplisit (bukan tanpa argumen)",
+    /rpc\.getPreset\(\{\}\)/.test(tui) && /rpc\.getLiveModels\(\{\}\)/.test(tui)
+    && !/rpc\.getPreset\(\)/.test(tui) && !/rpc\.getLiveModels\(\)/.test(tui));
+  ok("/subagent v0.3.64: TUI me-retry getPreset/getLiveModels/setEnabled saat RPC belum termuat (callRpcWithRetry)",
+    /callRpcWithRetry\("getPreset"/.test(tui) && /callRpcWithRetry\("getLiveModels"/.test(tui)
+    && /callRpcWithRetry\("setEnabled"/.test(tui) && /callRpcWithRetry,/.test(tui));
+  ok("/subagent v0.3.64: toast on/off SINGKAT — persis 'Subagent ON' / 'Subagent OFF', teks panjang lama hilang",
+    /"Subagent ON"/.test(tui) && /"Subagent OFF"/.test(tui)
+    && !/Subagent dinyalakan/.test(tui) && !/Subagent dimatikan/.test(tui)
+    && !/Sistem \/subagent dinyalakan kembali/.test(tui));
+  const F = await import("../lumitome/config/plugins/subagent/flow.mjs");
+  ok("/subagent v0.3.64: retry — isRpcUnavailableError hanya benar untuk pesan 'RPC is unavailable'",
+    F.isRpcUnavailableError(new Error("RPC is unavailable: lumitome.subagent")) === true
+    && F.isRpcUnavailableError(new Error("Expected JSON value")) === false
+    && F.isRpcUnavailableError("RPC is unavailable") === true
+    && F.RPC_RETRY_ATTEMPTS === 3 && F.RPC_RETRY_DELAY_MS === 400);
+  ok("/subagent v0.3.64: retry — gagal 2x unavailable lalu sukses (sleep 2x, nilai kembali)",
+    await (async () => {
+      let n = 0; const delays = [];
+      const v = await F.callRpcWithRetry("getPreset", () => {
+        n++;
+        if (n < 3) throw new Error("RPC is unavailable: lumitome.subagent");
+        return { preset: { enabled: true } };
+      }, { sleep: (ms) => { delays.push(ms); return Promise.resolve(); } });
+      return n === 3 && delays.length === 2 && delays.every((d) => d === 400) && v.preset.enabled === true;
+    })());
+  ok("/subagent v0.3.64: retry — error BUKAN unavailable langsung dilempar tanpa retry (1 percobaan)",
+    await (async () => {
+      let n = 0;
+      try {
+        await F.callRpcWithRetry("getPreset", () => { n++; throw new Error("Invalid RPC input"); }, { sleep: () => Promise.resolve() });
+        return false;
+      } catch (e) {
+        return n === 1 && /getPreset: Invalid RPC input/.test(e.message);
+      }
+    })());
+  ok("/subagent v0.3.64: retry — unavailable terus-menerus habis 3 percobaan lalu lempar dengan label method",
+    await (async () => {
+      let n = 0;
+      try {
+        await F.callRpcWithRetry("getLiveModels", () => { n++; throw new Error("RPC is unavailable: lumitome.subagent"); }, { sleep: () => Promise.resolve() });
+        return false;
+      } catch (e) {
+        return n === 3 && /getLiveModels: RPC is unavailable/.test(e.message);
+      }
+    })());
+}
+
 finish();
