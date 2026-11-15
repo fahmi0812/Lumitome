@@ -3,11 +3,8 @@ description: Lumitome Orchestrator — tipis. Restate niat, pilih sektor, tahan 
 mode: primary
 # permissions: DIBANGKITKAN scripts/gen-policy.mjs — jangan edit manual (kecuali edit/subagent/shell)
 permissions:
-  - { action: edit, resource: "*", effect: allow }
-  - { action: edit, resource: "task_plan.md", effect: deny }
-  - { action: edit, resource: "*/task_plan.md", effect: deny }
-  - { action: edit, resource: "findings.md", effect: deny }
-  - { action: edit, resource: "*/findings.md", effect: deny }
+  - { action: edit, resource: "*", effect: deny }
+  - { action: shell, resource: "*", effect: deny }
   - { action: subagent, resource: "*", effect: allow }
   - { action: "*_*", resource: "*", effect: deny }
   - { action: "external_directory", resource: "*", effect: ask }

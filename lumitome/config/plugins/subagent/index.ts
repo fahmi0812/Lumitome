@@ -4,6 +4,13 @@
 // tulis ulang validasi 9router-only). Root repo diselesaikan dari lokasi
 // file ini (paths.mjs) — BUKAN dari ctx.location.directory (itu direktori
 // proyek pengguna; preset + agent hidup di root repo Lumitome).
+// v0.3.70: penegakan delegasi NATIVE di kode plugin (riset Claude Code):
+// context hook menghapus direct tools dari snapshot orchestrator + injeksi
+// protokol delegasi pendek tiap model call; guard execute.before menolak
+// tool mutasi + memvalidasi panggilan subagent; execute.after mencatat
+// metrik delegation-rate (JSONL); audit akhir giliran via event
+// session.execution.*. TIDAK ada re-drive (engine tidak punya hook
+// Stop/SubagentStop pemblokir — lihat CHANGELOG v0.3.70).
 import { Plugin } from "@opencode/plugin"
 import fs from "node:fs"
 import { fileURLToPath } from "node:url"
@@ -15,6 +22,7 @@ import {
   setEnabled,
   syncOrchestratorMode,
   syncSubagentRulesConfig,
+  syncOrchestratorPermissions,
   DEFAULT_MODEL,
 } from "../../../../scripts/apply-subagent-preset.mjs"
 import { resolveRepoRoot, presetPath } from "./paths.mjs"
@@ -24,6 +32,21 @@ import {
   thinkingSessionModel,
   splitModelId,
 } from "./flow.mjs"
+import {
+  ORCHESTRATOR_AGENT,
+  shouldEnforce,
+  applyToolEnforcement,
+  buildDelegationProtocol,
+  subagentToolDescription,
+  guardToolCall,
+  classifyTool,
+  appendMetrics,
+  lumiHome,
+  newCounters,
+  countTool,
+  turnDelta,
+  debugEnabled,
+} from "./enforce.mjs"
 
 function readPreset(root: string) {
   return JSON.parse(fs.readFileSync(presetPath(root), "utf8"))
@@ -83,13 +106,18 @@ async function maybeSwitchNewSession(ctx: any, root: string, event: any) {
   })
 }
 
-function watchSessionCreated(ctx: any, root: string) {
+function watchSessionCreated(ctx: any, root: string, sessionAgents: Map<string, string>) {
   // Fire-and-forget + fail-silent: pengalihan sesi baru tidak boleh
-  // mematikan plugin bila langganan event putus.
+  // mematikan plugin bila langganan event putus. Peta sessionID → agent
+  // juga dipakai guard execute.before + audit akhir giliran (v0.3.70) —
+  // event session.created membawa agent (dipakai watcher sejak v0.3.65).
   void (async () => {
     try {
       for await (const event of ctx.event.subscribe({ types: ["session.created"] })) {
         try {
+          if (typeof event?.data?.sessionID === "string" && typeof event?.data?.agent === "string") {
+            sessionAgents.set(event.data.sessionID, event.data.agent)
+          }
           await maybeSwitchNewSession(ctx, root, event)
         } catch {
           // satu sesi gagal dialihkan: lanjut ke event berikutnya
@@ -101,15 +129,140 @@ function watchSessionCreated(ctx: any, root: string) {
   })()
 }
 
+// Audit akhir giliran (v0.3.70 — bagian pengukuran peringkat 5 riset, TANPA
+// re-drive): tiap session.execution.* di sesi orchestrator (mode ON) dicatat
+// delta tool call sejak audit terakhir ke metrik JSONL. Giliran dengan
+// delta.subagent === 0 = orchestrator selesai tanpa delegasi — tercatat,
+// bukan dipaksa ulang (engine tidak punya hook Stop pemblokir; re-prompt
+// via event berpacu dengan input user dan bisa loop).
+function watchExecutionEnds(ctx: any, root: string, home: string, sessionAgents: Map<string, string>, countersBySession: Map<string, any>) {
+  void (async () => {
+    try {
+      for await (const event of ctx.event.subscribe({ types: ["session.execution.succeeded", "session.execution.failed", "session.execution.interrupted"] })) {
+        try {
+          const sessionID = event?.data?.sessionID
+          if (typeof sessionID !== "string") continue
+          const agent = sessionAgents.get(sessionID)
+          const preset = readPresetSafe(root)
+          if (!shouldEnforce(preset, agent)) continue
+          const counters = countersBySession.get(sessionID)
+          if (!counters) continue
+          const delta = turnDelta(counters)
+          const outcome = String(event?.type ?? "").replace("session.execution.", "")
+          appendMetrics(home, { kind: "turn-end", sessionID, agent, outcome, ...delta, delegated: delta.subagent > 0 })
+        } catch {
+          // satu audit gagal: lanjut ke event berikutnya
+        }
+      }
+    } catch {
+      // langganan putus: diam (metrik saja yang hilang)
+    }
+  })()
+}
+
+// Penegakan delegasi native (v0.3.70). Tiga hook, semuanya fail-silent +
+// dijaga kapabilitas engine (engine lama tanpa hook ini dilewati diam-diam):
+//  - context: hapus direct tools dari snapshot orchestrator + injeksi
+//    protokol delegasi pendek + pertajam deskripsi tool subagent.
+//  - execute.before: guard — tolak tool mutasi + validasi panggilan
+//    subagent (throw; spike-test live membuktikan throw memblokir).
+//  - execute.after: hitung tool call per sesi → metrik JSONL.
+// Agent untuk guard diambil dari event (bila ada) → peta session.created
+// → ctx.session.get; bila tetap tidak diketahui, guard MEMBIARKAN lewat
+// (fail-open — sesi bukan orchestrator tidak boleh terblokir; penghapusan
+// tool di context hook tetap berlaku karena hook itu membawa event.agent).
+async function registerEnforcement(ctx: any, root: string, home: string, sessionAgents: Map<string, string>, countersBySession: Map<string, any>) {
+  const debug = debugEnabled()
+  if (typeof ctx.session?.hook === "function") {
+    await ctx.session.hook("context", (event: any) => {
+      try {
+        const preset = readPresetSafe(root)
+        if (!shouldEnforce(preset, event?.agent)) return
+        if (event?.tools && typeof event.tools === "object") {
+          const { removed } = applyToolEnforcement(event.tools, preset, event.agent)
+          if (event.tools.subagent && typeof event.tools.subagent.description === "string") {
+            event.tools.subagent.description = subagentToolDescription(preset, event.tools.subagent.description)
+          }
+          if (debug) appendMetrics(home, { kind: "debug", hook: "context", sessionID: event?.sessionID, agent: event?.agent, removed })
+        }
+        if (Array.isArray(event?.system)) {
+          event.system.push({ type: "text", text: buildDelegationProtocol(preset) })
+        }
+        if (debug) appendMetrics(home, { kind: "debug", hook: "context-system", sessionID: event?.sessionID, agent: event?.agent, systemIsArray: Array.isArray(event?.system), systemLen: Array.isArray(event?.system) ? event.system.length : -1 })
+      } catch (e) {
+        appendMetrics(home, { kind: "hook-error", hook: "context", message: String((e as any)?.message ?? e) })
+      }
+    })
+  }
+  if (typeof ctx.tool?.hook === "function") {
+    await ctx.tool.hook("execute.before", async (event: any) => {
+      const tool = event?.tool
+      if (typeof tool !== "string") return
+      const sessionID = event?.sessionID
+      let agent = event?.agent
+      if (typeof agent !== "string" && typeof sessionID === "string") {
+        agent = sessionAgents.get(sessionID)
+        if (typeof agent !== "string" && typeof ctx.session?.get === "function") {
+          try {
+            const info = await ctx.session.get({ sessionID })
+            agent = info?.agent
+            if (typeof agent === "string") sessionAgents.set(sessionID, agent)
+          } catch {
+            // agent tetap tidak diketahui: guard membiarkan lewat
+          }
+        }
+      }
+      if (debug) appendMetrics(home, { kind: "debug", hook: "execute.before", sessionID, agent, tool, keys: Object.keys(event ?? {}) })
+      const preset = readPresetSafe(root)
+      const reason = guardToolCall({ preset, agent, tool, input: event?.input })
+      if (reason) {
+        const counters = countersBySession.get(sessionID) ?? newCounters()
+        countTool(counters, tool, true)
+        if (typeof sessionID === "string") countersBySession.set(sessionID, counters)
+        appendMetrics(home, { kind: "guard-block", sessionID, agent, tool, reason })
+        throw new Error(reason)
+      }
+    })
+    await ctx.tool.hook("execute.after", (event: any) => {
+      try {
+        const sessionID = event?.sessionID
+        const tool = event?.tool
+        if (typeof sessionID !== "string" || typeof tool !== "string") return
+        const agent = sessionAgents.get(sessionID)
+        const preset = readPresetSafe(root)
+        if (!shouldEnforce(preset, agent)) return
+        const counters = countersBySession.get(sessionID) ?? newCounters()
+        countTool(counters, tool, false)
+        countersBySession.set(sessionID, counters)
+        appendMetrics(home, { kind: "tool", sessionID, agent, tool, toolKind: classifyTool(tool), status: event?.status })
+        if (debug) appendMetrics(home, { kind: "debug", hook: "execute.after", sessionID, agent, tool, status: event?.status, keys: Object.keys(event ?? {}) })
+      } catch {
+        // metrik tidak boleh mematikan plugin
+      }
+    })
+  }
+}
+
 export default Plugin.define({
   id: "lumitome.subagent",
   async setup(ctx) {
     const root = resolveRepoRoot(fileURLToPath(import.meta.url))
+    const home = lumiHome()
+    // Peta sesi → agent + counter tool call per sesi (v0.3.70: guard + metrik).
+    const sessionAgents = new Map<string, string>()
+    const countersBySession = new Map<string, any>()
     // Sesi baru otomatis memakai model Thinking (v0.3.65). Dijaga ketat:
     // hanya bila API plugin menyediakannya (engine lama tanpa ctx.event /
     // ctx.session.switchModel dilewati diam-diam — plugin RPC tetap jalan).
     if (typeof ctx.event?.subscribe === "function" && typeof ctx.session?.switchModel === "function") {
-      watchSessionCreated(ctx, root)
+      watchSessionCreated(ctx, root, sessionAgents)
+      watchExecutionEnds(ctx, root, home, sessionAgents, countersBySession)
+    }
+    // Penegakan delegasi native (v0.3.70) — dijaga kapabilitas engine.
+    try {
+      await registerEnforcement(ctx, root, home, sessionAgents, countersBySession)
+    } catch {
+      // hook tidak tersedia di engine ini: file permissions + RPC tetap jalan
     }
     ctx.rpc.register(SubagentRpc, {
       getPreset: async () => ({ preset: readPreset(root) }),
@@ -150,8 +303,11 @@ export default Plugin.define({
         // aturan peran tetap berlaku di sesi baru walau sistem dimatikan.
         // v0.3.68: blok konfigurasi di rules/subagent.md ikut saklar juga
         // (mode OFF tertulis di blok; sesi baru tanpa notice membaca dari file).
+        // v0.3.70: permissions orchestrator ikut saklar — OFF mengembalikan
+        // edit (perilaku normal penuh), ON menolak edit/shell (hanya delegasi).
         syncOrchestratorMode({ root, preset: next })
         syncSubagentRulesConfig({ root, preset: next })
+        syncOrchestratorPermissions({ root, preset: next })
         return { enabled: next.enabled }
       },
     })

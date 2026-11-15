@@ -173,6 +173,58 @@ export function readAppliedModels(root = ".") {
  * ditulis otomatis tiap preset disimpan/diubah — jangan edit manual.
  * Tanpa kata "enabled" (tes v0.3.62: saklar hidup di preset, bukan file ini). */
 export const ORCHESTRATOR_MODE_RE = /^Mode \/subagent saat ini: .*$/m;
+
+/** Blok permissions orchestrator.md saat /subagent ON vs OFF (v0.3.70 —
+ * peringkat 1 riset Claude Code: hapus direct tools + deny di permissions).
+ * ON: edit + shell DITOLAK — kerja langsung mustahil, hanya delegasi yang
+ * tersisa (deny edit "*" menutupi task_plan.md/findings.md juga, jadi
+ * deny khusus itu tidak perlu di keadaan ON). OFF: kembali ke default
+ * gen-policy (edit diizinkan, kecuali task_plan.md/findings.md yang tetap
+ * hak synthesizer). gen-policy MEMPERTAHANKAN baris manual
+ * edit/subagent/shell (rebuild() menyalinnya verbatim), jadi validate
+ * (gen-policy --check) tetap lolos di kedua keadaan. Baris ini TIDAK
+ * mengandung kata "enabled" (saklar hidup di preset, bukan file ini). */
+export const ORCHESTRATOR_PERMISSIONS_ON = [
+  '  - { action: edit, resource: "*", effect: deny }',
+  '  - { action: shell, resource: "*", effect: deny }',
+  '  - { action: subagent, resource: "*", effect: allow }',
+];
+export const ORCHESTRATOR_PERMISSIONS_OFF = [
+  '  - { action: edit, resource: "*", effect: allow }',
+  '  - { action: edit, resource: "task_plan.md", effect: deny }',
+  '  - { action: edit, resource: "*/task_plan.md", effect: deny }',
+  '  - { action: edit, resource: "findings.md", effect: deny }',
+  '  - { action: edit, resource: "*/findings.md", effect: deny }',
+  '  - { action: subagent, resource: "*", effect: allow }',
+];
+/** Baris manual task/question (bila ada di masa depan) dipertahankan saat
+ * blok permissions ditulis ulang — jangan sampai hilang. */
+const MANUAL_KEEP_RE = /^\s+- \{ action: (task|question)\b/;
+const MANUAL_BLOCK_RE = /^\s+- \{ action: (edit|shell|subagent|task|question)\b/;
+
+/** Sinkronkan blok permissions di orchestrator.md dengan preset.
+ * Hanya baris manual edit/shell/subagent (+ task/question yang
+ * dipertahankan) yang diganti; baris *_* + external_directory (hasil
+ * gen-policy) dibiarkan. File hilang → peringatan, bukan error (bukan
+ * konteks repo penuh — sama seperti syncOrchestratorMode).
+ * Kembali {changed, warnings, errors}. */
+export function syncOrchestratorPermissions({ root = ".", preset, check = false } = {}) {
+  const f = path.join(root, ".opencode", "agents", "orchestrator.md");
+  let t;
+  try { t = fs.readFileSync(f, "utf8"); }
+  catch { return { changed: false, warnings: [`orchestrator.md tidak ditemukan — permissions /subagent tidak ditulis (${f})`], errors: [] }; }
+  const lines = t.split("\n");
+  const start = lines.findIndex((l) => l.trim() === "permissions:");
+  if (start === -1) return { changed: false, warnings: [], errors: [`orchestrator.md tidak punya blok permissions:`] };
+  let end = start + 1;
+  while (end < lines.length && MANUAL_BLOCK_RE.test(lines[end])) end++;
+  const kept = lines.slice(start + 1, end).filter((l) => MANUAL_KEEP_RE.test(l));
+  const want = isEnabled(preset) ? ORCHESTRATOR_PERMISSIONS_ON : ORCHESTRATOR_PERMISSIONS_OFF;
+  const next = [...lines.slice(0, start + 1), ...want, ...kept, ...lines.slice(end)].join("\n");
+  if (next === t) return { changed: false, warnings: [], errors: [] };
+  if (!check) fs.writeFileSync(f, next);
+  return { changed: true, warnings: [], errors: [] };
+}
 export function orchestratorModeLine(preset) {
   if (!isEnabled(preset)) return "Mode /subagent saat ini: OFF.";
   return `Mode /subagent saat ini: ${preset?.mode === "paralel" ? "paralel" : "serial"}.`;
@@ -199,25 +251,27 @@ export function syncOrchestratorMode({ root = ".", preset, check = false } = {})
   return { changed: true, warnings: [], errors: [] };
 }
 
-/** Terapkan preset ke file agent. Kembali {changed:[file], modeChanged, configChanged, warnings, errors} — check:true tanpa menulis.
+/** Terapkan preset ke file agent. Kembali {changed:[file], modeChanged, configChanged, permissionsChanged, warnings, errors} — check:true tanpa menulis.
  * Saat OFF (v0.3.62): model peran tidak ditulis — tapi baris mode di
  * orchestrator.md TETAP disinkronkan ke OFF (itu saklar baca yang mematikan
  * aturan peran; tanpa ini orchestrator tetap mendelegasikan ke peran walau
  * sistem dimatikan) — begitu pula blok konfigurasi di rules/subagent.md
  * (v0.3.68: mode OFF tertulis di blok; file rules mengabaikan dirinya
- * sendiri bila baris mode orchestrator OFF). {disabled:true} — --check
- * tetap exit 0 bila tidak ada yang basi (validate tidak boleh gagal hanya
+ * sendiri bila baris mode orchestrator OFF) dan permissions orchestrator
+ * (v0.3.70: OFF mengembalikan edit — perilaku normal penuh). {disabled:true}
+ * — --check tetap exit 0 bila tidak ada yang basi (validate tidak boleh gagal hanya
  * karena sistem dimatikan). */
 export function applyPreset({ root = ".", preset, liveModels = null, stored, check = false } = {}) {
   // v0.3.69: tanpa `stored` eksplisit, model tersimpan dibaca dari file agent
   // (jalur CLI — preset JSON di disk adalah preset baru).
   const effectiveStored = stored ?? { roles: Object.fromEntries(Object.entries(readAppliedModels(root)).map(([r, m]) => [r, { model: m }])) };
   const { errors, warnings } = validatePreset(preset, liveModels, effectiveStored);
-  if (errors.length) return { changed: [], modeChanged: false, configChanged: false, warnings, errors };
+  if (errors.length) return { changed: [], modeChanged: false, configChanged: false, permissionsChanged: false, warnings, errors };
   if (!isEnabled(preset)) {
     const m = syncOrchestratorMode({ root, preset, check });
     const c = syncSubagentRulesConfig({ root, preset, check });
-    return { changed: [], modeChanged: m.changed, configChanged: c.changed, warnings: [...warnings, ...m.warnings, ...c.warnings], errors: [...errors, ...m.errors, ...c.errors], disabled: true };
+    const p = syncOrchestratorPermissions({ root, preset, check });
+    return { changed: [], modeChanged: m.changed, configChanged: c.changed, permissionsChanged: p.changed, warnings: [...warnings, ...m.warnings, ...c.warnings, ...p.warnings], errors: [...errors, ...m.errors, ...c.errors, ...p.errors], disabled: true };
   }
   const changed = [];
   for (const role of ROLES) {
@@ -233,7 +287,8 @@ export function applyPreset({ root = ".", preset, liveModels = null, stored, che
   }
   const m = syncOrchestratorMode({ root, preset, check });
   const c = syncSubagentRulesConfig({ root, preset, check });
-  return { changed, modeChanged: m.changed, configChanged: c.changed, warnings: [...warnings, ...m.warnings, ...c.warnings], errors: [...errors, ...m.errors, ...c.errors] };
+  const p = syncOrchestratorPermissions({ root, preset, check });
+  return { changed, modeChanged: m.changed, configChanged: c.changed, permissionsChanged: p.changed, warnings: [...warnings, ...m.warnings, ...c.warnings, ...p.warnings], errors: [...errors, ...m.errors, ...c.errors, ...p.errors] };
 }
 
 /** CLI: `lumitome subagent-preset [--check]` (dispatch di lumitome/bin/lumitome.mjs)
@@ -252,7 +307,8 @@ export function cli({ argv = process.argv.slice(2), root = ".", log = console.lo
     fs.writeFileSync(presetPath, JSON.stringify(next, null, 2) + "\n");
     const m = syncOrchestratorMode({ root, preset: next });
     const c = syncSubagentRulesConfig({ root, preset: next });
-    for (const w of [...m.warnings, ...c.warnings]) err(`peringatan: ${w}`);
+    const p = syncOrchestratorPermissions({ root, preset: next });
+    for (const w of [...m.warnings, ...c.warnings, ...p.warnings]) err(`peringatan: ${w}`);
     log(`apply-subagent-preset: subagent ${cmd === "on" ? "ON" : "OFF"} (preset ${presetPath})`);
     return 0;
   }
@@ -263,12 +319,12 @@ export function cli({ argv = process.argv.slice(2), root = ".", log = console.lo
   for (const w of r.warnings) err(`peringatan: ${w}`);
   if (r.errors.length) { for (const e of r.errors) err(`GAGAL: ${e}`); return 1; }
   if (check) {
-    if (r.changed.length || r.modeChanged || r.configChanged) { log(`apply-subagent-preset: STALE ${[...r.changed, ...(r.modeChanged ? ["orchestrator.md (baris mode)"] : []), ...(r.configChanged ? ["rules/subagent.md (blok konfigurasi)"] : [])].join(", ")} → lumitome subagent-preset`); return 1; }
+    if (r.changed.length || r.modeChanged || r.configChanged || r.permissionsChanged) { log(`apply-subagent-preset: STALE ${[...r.changed, ...(r.modeChanged ? ["orchestrator.md (baris mode)"] : []), ...(r.configChanged ? ["rules/subagent.md (blok konfigurasi)"] : []), ...(r.permissionsChanged ? ["orchestrator.md (permissions)"] : [])].join(", ")} → lumitome subagent-preset`); return 1; }
     log("apply-subagent-preset: OK (file agent = preset)");
   } else if (r.disabled) {
     log("apply-subagent-preset: subagent OFF — preset tidak diterapkan (nyalakan: lumitome subagent-preset on)");
   } else {
-    const wrote = [...r.changed, ...(r.modeChanged ? ["orchestrator.md (baris mode)"] : []), ...(r.configChanged ? ["rules/subagent.md (blok konfigurasi)"] : [])];
+    const wrote = [...r.changed, ...(r.modeChanged ? ["orchestrator.md (baris mode)"] : []), ...(r.configChanged ? ["rules/subagent.md (blok konfigurasi)"] : []), ...(r.permissionsChanged ? ["orchestrator.md (permissions)"] : [])];
     log(wrote.length ? `apply-subagent-preset: tulis ${wrote.join(", ")} (berlaku mulai sesi TUI berikutnya)` : "apply-subagent-preset: sudah sesuai preset, tidak ada perubahan");
   }
   return 0;

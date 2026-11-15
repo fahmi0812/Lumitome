@@ -1,5 +1,5 @@
 ---
-description: Builder — pelaksana peran /subagent. Implementasi per tiket + tes, laporkan perintah + exit code sebagai FACT. Satu-satunya peran yang boleh edit.
+description: "Dipakai untuk IMPLEMENTASI satu tiket: tulis kode + jalankan tes. Pemicu: implementasi, buat, tulis kode, perbaiki, tambah fitur. JANGAN dipakai untuk merencanakan, mencari, atau review."
 mode: subagent
 model: 9router/ag/gemini-3.8-flash-high
 color: "#22c55e"

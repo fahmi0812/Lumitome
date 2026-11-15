@@ -1,5 +1,5 @@
 ---
-description: Thinking — perencana peran /subagent. Baca konteks penuh, tulis spec + acceptance + tiket kecil sebelum implementasi. Tanpa edit; satu-satunya peran yang boleh merumuskan pertanyaan ke user.
+description: "Dipakai PERTAMA untuk tugas multi-langkah: rencana, spec, acceptance, tiket. Pemicu: rencanakan, spec, desain, pecah tugas. JANGAN dipakai untuk mencari, implementasi, atau review."
 mode: subagent
 model: 9router/ag/gemini-3.8-flash-high
 color: "#f59e0b"

@@ -1,5 +1,5 @@
 ---
-description: Reviewer — pemeriksa peran /subagent. Konteks NOL; hanya terima spec/diff + sumber yang dirujuk. Temuan berlabel FACT/JUDGMENT, urut severity; critical memblokir.
+description: "Dipakai SETELAH Build selesai: verifikasi hasil terhadap spec + standar repo. Pemicu: review, periksa, verifikasi, cek hasil. JANGAN dipakai untuk merencanakan, mencari, atau implementasi."
 mode: subagent
 model: 9router/ag/gemini-3.8-flash-high
 color: "#a78bfa"

@@ -1,5 +1,5 @@
 ---
-description: Search — pencari peran /subagent. Cari kode/dokumen/web, kembalikan ringkasan + referensi + keyakinan. Tanpa edit, tanpa bertanya ke user.
+description: "Dipakai untuk MENCARI kode/dokumen/web sebelum implementasi. Pemicu: cari, search, temukan, baca kode, konteks. JANGAN dipakai untuk merencanakan, implementasi, atau review."
 mode: subagent
 model: 9router/ag/gemini-3.8-flash-high
 color: "#38bdf8"
