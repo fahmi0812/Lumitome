@@ -26,6 +26,13 @@
 //   screen), sesi baru yang dibuat sesudah itu otomatis dialihkan ke Thinking
 //   oleh server plugin (index.ts, langganan session.created) — jadi status
 //   line menunjukkan Thinking sejak pesan pertama.
+//   v0.3.66: sesudah simpan ada SATU pilihan akhir — "Masuk mode subagent
+//   sekarang?" [Ya, mulai] langsung masuk mode subagent (sesi aktif dialihkan
+//   ke Thinking; bila belum ada sesi, sesi baru DIBUKA dengan model Thinking
+//   lalu TUI diarahkan ke sana), [Simpan saja] hanya menyimpan konfigurasi.
+//   v0.3.66 juga: model default sesi TUI ikut preset Thinking (wrapper
+//   lumitome.mjs) — akar bug live v0.3.65: TUI menimpa switchModel watcher
+//   dengan model default config (gemini) saat pesan pertama dikirim.
 import { Plugin, usePlugin } from "@opencode/plugin/tui"
 import { createSignal } from "solid-js"
 import { SubagentRpc } from "./rpc.js"
@@ -88,8 +95,8 @@ async function switchSessionToThinking(context, preset) {
   }
 }
 
-async function sendDelegationPrompt(context, preset, live, task) {
-  const sessionID = currentSessionID(context)
+async function sendDelegationPrompt(context, preset, live, task, sessionIDOverride) {
+  const sessionID = sessionIDOverride ?? currentSessionID(context)
   if (!sessionID) {
     toast(context, "Tidak ada sesi aktif", "Konfigurasi tersimpan — delegasi menunggu sesi.")
     return
@@ -103,6 +110,44 @@ async function sendDelegationPrompt(context, preset, live, task) {
   })
 }
 
+/**
+ * Masuk mode subagent SEKARANG (v0.3.66 — pilihan akhir sesudah simpan):
+ * sesi (baru atau yang aktif) langsung pakai model Thinking + prompt
+ * delegasi dikirim — user tidak perlu ketik pesan dulu atau restart TUI.
+ * Bila belum ada sesi: sesi baru DIBUKA di sini (client.session.create
+ * dengan model Thinking) lalu TUI diarahkan ke sesi itu (router.navigate);
+ * watcher server plugin melewatinya (model awal sudah Thinking, bukan
+ * default terpin). Gagal di langkah mana pun → kembalikan catatan jujur
+ * (preset sudah tersimpan; user bisa buka sesi manual).
+ */
+async function enterSubagentMode(context, preset, live, task) {
+  const full = thinkingSessionModel(preset)
+  if (!full) return "Model sesi tidak diubah (Thinking nonaktif)."
+  const parts = splitModelId(full)
+  if (!parts) return "Model sesi tidak diubah (model Thinking tidak valid)."
+  let sessionID = currentSessionID(context)
+  if (sessionID) {
+    try {
+      await context.client.session.switchModel({ sessionID, model: { providerID: parts.providerID, id: parts.id } })
+    } catch (e) {
+      return `Model sesi gagal dialihkan (${String(e?.message ?? e)}) — preset tetap tersimpan; ganti manual via /models.`
+    }
+  } else {
+    try {
+      const created = await context.client.session.create({ model: { providerID: parts.providerID, id: parts.id }, agent: "orchestrator" })
+      sessionID = created?.id ?? created?.sessionID ?? created?.data?.id
+      if (!sessionID) return "Sesi baru gagal dibuat (tidak ada ID) — konfigurasi tersimpan; buka sesi baru manual."
+      if (typeof context.ui.router?.navigate === "function") {
+        try { context.ui.router.navigate({ type: "session", sessionID }) } catch {}
+      }
+    } catch (e) {
+      return `Sesi baru gagal dibuat (${String(e?.message ?? e)}) — konfigurasi tersimpan; buka sesi baru manual.`
+    }
+  }
+  await sendDelegationPrompt(context, preset, live, task, sessionID)
+  return `Sesi memakai ${full} (Thinking).`
+}
+
 async function saveAndDelegate(context, rpc, next, live, task) {
   let saved
   try {
@@ -112,6 +157,22 @@ async function saveAndDelegate(context, rpc, next, live, task) {
     return
   }
   const warn = saved.warnings?.length ? ` ${saved.warnings.join(" ")}` : ""
+  // v0.3.66: langkah akhir — SATU pilihan, bahasa pendek (ide Fahmi: jangan
+  // paksa user "buka sesi dulu, baru /subagent, baru Ctrl+S"). Esc/batal =
+  // "Simpan saja" (tidak ada yang rusak; konfigurasi sudah tersimpan).
+  const choice = await context.ui.dialog.select({
+    title: "Masuk mode subagent sekarang?",
+    current: "start",
+    options: [
+      { title: "Ya, mulai", value: "start", description: "Sesi langsung pakai model Thinking" },
+      { title: "Simpan saja", value: "save", description: "Cuma simpan konfigurasi" },
+    ],
+  }).catch(() => undefined)
+  if (choice === "start") {
+    const note = await enterSubagentMode(context, next, live, task)
+    toast(context, "Mode subagent jalan", `${summarizePreset(next)} — ${note}${warn}`)
+    return
+  }
   const switched = await switchSessionToThinking(context, next)
   toast(
     context,

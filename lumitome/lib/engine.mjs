@@ -1,7 +1,8 @@
 /**
- * Engine OpenCode terpin untuk Lumitome (dipakai instalasi npm: postinstall / first-run, dan upgrade-engine).
+ * Engine OpenCode terpin untuk Lumitome (dipakai instalasi npm: postinstall / first-run, dan `lumitome upgrade`).
  * Unduh aset rilis resmi → verifikasi SHA256 (hash terpin di sini) → ekstrak → $LUMI_HOME/bin/opencode[.exe].
- * Tanpa auto-update: engine hanya diganti lewat `lumitome upgrade-engine`.
+ * Tanpa auto-update: engine hanya diganti lewat `lumitome upgrade` (cara gampang, versi + SHA256 terpin)
+ * atau `lumitome upgrade-engine <versi> --sha256 <hash>` (manual/lanjutan).
  * Default: build Lumitome dari OpenCode v2.3.0 (hanya logo diganti, engine/patches/logo.patch), aset rilis
  * fahmi0812/Lumitome engine-2.3.0-lumi.1. LUMI_ENGINE=upstream → binary resmi OpenCode v2.3.0.
  */
@@ -102,7 +103,7 @@ export const wantedFlavor = (env = process.env, platform = process.platform, arc
 /** Pastikan engine terpasang & build-nya sesuai (lumi/upstream). Engine yang sudah jalan tidak pernah dihapus bila unduhan gagal;
  *  tanpa engine sama sekali dan build Lumitome gagal → coba upstream. Engine
  *  versi lain yang sudah terpasang (mis. pilihan eksplisit via upgrade-engine)
- *  tidak ditimpa di sini — engine hanya diganti lewat `lumitome upgrade-engine`. */
+ *  tidak ditimpa di sini — engine hanya diganti lewat `lumitome upgrade` / `upgrade-engine`. */
 export async function ensureEngine({ home, bin = engineBin(home), env = process.env, log = (m) => process.stderr.write(m + "\n"), fetchImpl = fetch }) {
   const v = engineVersion(bin, env), want = wantedFlavor(env), have = installedFlavor(bin) || "upstream";
   if (v !== null && (v !== OC_VERSION || have === want)) return { installed: false, flavor: have };

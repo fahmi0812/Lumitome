@@ -402,4 +402,57 @@ import { frontmatter } from "../router/parse.mjs";
     tarLines.every((l) => l.includes("|| die") || l.includes("run tar")));
 }
 
+{
+  // v0.3.66: `lumitome upgrade` — cara gampang naikkan engine (tanpa versi/hash).
+  // Tanpa argumen: naik ke versi terpin (OC_VERSION) dengan SHA256 terpin di
+  // engine.mjs (= install.sh); checksum tetap diverifikasi installEngine.
+  // `upgrade-engine <versi> --sha256 ...` tetap jalan manual/lanjutan.
+  const EN = await import("../lumitome/lib/engine.mjs");
+  const osm = await import("node:os");
+  const PIN_LINUX_X64 = "0e8328e8b307795065a87263c196c03ff36dd6f7fe366cb420603b3b8758df72";
+  const a = EN.assetFor(EN.OC_VERSION, "linux", "x64");
+  ok("upgrade: versi terpin 2.3.0 + SHA256 linux-x64 = pin install.sh (build Lumitome)",
+    EN.OC_VERSION === "2.3.0" && a.sha256 === PIN_LINUX_X64 && a.url.includes("/releases/download/engine-2.3.0-lumi.1/")
+    && fs.readFileSync("install.sh", "utf8").includes(PIN_LINUX_X64));
+  let bad = "";
+  await EN.installEngine({ home: fs.mkdtempSync(path.join(osm.tmpdir(), "lumiupg-")), log: () => {}, fetchImpl: async () => ({ ok: true, arrayBuffer: async () => new TextEncoder().encode("palsu").buffer }) }).catch((e) => { bad = e.message; });
+  ok("upgrade: installEngine jalur terpin (tanpa sha argumen — persis yang dipakai `lumitome upgrade`) menolak SHA256 salah",
+    /SHA256 tidak cocok/.test(bad));
+  const W = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
+  ok("upgrade: wrapper TIDAK lagi memblokir subcommand `upgrade` (hanya `uninstall` yang diblokir); blok `engine` menangani upgrade",
+    /if \(sub === "uninstall"\) die\(2/.test(W) && !/sub === "upgrade" \|\| sub === "uninstall"/.test(W)
+    && /sub === "engine" \|\| sub === "upgrade-engine" \|\| sub === "upgrade"/.test(W));
+  ok("upgrade: `lumitome upgrade` tanpa argumen = versi terpin + SHA terpin + keluar bila sudah terbaru; usage upgrade-engine menyebut jalan gampang; penanda build (.flavor) ikut ke bin/",
+    /if \(sub === "upgrade"\) \{/.test(W) && /v = EN\.OC_VERSION/.test(W) && /EN\.assetFor\(v, process\.platform, process\.arch\)/.test(W)
+    && /engine sudah versi terbaru/.test(W) && /lumitome upgrade \(cara gampang\)/.test(W)
+    && /fs\.copyFileSync\(EN\.flavorFile\(dst\), EN\.flavorFile\(cur\)\)/.test(W));
+  // Tes CLI (offline, tanpa unduhan): engine tiruan di LUMI_HOME temp.
+  const mkFake = (ver) => {
+    const h = fs.mkdtempSync(path.join(osm.tmpdir(), "lumiupg-cli-"));
+    fs.mkdirSync(path.join(h, "bin"), { recursive: true });
+    const bin = path.join(h, "bin", "opencode");
+    fs.writeFileSync(bin, `#!/usr/bin/env node\nif (process.argv.includes("--version")) console.log("opencode v${ver}");\n`);
+    fs.chmodSync(bin, 0o755);
+    return h;
+  };
+  const runCli = (home, args, input) => cp.spawnSync(process.execPath, ["--experimental-strip-types", "--no-warnings", path.resolve("lumitome/bin/lumitome.mjs"), ...args],
+    { encoding: "utf8", timeout: 60000, cwd: home, input, env: { ...process.env, HOME: home, LUMI_HOME: home, SW_HOME: home, LUMI_WORKSPACE: home, LUMI_AUTO_INDEX: "0", NINEROUTER_API_KEY: "" } });
+  const hCur = mkFake("2.3.0");
+  const rCur = runCli(hCur, ["upgrade"]);
+  ok("upgrade CLI: engine sudah 2.3.0 → exit 0, satu baris 'sudah versi terbaru', tanpa unduhan",
+    rCur.status === 0 && /engine sudah versi terbaru — v2\.3\.0/.test(rCur.stdout) && !/mengunduh/.test(rCur.stderr + rCur.stdout));
+  fs.rmSync(hCur, { recursive: true, force: true });
+  const hOld = mkFake("2.2.4");
+  const rNo = runCli(hOld, ["upgrade"], "tidak\n");
+  ok("upgrade CLI: tanpa --yes + jawab bukan 'ya' → dibatalkan (exit 1), engine lama dipertahankan, tanpa unduhan",
+    rNo.status === 1 && /dibatalkan/.test(rNo.stderr + rNo.stdout));
+  const rArg = runCli(hOld, ["upgrade", "2.3.0"]);
+  ok("upgrade CLI: argumen posisi ditolak (exit 2, usage 'lumitome upgrade [--yes]')",
+    rArg.status === 2 && /pakai: lumitome upgrade \[--yes\]/.test(rArg.stderr + rArg.stdout));
+  const rUe = runCli(hOld, ["upgrade-engine"]);
+  ok("upgrade-engine CLI: tanpa argumen tetap exit 2 + usage menyebut jalan gampang `lumitome upgrade`",
+    rUe.status === 2 && /lumitome upgrade \(cara gampang\)/.test(rUe.stderr + rUe.stdout));
+  fs.rmSync(hOld, { recursive: true, force: true });
+}
+
 finish();

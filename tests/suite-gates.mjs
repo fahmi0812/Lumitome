@@ -786,4 +786,52 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     && !/Space toggles a role/.test(fm("README.md")));
 }
 
+// (v0.3.66) /subagent — dua perbaikan atas laporan live Fahmi (15 Nov):
+// (A) Model default sesi TUI ikut Thinking. Akar bug v0.3.65: watcher
+// switchModel (session.created) ketimpa TUI saat pesan pertama — TUI
+// menerapkan model default config (terpin gemini) ke sesi baru. Perbaikan:
+// wrapper (lumitome.mjs) membaca preset saat launch dan memakai model
+// Thinking sebagai MODEL untuk buildFinalConfig (sesi TUI); `lumitome run`
+// TIDAK diubah; LUMI_MODEL eksplisit tetap menang; model Thinking yang
+// tidak ada di daftar 9router → diam, pakai default lama.
+// (B) Langkah akhir sesudah simpan: "Masuk mode subagent sekarang?"
+// [Ya, mulai] / [Simpan saja]. "Ya" langsung masuk mode subagent — sesi
+// aktif dialihkan ke Thinking; bila belum ada sesi, sesi baru DIBUKA
+// (client.session.create + model Thinking) lalu TUI diarahkan ke sana
+// (router.navigate) dan prompt delegasi dikirim — tanpa ketik pesan dulu,
+// tanpa restart manual. Esc/batal = "Simpan saja".
+{
+  const fm = (p) => fs.readFileSync(p, "utf8");
+  const PLUG = "lumitome/config/plugins/subagent";
+  const PINNED = "9router/ag/gemini-3.8-flash-high";
+  const OPUS = "9router/kr/claude-opus-5.5-test-agentic";
+  const W = fm("lumitome/bin/lumitome.mjs");
+  ok("/subagent v0.3.66: wrapper — model default TUI ikut Thinking dari preset (bukan hardcode gemini)",
+    /let TUI_MODEL = MODEL/.test(W) && /thinkingSessionModel\(preset\)/.test(W)
+    && /FRAG\.providers\["9router"\]\?\.models\?\.\[t\.slice\("9router\/"\.length\)\]/.test(W)
+    && /MODEL: TUI_MODEL/.test(W));
+  ok("/subagent v0.3.66: wrapper — preset Thinking HANYA untuk sesi TUI: `lumitome run` tetap MODEL lama; LUMI_MODEL menang",
+    /if \(sub !== "run" && !env\.LUMI_MODEL\)/.test(W)
+    && /args = \["run", "--standalone", \.\.\.\(mIdx\.length \? \[\] : \["-m", model \|\| MODEL\]\)/.test(W));
+  const tui = fm(`${PLUG}/tui.tsx`);
+  ok("/subagent v0.3.66: sesudah simpan ada SATU pilihan akhir 'Masuk mode subagent sekarang?' — [Ya, mulai] / [Simpan saja]",
+    /Masuk mode subagent sekarang\?/.test(tui) && /"Ya, mulai"/.test(tui) && /"Simpan saja"/.test(tui)
+    && /current: "start"/.test(tui));
+  ok("/subagent v0.3.66: 'Ya, mulai' tanpa sesi → buka sesi baru (session.create + model Thinking) lalu arahkan TUI (router.navigate) + kirim delegasi",
+    /enterSubagentMode/.test(tui) && /context\.client\.session\.create\(\{ model: \{ providerID: parts\.providerID, id: parts\.id \}, agent: "orchestrator" \}\)/.test(tui)
+    && /context\.ui\.router\.navigate\(\{ type: "session", sessionID \}\)/.test(tui)
+    && /sendDelegationPrompt\(context, preset, live, task, sessionID\)/.test(tui));
+  ok("/subagent v0.3.66: 'Ya, mulai' dengan sesi aktif → switchModel ke Thinking di tempat (tanpa restart); gagal create/switch → catatan jujur, preset tetap tersimpan",
+    /if \(sessionID\) \{/.test(tui) && /context\.client\.session\.switchModel\(\{ sessionID, model: \{ providerID: parts\.providerID, id: parts\.id \} \}\)/.test(tui)
+    && /Sesi baru gagal dibuat/.test(tui) && /Model sesi gagal dialihkan/.test(tui));
+  ok("/subagent v0.3.66: 'Simpan saja' (atau Esc) = perilaku lama — toast 'Subagent disimpan' + switch + delegasi ke sesi aktif bila ada",
+    /const switched = await switchSessionToThinking\(context, next\)/.test(tui)
+    && /"Subagent disimpan"/.test(tui) && /choice === "start"/.test(tui));
+  const PR66 = await import("../lumitome/config/plugins/subagent/prompt.mjs");
+  const dlg66 = PR66.buildDelegationPrompt(JSON.parse(fm(".opencode/lumitome-subagent.json")), "uji", true);
+  ok("/subagent v0.3.66: prompt delegasi menyebut pilihan 'Ya, mulai' + sesi baru langsung dibuka dengan model Thinking",
+    /pilih 'Ya, mulai' sesudah simpan/.test(dlg66) && /sesi baru langsung dibuka dengan model Thinking/.test(dlg66)
+    && /sesi baru yang dibuat sesudah ini pun otomatis memakai model Thinking/.test(dlg66));
+}
+
 finish();

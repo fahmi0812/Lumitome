@@ -37,8 +37,8 @@ if (argv[0] === "--version" || argv[0] === "-v") {
   let oc = "?"; try { oc = execFileSync(ocBin(), ["--version"], { encoding: "utf8", env: isoEnv() }).trim(); } catch {}
   console.log(`lumitome ${VERSION} (${oc})`); process.exit(0);
 }
-// subcommand engine yang mengubah binary terpin (self-upgrade/uninstall OpenCode) diblok: engine hanya via upgrade-engine
-if (sub === "upgrade" || sub === "uninstall") die(2, `'${sub}' engine OpenCode diblok (engine terpin). Kode Lumitome: lumitome update; engine: lumitome upgrade-engine <versi> --sha256 <hash>; hapus: install.sh --uninstall`);
+// subcommand engine yang mengubah binary terpin (self-upgrade/uninstall OpenCode) diblok: engine hanya via `lumitome upgrade` / upgrade-engine
+if (sub === "uninstall") die(2, `'uninstall' engine OpenCode diblok (engine terpin). Kode Lumitome: lumitome update; engine: lumitome upgrade (cara gampang) atau lumitome upgrade-engine <versi> --sha256 <hash>; hapus: install.sh --uninstall`);
 // ---------- update kode Lumitome (manual; engine tidak disentuh) ----------
 if (sub === "update") {
   // git (install.sh) atau npm: keduanya ditangani update.mjs (npm → npm install -g tarball tag, output ke log)
@@ -89,28 +89,50 @@ if (sub === "trust") {
   process.exit(0);
 }
 // ---------- engine terpin: hanya diganti lewat perintah eksplisit ----------
-if (sub === "engine" || sub === "upgrade-engine") {
+if (sub === "engine" || sub === "upgrade-engine" || sub === "upgrade") {
   const EN = await import(pathToFileURL(path.join(ROOT, "lib", "engine.mjs")).href);
   const home = env.SW_HOME || env.LUMI_HOME || path.join(os.homedir(), ".lumitome");
   const cur = EN.engineBin(home);
   const ver = () => { try { return execFileSync(cur, ["--version"], { encoding: "utf8", env: isoEnv() }).trim(); } catch { return "(tidak ada)"; } };
   if (sub === "engine") { console.log(`engine: ${cur}\nversi:  ${ver()}\nbuild:  ${EN.installedFlavor(cur) || "upstream"} (LUMI_ENGINE=upstream → OpenCode resmi)\nautoupdate: mati (OPENCODE_DISABLE_AUTOUPDATE=1, update:"disable")`); process.exit(0); }
-  const [v, ...rest] = argv.slice(1);
-  const shaArg = rest[rest.indexOf("--sha256") + 1];
-  if (!v || !/^\d+\.\d+\.\d+$/.test(v) || rest.indexOf("--sha256") < 0 || !/^[0-9a-f]{64}$/.test(shaArg || ""))
-    die(2, "pakai: lumitome upgrade-engine <x.y.z> --sha256 <sha256 arsip rilis> [--yes]  (checksum wajib; lihat SHA256SUMS rilis OpenCode)");
-  const url = EN.assetFor(v, process.platform, process.arch, "upstream").url;
+  // v0.3.66: `lumitome upgrade` = cara gampang (tanpa argumen): naik ke versi
+  // terpin (OC_VERSION) dengan SHA256 terpin di engine.mjs (= install.sh).
+  // `upgrade-engine` tetap jalan manual/lanjutan (versi + hash dari user).
+  // Checksum tetap diverifikasi installEngine di kedua jalur — kesederhanaan
+  // tidak menghapus pemeriksaan keamanan. Tanpa --yes, tanya sekali (konvensi
+  // upgrade-engine: ketik 'ya').
+  let v, shaArg, url, rest, pinned = false;
+  if (sub === "upgrade") {
+    rest = argv.slice(1);
+    if (rest.some((a) => a !== "--yes")) die(2, "pakai: lumitome upgrade [--yes]  (naik ke engine terpin, tanpa versi/hash)");
+    v = EN.OC_VERSION;
+    const a = EN.assetFor(v, process.platform, process.arch);
+    shaArg = a.sha256; url = a.url; pinned = true;
+    if (!shaArg) die(2, `tidak ada SHA256 terpin untuk ${a.key} v${v} — pakai: lumitome upgrade-engine <versi> --sha256 <hash>`);
+    const have = ver().replace(/^.*?v?(\d+\.\d+\.\d+).*$/s, "$1");
+    if (have === v) { console.log(`engine sudah versi terbaru — v${v}`); process.exit(0); }
+  } else {
+    [v, ...rest] = argv.slice(1);
+    shaArg = rest[rest.indexOf("--sha256") + 1];
+    if (!v || !/^\d+\.\d+\.\d+$/.test(v) || rest.indexOf("--sha256") < 0 || !/^[0-9a-f]{64}$/.test(shaArg || ""))
+      die(2, "pakai: lumitome upgrade (cara gampang) atau lumitome upgrade-engine <x.y.z> --sha256 <sha256 arsip rilis> [--yes]  (checksum wajib; lihat SHA256SUMS rilis OpenCode)");
+    url = EN.assetFor(v, process.platform, process.arch, "upstream").url;
+  }
   if (!rest.includes("--yes")) {
     process.stderr.write(`Ganti engine ${ver()} → v${v}\n  ${url}\n  sha256 ${shaArg}\nKetik 'ya' untuk lanjut: `);
     const ans = await new Promise((r) => { process.stdin.once("data", (d) => r(String(d).trim())); });
     if (ans !== "ya") die(1, "dibatalkan");
   }
   const dst = path.join(home, "engines", v, EN.exeName());
-  try { await EN.installEngine({ home, version: v, sha: shaArg, dst }); } catch (e) { die(1, `${e.message}; engine lama dipertahankan`); }
+  try { await EN.installEngine(pinned ? { home, version: v, dst } : { home, version: v, sha: shaArg, dst }); } catch (e) { die(1, `${e.message}; engine lama dipertahankan`); }
   // simpan engine lama ke engines/<versi>, lalu ganti bin/opencode (Windows: salin; lainnya: symlink)
   if (fs.existsSync(cur) && !fs.lstatSync(cur).isSymbolicLink()) { const old = ver().replace(/^.*?v?(\d+\.\d+\.\d+).*$/s, "$1"); const od = path.join(home, "engines", old); fs.mkdirSync(od, { recursive: true }); fs.renameSync(cur, path.join(od, EN.exeName())); }
   fs.rmSync(cur, { force: true });
   if (process.platform === "win32") fs.copyFileSync(dst, cur); else fs.symlinkSync(dst, cur);
+  // v0.3.66: penanda build (.flavor) ikut ke samping bin/opencode — tanpa
+  // ini `lumitome engine` salah menampilkan "upstream" dan ensureEngine
+  // peluncuran berikutnya mengunduh ulang (flavor tidak cocok).
+  try { fs.copyFileSync(EN.flavorFile(dst), EN.flavorFile(cur)); } catch {}
   console.log(`engine → ${ver()} (${cur}); versi lama di ${path.join(home, "engines")}`);
   process.exit(0);
 }
@@ -174,6 +196,26 @@ function chooseModel() {
   const [n, p] = Object.entries(FRAG.providers)[0] || []; return n ? `${n}/${Object.keys(p.models)[0]}` : null;
 }
 const MODEL = chooseModel();
+// v0.3.66: model default sesi TUI ikut Thinking (preset /subagent) — akar
+// bug live v0.3.65: watcher switchModel ketimpa TUI saat pesan pertama,
+// karena TUI menerapkan model default config (terpin gemini) ke sesi baru.
+// Dengan default ini = Thinking, sesi baru lahir dengan Thinking dan TUI
+// tidak punya gemini untuk dikembalikan. LUMI_MODEL eksplisit tetap menang;
+// `lumitome run` TIDAK diubah (headless build tetap default terpin, kecuali
+// -m / LUMI_MODEL) — preset hanya memengaruhi sesi TUI. Gagal baca preset
+// (tidak ada/rusak/off) atau model Thinking tidak ada di daftar 9router
+// → diam, pakai MODEL lama.
+let TUI_MODEL = MODEL;
+if (sub !== "run" && !env.LUMI_MODEL) {
+  try {
+    const F = await import(pathToFileURL(path.join(ROOT, "config", "plugins", "subagent", "flow.mjs")).href);
+    const preset = JSON.parse(fs.readFileSync(path.join(REPO, ".opencode", "lumitome-subagent.json"), "utf8"));
+    if (preset?.enabled !== false) {
+      const t = F.thinkingSessionModel(preset);
+      if (t && FRAG.providers["9router"]?.models?.[t.slice("9router/".length)]) TUI_MODEL = t;
+    }
+  } catch {}
+}
 if (!HAS_PROVIDER) {
   if (sub === "run") die(2, "belum ada provider. Tambah: `lumitome connect` (Custom OpenAI/Anthropic-compatible) atau export NINEROUTER_API_KEY");
   if (sub === "") {
@@ -256,7 +298,7 @@ if (TRUST) {
 const TIMEOUTS = PV.providerTimeouts(env);
 const VALUE_FLAGS = new Set(["-m", "--model", "-s", "--session", "--agent", "--format", "-f", "--file", "--title", "--log-level", "--server"]);
 function promptOf(rest) { const out = []; for (let i = 0; i < rest.length; i++) { const a = rest[i]; if (VALUE_FLAGS.has(a)) { i++; continue; } if (a.startsWith("-")) continue; out.push(a); } return out.join(" "); }
-const { skillNote } = await (await import(pathToFileURL(path.join(ROOT, "lib", "build-config.mjs")).href)).buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOURNAL, RUN_ID, FRAG, MODEL, HAS_9R_ENV, TIMEOUTS, TRUST, sub, prompt: sub === "run" ? promptOf(argv.slice(1)) : "" });
+const { skillNote } = await (await import(pathToFileURL(path.join(ROOT, "lib", "build-config.mjs")).href)).buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOURNAL, RUN_ID, FRAG, MODEL: TUI_MODEL, HAS_9R_ENV, TIMEOUTS, TRUST, sub, prompt: sub === "run" ? promptOf(argv.slice(1)) : "" });
 
 // TUI/attach memakai "managed service" OpenCode (port default 49374 — sama dengan `opencode serve --service` milik
 // user). Lumitome memakai port & state sendiri di LUMI_HOME; service milik user tidak disentuh/dimatikan.
