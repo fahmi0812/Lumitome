@@ -47,7 +47,12 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
   const skillSectors = wantMcp.includes("all") || wantMcp.includes("skills") ? ALL_SECTORS : ALL_SECTORS.filter((sec) => wantMcp.includes(`skills-${sec}`));
   if (skillSectors.length) mcpOverride.skills = { type: "local", command: [process.execPath, "--no-warnings", path.join(REPO, "router", "skill-search-mcp.mjs"), "--sectors", skillSectors.join(","), "--root", REPO], timeout: { startup: 30000, catalog: 30000, execution: 30000 } };
   // drawio (next-ai-draw-io, terpin) — opsional, mati default; hanya bila disebut eksplisit di LUMI_MCP (tidak ikut "all")
-  if (wantMcp.includes("drawio")) mcpOverride.drawio = { type: "local", command: ["npx", "-y", "@next-ai-drawio/mcp-server@0.4.14"], environment: { BROWSER: env.BROWSER || "" }, timeout: { startup: 120000, catalog: 120000, execution: 120000 } };
+  if (wantMcp.includes("drawio")) mcpOverride.drawio = { type: "local", command: ["npx", "-y", "@next-ai-drawio/mcp-server@0.4.15"], environment: { BROWSER: env.BROWSER || "" }, timeout: { startup: 120000, catalog: 120000, execution: 120000 } };
+  // blender (ahujasid/mcp-for-blender, terpin 2.2.9) — opsional, mati default; hanya bila disebut eksplisit di LUMI_MCP (tidak ikut "all").
+  // KEAMANAN: execute_blender_code menjalankan Python arbitrer di dalam Blender dengan akses penuh user (fitur produknya);
+  // safe mode OFF secara default — opt-in validator AST via BLENDER_MCP_SAFE_MODE=1 (hanya jalur MCP, bukan sandbox).
+  // Butuh Blender terpasang + addon "MCP for Blender" aktif di Blender (uvx mcp-for-blender install-addon).
+  if (wantMcp.includes("blender")) mcpOverride.blender = { type: "local", command: ["uvx", "mcp-for-blender==2.2.9"], environment: { BLENDER_MCP_SAFE_MODE: env.BLENDER_MCP_SAFE_MODE || "" }, timeout: { startup: 120000, catalog: 120000, execution: 120000 } };
   // figcraft (storytold/figcraft, terpin v0.18.1) — opsional, mati default; hanya bila disebut eksplisit di LUMI_MCP (tidak ikut "all")
   if (wantMcp.includes("figcraft")) {
     const FC = env.LUMI_FIGCRAFT_CLI || "figcraft-cli";

@@ -1,11 +1,11 @@
 ---
 name: solidcraft-packaging
-description: Use when preparing or shipping a SolidCraft release, changing installers or packages (AppImage, MSI, dmg, Flatpak, Snap, WinGet, Nix, FreeBSD, web), release asset names, signing or the Pages deployment.
+description: "Use when preparing or shipping a SolidCraft release, changing installers or packages (AppImage, MSI, dmg, Flatpak, Snap, WinGet, Nix, FreeBSD, web), release asset names, signing or the Pages deployment."
 license: Apache-2.0
 metadata:
   swanwright_sector: coding
   swanwright_src: tangency-labs/solidcraft
-  swanwright_sha: b8d554ca35ad54ed6ab3e28bdb7dce98375c838f
+  swanwright_sha: 80a83637f4e01c8ddfb5fa426c5f164366979d74
   swanwright_original_id: tangency-labs-solidcraft__solidcraft-packaging
   swanwright_original_name: solidcraft-packaging
 ---
@@ -37,3 +37,7 @@ Development pushes are not application releases. Pushing to `main` or pushing a 
 - `packaging/` holds the per-platform scripts (`packaging/linux`, `packaging/windows`, `packaging/macos`, `packaging/freebsd`, `packaging/web`); `packaging/tests` checks them.
 - Nix: `flake.nix` and `docs/nix.md`. Building: `docs/building.md`. Downloads: `docs/downloads.md`.
 - Build with `CARGO_TARGET_DIR=<repo>/target`. Windows from Linux: `cargo xwin build --release --target x86_64-pc-windows-msvc -p solidcraft`.
+
+## No integrations with other platforms
+
+Don't build someone's platform or service into SolidCraft (their cloud, sync, hosting, WebDAV, accounts, embedding the app elsewhere, host-page file bridges) without the maintainer's yes first; unasked PRs are closed. Flatpak, Snap, winget, Homebrew, AUR, OS keyrings and file dialogs are fine. The only official external host is the ArtCraft launcher, which downloads our release binaries.

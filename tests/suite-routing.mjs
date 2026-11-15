@@ -64,7 +64,9 @@ ok(`indeks: tiap seksi <= budget, total <= ${INDEX_TOTAL_BUDGET} (${Object.entri
   Object.entries(secTok).filter(([k]) => k !== "total").every(([k, v]) => v <= (INDEX_SECTION_BUDGETS[k] ?? INDEX_DEFAULT_SECTION_BUDGET)) && secTok.total <= INDEX_TOTAL_BUDGET);
 // v0.3.46 P2-1 §5 — target anggaran realistis: total terukur ~17,7k tok (734 entri),
 // bukan 3k di PRD lama; budget 22,4k menampung realita (terukur x1,25).
-ok(`indeks: total terukur ~17,7k dalam budget realistis 22,4k (total ${secTok.total})`, secTok.total > 10000 && secTok.total <= INDEX_TOTAL_BUDGET);
+// v0.3.60: total terukur ~18,4k tok (762 entri aktif); budget naik ke 23,2k
+// (cap security 200 → 1000 karena +26 skill keamanan).
+ok(`indeks: total terukur ~18,4k dalam budget realistis 23,2k (total ${secTok.total})`, secTok.total > 10000 && secTok.total <= INDEX_TOTAL_BUDGET);
 
 
 // --- v0.3.22: satu parser frontmatter + satu stripJsonc (router/parse.mjs) ---
@@ -128,7 +130,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const { checkMcpPolicy } = await import("../scripts/check-opencode.mjs");
   delete process.env.SW_EMBED; delete process.env.SW_EMBED_MODEL;
   const built = await SD.buildIndex({ quiet: true });
-  ok("indeks: 735 aktif (128 folder + 607 pack non-red-team), 166 disabled (red-team), 0 pack", built.counts.active === 735 && built.counts.disabled === 166 && built.counts.pack === 0);
+  ok("indeks: 762 aktif (154 folder + 608 pack non-red-team), 166 disabled (red-team), 0 pack", built.counts.active === 762 && built.counts.disabled === 166 && built.counts.pack === 0);
   const db = SD.openDb("runtime/skills.db", { readOnly: true });
   const st = Object.fromEntries(db.prepare("SELECT name,status FROM skill WHERE name IN ('api-security','llm-security')").all().map((r) => [r.name, r.status]));
   ok("api-security & llm-security status=disabled di indeks", st["api-security"] === "disabled" && st["llm-security"] === "disabled");
@@ -167,7 +169,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
     // v0.3.1: enrichment, trigram, gating L1, timeout keras, cache rute
     const d = SD.openDb("runtime/skills.db");
     const en = d.prepare("SELECT json FROM skill_enrich").all().map((r) => JSON.parse(r.json));
-    ok(`enrich: ${en.length} skill aktif, masing2 3–5 contoh + alias`, en.length === 735 && en.every((e) => e.examples.length >= 3 && e.examples.length <= 5 && e.aliases_en.length > 0));
+    ok(`enrich: ${en.length} skill aktif, masing2 3–5 contoh + alias`, en.length === 762 && en.every((e) => e.examples.length >= 3 && e.examples.length <= 5 && e.aliases_en.length > 0));
     const L = await import("../router/l0.mjs");
     const r1 = L.searchL0(d, "deploi ke vercle"); d.close();
     ok("L0 trigram: typo 'deploi ke vercle' → vercel-ops top1", r1.candidates[0]?.name === "vercel-ops");

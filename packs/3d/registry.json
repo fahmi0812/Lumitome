@@ -1346,6 +1346,23 @@
       "original_name": "rigging"
     },
     {
+      "id": "scan-to-threejs",
+      "name": "scan-to-threejs",
+      "sektor": "media",
+      "description": "Rebuild editable Three.js rooms from 3D Model Anything iPhone exports, RoomPlan JSON, or GLB/glTF scans. Use for scan-based reconstruction and photo-guided refinement of modeled spaces.",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "3d",
+      "src": "wesbos/3d-model-anything",
+      "sha": "31b2dc9da3fb541e501f2f0936e55b32afb70ee8",
+      "license": "MIT",
+      "original_id": "wesbos-3d-model-anything__scan-to-threejs",
+      "original_name": "scan-to-threejs"
+    },
+    {
       "id": "scene-assembly",
       "name": "scene-assembly",
       "sektor": "media",

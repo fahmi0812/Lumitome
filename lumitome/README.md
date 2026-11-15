@@ -1,6 +1,6 @@
 # lumitome 0.3.0
 
-Wrapper CLI aman di atas **OpenCode v2.2.4** + harness Swanwright, provider **9router**.
+Wrapper CLI aman di atas **OpenCode v2.3.0** + harness Swanwright, provider **9router**.
 `lumitome <subcommand> …`: semua argumen diteruskan ke `opencode`. Tanpa subcommand = TUI.
 
 ```bash

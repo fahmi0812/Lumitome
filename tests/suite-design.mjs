@@ -550,4 +550,14 @@ import { ok, skip, finish } from "./harness.mjs";
   }
 }
 
+// v0.3.60: tautan referensi desain (bukan impor file) — loopdesign/stitch-ui/3D-web.
+{
+  const LD = fs.readFileSync(".opencode/skills/loopdesign/SKILL.md", "utf8");
+  const ST = fs.readFileSync(".opencode/skills/stitch-ui/SKILL.md", "utf8");
+  const ML = fs.readFileSync("packs/gamedev/skills/threejs-materials-lighting/SKILL.md", "utf8");
+  ok("v0.3.60: loopdesign merujuk fontshare.com + prettysites.io (referensi Maker)", LD.includes("fontshare.com") && LD.includes("prettysites.io"));
+  ok("v0.3.60: stitch-ui merujuk fontshare.com (jawaban font generik)", ST.includes("fontshare.com"));
+  ok("v0.3.60: threejs-materials-lighting merujuk ambientcg.com (PBR/HDRI CC0)", ML.includes("ambientcg.com"));
+}
+
 finish();

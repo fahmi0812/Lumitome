@@ -111,7 +111,20 @@
         "command": [
           "npx",
           "-y",
-          "@next-ai-drawio/mcp-server@0.4.14"
+          "@next-ai-drawio/mcp-server@0.4.15"
+        ],
+        "disabled": true,
+        "timeout": {
+          "startup": 120000,
+          "catalog": 120000,
+          "execution": 120000
+        }
+      },
+      "blender": {
+        "type": "local",
+        "command": [
+          "uvx",
+          "mcp-for-blender==2.2.9"
         ],
         "disabled": true,
         "timeout": {

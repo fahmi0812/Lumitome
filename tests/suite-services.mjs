@@ -106,7 +106,7 @@ import { frontmatter } from "../router/parse.mjs";
   const SDB = await import("../router/skill-db.mjs");
   ok("salinan cermin pack (impeccable-2.., design-2) tidak diindeks; foldernya tetap ada", !SDB.collectSkills(".").some((x) => /^impeccable-\d+$|^design-2$/.test(x.name)) && fs.existsSync("packs/design-extra/skills/impeccable-2/SKILL.md"));
   const Wd = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8"), oc = fs.readFileSync("opencode.jsonc", "utf8");
-  ok("drawio: skill aktif terpin SHA + MCP opsional (mati default, versi npx terpin, tidak ikut 'all')", fs.existsSync(".opencode/skills/drawio-diagram/SKILL.md") && /c9dc5f5cc62e7e5a327a62b39027d80033e1548c/.test(fs.readFileSync(".opencode/skills/drawio-diagram/SKILL.md", "utf8")) && /if \(wantMcp\.includes\("drawio"\)\)/.test(fs.readFileSync("lumitome/lib/build-config.mjs", "utf8")) && /"@next-ai-drawio\/mcp-server@0\.4\.14"\s*\],\s*"disabled": true/.test(oc));
+  ok("drawio: skill aktif terpin SHA + MCP opsional (mati default, versi npx terpin, tidak ikut 'all')", fs.existsSync(".opencode/skills/drawio-diagram/SKILL.md") && /c9dc5f5cc62e7e5a327a62b39027d80033e1548c/.test(fs.readFileSync(".opencode/skills/drawio-diagram/SKILL.md", "utf8")) && /if \(wantMcp\.includes\("drawio"\)\)/.test(fs.readFileSync("lumitome/lib/build-config.mjs", "utf8")) && /"@next-ai-drawio\/mcp-server@0\.4\.15"\s*\],\s*"disabled": true/.test(oc));
   const BR = await import("../lumitome/lib/brand.mjs");
   const brandSvg = fs.readFileSync("assets/brand/logo.svg", "utf8") + fs.readFileSync("assets/brand/generate.py", "utf8");
   ok("brand: palet banner = hex brand kit assets/brand", BR.PALETTE.every((h) => brandSvg.includes(h)));
@@ -146,6 +146,9 @@ import { frontmatter } from "../router/parse.mjs";
   const BC13 = fs.readFileSync("lumitome/lib/build-config.mjs", "utf8");
   ok("wrapper: MCP skills --sectors; nama lama skills-<sektor> di LUMI_MCP diterima", /mcpOverride\.skills = \{[^}]*"--sectors"/.test(BC13) && /wantMcp\.includes\(`skills-\$\{sec\}`\)/.test(BC13));
   ok("figcraft: terdaftar disabled + pin v0.18.1 (sektor media), opt-in eksplisit, bukan all, confinement = WS", (() => { const M = JSON.parse(fs.readFileSync("router/mcp-sectors.json", "utf8")); const OC = fs.readFileSync("opencode.jsonc", "utf8"); return M.servers.figcraft?.default === "disabled" && M.servers.figcraft?.pin === "v0.18.1" && M.sectors.media.includes("figcraft") && /"figcraft": \{\s*[^}]*"disabled": true/.test(OC) && /wantMcp\.includes\("figcraft"\)/.test(BC13) && !/wantMcp\.includes\("all"\)[^;]*figcraft/.test(BC13) && /--automation-read-root", WS, "--automation-write-root", WS/.test(BC13); })());
+  // v0.3.60: MCP Blender (ahujasid/mcp-for-blender 2.2.9) — opt-in, mati default,
+  // pin uvx ==, sektor media, execute_blender_code = ask (Python arbitrer).
+  ok("blender: terdaftar disabled + pin 2.2.9 (sektor media), opt-in eksplisit, bukan all, safe mode OFF default", (() => { const M = JSON.parse(fs.readFileSync("router/mcp-sectors.json", "utf8")); const OC = fs.readFileSync("opencode.jsonc", "utf8"); return M.servers.blender?.default === "disabled" && M.servers.blender?.pin === "mcp-for-blender@2.2.9" && M.sectors.media.includes("blender") && (M.servers.blender?.ask || []).includes("execute_blender_code") && /"blender": \{\s*[^}]*"disabled": true/.test(OC) && /"uvx",\s*"mcp-for-blender==2\.2\.9"/.test(OC) && /wantMcp\.includes\("blender"\)/.test(BC13) && !/wantMcp\.includes\("all"\)[^;]*blender/.test(BC13) && /BLENDER_MCP_SAFE_MODE/.test(BC13); })());
   const CM13 = await import("../lumitome/lib/codemem.mjs");
   const ex = (set) => (f) => set.has(f);
   ok("gitRoot: POSIX naik ke induk berisi .git; tanpa .git → null", CM13.gitRoot("/home/u/repo/src/a", { exists: ex(new Set(["/home/u/repo/.git"])), p: path.posix }) === "/home/u/repo" && CM13.gitRoot("/home/u/x", { exists: () => false, p: path.posix }) === null);
@@ -205,6 +208,18 @@ import { frontmatter } from "../router/parse.mjs";
     r3.finalCfg.permissions.some((p) => p.action === "shell" && p.resource === "*npx -y modern-web-guidance@latest *" && p.effect === "allow") &&
     !r3.finalCfg.permissions.some((p) => p.action === "shell" && (p.resource === "*npx *" || p.resource === "npx *") && p.effect === "allow"));
   fs.rmSync(h3, { recursive: true, force: true });
+  // v0.3.60: MCP Blender — opt-in eksplisit saja; tidak ikut "all" maupun default.
+  const { h: h4, c: c4 } = mk();
+  const env4 = { LUMI_MCP: "skills,blender", LUMI_ROUTER_L1: "0" };
+  const r4 = await BC.buildFinalConfig({ env: env4, ...base, HOME: h4, CFG_DIR: c4, JOURNAL: path.join(h4, "j.jsonl"), RUN_ID: "t4", sub: "models" });
+  ok("buildFinalConfig blender: LUMI_MCP=skills,blender → server uvx terpin + safe mode OFF default",
+    JSON.stringify(r4.finalCfg.mcp.servers.blender?.command) === JSON.stringify(["uvx", "mcp-for-blender==2.2.9"]) && r4.finalCfg.mcp.servers.blender?.environment?.BLENDER_MCP_SAFE_MODE === "");
+  fs.rmSync(h4, { recursive: true, force: true });
+  const { h: h5, c: c5 } = mk();
+  const env5 = { LUMI_MCP: "all", LUMI_ROUTER_L1: "0" };
+  const r5 = await BC.buildFinalConfig({ env: env5, ...base, HOME: h5, CFG_DIR: c5, JOURNAL: path.join(h5, "j.jsonl"), RUN_ID: "t5", sub: "models" });
+  ok("buildFinalConfig blender: LUMI_MCP=all → blender TIDAK ikut (opt-in eksplisit)", !r5.finalCfg.mcp.servers.blender);
+  fs.rmSync(h5, { recursive: true, force: true });
 }
 
 {

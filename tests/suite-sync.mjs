@@ -1,6 +1,9 @@
-/** Sync upstream v0.3.56 — pin SHA baru, pin MCP baru, dan penjaga larangan.
+/** Sync upstream v0.3.56 + v0.3.60 — pin SHA baru, pin MCP baru, dan penjaga larangan.
  *  Ditulis dulu (merah): pin registry masih lama, pin MCP masih lama,
  *  modul sync-upstream baru belum ada (import gagal).
+ *  v0.3.60: pin baru untuk emil/impeccable/anti-slop/rea/solidcraft/logo-design
+ *  + 4 repo baru (owasp, 3d-model-anything, BugHunter selektif, trailofbits
+ *  selektif CC BY-SA) + MCP Blender opt-in + drawio 0.4.15.
  *  Dijalankan lewat tests/run.mjs (npm test); standalone:
  *  node --experimental-strip-types tests/suite-sync.mjs */
 import fs from "node:fs";
@@ -9,11 +12,11 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { ok, finish } from "./harness.mjs";
 
-// ---------- 1. Pin SHA baru (19 repo, hasil audit 13 Nov 2026, diverifikasi live) ----------
+// ---------- 1. Pin SHA baru (v0.3.60; audit 13 Nov + evaluasi 15 Nov 2026, diverifikasi live) ----------
 const NEW_PINS = {
   "caru-ini/stack-diagram": "9175bde8449cc8f5390d6eb72ecc2e1f5bfe21f3",
   "cathrynlavery/diagram-design": "f6db0decea96de66b901331a0f79a8d4b147ebae",
-  "emilkowalski/skills": "f7ce8c02d6e3c8f0d980a44c57bcc41a40254349",
+  "emilkowalski/skills": "0f2e23b32bb1265e84cff8d3e75785fec953fb1b",
   "genspark-ai/genoffice": "d751696166e1d93ab4b9e7319d3b0233a70bf984",
   "google/elephant-goldfish-model": "270b10326bf366d823bc76fd662cf83808d5781e",
   "haydenschmitty/floorplan": "5e3eaac9639705f52e5e31b620a0d20550acd9dd",
@@ -22,18 +25,24 @@ const NEW_PINS = {
   // tidak bisa lewat push konektor, dan teks barunya merujuk aset itu.
   "lemomo-ai/lemo-opuscar": "3a7132b996be0241c1ea0ab180d519f06e6f10b6",
   "magicuidesign/magicui": "2712647e193295d2fd85b65e58095fb2009736d7",
-  "miqdadbadjuber/anti-slop": "54e39872aeba6a699b40f6a68f51307c3eea2901",
-  "morluto/rea": "5cddc69c51a0fb18d021417199046314581ba9c2",
-  "pbakaus/impeccable": "c4cd1924c389f68d37c687d9c2bbf13f12547c41",
-  // solidcraft: target AUDIT (b8d554ca35ad, diverifikasi ada upstream via API).
-  // Live HEAD sudah bergerak ke b3b5d2bc92a7 (13 Nov 08:47 UTC) — commit itu
-  // BELUM diaudit, jadi TIDAK dipakai di slice ini.
-  "tangency-labs/solidcraft": "b8d554ca35ad54ed6ab3e28bdb7dce98375c838f",
+  "miqdadbadjuber/anti-slop": "35b54dc660aa7d11428ee62c5788ad36bc18ac3c",
+  "morluto/rea": "da53dce1f729d33abe0d269061412af7662f2a09",
+  "pbakaus/impeccable": "1b2aa57ca0f1cd6e393689bba70a780cb701aacd",
+  // solidcraft: pin v0.3.60 = HEAD 15 Nov (80a83637). Selisih vs SHA evaluasi
+  // 1339e2b9 diverifikasi hanya kode CAD (skill paths tidak berubah).
+  "tangency-labs/solidcraft": "80a83637f4e01c8ddfb5fa426c5f164366979d74",
   "vercel-labs/json-render": "5e30a6f9425cd5ffb5038ba44352ab4b1feb3fc7",
   "adhiprib/humanizer-indonesia": "62fe1aed5932c26cfcfc7ed096415e59aae5b0db",
   "Nutlope/hallmark": "04977e15f3dfd6ee4b74c887dac3eb52665d6c92",
   "tt-a1i/archify": "7e45f36c66de1254d5ad6ba1d878f6499ea269fd",
   "nowork-studio/notfair-plugin": "8035315b959379d0a0df0c8f7d30c0defc5be576",
+  // v0.3.60 — repo BARU (evaluasi 15 Nov): owasp 1 skill, scan-to-threejs 1,
+  // BugHunter SELEKTIF 20 (bukan 83), trailofbits SELEKTIF 5 (CC BY-SA 4.0).
+  "agamm/claude-code-owasp": "1ae29cb22518560e3625d77f2ae64f61647d9201",
+  "wesbos/3d-model-anything": "31b2dc9da3fb541e501f2f0936e55b32afb70ee8",
+  "elementalsouls/Claude-BugHunter": "8ac4242ee0a108e65ac1343b56cce6c50ba456ef",
+  "trailofbits/skills": "149d7b21f4067765b82e67029730b42d228ef4b4",
+  "kaankiziltug/logo-design-skill": "e9eaddc07895575253d6663320354a708f53e955",
 };
 const reg = JSON.parse(fs.readFileSync("router/skills-registry.json", "utf8"));
 // Skill yang upstream HAPUS (cermin + pin lama dipertahankan — bukan gagal sync).
@@ -74,10 +83,21 @@ ok("mcp playwright 0.0.85 (opencode.jsonc + docs)", OC.includes("@playwright/mcp
 ok("mcp playwright lama 0.0.83 hilang dari config+docs", !OC.includes("@playwright/mcp@0.0.83") && !MCPDOC.includes("@playwright/mcp@0.0.83"));
 ok("mcp chromedev 1.13.0 (opencode.jsonc + docs)", OC.includes("chrome-devtools-mcp@1.13.0") && MCPDOC.includes("chrome-devtools-mcp@1.13.0"));
 ok("mcp chromedev lama 1.12.0 hilang dari config+docs", !OC.includes("chrome-devtools-mcp@1.12.0") && !MCPDOC.includes("chrome-devtools-mcp@1.12.0"));
-ok("mcp drawio @next-ai-drawio/mcp-server@0.4.14 (jsonc + build-config + sectors)", OC.includes("@next-ai-drawio/mcp-server@0.4.14") && BC.includes("@next-ai-drawio/mcp-server@0.4.14") && MS.servers.drawio?.pin === "@next-ai-drawio/mcp-server@0.4.14");
-ok("mcp drawio lama 0.4.11 hilang dari config", !OC.includes("@next-ai-drawio/mcp-server@0.4.11") && !BC.includes("@next-ai-drawio/mcp-server@0.4.11") && MS.servers.drawio?.pin !== "@next-ai-drawio/mcp-server@0.4.11");
+ok("mcp drawio @next-ai-drawio/mcp-server@0.4.15 (jsonc + build-config + sectors)", OC.includes("@next-ai-drawio/mcp-server@0.4.15") && BC.includes("@next-ai-drawio/mcp-server@0.4.15") && MS.servers.drawio?.pin === "@next-ai-drawio/mcp-server@0.4.15");
+ok("mcp drawio lama 0.4.14 hilang dari config", !OC.includes("@next-ai-drawio/mcp-server@0.4.14") && !BC.includes("@next-ai-drawio/mcp-server@0.4.14") && MS.servers.drawio?.pin !== "@next-ai-drawio/mcp-server@0.4.14");
 ok("mcp figcraft v0.18.1 (sectors + docs + komentar build-config)", MS.servers.figcraft?.pin === "v0.18.1" && MCPDOC.includes("v0.18.1") && /figcraft.*v0\.18\.1/.test(BC));
 ok("mcp figcraft lama v0.16.0 hilang dari sectors+docs", MS.servers.figcraft?.pin !== "v0.16.0" && !MCPDOC.includes("v0.16.0"));
+
+// ---------- 2b. v0.3.60 — skill baru (27), lisensi CC BY-SA, MCP Blender, ref 9router ----------
+ok("v0.3.60: registry 928 skill (901 + 27 baru)", reg.skills.length === 928);
+const BH = ["bb-methodology", "redteam-mindset", "triage-validation", "evidence-hygiene", "hunt-sqli", "hunt-xss", "hunt-ssrf", "hunt-idor", "hunt-auth-bypass", "hunt-jwt-crypto", "hunt-csrf", "hunt-rce", "hunt-ssti", "hunt-xxe", "hunt-lfi", "hunt-deserialization", "hunt-oauth", "hunt-session", "hunt-graphql", "hunt-llm-ai"];
+const bhSkills = reg.skills.filter((s) => s.src === "elementalsouls/Claude-BugHunter");
+ok("v0.3.60: BugHunter SELEKTIF 20 skill (bukan 83)", bhSkills.length === 20 && BH.every((n) => bhSkills.some((s) => s.name === n)));
+const tob = reg.skills.filter((s) => s.src === "trailofbits/skills");
+ok("v0.3.60: trailofbits SELEKTIF 5 skill CC BY-SA 4.0 + atribusi + LICENSE", tob.length === 5 && ["audit-context-building", "c-review", "cvss-scoring", "fp-check", "differential-review"].every((n) => tob.some((s) => s.name === n)) && tob.every((s) => s.license.startsWith("CC-BY-SA-4.0")) && tob.every((s) => fs.existsSync(`.opencode/skills/${s.name}/LICENSE`) && fs.readFileSync(`.opencode/skills/${s.name}/SKILL.md`, "utf8").includes("license_note") && fs.readFileSync(`.opencode/skills/${s.name}/SKILL.md`, "utf8").includes("Trail of Bits, CC BY-SA 4.0")));
+ok("v0.3.60: owasp-security + scan-to-threejs (MIT, sektor benar)", reg.skills.some((s) => s.name === "owasp-security" && s.src === "agamm/claude-code-owasp" && s.sektor === "security" && s.license === "MIT") && reg.skills.some((s) => s.name === "scan-to-threejs" && s.src === "wesbos/3d-model-anything" && s.sektor === "media" && s.pack === "3d" && s.license === "MIT"));
+ok("v0.3.60: MCP blender opt-in disabled + pin 2.2.9 (sektor media, ask execute_blender_code)", MS.servers.blender?.default === "disabled" && MS.servers.blender?.pin === "mcp-for-blender@2.2.9" && MS.sectors.media.includes("blender") && (MS.servers.blender?.ask || []).includes("execute_blender_code") && OC.includes("mcp-for-blender==2.2.9") && BC.includes("mcp-for-blender==2.2.9"));
+ok("v0.3.60: README merujuk antigravity-fixer untuk 9router 403/not eligible + peringatan OAuth", fs.readFileSync("README.md", "utf8").includes("antigravity-fixer") && /Read the tool before running it/i.test(fs.readFileSync("README.md", "utf8")));
 
 // ---------- 3. Yang DILARANG disentuh — harus tetap ----------
 const bySrc = (src) => reg.skills.filter((s) => s.src === src);
