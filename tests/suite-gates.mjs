@@ -457,4 +457,69 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     /lumitome subagent-preset/.test(cmd) && !/node scripts\/apply-subagent-preset/.test(cmd));
 }
 
+// (v0.3.62) /subagent off — saklar mati total (field `enabled` di preset).
+{
+  const ROLES = ["thinking", "search", "builder", "reviewer"];
+  const fm = (p) => fs.readFileSync(p, "utf8");
+  const ASP = await import("../scripts/apply-subagent-preset.mjs");
+  const os = await import("node:os");
+  const base = JSON.parse(fm(".opencode/lumitome-subagent.json"));
+  ok("/subagent off: preset tanpa field enabled = ON (backward compatible, preset v0.3.61 tetap jalan)",
+    ASP.isEnabled({}) === true && ASP.isEnabled({ enabled: true }) === true && ASP.isEnabled({ enabled: false }) === false);
+  ok("/subagent off: setEnabled tidak memutasi preset asal",
+    (() => { const p = { enabled: true, roles: {} }; const q = ASP.setEnabled(p, false); return p.enabled === true && q.enabled === false; })());
+  ok("/subagent off: validatePreset menolak enabled non-boolean",
+    ASP.validatePreset({ ...base, enabled: "yes" }, null).errors.some((e) => /enabled/.test(e)));
+  ok("/subagent off: preset OFF + model tidak valid tetap lolos (tidak divalidasi saat dormant)",
+    (() => { const p = JSON.parse(JSON.stringify(base)); p.enabled = false; p.roles.search.model = "anthropic/tidak-ada"; return ASP.validatePreset(p, null).errors.length === 0; })());
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-subagent-off-"));
+  try {
+    for (const r of ROLES) { fs.mkdirSync(path.join(tmp, ".opencode", "agents"), { recursive: true }); fs.copyFileSync(`.opencode/agents/${r}.md`, path.join(tmp, ".opencode", "agents", `${r}.md`)); }
+    const off = JSON.parse(JSON.stringify(base)); off.enabled = false; off.roles.search.model = "9router/ag/gemini-3.8-flash";
+    const r1 = ASP.applyPreset({ root: tmp, preset: off, liveModels: null });
+    ok("/subagent off: applyPreset tidak menulis file agent apa pun saat OFF",
+      r1.disabled === true && r1.changed.length === 0 && r1.errors.length === 0
+      && fm(path.join(tmp, ".opencode", "agents", "search.md")).includes("model: 9router/ag/gemini-3.8-flash-high"));
+    ok("/subagent off: applyPreset --check tetap lolos saat OFF walau model basi",
+      ASP.applyPreset({ root: tmp, preset: off, liveModels: null, check: true }).disabled === true);
+    fs.copyFileSync(".opencode/lumitome-subagent.json", path.join(tmp, ".opencode", "lumitome-subagent.json"));
+    const logs = [];
+    ok("/subagent off: cli() off menulis enabled:false ke preset (exit 0)",
+      ASP.cli({ argv: ["off"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
+      && JSON.parse(fm(path.join(tmp, ".opencode", "lumitome-subagent.json"))).enabled === false);
+    ok("/subagent off: cli() status mencetak OFF",
+      ASP.cli({ argv: ["status"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0 && /OFF/.test(logs[logs.length - 1]));
+    ok("/subagent off: cli() plain saat OFF exit 0 tanpa menulis",
+      ASP.cli({ argv: [], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
+      && fm(path.join(tmp, ".opencode", "agents", "search.md")).includes("model: 9router/ag/gemini-3.8-flash-high"));
+    ok("/subagent off: cli() --check saat OFF exit 0",
+      ASP.cli({ argv: ["--check"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0);
+    ok("/subagent off: cli() on mengembalikan enabled:true + peran/model utuh (exit 0)",
+      ASP.cli({ argv: ["on"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
+      && (() => { const p = JSON.parse(fm(path.join(tmp, ".opencode", "lumitome-subagent.json"))); return p.enabled === true && Object.keys(p.roles).length === 4 && p.roles.builder.model.startsWith("9router/"); })());
+    ok("/subagent off: cli() status mencetak ON setelah on",
+      ASP.cli({ argv: ["status"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0 && /ON/.test(logs[logs.length - 1]));
+    ok("/subagent off: cli() menolak perintah posisi tidak dikenal (exit 2)",
+      ASP.cli({ argv: ["bogus"], root: tmp, log: () => {}, err: () => {} }) === 2);
+    ok("/subagent off: cli() off lewat --preset <path> tetap dikenali (nilai flag dilewati)",
+      ASP.cli({ argv: ["--preset", path.join(tmp, ".opencode", "lumitome-subagent.json"), "off"], root: tmp, log: () => {}, err: () => {} }) === 0
+      && JSON.parse(fm(path.join(tmp, ".opencode", "lumitome-subagent.json"))).enabled === false);
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+  const cmd = fm(".opencode/commands/subagent.md");
+  ok("/subagent off: command menangani argumen off/on PALING AWAL (Langkah 0, sebelum popup)",
+    /Langkah 0/.test(cmd) && /`lumitome subagent-preset off`/.test(cmd) && /`lumitome subagent-preset on`/.test(cmd));
+  ok("/subagent off: command cek status sebelum popup; bila OFF jawab singkat + BERHENTI tanpa delegasi",
+    /`lumitome subagent-preset status`/.test(cmd) && /BERHENTI/.test(cmd) && /tanpa popup, tanpa delegasi/i.test(cmd));
+  ok("/subagent off: aturan keras — OFF = jangan delegasi ke agent peran apa pun + jangan popup",
+    /Bila sistem OFF/.test(cmd) && /JANGAN delegasi ke agent peran apa pun/.test(cmd) && /JANGAN tampilkan popup/.test(cmd));
+  ok("/subagent off: command menyebut satu-satunya jalur ke agent peran adalah perintah ini",
+    /Satu-satunya jalur ke agent peran adalah perintah ini/.test(cmd));
+  ok("/subagent off: preset repo default enabled:true (fresh install = ON)",
+    JSON.parse(fm(".opencode/lumitome-subagent.json")).enabled === true);
+  ok("/subagent off: README mendokumentasikan /subagent off|on + default on",
+    /\/subagent off/.test(fm("README.md")) && /\/subagent on/.test(fm("README.md")) && /Default is on/i.test(fm("README.md")));
+  ok("/subagent off: orchestrator.md tidak berubah (saklar di command + preset, bukan orchestrator)",
+    !/enabled/.test(fm(".opencode/agents/orchestrator.md")));
+}
+
 finish();

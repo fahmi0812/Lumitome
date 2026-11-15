@@ -1,5 +1,5 @@
 ---
-description: /subagent — delegasi peran via popup. Pilih peran (Thinking/Search/Build/Review) + model 9router per peran + mode, lalu orchestrator mendelegasikan ke agent peran.
+description: /subagent — delegasi peran via popup. Pilih peran (Thinking/Search/Build/Review) + model 9router per peran + mode, lalu orchestrator mendelegasikan ke agent peran. `/subagent off|on` mematikan/menyalakan sistem peran sepenuhnya.
 ---
 # /subagent — delegasi peran via popup (tahap 1)
 
@@ -7,6 +7,12 @@ Aturan keras:
 - Popup HANYA muncul bila user memanggil `/subagent` secara eksplisit. JANGAN pernah memunculkannya sendiri di tengah tugas auto.
 - Model yang ditawarkan HANYA dari daftar 9router lokal yang masih hidup. JANGAN mengarang ID model. JANGAN tawarkan model provider lain (anthropic/openai/dll.) — Lumitome hanya memakai 9router (AGENTS.md; default terpin `9router/ag/gemini-3.8-flash-high`).
 - Peran TIDAK BOLEH mendelegasikan lagi (depth 1; permission `task`/`subagent` deny di file agent peran). Worker TIDAK BOLEH bertanya ke user.
+- Bila sistem OFF (`enabled: false` di preset), JANGAN delegasi ke agent peran apa pun dan JANGAN tampilkan popup — kerjakan tugas seperti biasa tanpa peran (jalur orchestrator normal). Satu-satunya jalur ke agent peran adalah perintah ini; tidak ada command lain yang memanggil mereka.
+
+Langkah 0 — saklar on/off (v0.3.62, ditangani PALING AWAL, sebelum popup):
+- Argumen `off`: jalankan `lumitome subagent-preset off` lewat shell, lalu jawab singkat "Sistem /subagent dimatikan (enabled: false). Orchestrator bekerja seperti biasa tanpa delegasi peran. Nyalakan lagi dengan `/subagent on`." JANGAN tampilkan popup, JANGAN delegasi.
+- Argumen `on`: jalankan `lumitome subagent-preset on` lewat shell, lalu jawab singkat "Sistem /subagent dinyalakan kembali." Lanjutkan normal (popup hanya bila user memanggil `/subagent` lagi tanpa argumen).
+- Tanpa argumen: cek dulu `lumitome subagent-preset status` lewat shell. Bila OFF, jawab singkat "Sistem /subagent sedang OFF — peran tidak aktif. Panggil `/subagent on` untuk menyalakannya." dan BERHENTI (tanpa popup, tanpa delegasi). Bila ON, lanjut ke Langkah 1.
 
 Langkah 1 — daftar model live: jalankan `lumitome models` lewat shell (auto-refresh best-effort; output `9router/<id>` per baris). Bila server tidak merespons / daftar kosong, pakai fallback `9router/ag/gemini-3.8-flash-high` dan KATAKAN begitu ke user. Bila daftar hanya berisi satu model, lewati pertanyaan model di Langkah 2 dan pakai model itu.
 

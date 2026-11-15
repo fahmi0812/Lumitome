@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.62 — /subagent off — saklar mati total
+
+- Saklar global sistem peran /subagent (diminta Fahmi — v0.3.61 hanya bisa matiin per peran, belum ada mati total): `/subagent off` → `"enabled": false` di `.opencode/lumitome-subagent.json`; `/subagent on` → nyalakan lagi. Saat OFF: `/subagent` tanpa argumen hanya menjawab singkat bahwa sistem lagi off (tanpa popup, tanpa delegasi); orchestrator bekerja seperti biasa tanpa peran. Default fresh install `"enabled": true` (perilaku default TIDAK berubah — dormant-by-default tetap berlaku); preset lama tanpa field `enabled` diperlakukan sebagai ON (backward compatible).
+- `scripts/apply-subagent-preset.mjs`: `isEnabled()` (hanya `false` yang mematikan) + `setEnabled()`; `validatePreset` menolak `enabled` non-boolean dan melewati validasi model saat OFF (validate tidak boleh gagal hanya karena sistem dimatikan); `applyPreset` saat OFF tidak menulis apa-apa dan `--check` tetap exit 0. `lumitome subagent-preset on|off|status` (status mencetak ON/OFF; perintah posisi tidak dikenal → exit 2).
+- `.opencode/commands/subagent.md`: Langkah 0 (ditangani PALING AWAL, sebelum popup) — argumen off/on + cek `lumitome subagent-preset status` sebelum popup; aturan keras "bila OFF, jangan delegasi ke agent peran apa pun + jangan tampilkan popup". Orchestrator.md TIDAK diubah (596/600 token, cap validate) — diverifikasi dari kode: satu-satunya jalur delegasi ke agent peran adalah command ini (orchestrator.md tidak pernah menyebut nama peran; tidak ada command lain yang memanggil mereka).
+- Batasan jujur (residual, dicatat): blokir OFF ditegakkan di level instruksi command, BUKAN deny permission mekanis — orchestrator tetap `subagent *` allow (diperlukan saat ON; permission statis saat TUI dimulai). Model yang mengabaikan command secara teori masih bisa mendelegasikan ke peran saat OFF; mitigasi: aturan keras + pernyataan satu-satunya jalur + tes yang mengunci keberadaan aturan itu.
+- Batasan jujur (belum terverifikasi live di VM ini — tanpa engine, tanpa TUI): popup TUI saat OFF/ON belum diuji live; yang terverifikasi live: dispatch CLI `lumitome subagent-preset status|off|on` (round-trip penuh off → status OFF → --check exit 0 → on → status ON), gates, dan semua tes unit.
+- Verifikasi: `npm run validate` OK (warns 0), lint OK (59 file), `npm test` **943 passed / 0 failed / 2 skipped** (baseline 922 — +21 asersi baru); routing golden top-1 0.8304 / held-out 0.8333 (asersi suite-routing, tanpa regresi).
+
 ## 0.3.61 — /subagent — delegasi peran via popup
 
 - Perintah baru `/subagent` (TUI, agent orchestrator): popup konfigurasi peran × model via tool `question` bawaan OpenCode — pilih peran aktif (Thinking/Search/Build/Review), model per peran, dan mode serial/paralel. Popup HANYA muncul bila `/subagent` dipanggil eksplisit (tidak pernah otomatis di tengah tugas auto). Headless (`lumitome run`): popup dilewati, pakai default (4 peran, model terpin, serial).

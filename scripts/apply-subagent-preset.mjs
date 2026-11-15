@@ -19,6 +19,9 @@
  *
  * Pakai: node scripts/apply-subagent-preset.mjs [--preset <path>] [--root <dir>] [--check]
  *   --check: hanya laporkan file yang berbeda dari preset, tanpa menulis (exit 1 bila beda).
+ *   on|off|status: `lumitome subagent-preset on|off` menulis field `enabled`
+ *   di preset (saklar global v0.3.62); `status` mencetak ON/OFF. Saat OFF,
+ *   apply/--check tidak menulis apa-apa dan exit 0 (sistem dormant).
  */
 import fs from "node:fs";
 import os from "node:os";
@@ -27,6 +30,14 @@ import path from "node:path";
 export const ROLES = ["thinking", "search", "builder", "reviewer"];
 export const MODEL_RE = /^9router\/[A-Za-z0-9][A-Za-z0-9._/-]*$/;
 export const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
+
+/** Saklar global /subagent (v0.3.62): preset tanpa field `enabled` = ON
+ * (backward compatible — preset v0.3.61 tetap jalan). Hanya `false` yang
+ * mematikan; nilai non-boolean ditolak validatePreset. */
+export function isEnabled(preset) { return preset?.enabled !== false; }
+
+/** Salinan preset dengan field `enabled` diubah (tanpa mutasi argumen). */
+export function setEnabled(preset, enabled) { return { ...preset, enabled }; }
 
 /** Daftar model 9router dari cache $LUMI_HOME/providers.json; null bila tidak bisa dibaca. */
 export function loadLiveModels(home = process.env.LUMI_HOME || path.join(os.homedir(), ".lumitome")) {
@@ -41,6 +52,12 @@ export function validatePreset(preset, liveModels) {
   const errors = [], warnings = [];
   if (!preset || typeof preset !== "object" || !preset.roles || typeof preset.roles !== "object")
     return { errors: ["preset tidak valid: butuh objek {roles:{...}}"], warnings };
+  if ("enabled" in preset && typeof preset.enabled !== "boolean")
+    return { errors: ["preset tidak valid: 'enabled' harus true/false"], warnings };
+  // OFF (v0.3.62): model tidak divalidasi — sistem dormant, isinya tidak
+  // dipakai; memaksa validasi saat OFF akan membuat validate gagal hanya
+  // karena user mematikan sistem (bug).
+  if (preset.enabled === false) return { errors, warnings };
   for (const [role, cfg] of Object.entries(preset.roles)) {
     if (!ROLES.includes(role)) { errors.push(`peran tidak dikenal: '${role}' (yang ada: ${ROLES.join(", ")})`); continue; }
     const m = cfg?.model;
@@ -51,10 +68,13 @@ export function validatePreset(preset, liveModels) {
   return { errors, warnings };
 }
 
-/** Terapkan preset ke file agent. Kembali {changed:[file], warnings} — check:true tanpa menulis. */
+/** Terapkan preset ke file agent. Kembali {changed:[file], warnings} — check:true tanpa menulis.
+ * Saat OFF (v0.3.62): tidak menulis apa-apa, {disabled:true} — --check tetap
+ * exit 0 (validate tidak boleh gagal hanya karena sistem dimatikan). */
 export function applyPreset({ root = ".", preset, liveModels = null, check = false } = {}) {
   const { errors, warnings } = validatePreset(preset, liveModels);
   if (errors.length) return { changed: [], warnings, errors };
+  if (!isEnabled(preset)) return { changed: [], warnings, errors, disabled: true };
   const changed = [];
   for (const role of ROLES) {
     const cfg = preset.roles[role];
@@ -76,9 +96,19 @@ export function cli({ argv = process.argv.slice(2), root = ".", log = console.lo
   const val = (f) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : undefined; };
   const presetPath = val("--preset") || path.join(root, ".opencode", "lumitome-subagent.json");
   const check = argv.includes("--check");
+  // Perintah posisi pertama (v0.3.62): on|off|status — lewati nilai --preset.
+  const cmd = (() => { for (let i = 0; i < argv.length; i++) { if (argv[i] === "--preset") { i++; continue; } if (!argv[i].startsWith("-")) return argv[i]; } return undefined; })();
   let preset;
   try { preset = JSON.parse(fs.readFileSync(presetPath, "utf8")); }
   catch (e) { err(`apply-subagent-preset: preset tidak bisa dibaca ${presetPath} (${e.message})`); return 2; }
+  if (cmd === "on" || cmd === "off") {
+    const next = setEnabled(preset, cmd === "on");
+    fs.writeFileSync(presetPath, JSON.stringify(next, null, 2) + "\n");
+    log(`apply-subagent-preset: subagent ${cmd === "on" ? "ON" : "OFF"} (preset ${presetPath})`);
+    return 0;
+  }
+  if (cmd === "status") { log(`subagent: ${isEnabled(preset) ? "ON" : "OFF"}`); return 0; }
+  if (cmd !== undefined) { err(`apply-subagent-preset: perintah tidak dikenal '${cmd}' (yang ada: on|off|status)`); return 2; }
   const live = loadLiveModels();
   const r = applyPreset({ root, preset, liveModels: live, check });
   for (const w of r.warnings) err(`peringatan: ${w}`);
@@ -86,6 +116,8 @@ export function cli({ argv = process.argv.slice(2), root = ".", log = console.lo
   if (check) {
     if (r.changed.length) { log(`apply-subagent-preset: STALE ${r.changed.join(", ")} → lumitome subagent-preset`); return 1; }
     log("apply-subagent-preset: OK (file agent = preset)");
+  } else if (r.disabled) {
+    log("apply-subagent-preset: subagent OFF — preset tidak diterapkan (nyalakan: lumitome subagent-preset on)");
   } else {
     log(r.changed.length ? `apply-subagent-preset: tulis ${r.changed.join(", ")} (berlaku mulai sesi TUI berikutnya)` : "apply-subagent-preset: sudah sesuai preset, tidak ada perubahan");
   }
