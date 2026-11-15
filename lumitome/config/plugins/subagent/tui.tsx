@@ -20,12 +20,16 @@
 //   `/subagent off|on|status` ditangani di sini (tanpa popup).
 //   Sesudah simpan, MODEL SESI langsung beralih ke model peran Thinking
 //   (session.switchModel — mekanisme yang sama dipakai /models; terverifikasi
-//   ke sumber opencode v2.3.0 + v2.2.4), lalu prompt delegasi dikirim ke sesi
-//   lewat session.prompt (fire-and-forget; model PERAN berlaku mulai sesi TUI
-//   berikutnya — jujur di toast). Bila belum ada sesi saat menyimpan (home
-//   screen), sesi baru yang dibuat sesudah itu otomatis dialihkan ke Thinking
-//   oleh server plugin (index.ts, langganan session.created) — jadi status
-//   line menunjukkan Thinking sejak pesan pertama.
+//   ke sumber opencode v2.3.0 + v2.2.4), lalu pemberitahuan SINGKAT dikirim
+//   ke sesi lewat session.prompt (fire-and-forget). Aturan lengkap TIDAK
+//   lagi di-inject sebagai prompt raksasa (v0.3.67 — Fahmi menilai aneh):
+//   aturan statis tinggal di file agent (orchestrator.md + file peran),
+//   ke sesi hanya mode + urutan + model Thinking + tugas (maks 2 baris).
+//   Model PERAN berlaku mulai sesi TUI berikutnya — jujur di toast.
+//   Bila belum ada sesi saat menyimpan (home screen), sesi baru yang dibuat
+//   sesudah itu otomatis dialihkan ke Thinking oleh server plugin
+//   (index.ts, langganan session.created) — jadi status line menunjukkan
+//   Thinking sejak pesan pertama.
 //   v0.3.66: sesudah simpan ada SATU pilihan akhir — "Masuk mode subagent
 //   sekarang?" [Ya, mulai] langsung masuk mode subagent (sesi aktif dialihkan
 //   ke Thinking; bila belum ada sesi, sesi baru DIBUKA dengan model Thinking
@@ -55,7 +59,7 @@ import {
   splitModelId,
   thinkingSessionModel,
 } from "./flow.mjs"
-import { buildDelegationPrompt } from "./prompt.mjs"
+import { buildSubagentNotice } from "./prompt.mjs"
 
 function toast(context, title, message, variant) {
   context.ui.toast.show({ title, message, variant: variant ?? "info", duration: 9000 })
@@ -95,13 +99,13 @@ async function switchSessionToThinking(context, preset) {
   }
 }
 
-async function sendDelegationPrompt(context, preset, live, task, sessionIDOverride) {
+async function sendSubagentNotice(context, preset, task, sessionIDOverride) {
   const sessionID = sessionIDOverride ?? currentSessionID(context)
   if (!sessionID) {
     toast(context, "Tidak ada sesi aktif", "Konfigurasi tersimpan — delegasi menunggu sesi.")
     return
   }
-  const text = buildDelegationPrompt(preset, task, live)
+  const text = buildSubagentNotice(preset, task)
   // Bentuk resmi opencode 2.3.0 + 2.2.4: session.prompt({ sessionID, text })
   // (SessionPromptInput — tidak ada field `parts`; bentuk v0.3.63 dengan
   // `parts: [{ type: "text", text }]` gagal live: "Missing key at ["text"]".)
@@ -112,15 +116,15 @@ async function sendDelegationPrompt(context, preset, live, task, sessionIDOverri
 
 /**
  * Masuk mode subagent SEKARANG (v0.3.66 — pilihan akhir sesudah simpan):
- * sesi (baru atau yang aktif) langsung pakai model Thinking + prompt
- * delegasi dikirim — user tidak perlu ketik pesan dulu atau restart TUI.
+ * sesi (baru atau yang aktif) langsung pakai model Thinking + pemberitahuan
+ * singkat dikirim — user tidak perlu ketik pesan dulu atau restart TUI.
  * Bila belum ada sesi: sesi baru DIBUKA di sini (client.session.create
  * dengan model Thinking) lalu TUI diarahkan ke sesi itu (router.navigate);
  * watcher server plugin melewatinya (model awal sudah Thinking, bukan
  * default terpin). Gagal di langkah mana pun → kembalikan catatan jujur
  * (preset sudah tersimpan; user bisa buka sesi manual).
  */
-async function enterSubagentMode(context, preset, live, task) {
+async function enterSubagentMode(context, preset, task) {
   const full = thinkingSessionModel(preset)
   if (!full) return "Model sesi tidak diubah (Thinking nonaktif)."
   const parts = splitModelId(full)
@@ -144,11 +148,11 @@ async function enterSubagentMode(context, preset, live, task) {
       return `Sesi baru gagal dibuat (${String(e?.message ?? e)}) — konfigurasi tersimpan; buka sesi baru manual.`
     }
   }
-  await sendDelegationPrompt(context, preset, live, task, sessionID)
+  await sendSubagentNotice(context, preset, task, sessionID)
   return `Sesi memakai ${full} (Thinking).`
 }
 
-async function saveAndDelegate(context, rpc, next, live, task) {
+async function saveAndDelegate(context, rpc, next, task) {
   let saved
   try {
     saved = await rpc.savePreset({ preset: next })
@@ -169,7 +173,7 @@ async function saveAndDelegate(context, rpc, next, live, task) {
     ],
   }).catch(() => undefined)
   if (choice === "start") {
-    const note = await enterSubagentMode(context, next, live, task)
+    const note = await enterSubagentMode(context, next, task)
     toast(context, "Mode subagent jalan", `${summarizePreset(next)} — ${note}${warn}`)
     return
   }
@@ -179,7 +183,7 @@ async function saveAndDelegate(context, rpc, next, live, task) {
     "Subagent disimpan",
     `${summarizePreset(next)} — ${switched.note} Model peran berlaku mulai sesi TUI berikutnya.${warn}`,
   )
-  await sendDelegationPrompt(context, next, live, task)
+  await sendSubagentNotice(context, next, task)
 }
 
 /** Model per peran yang aman dipakai (model tersimpan yang bukan 9router → fallback terpin). */
@@ -216,7 +220,7 @@ async function runSelects(context, rpc, preset, models, live, task) {
   })
   if (mode === undefined) return toastCancelled(context)
   const next = buildPreset(preset, { models: byRole, mode })
-  await saveAndDelegate(context, rpc, next, live, task)
+  await saveAndDelegate(context, rpc, next, task)
 }
 
 function showTableOnce(context, state, focus, models) {
@@ -237,7 +241,7 @@ async function runTable(context, rpc, preset, models, live, task) {
     if (action.type === "cancel") return toastCancelled(context)
     if (action.type === "save") {
       const next = buildPreset(preset, { models: action.state.models, mode: action.state.mode })
-      await saveAndDelegate(context, rpc, next, live, task)
+      await saveAndDelegate(context, rpc, next, task)
       return
     }
     if (action.type === "model") {

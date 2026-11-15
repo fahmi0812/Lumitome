@@ -13,6 +13,7 @@ import {
   validatePreset,
   loadLiveModels,
   setEnabled,
+  syncOrchestratorMode,
   DEFAULT_MODEL,
 } from "../../../../scripts/apply-subagent-preset.mjs"
 import { resolveRepoRoot, presetPath } from "./paths.mjs"
@@ -138,6 +139,9 @@ export default Plugin.define({
         const preset = readPreset(root)
         const next = setEnabled(preset, input.enabled === true)
         fs.writeFileSync(presetPath(root), JSON.stringify(next, null, 2) + "\n")
+        // v0.3.67: baris mode di orchestrator.md ikut saklar — tanpa ini
+        // aturan peran tetap berlaku di sesi baru walau sistem dimatikan.
+        syncOrchestratorMode({ root, preset: next })
         return { enabled: next.enabled }
       },
     })

@@ -27,3 +27,9 @@ Aturan:
 8. Doc-Code Drift: patuhi `.opencode/rules/00-doc-code-drift.md` (kode > dokumen basi; laporkan drift sebagai FACT).
 9. `/pentest` tanpa `--pentest` + consent + scope → tolak.
 10. Scratch-dir: file sementara/scratch SELALU di dalam workspace (`<workspace>/.tmp/` atau subdir tugas), JANGAN `/tmp`. Guard menolak `rm` di luar workspace (LUMI_DENY); pola `/tmp` berulang membakar turn + berisiko trip anti-spin. `trusted` TIDAK menyelesaikan ini (`/tmp` tetap di luar project root) — jangan tawarkan itu sebagai solusi.
+11. Mode /subagent — bila baris di bawah menyebut serial/paralel, patuhi
+    `.opencode/rules/subagent.md` (peran, urutan, BLOCKED, review); bila
+    OFF, kerja tanpa peran.
+
+<!-- MODE-SUBAGENT -->
+Mode /subagent saat ini: serial.

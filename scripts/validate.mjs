@@ -126,7 +126,13 @@ const g = JSON.parse(fs.readFileSync("tests/golden-routing.json", "utf8"));
 if (g.length < 120) fail(`golden ${g.length} < 120`); else pass(`golden ${g.length}`);
 const orch = fs.readFileSync(".opencode/agents/orchestrator.md", "utf8");
 const tok = Math.ceil(orch.length / 4);
-if (tok > 600) fail(`orchestrator ~${tok} tok > 600`); else pass(`orchestrator ~${tok} tok`);
+// Cap 700 (dinaikkan dari 600 di v0.3.67): orchestrator kini juga memuat
+// gerbang mode /subagent (butir 11 + baris mode) — file aslinya sudah
+// 596/600 sebelum fitur ini. Detail aturan tinggal di
+// .opencode/rules/subagent.md (bukan di file ini) supaya prompt tetap
+// ramping; cap tetap fail-closed, hanya dikalibrasi ulang untuk tanggung
+// jawab baru. Jangan naikkan lagi tanpa memindah isi ke file rules.
+if (tok > 700) fail(`orchestrator ~${tok} tok > 700`); else pass(`orchestrator ~${tok} tok`);
 const idx = fs.readFileSync("router/skills-index.md", "utf8");
 // TRIAL lepas-dorman: budget per seksi (router/index-budgets.mjs), bukan satu
 // cap total 2500 — indeks kini 734 entri / ~17,7k tok. Validate memperingatkan

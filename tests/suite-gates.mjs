@@ -391,24 +391,32 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     (() => { try { cp.execFileSync(process.execPath, ["scripts/gen-policy.mjs", "--check"], { stdio: "pipe" }); return true; } catch { return false; } })());
   // v0.3.63: command .md DIPENSIUNKAN (file .md hanya template prompt —
   // Tahap 1 gagal karena model tidak memanggil tool `question`). Popup kini
-  // dibuka plugin TUI (lumitome/config/plugins/subagent/tui.tsx); isi
-  // delegasi + BLOCKED pindah ke prompt.mjs (dikirim via session.prompt).
+  // dibuka plugin TUI (lumitome/config/plugins/subagent/tui.tsx).
+  // v0.3.67: prompt delegasi RAKSASA dihapus — aturan lengkap pindah ke
+  // file agent (orchestrator.md + file peran, cara native OpenCode); ke
+  // sesi hanya pemberitahuan SINGKAT (prompt.mjs, maks 2 baris).
   const TUI = fm("lumitome/config/plugins/subagent/tui.tsx");
   const PROMPT = await import("../lumitome/config/plugins/subagent/prompt.mjs");
   const preset0 = JSON.parse(fm(".opencode/lumitome-subagent.json"));
-  const dlg0 = PROMPT.buildDelegationPrompt(preset0, "uji tugas", true);
+  const notice0 = PROMPT.buildSubagentNotice(preset0, "uji tugas");
+  const ORCH = fm(".opencode/agents/orchestrator.md");
+  const RULES = fm(".opencode/rules/subagent.md");
   ok("/subagent: command .md pensiun — tidak ada dua /subagent (plugin TUI satu-satunya pemicu)",
     !fs.existsSync(".opencode/commands/subagent.md"));
   ok("/subagent: plugin TUI membuka dialog via dialog.select (Stage A) + dialog.show tabel (Stage B), tanpa tool question",
     /dialog\.select/.test(TUI) && /dialog\.show/.test(TUI) && !/\.question\s*\(/.test(TUI));
-  ok("/subagent: prompt delegasi memuat protokol BLOCKED + triase orchestrator",
-    /BLOCKED/.test(dlg0) && /triase berurutan/i.test(dlg0));
+  ok("/subagent: aturan statis di .opencode/rules/subagent.md — BLOCKED + triase + review dua sumbu + depth-1",
+    /Protokol BLOCKED/.test(RULES) && /triase berurutan/i.test(RULES) && /dua sumbu/.test(RULES) && /TIDAK BOLEH mendelegasikan lagi/.test(RULES));
   ok("/subagent: triase langkah 1 hanya boleh jawab dari FACT di konteks (dilarang menebak)",
-    /HANYA bila jawabannya sudah ada sebagai FACT/.test(dlg0) && /JANGAN menebak/.test(dlg0));
-  ok("/subagent: prompt delegasi jujur — pilihan model berlaku mulai sesi TUI berikutnya",
-    /sesi TUI berikutnya/i.test(dlg0));
-  ok("/subagent: prompt delegasi TIDAK menyebut tool question (popup sudah terjadi di TUI)",
-    !/question/i.test(dlg0));
+    /HANYA bila jawabannya sudah ada sebagai FACT/.test(RULES) && /JANGAN menebak/.test(RULES));
+  ok("/subagent: orchestrator.md hanya berisi gerbang mode + pointer ke rules (bukan aturan panjang) + baris mode",
+    /Mode \/subagent/.test(ORCH) && /rules\/subagent\.md/.test(ORCH) && /Mode \/subagent saat ini: serial\./.test(ORCH));
+  ok("/subagent: pemberitahuan ke sesi SINGKAT (maks 2 baris) — mode + urutan + Thinking + tugas, tanpa blok konfigurasi",
+    notice0.split("\n").length <= 2 && /Mode subagent aktif: serial/.test(notice0) && /thinking → search → builder → reviewer/.test(notice0)
+    && /Thinking: 9router\//.test(notice0) && /Tugas: uji tugas/.test(notice0)
+    && !/Protokol BLOCKED/.test(notice0) && !/HASIL\/BLOCKED\/RISIKO/.test(notice0) && !/dua sumbu/.test(notice0));
+  ok("/subagent: pemberitahuan tanpa tugas menunjuk file rules (bukan blok aturan)",
+    /rules\/subagent\.md/.test(PROMPT.buildSubagentNotice(preset0, "")) && !/Protokol BLOCKED/.test(PROMPT.buildSubagentNotice(preset0, "")));
   // preset JSON
   const preset = JSON.parse(fm(".opencode/lumitome-subagent.json"));
   ok("/subagent: preset valid — peran hanya 4 yang dikenal, semua model 9router/, mode serial|paralel",
@@ -518,8 +526,6 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
       && JSON.parse(fm(path.join(tmp, ".opencode", "lumitome-subagent.json"))).enabled === false);
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
   const TUI62 = fm("lumitome/config/plugins/subagent/tui.tsx");
-  const PROMPT62 = await import("../lumitome/config/plugins/subagent/prompt.mjs");
-  const dlg62 = PROMPT62.buildDelegationPrompt(JSON.parse(fm(".opencode/lumitome-subagent.json")), "", true);
   ok("/subagent off: plugin TUI menangani argumen off/on (tanpa popup)",
     /command === "off" \|\| command === "on"/.test(TUI62) && /rpc\.setEnabled/.test(TUI62));
   ok("/subagent off: plugin TUI cek status sebelum popup; bila OFF jawab singkat + BERHENTI tanpa delegasi",
@@ -528,14 +534,15 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     && TUI62.indexOf("if (!isEnabled(preset))") < TUI62.indexOf("await runSelects"));
   ok("/subagent off: aturan keras — OFF = jangan delegasi ke agent peran apa pun + jangan popup",
     /isEnabled\(preset\)/.test(TUI62) && /tanpa delegasi/.test(TUI62) && /sedang OFF/.test(TUI62));
-  ok("/subagent off: prompt delegasi menyebut delegasi via tool subagent satu-satunya jalur",
-    /satu-satunya jalur/.test(dlg62));
+  ok("/subagent off: aturan delegasi via tool subagent satu-satunya jalur tinggal di .opencode/rules/subagent.md (bukan prompt raksasa)",
+    /satu-satunya jalur/.test(fm(".opencode/rules/subagent.md")));
   ok("/subagent off: preset repo default enabled:true (fresh install = ON)",
     JSON.parse(fm(".opencode/lumitome-subagent.json")).enabled === true);
   ok("/subagent off: README mendokumentasikan /subagent off|on + default on",
     /\/subagent off/.test(fm("README.md")) && /\/subagent on/.test(fm("README.md")) && /Default is on/i.test(fm("README.md")));
-  ok("/subagent off: orchestrator.md tidak berubah (saklar di command + preset, bukan orchestrator)",
-    !/enabled/.test(fm(".opencode/agents/orchestrator.md")));
+  ok("/subagent off: orchestrator.md memuat pointer rules + baris mode, tapi kata 'enabled' tidak ada di sana (saklar hidup di preset, bukan file ini)",
+    /rules\/subagent\.md/.test(fm(".opencode/agents/orchestrator.md")) && /Mode \/subagent saat ini/.test(fm(".opencode/agents/orchestrator.md"))
+    && !/enabled/.test(fm(".opencode/agents/orchestrator.md")));
 }
 
 // (v0.3.63) /subagent tahap 2 — plugin TUI resmi (popup beneran).
@@ -570,8 +577,8 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
   const tui = fm(`${PLUG}/tui.tsx`);
   ok("/subagent plugin: TUI Plugin.define id lumitome.subagent.tui + keymap.layer slash subagent",
     /Plugin\.define\(\{\s*id: "lumitome\.subagent\.tui"/.test(tui) && /keymap\.layer/.test(tui) && /slash: \{ name: "subagent"/.test(tui));
-  ok("/subagent plugin: TUI mengirim prompt delegasi ke sesi via session.prompt + router.current (bukan via model)",
-    /session\.prompt/.test(tui) && /router\.current/.test(tui));
+  ok("/subagent plugin: TUI mengirim pemberitahuan singkat ke sesi via session.prompt + router.current (bukan via model; prompt raksasa dihapus v0.3.67)",
+    /session\.prompt/.test(tui) && /router\.current/.test(tui) && /sendSubagentNotice/.test(tui));
   ok("/subagent plugin: TUI Stage B memakai dialog.show + dialog.set size large (tabel satu-layar)",
     /dialog\.show/.test(tui) && /dialog\.set\(\{ size: "large"/.test(tui));
   ok("/subagent plugin: TUI memakai dialog.select + usePlugin (komponen tabel)",
@@ -613,15 +620,18 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     && F.applyTableModel({ models: { thinking: PINNED } }, "thinking", "9router/y").models.thinking === "9router/y");
   const PR = await import("../lumitome/config/plugins/subagent/prompt.mjs");
   const base = JSON.parse(fm(".opencode/lumitome-subagent.json"));
-  const dlg = PR.buildDelegationPrompt(base, "kerjakan tiket 4G", true);
-  ok("/subagent prompt: berisi tugas + peran aktif + model + mode + urutan delegasi",
-    /kerjakan tiket 4G/.test(dlg) && /Thinking/.test(dlg) && /9router\/ag\/gemini-3\.8-flash-high/.test(dlg) && /Mode: serial/.test(dlg) && /Urutan delegasi/.test(dlg));
-  ok("/subagent prompt: berisi BLOCKED + format HASIL/BLOCKED/RISIKO + review dua sumbu + anti-spin",
-    /BLOCKED/.test(dlg) && /HASIL\/BLOCKED\/RISIKO/.test(dlg) && /dua sumbu/.test(dlg) && /anti-spin/.test(dlg));
-  ok("/subagent prompt: jujur — model berlaku mulai sesi TUI berikutnya; tanpa tugas → fallback sesi",
-    /sesi TUI berikutnya/.test(dlg) && /tidak ada teks tambahan/.test(PR.buildDelegationPrompt(base, "", true)));
-  ok("/subagent prompt: tanpa daftar live → kata fallback terpin dipakai",
-    /tidak bisa dibaca live/.test(PR.buildDelegationPrompt(base, "x", false)));
+  const note = PR.buildSubagentNotice(base, "kerjakan tiket 4G");
+  const RULES63 = fm(".opencode/rules/subagent.md");
+  ok("/subagent prompt: pemberitahuan singkat berisi tugas + mode + urutan + model Thinking (maks 2 baris)",
+    note.split("\n").length <= 2 && /Tugas: kerjakan tiket 4G/.test(note) && /Mode subagent aktif: serial/.test(note)
+    && /thinking → search → builder → reviewer/.test(note) && /Thinking: 9router\/ag\/gemini-3\.8-flash-high/.test(note));
+  ok("/subagent prompt: aturan BLOCKED + format HASIL/BLOCKED/RISIKO + review dua sumbu + anti-spin tinggal di .opencode/rules/subagent.md (bukan di pesan)",
+    /BLOCKED/.test(RULES63) && /HASIL\/BLOCKED\/RISIKO/.test(RULES63) && /dua sumbu/.test(RULES63) && /anti-spin/.test(RULES63)
+    && !/BLOCKED/.test(note) && !/HASIL\/BLOCKED\/RISIKO/.test(note) && !/dua sumbu/.test(note));
+  ok("/subagent prompt: tanpa tugas → pemberitahuan menunjuk file rules, tetap singkat",
+    PR.buildSubagentNotice(base, "").split("\n").length <= 2 && /rules\/subagent\.md/.test(PR.buildSubagentNotice(base, "")));
+  ok("/subagent prompt: buildDelegationPrompt raksasa sudah dihapus (tidak ada ekspor lama)",
+    PR.buildDelegationPrompt === undefined);
   const PA = await import("../lumitome/config/plugins/subagent/paths.mjs");
   ok("/subagent paths: resolveRepoRoot dari file plugin → root repo (cwd tes)",
     PA.resolveRepoRoot(path.resolve(`${PLUG}/index.ts`)) === process.cwd());
@@ -749,7 +759,7 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
   ok("/subagent v0.3.65: save memanggil session.switchModel ke model Thinking (mekanisme /models)",
     /switchSessionToThinking/.test(tui) && /context\.client\.session\.switchModel\(\{ sessionID, model: \{ providerID: parts\.providerID, id: parts\.id \} \}\)/.test(tui)
     && /thinkingSessionModel\(/.test(tui) && /splitModelId\(/.test(tui));
-  ok("/subagent v0.3.65: prompt delegasi memakai bentuk resmi session.prompt({ sessionID, text }) — bukan parts (v0.3.63 salah bentuk, gagal live 'Missing key at [\"text\"]')",
+  ok("/subagent v0.3.65: pemberitahuan singkat memakai bentuk resmi session.prompt({ sessionID, text }) — bukan parts (v0.3.63 salah bentuk, gagal live 'Missing key at [\"text\"]')",
     /session\.prompt\(\{ sessionID, text \}\)/.test(tui) && !/session\.prompt\(\{ sessionID, parts/.test(tui));
   const idx = fm(`${PLUG}/index.ts`);
   ok("/subagent v0.3.65: sesi baru otomatis ikut Thinking — server plugin langganan session.created + switchModel (terverifikasi ke API plugin 2.3.0 + 2.2.4)",
@@ -762,9 +772,9 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
   ok("/subagent v0.3.65: watcher fail-silent + dijaga kapabilitas engine (engine lama tanpa ctx.event/switchModel tidak mematikan plugin)",
     /typeof ctx\.event\?\.subscribe === "function"/.test(idx) && /typeof ctx\.session\?\.switchModel === "function"/.test(idx)
     && (idx.match(/catch \{/g) ?? []).length >= 3);
-  ok("/subagent v0.3.65: note tanpa sesi jujur — sesi baru nanti otomatis pakai Thinking; prompt + README menyebut hal yang sama",
+  ok("/subagent v0.3.65: note tanpa sesi jujur — sesi baru nanti otomatis pakai Thinking; tui + README menyebut hal yang sama (prompt raksasa sudah dihapus v0.3.67)",
     /sesi baru nanti otomatis pakai model Thinking/.test(tui)
-    && /sesi baru yang dibuat sesudah ini pun otomatis memakai model Thinking/.test(fm(`${PLUG}/prompt.mjs`))
+    && /buildSubagentNotice/.test(fm(`${PLUG}/prompt.mjs`))
     && /New sessions created afterwards start with the Thinking model too/.test(fm("README.md")));
   ok("/subagent v0.3.65: tabel close() — onAction DULU baru dialog.clear() (bug v0.3.63: clear() duluan memicu on-close 'cancel' sehingga Ctrl+S selalu Dibatalkan tanpa menyimpan)",
     (() => { const a = tui.search(/^\s*props\.onAction\(action\)$/m); const b = tui.search(/^\s*plugin\.ui\.dialog\.clear\(\)$/m); return a !== -1 && b !== -1 && a < b; })());
@@ -778,9 +788,9 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     !/bind: "space"/.test(tui) && /"\[✓\]"/.test(tui) && !/Spasi aktif\/nonaktif/.test(tui)
     && /↑↓ pindah • Enter ganti • Ctrl\+S simpan • Esc batal/.test(tui) && /Model sesi ikut Thinking saat disimpan/.test(tui));
   const PR = await import("../lumitome/config/plugins/subagent/prompt.mjs");
-  const dlg = PR.buildDelegationPrompt(JSON.parse(fm(".opencode/lumitome-subagent.json")), "uji", true);
-  ok("/subagent v0.3.65: prompt delegasi jujur — model SESI langsung ikut Thinking, model PERAN sesi berikutnya",
-    /model SESI langsung beralih ke model Thinking/.test(dlg) && /sesi TUI berikutnya/.test(dlg));
+  const note65 = PR.buildSubagentNotice(JSON.parse(fm(".opencode/lumitome-subagent.json")), "uji");
+  ok("/subagent v0.3.65: pemberitahuan singkat menyebut model Thinking yang dipakai sesi (model PERAN berlaku sesi berikutnya — di toast + orchestrator.md)",
+    /Thinking: 9router\//.test(note65) && /Model peran berlaku mulai sesi TUI berikutnya/.test(tui));
   ok("/subagent v0.3.65: README — peran selalu aktif, model sesi ikut Thinking, tanpa Spasi toggle",
     /always all active/.test(fm("README.md")) && /switches the current session's model to the Thinking role's model/.test(fm("README.md"))
     && !/Space toggles a role/.test(fm("README.md")));
@@ -817,10 +827,10 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
   ok("/subagent v0.3.66: sesudah simpan ada SATU pilihan akhir 'Masuk mode subagent sekarang?' — [Ya, mulai] / [Simpan saja]",
     /Masuk mode subagent sekarang\?/.test(tui) && /"Ya, mulai"/.test(tui) && /"Simpan saja"/.test(tui)
     && /current: "start"/.test(tui));
-  ok("/subagent v0.3.66: 'Ya, mulai' tanpa sesi → buka sesi baru (session.create + model Thinking) lalu arahkan TUI (router.navigate) + kirim delegasi",
+  ok("/subagent v0.3.66: 'Ya, mulai' tanpa sesi → buka sesi baru (session.create + model Thinking) lalu arahkan TUI (router.navigate) + kirim pemberitahuan singkat",
     /enterSubagentMode/.test(tui) && /context\.client\.session\.create\(\{ model: \{ providerID: parts\.providerID, id: parts\.id \}, agent: "orchestrator" \}\)/.test(tui)
     && /context\.ui\.router\.navigate\(\{ type: "session", sessionID \}\)/.test(tui)
-    && /sendDelegationPrompt\(context, preset, live, task, sessionID\)/.test(tui));
+    && /sendSubagentNotice\(context, preset, task, sessionID\)/.test(tui));
   ok("/subagent v0.3.66: 'Ya, mulai' dengan sesi aktif → switchModel ke Thinking di tempat (tanpa restart); gagal create/switch → catatan jujur, preset tetap tersimpan",
     /if \(sessionID\) \{/.test(tui) && /context\.client\.session\.switchModel\(\{ sessionID, model: \{ providerID: parts\.providerID, id: parts\.id \} \}\)/.test(tui)
     && /Sesi baru gagal dibuat/.test(tui) && /Model sesi gagal dialihkan/.test(tui));
@@ -828,10 +838,105 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     /const switched = await switchSessionToThinking\(context, next\)/.test(tui)
     && /"Subagent disimpan"/.test(tui) && /choice === "start"/.test(tui));
   const PR66 = await import("../lumitome/config/plugins/subagent/prompt.mjs");
-  const dlg66 = PR66.buildDelegationPrompt(JSON.parse(fm(".opencode/lumitome-subagent.json")), "uji", true);
-  ok("/subagent v0.3.66: prompt delegasi menyebut pilihan 'Ya, mulai' + sesi baru langsung dibuka dengan model Thinking",
-    /pilih 'Ya, mulai' sesudah simpan/.test(dlg66) && /sesi baru langsung dibuka dengan model Thinking/.test(dlg66)
-    && /sesi baru yang dibuat sesudah ini pun otomatis memakai model Thinking/.test(dlg66));
+  const note66 = PR66.buildSubagentNotice(JSON.parse(fm(".opencode/lumitome-subagent.json")), "uji");
+  ok("/subagent v0.3.66: pemberitahuan singkat tetap jalan sesudah 'Ya, mulai' (mode + Thinking + tugas, tanpa prompt raksasa)",
+    /Mode subagent aktif/.test(note66) && /Thinking: 9router\//.test(note66) && /Tugas: uji/.test(note66) && !/pilih 'Ya, mulai'/.test(note66));
+}
+
+// (v0.3.67) /subagent — hapus prompt delegasi raksasa (Fahmi 15 Nov 16:42 WIB:
+// konfigurasi masuk lewat prompt/file .md terasa aneh — maunya native).
+// Aturan lengkap pindah ke file agent (cara native OpenCode): orchestrator.md
+// (urutan, BLOCKED, review, fast-path, depth-1) + file peran + baris mode
+// "Mode /subagent saat ini" di orchestrator.md (ditulis apply-preset —
+// baris itulah yang mengaktifkan/mematikan aturan peran). Ke sesi hanya
+// pemberitahuan SINGKAT (maks 2 baris). Batasan jujur: sesi yang sudah
+// berjalan sebelum upgrade tidak memuat aturan baru sampai restart TUI.
+{
+  const fm = (p) => fs.readFileSync(p, "utf8");
+  const PLUG = "lumitome/config/plugins/subagent";
+  const PINNED = "9router/ag/gemini-3.8-flash-high";
+  const OPUS = "9router/kr/claude-opus-5.5-test-agentic";
+  const ORCH = fm(".opencode/agents/orchestrator.md");
+  const RULES67 = fm(".opencode/rules/subagent.md");
+  const preset = JSON.parse(fm(".opencode/lumitome-subagent.json"));
+  const PR = await import("../lumitome/config/plugins/subagent/prompt.mjs");
+  ok("/subagent v0.3.67: prompt raksasa DIHAPUS — tidak ada lagi buildDelegationPrompt / 'Protokol BLOCKED' di pesan",
+    PR.buildDelegationPrompt === undefined && typeof PR.buildSubagentNotice === "function"
+    && !/buildDelegationPrompt/.test(fm(`${PLUG}/tui.tsx`)) && !/sendDelegationPrompt/.test(fm(`${PLUG}/tui.tsx`)));
+  ok("/subagent v0.3.67: pemberitahuan singkat — maks 2 baris, mode + urutan + Thinking + tugas; tanpa tugas menunjuk file rules",
+    (() => { const a = PR.buildSubagentNotice(preset, "perbaiki bug login"); const b = PR.buildSubagentNotice(preset, "");
+      return a.split("\n").length === 2 && b.split("\n").length === 2
+        && /Mode subagent aktif: serial · thinking → search → builder → reviewer · Thinking: 9router\//.test(a)
+        && /Tugas: perbaiki bug login/.test(a) && /rules\/subagent\.md/.test(b)
+        && !/BLOCKED/.test(a) && !/BLOCKED/.test(b) && !/dua sumbu/.test(a); })());
+  ok("/subagent v0.3.67: .opencode/rules/subagent.md memuat aturan statis lengkap — urutan, fast-path builder, format laporan, review dua sumbu, BLOCKED + triase, depth-1 + pagar diri pada baris mode",
+    /thinking → \(search\) → builder → reviewer/.test(RULES67) && /langsung builder/.test(RULES67)
+    && /HASIL\/BLOCKED\/RISIKO/.test(RULES67) && /dua sumbu/.test(RULES67)
+    && /Protokol BLOCKED/.test(RULES67) && /triase berurutan/.test(RULES67) && /TIDAK BOLEH mendelegasikan lagi/.test(RULES67)
+    && /HANYA bila `.opencode\/agents\/orchestrator\.md` menyebut/.test(RULES67));
+  ok("/subagent v0.3.67: orchestrator.md hanya berisi gerbang mode + pointer ke rules + baris mode yang cocok dengan preset repo (serial, ON)",
+    /Mode \/subagent saat ini: serial\./.test(ORCH) && /bila baris di bawah menyebut serial\/paralel, patuhi/.test(ORCH)
+    && /rules\/subagent\.md/.test(ORCH) && !/Protokol BLOCKED/.test(ORCH) && !/enabled/.test(ORCH));
+  ok("/subagent v0.3.67: validate cap orchestrator dikalibrasi 600 → 700 (terdokumentasi — gerbang mode menambah tanggung jawab)",
+    /tok > 700/.test(fm("scripts/validate.mjs")) && /dinaikkan dari 600 di v0\.3\.67/.test(fm("scripts/validate.mjs")));
+  ok("/subagent v0.3.67: TUI mengirim pemberitahuan singkat (bukan prompt delegasi) di kedua jalur simpan",
+    /sendSubagentNotice\(context, preset, task, sessionID\)/.test(fm(`${PLUG}/tui.tsx`))
+    && /sendSubagentNotice\(context, next, task\)/.test(fm(`${PLUG}/tui.tsx`))
+    && /session\.prompt\(\{ sessionID, text \}\)/.test(fm(`${PLUG}/tui.tsx`)));
+  ok("/subagent v0.3.67: server setEnabled ikut sinkronkan baris mode (OFF tidak boleh tinggalkan aturan peran aktif)",
+    /syncOrchestratorMode\(\{ root, preset: next \}\)/.test(fm(`${PLUG}/index.ts`)));
+  // Baris mode — applyPreset di temp dir (salin file peran + orchestrator).
+  const ASP = await import("../scripts/apply-subagent-preset.mjs");
+  const os = await import("node:os");
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-subagent-0367-"));
+  try {
+    for (const r of ["thinking", "search", "builder", "reviewer"]) { fs.mkdirSync(path.join(tmp, ".opencode", "agents"), { recursive: true }); fs.copyFileSync(`.opencode/agents/${r}.md`, path.join(tmp, ".opencode", "agents", `${r}.md`)); }
+    fs.copyFileSync(".opencode/agents/orchestrator.md", path.join(tmp, ".opencode", "agents", "orchestrator.md"));
+    const orchTmp = () => fm(path.join(tmp, ".opencode", "agents", "orchestrator.md"));
+    const pPar = JSON.parse(JSON.stringify(preset)); pPar.mode = "paralel";
+    // cli() membaca preset dari DISK (root/.opencode/lumitome-subagent.json),
+    // bukan dari objek — tulis preset pPar dulu supaya --check/off/on menguji preset itu.
+    fs.writeFileSync(path.join(tmp, ".opencode", "lumitome-subagent.json"), JSON.stringify(pPar, null, 2) + "\n");
+    const r1 = ASP.applyPreset({ root: tmp, preset: pPar, liveModels: null });
+    ok("/subagent v0.3.67: applyPreset menulis baris mode paralel ke orchestrator.md (modeChanged) + model peran tetap jalan",
+      r1.modeChanged === true && /Mode \/subagent saat ini: paralel\./.test(orchTmp()) && r1.errors.length === 0);
+    const r2 = ASP.applyPreset({ root: tmp, preset: pPar, liveModels: null });
+    ok("/subagent v0.3.67: applyPreset idempotent — baris mode sudah cocok → modeChanged false, tidak ada tulis ulang",
+      r2.modeChanged === false && r2.changed.length === 0);
+    const pOff = JSON.parse(JSON.stringify(pPar)); pOff.enabled = false;
+    const r3 = ASP.applyPreset({ root: tmp, preset: pOff, liveModels: null });
+    ok("/subagent v0.3.67: applyPreset saat OFF — model peran TIDAK ditulis, tapi baris mode jadi OFF (saklar baca tetap jalan)",
+      r3.disabled === true && r3.modeChanged === true && /Mode \/subagent saat ini: OFF\./.test(orchTmp())
+      && fm(path.join(tmp, ".opencode", "agents", "search.md")).includes(`model: ${PINNED}`));
+    ok("/subagent v0.3.67: applyPreset --check mendeteksi baris mode basi (preset ON, baris OFF)",
+      ASP.applyPreset({ root: tmp, preset: pPar, liveModels: null, check: true }).modeChanged === true);
+    ok("/subagent v0.3.67: cli() --check exit 1 saat baris mode basi, exit 0 sesudah diterapkan",
+      ASP.cli({ argv: ["--check"], root: tmp, log: () => {}, err: () => {} }) === 1
+      && ASP.cli({ argv: [], root: tmp, log: () => {}, err: () => {} }) === 0
+      && ASP.cli({ argv: ["--check"], root: tmp, log: () => {}, err: () => {} }) === 0);
+    const logs = [];
+    ok("/subagent v0.3.67: cli() off menulis enabled:false + baris mode OFF; cli() on mengembalikan keduanya",
+      ASP.cli({ argv: ["off"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
+      && /Mode \/subagent saat ini: OFF\./.test(orchTmp())
+      && ASP.cli({ argv: ["on"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
+      && /Mode \/subagent saat ini: paralel\./.test(orchTmp()));
+    ok("/subagent v0.3.67: orchestratorModeLine — ON serial/paralel, OFF → OFF (tanpa kata enabled)",
+      ASP.orchestratorModeLine({ enabled: true, mode: "serial" }) === "Mode /subagent saat ini: serial."
+      && ASP.orchestratorModeLine({ enabled: true, mode: "paralel" }) === "Mode /subagent saat ini: paralel."
+      && ASP.orchestratorModeLine({ enabled: false, mode: "serial" }) === "Mode /subagent saat ini: OFF.");
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+  // Fixture tanpa orchestrator.md (tes lama hanya menyalin file peran):
+  // sync mode = peringatan, bukan error — apply model tetap jalan.
+  const tmp2 = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-subagent-0367b-"));
+  try {
+    for (const r of ["thinking", "search", "builder", "reviewer"]) { fs.mkdirSync(path.join(tmp2, ".opencode", "agents"), { recursive: true }); fs.copyFileSync(`.opencode/agents/${r}.md`, path.join(tmp2, ".opencode", "agents", `${r}.md`)); }
+    const p2 = JSON.parse(JSON.stringify(preset)); p2.roles.search.model = "9router/ag/gemini-3.8-flash";
+    const r = ASP.applyPreset({ root: tmp2, preset: p2, liveModels: null });
+    ok("/subagent v0.3.67: tanpa orchestrator.md, applyPreset tetap menulis model (peringatan saja, bukan error)",
+      r.errors.length === 0 && r.changed.length === 1 && r.modeChanged === false && r.warnings.length >= 1);
+  } finally { fs.rmSync(tmp2, { recursive: true, force: true }); }
+  ok("/subagent v0.3.67: README mendokumentasikan pemberitahuan singkat + aturan di orchestrator.md (bukan prompt raksasa)",
+    /short confirmation/.test(fm("README.md")) && /orchestrator\.md/.test(fm("README.md")));
 }
 
 finish();
