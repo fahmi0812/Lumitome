@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.69-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.70-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -40,7 +40,7 @@ While it installs (and uninstalls) you see one status line and one line when it 
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.69.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.70.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
@@ -166,6 +166,8 @@ LUMI_AUTO_REFRESH=0 lumitome
 A running TUI session does not pick up new models until you restart it — the model list is loaded when the TUI starts. Inside the TUI, `/refresh-models` refreshes the list and reminds you to restart. To see the saved list, `lumitome models --lumitome` (it refreshes first, like startup does).
 
 In the TUI (orchestrator agent), `/subagent` opens a popup to configure role delegation for the task: which 9router model each of the four roles uses (Thinking, Search, Build, Review — always all active, no per-role on/off), and serial/parallel mode. The popup is a real TUI plugin dialog (`lumitome/config/plugins/subagent/`, Stage A sequential selects by default; `/subagent tabel` opens the one-screen roles × model table, Stage B — arrow keys + Enter, Ctrl+S saves, Esc cancels; the [✓] on each row is just a visual marker that the role is active). Saving also switches the current session's model to the Thinking role's model, so the status line shows the model you picked as Thinking. New sessions created afterwards start with the Thinking model too (the wrapper's TUI default follows the preset, and the server plugin also switches them on `session.created`, unless the session was created with an explicit model or is a subagent child). After saving, one final choice asks whether to enter subagent mode now: "Ya, mulai" opens a new subagent session with the Thinking model (or switches the active session to it in place, no TUI restart) while "Simpan saja" only saves the configuration. A short confirmation (mode + role order + Thinking model + task, at most two lines) is sent to the session only if it was already running before the save; a newly created session gets no injected message at all — it reads the configuration from the "Konfigurasi aktif" block in `.opencode/rules/subagent.md` instead. The full delegation rules (role order, BLOCKED protocol, two-axis review) live in `.opencode/rules/subagent.md` — not in an injected prompt — gated by the "Mode /subagent saat ini" line in `.opencode/agents/orchestrator.md`, which is kept in sync by `lumitome subagent-preset` (serial/parallel when on, OFF when off); the same command also keeps the "Konfigurasi aktif" block (role→model mapping + order + mode) in sync. The choice is saved to `.opencode/lumitome-subagent.json` and applied with `lumitome subagent-preset`; mode choices apply immediately, role model choices apply from the next TUI session (same restart rule as above). Workers never ask you questions directly — if one gets stuck it reports BLOCKED to the orchestrator instead. `/subagent off` disables the role system entirely (no popup, the orchestrator works as before without role delegation); `/subagent on` re-enables it. Default is on — a fresh install behaves exactly as before /subagent existed (dormant until called). Headless (`lumitome run`) has no popup: manage roles with `lumitome subagent-preset status|on|off`.
+
+Delegation is enforced in plugin code, not just requested in a rules file (v0.3.70, after the Claude Code deep-dive): while subagent mode is on, the server plugin removes the orchestrator's direct tools (edit/write/shell/execute and friends) from every model request and denies them in the orchestrator's permissions, so the only executable path is the built-in `subagent` tool; a short delegation protocol (role table by task verb) is injected into every model call, and a guard rejects any direct mutating call that still slips through. Role descriptions are trigger-first ("Pemicu: …") and mutually exclusive. Delegation is measured: the plugin appends per-call and per-turn records to `$LUMI_HOME/subagent-metrics.jsonl`; `node scripts/subagent-metrics.mjs` summarizes delegation rate per session. There is deliberately no automatic re-drive when a turn ends without delegating — OpenCode 2.3.0 has no blocking Stop hook, and an event-driven re-prompt would race user input. Set `LUMI_SUBAGENT_DEBUG=1` to log hook event shapes into the same metrics file.
 
 ### Windows: optional Defender exclusion
 
