@@ -461,9 +461,13 @@ export function evaluateTool(tool, input, ctx = {}) {
   const command = String(input?.command ?? "");
   const d = classifyShell(command, { workspace, headless, tier });
   if (d.effect === "deny") return { effect: "deny", rule: d.rule, reason: d.reason, command };
-  // 5) shell: path di luar kebijakan sandbox
-  const outside = shellOutsidePaths(command, sandbox);
-  if (outside.length) return { effect: "deny", rule: "sandbox-outside", reason: outsideMessage(outside[0].path, sandbox, outside[0].kind), command };
+  // 5) shell: path di luar kebijakan sandbox (hanya bila sandbox aktif —
+  // v0.3.71: default off → sandbox null; shellOutsidePaths deref sp, jadi
+  // langkah ini dilewati sepenuhnya bila sandbox null)
+  if (sandbox) {
+    const outside = shellOutsidePaths(command, sandbox);
+    if (outside.length) return { effect: "deny", rule: "sandbox-outside", reason: outsideMessage(outside[0].path, sandbox, outside[0].kind), command };
+  }
   // 6) bwrap: bungkus perintah (rewrite), bukan tolak
   if (sandboxMode === "bwrap") {
     return { effect: d.effect, rewrite: { command: bwrapCommand(command, { workspace, toolDirs, argsDir, sandbox }) } };

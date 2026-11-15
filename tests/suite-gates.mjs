@@ -459,16 +459,17 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
       for (const r of ROLES) { fs.mkdirSync(path.join(tmp2, ".opencode", "agents"), { recursive: true }); fs.copyFileSync(`.opencode/agents/${r}.md`, path.join(tmp2, ".opencode", "agents", `${r}.md`)); }
       fs.copyFileSync(".opencode/lumitome-subagent.json", path.join(tmp2, ".opencode", "lumitome-subagent.json"));
       const logs = [];
+      const pp2 = path.join(tmp2, ".opencode", "lumitome-subagent.json");
       const p3 = JSON.parse(fm(".opencode/lumitome-subagent.json")); p3.roles.builder.model = "9router/ag/gemini-3.8-flash";
-      fs.writeFileSync(path.join(tmp2, ".opencode", "lumitome-subagent.json"), JSON.stringify(p3, null, 2) + "\n");
+      fs.writeFileSync(pp2, JSON.stringify(p3, null, 2) + "\n");
       ok("/subagent: cli() --check exit 1 saat preset belum diterapkan",
-        ASP.cli({ argv: ["--check"], root: tmp2, log: (m) => logs.push(m), err: () => {} }) === 1);
+        ASP.cli({ argv: ["--preset", pp2, "--check"], root: tmp2, log: (m) => logs.push(m), err: () => {} }) === 1);
       ok("/subagent: cli() menerapkan preset lalu --check exit 0",
-        ASP.cli({ argv: [], root: tmp2, log: (m) => logs.push(m), err: () => {} }) === 0
+        ASP.cli({ argv: ["--preset", pp2], root: tmp2, log: (m) => logs.push(m), err: () => {} }) === 0
         && fm(path.join(tmp2, ".opencode", "agents", "builder.md")).includes("model: 9router/ag/gemini-3.8-flash")
-        && ASP.cli({ argv: ["--check"], root: tmp2, log: (m) => logs.push(m), err: () => {} }) === 0);
+        && ASP.cli({ argv: ["--preset", pp2, "--check"], root: tmp2, log: (m) => logs.push(m), err: () => {} }) === 0);
       ok("/subagent: cli() menolak preset berisi model non-9router (exit 1)",
-        (() => { const bad = JSON.parse(fm(".opencode/lumitome-subagent.json")); bad.roles.builder.model = "openai/gpt-5"; fs.writeFileSync(path.join(tmp2, ".opencode", "lumitome-subagent.json"), JSON.stringify(bad)); return ASP.cli({ argv: [], root: tmp2, log: () => {}, err: () => {} }) === 1; })());
+        (() => { const bad = JSON.parse(fm(".opencode/lumitome-subagent.json")); bad.roles.builder.model = "openai/gpt-5"; fs.writeFileSync(pp2, JSON.stringify(bad)); return ASP.cli({ argv: ["--preset", pp2], root: tmp2, log: () => {}, err: () => {} }) === 1; })());
     } finally { fs.rmSync(tmp2, { recursive: true, force: true }); }
   }
   ok("/subagent: dispatch `lumitome subagent-preset` ada di entry CLI (root = REPO)",
@@ -502,25 +503,26 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
       && fm(path.join(tmp, ".opencode", "agents", "search.md")).includes("model: 9router/ag/gemini-3.8-flash-high"));
     ok("/subagent off: applyPreset --check tetap lolos saat OFF walau model basi",
       ASP.applyPreset({ root: tmp, preset: off, liveModels: null, check: true }).disabled === true);
-    fs.copyFileSync(".opencode/lumitome-subagent.json", path.join(tmp, ".opencode", "lumitome-subagent.json"));
+    const pp = path.join(tmp, ".opencode", "lumitome-subagent.json");
+    fs.copyFileSync(".opencode/lumitome-subagent.json", pp);
     const logs = [];
     ok("/subagent off: cli() off menulis enabled:false ke preset (exit 0)",
-      ASP.cli({ argv: ["off"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
-      && JSON.parse(fm(path.join(tmp, ".opencode", "lumitome-subagent.json"))).enabled === false);
+      ASP.cli({ argv: ["--preset", pp, "off"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
+      && JSON.parse(fm(pp)).enabled === false);
     ok("/subagent off: cli() status mencetak OFF",
-      ASP.cli({ argv: ["status"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0 && /OFF/.test(logs[logs.length - 1]));
+      ASP.cli({ argv: ["--preset", pp, "status"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0 && /OFF/.test(logs[logs.length - 1]));
     ok("/subagent off: cli() plain saat OFF exit 0 tanpa menulis",
-      ASP.cli({ argv: [], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
+      ASP.cli({ argv: ["--preset", pp], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
       && fm(path.join(tmp, ".opencode", "agents", "search.md")).includes("model: 9router/ag/gemini-3.8-flash-high"));
     ok("/subagent off: cli() --check saat OFF exit 0",
-      ASP.cli({ argv: ["--check"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0);
+      ASP.cli({ argv: ["--preset", pp, "--check"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0);
     ok("/subagent off: cli() on mengembalikan enabled:true + peran/model utuh (exit 0)",
-      ASP.cli({ argv: ["on"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
-      && (() => { const p = JSON.parse(fm(path.join(tmp, ".opencode", "lumitome-subagent.json"))); return p.enabled === true && Object.keys(p.roles).length === 4 && p.roles.builder.model.startsWith("9router/"); })());
+      ASP.cli({ argv: ["--preset", pp, "on"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
+      && (() => { const p = JSON.parse(fm(pp)); return p.enabled === true && Object.keys(p.roles).length === 4 && p.roles.builder.model.startsWith("9router/"); })());
     ok("/subagent off: cli() status mencetak ON setelah on",
-      ASP.cli({ argv: ["status"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0 && /ON/.test(logs[logs.length - 1]));
+      ASP.cli({ argv: ["--preset", pp, "status"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0 && /ON/.test(logs[logs.length - 1]));
     ok("/subagent off: cli() menolak perintah posisi tidak dikenal (exit 2)",
-      ASP.cli({ argv: ["bogus"], root: tmp, log: () => {}, err: () => {} }) === 2);
+      ASP.cli({ argv: ["--preset", pp, "bogus"], root: tmp, log: () => {}, err: () => {} }) === 2);
     ok("/subagent off: cli() off lewat --preset <path> tetap dikenali (nilai flag dilewati)",
       ASP.cli({ argv: ["--preset", path.join(tmp, ".opencode", "lumitome-subagent.json"), "off"], root: tmp, log: () => {}, err: () => {} }) === 0
       && JSON.parse(fm(path.join(tmp, ".opencode", "lumitome-subagent.json"))).enabled === false);
@@ -573,7 +575,7 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     /Rpc\.define\(\{\s*id: "lumitome\.subagent"/.test(rpc)
     && ["getPreset", "savePreset", "getLiveModels", "setEnabled"].every((m) => new RegExp(`${m}:`).test(rpc)));
   ok("/subagent plugin: skema RPC memakai nilai contoh konkret (bukan {} kosong di output — {} kosong membuat registrasi RPC gagal di engine 2.3.0)",
-    /EXAMPLE_PRESET/.test(rpc) && /models: \["9router\/ag\/gemini-3\.8-flash-high"\]/.test(rpc) && !/output: \{ preset: \{\} \}/.test(rpc));
+    /EXAMPLE_PRESET/.test(rpc) && /models: \[DEFAULT_MODEL\]/.test(rpc) && !/output: \{ preset: \{\} \}/.test(rpc));
   const tui = fm(`${PLUG}/tui.tsx`);
   ok("/subagent plugin: TUI Plugin.define id lumitome.subagent.tui + keymap.layer slash subagent",
     /Plugin\.define\(\{\s*id: "lumitome\.subagent\.tui"/.test(tui) && /keymap\.layer/.test(tui) && /slash: \{ name: "subagent"/.test(tui));
@@ -817,8 +819,8 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
   const OPUS = "9router/kr/claude-opus-5.5-test-agentic";
   const W = fm("lumitome/bin/lumitome.mjs");
   ok("/subagent v0.3.66: wrapper — model default TUI ikut Thinking dari preset (bukan hardcode gemini)",
-    /let TUI_MODEL = MODEL/.test(W) && /thinkingSessionModel\(preset\)/.test(W)
-    && /FRAG\.providers\["9router"\]\?\.models\?\.\[t\.slice\("9router\/"\.length\)\]/.test(W)
+    /let TUI_MODEL = MODEL/.test(W) && /loadPreset\(\{ home: ISO_HOME, root: REPO \}\)/.test(W)
+    && /resolveSessionDefault\(loaded\.preset, ASP\.loadLiveModels\(ISO_HOME\)\)/.test(W)
     && /MODEL: TUI_MODEL/.test(W));
   ok("/subagent v0.3.66: wrapper — preset Thinking HANYA untuk sesi TUI: `lumitome run` tetap MODEL lama; LUMI_MODEL menang",
     /if \(sub !== "run" && !env\.LUMI_MODEL\)/.test(W)
@@ -894,9 +896,11 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     fs.copyFileSync(".opencode/agents/orchestrator.md", path.join(tmp, ".opencode", "agents", "orchestrator.md"));
     const orchTmp = () => fm(path.join(tmp, ".opencode", "agents", "orchestrator.md"));
     const pPar = JSON.parse(JSON.stringify(preset)); pPar.mode = "paralel";
-    // cli() membaca preset dari DISK (root/.opencode/lumitome-subagent.json),
-    // bukan dari objek — tulis preset pPar dulu supaya --check/off/on menguji preset itu.
-    fs.writeFileSync(path.join(tmp, ".opencode", "lumitome-subagent.json"), JSON.stringify(pPar, null, 2) + "\n");
+    // cli() membaca preset dari DISK (v0.3.71 A1: --preset eksplisit —
+    // default cli = file user $LUMI_HOME), bukan dari objek — tulis preset
+    // pPar dulu supaya --check/off/on menguji preset itu.
+    const pp67 = path.join(tmp, ".opencode", "lumitome-subagent.json");
+    fs.writeFileSync(pp67, JSON.stringify(pPar, null, 2) + "\n");
     const r1 = ASP.applyPreset({ root: tmp, preset: pPar, liveModels: null });
     ok("/subagent v0.3.67: applyPreset menulis baris mode paralel ke orchestrator.md (modeChanged) + model peran tetap jalan",
       r1.modeChanged === true && /Mode \/subagent saat ini: paralel\./.test(orchTmp()) && r1.errors.length === 0);
@@ -911,14 +915,14 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     ok("/subagent v0.3.67: applyPreset --check mendeteksi baris mode basi (preset ON, baris OFF)",
       ASP.applyPreset({ root: tmp, preset: pPar, liveModels: null, check: true }).modeChanged === true);
     ok("/subagent v0.3.67: cli() --check exit 1 saat baris mode basi, exit 0 sesudah diterapkan",
-      ASP.cli({ argv: ["--check"], root: tmp, log: () => {}, err: () => {} }) === 1
-      && ASP.cli({ argv: [], root: tmp, log: () => {}, err: () => {} }) === 0
-      && ASP.cli({ argv: ["--check"], root: tmp, log: () => {}, err: () => {} }) === 0);
+      ASP.cli({ argv: ["--preset", pp67, "--check"], root: tmp, log: () => {}, err: () => {} }) === 1
+      && ASP.cli({ argv: ["--preset", pp67], root: tmp, log: () => {}, err: () => {} }) === 0
+      && ASP.cli({ argv: ["--preset", pp67, "--check"], root: tmp, log: () => {}, err: () => {} }) === 0);
     const logs = [];
     ok("/subagent v0.3.67: cli() off menulis enabled:false + baris mode OFF; cli() on mengembalikan keduanya",
-      ASP.cli({ argv: ["off"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
+      ASP.cli({ argv: ["--preset", pp67, "off"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
       && /Mode \/subagent saat ini: OFF\./.test(orchTmp())
-      && ASP.cli({ argv: ["on"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
+      && ASP.cli({ argv: ["--preset", pp67, "on"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
       && /Mode \/subagent saat ini: paralel\./.test(orchTmp()));
     ok("/subagent v0.3.67: orchestratorModeLine — ON serial/paralel, OFF → OFF (tanpa kata enabled)",
       ASP.orchestratorModeLine({ enabled: true, mode: "serial" }) === "Mode /subagent saat ini: serial."
@@ -1000,18 +1004,19 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     ok("/subagent v0.3.68: applyPreset saat OFF — blok konfigurasi jadi OFF + baris mode OFF (model peran tetap tidak ditulis)",
       r3.disabled === true && r3.configChanged === true && /- Mode: OFF\./.test(rulesTmp())
       && /Mode \/subagent saat ini: OFF\./.test(fm(path.join(tmp, ".opencode", "agents", "orchestrator.md"))));
+    const pp68 = path.join(tmp, ".opencode", "lumitome-subagent.json");
     ok("/subagent v0.3.68: cli() --check exit 1 saat blok konfigurasi basi, exit 0 sesudah diterapkan",
-      ASP.cli({ argv: ["--check"], root: tmp, log: () => {}, err: () => {} }) === 1
-      && ASP.cli({ argv: [], root: tmp, log: () => {}, err: () => {} }) === 0
-      && ASP.cli({ argv: ["--check"], root: tmp, log: () => {}, err: () => {} }) === 0);
+      ASP.cli({ argv: ["--preset", pp68, "--check"], root: tmp, log: () => {}, err: () => {} }) === 1
+      && ASP.cli({ argv: ["--preset", pp68], root: tmp, log: () => {}, err: () => {} }) === 0
+      && ASP.cli({ argv: ["--preset", pp68, "--check"], root: tmp, log: () => {}, err: () => {} }) === 0);
     const logs = [];
-    // cli() membaca preset dari DISK — tulis pOpus dulu supaya off/on
-    // menguji preset itu (seperti tes v0.3.67).
-    fs.writeFileSync(path.join(tmp, ".opencode", "lumitome-subagent.json"), JSON.stringify(pOpus, null, 2) + "\n");
+    // cli() membaca preset dari DISK (v0.3.71 A1: --preset eksplisit) —
+    // tulis pOpus dulu supaya off/on menguji preset itu (seperti tes v0.3.67).
+    fs.writeFileSync(pp68, JSON.stringify(pOpus, null, 2) + "\n");
     ok("/subagent v0.3.68: cli() off menulis blok OFF; cli() on mengembalikan blok paralel + Thinking opus",
-      ASP.cli({ argv: ["off"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
+      ASP.cli({ argv: ["--preset", pp68, "off"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
       && /- Mode: OFF\./.test(rulesTmp())
-      && ASP.cli({ argv: ["on"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
+      && ASP.cli({ argv: ["--preset", pp68, "on"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
       && /- Mode: paralel\./.test(rulesTmp()) && rulesTmp().includes(`- Thinking: ${OPUS}`));
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
   // Fixture tanpa rules/subagent.md: sync blok = peringatan, bukan error.
@@ -1188,12 +1193,169 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
       rN.errors.length >= 1);
   } finally { fs.rmSync(tmpG, { recursive: true, force: true }); }
   ok("/subagent v0.3.69: server savePreset meneruskan preset tersimpan (stored) ke validatePreset + applyPreset (grandfathering ujung-ke-ujung)",
-    /const stored = readPreset\(root\)/.test(fm(`${PLUG}/index.ts`))
+    /const stored = readPreset\(root, home\)/.test(fm(`${PLUG}/index.ts`))
     && /validatePreset\(preset, live, stored\)/.test(fm(`${PLUG}/index.ts`))
     && /applyPreset\(\{ root, preset, liveModels: live, stored \}\)/.test(fm(`${PLUG}/index.ts`)));
   ok("/subagent v0.3.69: rules/subagent.md — deskripsi delegasi WAJIB diawali label peran '[Peran]' (yang tampil di TUI saat berjalan/selesai)",
     /Deskripsi delegasi: tiap panggilan tool subagent WAJIB diawali label peran dalam kurung siku/.test(fm(".opencode/rules/subagent.md"))
     && /contoh "\[Thinking\] Rencanakan/.test(fm(".opencode/rules/subagent.md")));
+}
+
+// (v0.3.71) /subagent — preset pindah ke $LUMI_HOME (A1) + update
+// mempertahankannya (A1b) + TUI_MODEL bersuara (A2) + satu DEFAULT_MODEL (A3)
+// + sandbox/batas baca-tulis dihapus (scope B).
+// Akar (fullcheck §2, terbukti): preset = state mesin ter-commit di git
+// (seed semua gemini); `lumitome update` menukar SELURUH direktori repo
+// dengan clone segar → tiap update reset preset ke seed; watcher tak bisa
+// menolong (thinking === initial, sama-sama gemini).
+{
+  const fm = (p) => fs.readFileSync(p, "utf8");
+  const os = await import("node:os");
+  const SP = await import("../lumitome/lib/subagent-preset.mjs");
+  const DM = await import("../lumitome/lib/default-model.mjs");
+  const F = await import("../lumitome/config/plugins/subagent/flow.mjs");
+  const ASP = await import("../scripts/apply-subagent-preset.mjs");
+  const PINNED = DM.DEFAULT_MODEL;
+  const seedPreset = () => JSON.parse(fm(".opencode/lumitome-subagent.json"));
+  const customPreset = () => ({ enabled: true, mode: "serial", roles: {
+    thinking: { active: true, model: "9router/kr/claude-opus-5.5", tier: "terkuat" },
+    search: { active: true, model: "9router/ag/gemini-3.8-flash", tier: "cepat-murah" },
+    builder: { active: true, model: "9router/kr/claude-sonnet-5.5", tier: "menengah-kuat" },
+    reviewer: { active: true, model: "9router/kr/claude-opus-5.5", tier: "terkuat" },
+  } });
+  // --- A3: satu sumber DEFAULT_MODEL ---
+  ok("v0.3.71 A3: DEFAULT_MODEL satu sumber (lib = flow = apply-script)",
+    DM.DEFAULT_MODEL === F.DEFAULT_MODEL && ASP.DEFAULT_MODEL === DM.DEFAULT_MODEL
+    && DM.DEFAULT_MODEL === "9router/ag/gemini-3.8-flash-high");
+  ok("v0.3.71 A3: wrapper tidak lagi mendefinisikan literal default sendiri",
+    !/const DEFAULT_MODEL = "9router\//.test(fm("lumitome/bin/lumitome.mjs"))
+    && /from "\.\.\/lib\/default-model\.mjs"/.test(fm("lumitome/bin/lumitome.mjs"))
+    && /default-model\.mjs/.test(fm("lumitome/config/plugins/subagent/flow.mjs")));
+  ok("v0.3.71 A3: kedua opencode.jsonc membawa penanda sumber tunggal",
+    /lumitome\/lib\/default-model\.mjs/.test(fm("lumitome/config/opencode.jsonc"))
+    && /lumitome\/lib\/default-model\.mjs/.test(fm("opencode.jsonc")));
+  // --- A1: migrasi + load + save user ---
+  const home71 = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-home-0371-"));
+  const root71 = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-root-0371-"));
+  try {
+    fs.mkdirSync(path.join(root71, ".opencode"), { recursive: true });
+    fs.writeFileSync(path.join(root71, ".opencode", "lumitome-subagent.json"), JSON.stringify(customPreset(), null, 2) + "\n");
+    ok("v0.3.71 A1: migratePreset menyalin seed → file user (sekali)",
+      SP.migratePreset({ home: home71, root: root71 }).migrated === true
+      && JSON.parse(fm(path.join(home71, "lumitome-subagent.json"))).roles.thinking.model === "9router/kr/claude-opus-5.5");
+    ok("v0.3.71 A1: migratePreset kedua = no-op (file user TIDAK ditimpa)",
+      SP.migratePreset({ home: home71, root: root71 }).migrated === false
+      && JSON.parse(fm(path.join(home71, "lumitome-subagent.json"))).roles.thinking.model === "9router/kr/claude-opus-5.5");
+    ok("v0.3.71 A1: loadPreset sumber = user sesudah migrasi",
+      SP.loadPreset({ home: home71, root: root71 }).source === "user");
+    ok("v0.3.71 A1: loadPreset fallback ke seed bila file user rusak",
+      (() => { fs.writeFileSync(path.join(home71, "lumitome-subagent.json"), "{rusak"); const r = SP.loadPreset({ home: home71, root: root71 }); fs.writeFileSync(path.join(home71, "lumitome-subagent.json"), JSON.stringify(customPreset())); return r.source === "seed" && r.preset.roles.thinking.model === "9router/kr/claude-opus-5.5"; })());
+    ok("v0.3.71 A1: loadPreset --preset eksplisit menang atas file user",
+      SP.loadPreset({ home: home71, root: root71, explicitPath: path.join(root71, ".opencode", "lumitome-subagent.json") }).source === "explicit");
+    ok("v0.3.71 A1: saveUserPreset atomik (tanpa file .tmp tersisa)",
+      (() => { const p = customPreset(); p.mode = "paralel"; SP.saveUserPreset({ home: home71, preset: p }); return JSON.parse(fm(path.join(home71, "lumitome-subagent.json"))).mode === "paralel" && !fs.readdirSync(home71).some((f) => f.includes(".tmp-")); })());
+    // --- A1b: preserve saat swap ---
+    const oldRepo = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-oldrepo-0371-"));
+    try {
+      fs.mkdirSync(path.join(oldRepo, ".opencode"), { recursive: true });
+      fs.writeFileSync(path.join(oldRepo, ".opencode", "lumitome-subagent.json"), JSON.stringify(customPreset(), null, 2) + "\n");
+      const homeB = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-homeb-0371-"));
+      try {
+        ok("v0.3.71 A1b: preservePresetAcrossUpdate menyalin preset repo lama → file user",
+          SP.preservePresetAcrossUpdate({ oldRepo, home: homeB }).preserved === true
+          && JSON.parse(fm(path.join(homeB, "lumitome-subagent.json"))).roles.thinking.model === "9router/kr/claude-opus-5.5");
+        ok("v0.3.71 A1b: preserve kedua = no-op (file user sudah ada)",
+          SP.preservePresetAcrossUpdate({ oldRepo, home: homeB }).preserved === false);
+        const emptyRepo = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-empty-0371-"));
+        const homeC = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-homec2-0371-"));
+        ok("v0.3.71 A1b: repo lama tanpa preset → preserved false",
+          SP.preservePresetAcrossUpdate({ oldRepo: emptyRepo, home: homeC }).preserved === false
+          && !fs.existsSync(path.join(homeC, "lumitome-subagent.json")));
+        fs.rmSync(emptyRepo, { recursive: true, force: true }); fs.rmSync(homeC, { recursive: true, force: true });
+      } finally { fs.rmSync(homeB, { recursive: true, force: true }); }
+    } finally { fs.rmSync(oldRepo, { recursive: true, force: true }); }
+    // --- A2: resolveSessionDefault ---
+    const LIVE = ["kr/claude-opus-5.5", "kr/claude-sonnet-5.5", "ag/gemini-3.8-flash", "ag/gemini-3.8-flash-high"];
+    ok("v0.3.71 A2: Thinking ada di live → sesi pakai Thinking",
+      ASP.resolveSessionDefault(customPreset(), LIVE).model === "9router/kr/claude-opus-5.5");
+    ok("v0.3.71 A2: Thinking TIDAK ada di live → default terpin + alasan menyebut refresh",
+      (() => { const d = ASP.resolveSessionDefault(customPreset(), ["ag/gemini-3.8-flash-high"]); return d.model === PINNED && /tidak ada di cache/.test(d.reason) && /refresh/.test(d.reason); })());
+    ok("v0.3.71 A2: live tidak bisa dibaca → default terpin + alasan jujur",
+      ASP.resolveSessionDefault(customPreset(), null).model === PINNED);
+    ok("v0.3.71 A2: preset OFF / tanpa preset → default terpin",
+      ASP.resolveSessionDefault({ ...customPreset(), enabled: false }, LIVE).model === PINNED
+      && ASP.resolveSessionDefault(null, LIVE).model === PINNED);
+    ok("v0.3.71 A2: wrapper memakai resolveSessionDefault (bukan logika duplikat) + bersuara di LUMI_DEBUG",
+      /resolveSessionDefault/.test(fm("lumitome/bin/lumitome.mjs"))
+      && /loadPreset\(\{ home: ISO_HOME, root: REPO \}\)/.test(fm("lumitome/bin/lumitome.mjs"))
+      && /LUMI_DEBUG && d\.model === DEFAULT_MODEL/.test(fm("lumitome/bin/lumitome.mjs")));
+    // --- A1 di update.mjs (jalur kode) + plugin server ---
+    ok("v0.3.71 A1b: update.mjs memanggil preserve di swap git + rollback + npm",
+      /preservePresetAcrossUpdate\(\{ oldRepo: bak, home \}\)/.test(fm("lumitome/lib/update.mjs"))
+      && /preservePresetAcrossUpdate\(\{ oldRepo: repo, home \}\)/.test(fm("lumitome/lib/update.mjs"))
+      && /preservePresetObject\(oldPresetNpm, home\)/.test(fm("lumitome/lib/update.mjs")));
+    ok("v0.3.71 A1: plugin server baca/tulis preset via accessor user (bukan seed repo)",
+      /loadPreset\(\{ home/.test(fm("lumitome/config/plugins/subagent/index.ts"))
+      && /saveUserPreset\(\{ home, preset \}\)/.test(fm("lumitome/config/plugins/subagent/index.ts"))
+      && !/writeFileSync\(presetPath\(root\)/.test(fm("lumitome/config/plugins/subagent/index.ts")));
+    // --- cli() dengan home param: status + on/off ke file user ---
+    const rootCli = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-rootcli-0371-"));
+    try {
+      for (const r of ["thinking", "search", "builder", "reviewer"]) { fs.mkdirSync(path.join(rootCli, ".opencode", "agents"), { recursive: true }); fs.copyFileSync(`.opencode/agents/${r}.md`, path.join(rootCli, ".opencode", "agents", `${r}.md`)); }
+      fs.copyFileSync(".opencode/agents/orchestrator.md", path.join(rootCli, ".opencode", "agents", "orchestrator.md"));
+      const homeCli = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-homecli-0371-"));
+      try {
+        fs.writeFileSync(path.join(homeCli, "lumitome-subagent.json"), JSON.stringify(customPreset(), null, 2) + "\n");
+        fs.writeFileSync(path.join(homeCli, "providers.json"), JSON.stringify({ providers: { "9router": { models: LIVE } } }));
+        const logs = [];
+        ok("v0.3.71 A2: cli() status menyebut preset user + Thinking + default sesi",
+          ASP.cli({ argv: ["status"], root: rootCli, home: homeCli, log: (m) => logs.push(m), err: () => {} }) === 0
+          && /subagent: ON/.test(logs[logs.length - 1]) && /preset: user/.test(logs[logs.length - 1])
+          && /Thinking: 9router\/kr\/claude-opus-5\.5 \(ada di cache live\)/.test(logs[logs.length - 1])
+          && /model default sesi TUI: 9router\/kr\/claude-opus-5\.5/.test(logs[logs.length - 1]));
+        ok("v0.3.71 A1: cli() off/on menulis ke file USER (seed repo tidak tersentuh)",
+          ASP.cli({ argv: ["off"], root: rootCli, home: homeCli, log: () => {}, err: () => {} }) === 0
+          && JSON.parse(fm(path.join(homeCli, "lumitome-subagent.json"))).enabled === false
+          && ASP.cli({ argv: ["on"], root: rootCli, home: homeCli, log: () => {}, err: () => {} }) === 0
+          && JSON.parse(fm(path.join(homeCli, "lumitome-subagent.json"))).enabled === true);
+      } finally { fs.rmSync(homeCli, { recursive: true, force: true }); }
+    } finally { fs.rmSync(rootCli, { recursive: true, force: true }); }
+    // --- A4: sinkron file agent dari preset user SEBELUM engine start ---
+    // (engine memuat definisi agent saat startup; popup save di tengah sesi
+    // tidak dibaca ulang — terbukti live 0371: sesi anak tetap gemini-high
+    // sesudah save menulis opus ke disk.)
+    const rootA4 = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-roota4-0371-"));
+    try {
+      for (const r of ["thinking", "search", "builder", "reviewer"]) {
+        fs.mkdirSync(path.join(rootA4, ".opencode", "agents"), { recursive: true });
+        fs.writeFileSync(path.join(rootA4, ".opencode", "agents", `${r}.md`),
+          `---\ndescription: peran ${r}\nmodel: 9router/ag/gemini-3.8-flash-high\n---\n\nIsi peran ${r}.\n`);
+      }
+      fs.copyFileSync(".opencode/agents/orchestrator.md", path.join(rootA4, ".opencode", "agents", "orchestrator.md"));
+      fs.mkdirSync(path.join(rootA4, ".opencode", "rules"), { recursive: true });
+      fs.copyFileSync(".opencode/rules/subagent.md", path.join(rootA4, ".opencode", "rules", "subagent.md"));
+      const r1 = ASP.applyPreset({ root: rootA4, preset: customPreset(), liveModels: null });
+      ok("v0.3.71 A4: applyPreset menulis model preset ke file agent (seed gemini → opus/flash/sonnet/opus)",
+        r1.errors.length === 0 && r1.changed.length === 4
+        && ["thinking", "search", "builder", "reviewer"].every((r) =>
+          new RegExp(`^model: ${customPreset().roles[r].model.replace(/\//g, "\\/")}$`, "m").test(fm(path.join(rootA4, ".opencode", "agents", `${r}.md`)))));
+      const r2 = ASP.applyPreset({ root: rootA4, preset: customPreset(), liveModels: null });
+      ok("v0.3.71 A4: applyPreset kedua = no-op (file agent sudah sesuai preset)",
+        r2.errors.length === 0 && r2.changed.length === 0);
+      ok("v0.3.71 A4: applyPreset menolak model non-9router (file agent tidak ditulis)",
+        (() => { const bad = customPreset(); bad.roles.thinking.model = "anthropic/claude-opus-5-5"; const rb = ASP.applyPreset({ root: rootA4, preset: bad, liveModels: null }); return rb.errors.length > 0 && /^model: 9router\/kr\/claude-opus-5\.5$/m.test(fm(path.join(rootA4, ".opencode", "agents", "thinking.md"))); })());
+    } finally { fs.rmSync(rootA4, { recursive: true, force: true }); }
+    ok("v0.3.71 A4: wrapper menyinkronkan file agent dari preset user sebelum engine start (liveModels: null)",
+      /ASP\.applyPreset\(\{ root: REPO, preset: loaded\.preset, liveModels: null \}\)/.test(fm("lumitome/bin/lumitome.mjs"))
+      && /engine memuat definisi agent saat startup/.test(fm("lumitome/bin/lumitome.mjs")));
+  } finally { fs.rmSync(home71, { recursive: true, force: true }); fs.rmSync(root71, { recursive: true, force: true }); }
+  // --- scope B: sandbox mati default, batas baca/tulis hilang ---
+  ok("v0.3.71 scope B: guard plugin hanya bwrap bila LUMI_SANDBOX=bwrap eksplisit",
+    /const sandbox = env\.LUMI_SANDBOX === "bwrap" \? "bwrap" : "off"/.test(fm("lumitome/config/plugins/lumitome-guard.ts"))
+    && !/TIER === "strict" \? "bwrap"/.test(fm("lumitome/config/plugins/lumitome-guard.ts")));
+  ok("v0.3.71 scope B: wrapper tidak lagi memperingatkan sandbox-downgraded",
+    !/sandbox-downgraded", runId/.test(fm("lumitome/bin/lumitome.mjs"))
+    && !/LUMI_SANDBOX=off menurunkan tier strict/.test(fm("lumitome/bin/lumitome.mjs")));
 }
 
 finish();

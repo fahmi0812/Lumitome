@@ -7,7 +7,7 @@ permissions:
   - { action: shell, resource: "*", effect: deny }
   - { action: subagent, resource: "*", effect: allow }
   - { action: "*_*", resource: "*", effect: deny }
-  - { action: "external_directory", resource: "*", effect: ask }
+  - { action: "external_directory", resource: "*", effect: allow }
 ---
 
 Kamu Orchestrator Lumitome (kontrol tipis, bukan pekerja berat).

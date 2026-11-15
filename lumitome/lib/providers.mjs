@@ -8,6 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
+import { DEFAULT_MODEL } from "./default-model.mjs";
 
 export const NAME_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
 // v0.3.45 (P1-4): preset 9router sekali-klik — nama + tipe + base URL lokal.
@@ -192,7 +193,10 @@ export async function cli({ argv, home, sub, env = process.env, log = console.lo
     const { models, warning } = await add(home, { name, type, baseURL, key });
     if (!models.length) { log(`OK: provider '${name}' (${type}) tersimpan tanpa model — ${warning}`); return 0; }
     log(`OK: provider '${name}' (${type}) — ${models.length} model terdeteksi. Contoh: ${models.slice(0, 5).map((m) => `${name}/${m}`).join(", ")}${models.length > 5 ? ", …" : ""}`);
-    const pref = models.includes("ag/gemini-3.8-flash-high") ? "ag/gemini-3.8-flash-high" : models[0];
+    // Saran model pertama sesudah connect: default terpin bila ada di
+    // daftar (satu sumber — lumitome/lib/default-model.mjs, v0.3.71 A3).
+    const prefId = DEFAULT_MODEL.replace(/^9router\//, "");
+    const pref = models.includes(prefId) ? prefId : models[0];
     log(`Pilih di TUI lewat /model, atau: lumitome run -m ${name}/${pref} "…"`);
     return 0;
   } catch (e) { err(`connect gagal: ${e.message}`); return 1; }

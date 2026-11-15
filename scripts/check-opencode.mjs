@@ -129,7 +129,6 @@ export function checkMcpPolicy(file = "opencode.jsonc", mapFile = "router/mcp-se
   const perms = cfg.permissions || [];
   const di = perms.findIndex((p) => p.action === "*_*" && p.effect === "deny");
   if (di < 0) e.push(`${file}: wajib deny-by-default MCP ("*_*" deny)`);
-  if (!perms.some((p, i) => i > di && p.action === "external_directory" && p.effect === "ask")) e.push(`${file}: external_directory ask harus setelah "*_*" deny`);
   if (!perms.some((p) => p.action === "shell" && /git push \*main\*/.test(p.resource) && p.effect === "deny")) e.push(`${file}: deny git push main hilang`);
   return e;
 }

@@ -14,8 +14,9 @@
 // contoh docs RPC; input `{}` = method tanpa argumen, dan pemanggil
 // WAJIB mengirim `{}` eksplisit (lihat tui.tsx).
 import { Rpc } from "@opencode/plugin/rpc"
+import { DEFAULT_MODEL } from "./flow.mjs"
 
-const EXAMPLE_ROLE = { active: true, model: "9router/ag/gemini-3.8-flash-high", tier: "terkuat" }
+const EXAMPLE_ROLE = { active: true, model: DEFAULT_MODEL, tier: "terkuat" }
 const EXAMPLE_PRESET = {
   enabled: true,
   mode: "serial",
@@ -44,7 +45,7 @@ export const SubagentRpc = Rpc.define({
     /** Daftar model 9router yang masih hidup (fallback terpin bila server mati). */
     getLiveModels: {
       input: {},
-      output: { models: ["9router/ag/gemini-3.8-flash-high"], live: true },
+      output: { models: [DEFAULT_MODEL], live: true },
     },
     /** Saklar on/off sistem peran (v0.3.62). */
     setEnabled: {

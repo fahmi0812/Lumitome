@@ -12,9 +12,9 @@
 // session.execution.*. TIDAK ada re-drive (engine tidak punya hook
 // Stop/SubagentStop pemblokir — lihat CHANGELOG v0.3.70).
 import { Plugin } from "@opencode/plugin"
-import fs from "node:fs"
 import { fileURLToPath } from "node:url"
 import { SubagentRpc } from "./rpc.js"
+import { DEFAULT_MODEL } from "../../../lib/default-model.mjs";
 import {
   applyPreset,
   validatePreset,
@@ -23,9 +23,9 @@ import {
   syncOrchestratorMode,
   syncSubagentRulesConfig,
   syncOrchestratorPermissions,
-  DEFAULT_MODEL,
 } from "../../../../scripts/apply-subagent-preset.mjs"
-import { resolveRepoRoot, presetPath } from "./paths.mjs"
+import { resolveRepoRoot } from "./paths.mjs"
+import { loadPreset, saveUserPreset } from "../../../lib/subagent-preset.mjs"
 import {
   filterNineRouterModels,
   canSavePreset,
@@ -48,13 +48,16 @@ import {
   debugEnabled,
 } from "./enforce.mjs"
 
-function readPreset(root: string) {
-  return JSON.parse(fs.readFileSync(presetPath(root), "utf8"))
+// v0.3.71 (A1): preset dibaca dari file user $LUMI_HOME (migrasi dari
+// seed repo bila belum ada; fallback seed bila file user hilang/rusak).
+// `home` disuntik dari setup (lumiHome) supaya tes bisa memakai home lain.
+function readPreset(root: string, home?: string) {
+  return loadPreset({ home: home ?? lumiHome(), root }).preset
 }
 
-function readPresetSafe(root: string) {
+function readPresetSafe(root: string, home?: string) {
   try {
-    return readPreset(root)
+    return readPreset(root, home)
   } catch {
     return null
   }
@@ -75,7 +78,7 @@ function readPresetSafe(root: string) {
 //    yang dialihkan, jadi `lumitome run -m <model>` / LUMI_MODEL tetap menang;
 //  - /subagent off (enabled: false) → tidak ada pengalihan;
 //  - Thinking nonaktif / bukan 9router → tidak ada pengalihan.
-async function maybeSwitchNewSession(ctx: any, root: string, event: any) {
+async function maybeSwitchNewSession(ctx: any, root: string, home: string, event: any) {
   if (event?.type !== "session.created") return
   const data = event.data ?? {}
   if (!data.sessionID || data.parentID) return
@@ -94,7 +97,7 @@ async function maybeSwitchNewSession(ctx: any, root: string, event: any) {
     }
   }
   if (initial && initial !== DEFAULT_MODEL) return
-  const preset = readPresetSafe(root)
+  const preset = readPresetSafe(root, home)
   if (!preset || preset.enabled === false) return
   const thinking = thinkingSessionModel(preset)
   if (!thinking || thinking === initial) return
@@ -106,7 +109,7 @@ async function maybeSwitchNewSession(ctx: any, root: string, event: any) {
   })
 }
 
-function watchSessionCreated(ctx: any, root: string, sessionAgents: Map<string, string>) {
+function watchSessionCreated(ctx: any, root: string, home: string, sessionAgents: Map<string, string>) {
   // Fire-and-forget + fail-silent: pengalihan sesi baru tidak boleh
   // mematikan plugin bila langganan event putus. Peta sessionID → agent
   // juga dipakai guard execute.before + audit akhir giliran (v0.3.70) —
@@ -118,7 +121,7 @@ function watchSessionCreated(ctx: any, root: string, sessionAgents: Map<string, 
           if (typeof event?.data?.sessionID === "string" && typeof event?.data?.agent === "string") {
             sessionAgents.set(event.data.sessionID, event.data.agent)
           }
-          await maybeSwitchNewSession(ctx, root, event)
+          await maybeSwitchNewSession(ctx, root, home, event)
         } catch {
           // satu sesi gagal dialihkan: lanjut ke event berikutnya
         }
@@ -143,7 +146,7 @@ function watchExecutionEnds(ctx: any, root: string, home: string, sessionAgents:
           const sessionID = event?.data?.sessionID
           if (typeof sessionID !== "string") continue
           const agent = sessionAgents.get(sessionID)
-          const preset = readPresetSafe(root)
+          const preset = readPresetSafe(root, home)
           if (!shouldEnforce(preset, agent)) continue
           const counters = countersBySession.get(sessionID)
           if (!counters) continue
@@ -176,7 +179,7 @@ async function registerEnforcement(ctx: any, root: string, home: string, session
   if (typeof ctx.session?.hook === "function") {
     await ctx.session.hook("context", (event: any) => {
       try {
-        const preset = readPresetSafe(root)
+        const preset = readPresetSafe(root, home)
         if (!shouldEnforce(preset, event?.agent)) return
         if (event?.tools && typeof event.tools === "object") {
           const { removed } = applyToolEnforcement(event.tools, preset, event.agent)
@@ -213,7 +216,7 @@ async function registerEnforcement(ctx: any, root: string, home: string, session
         }
       }
       if (debug) appendMetrics(home, { kind: "debug", hook: "execute.before", sessionID, agent, tool, keys: Object.keys(event ?? {}) })
-      const preset = readPresetSafe(root)
+      const preset = readPresetSafe(root, home)
       const reason = guardToolCall({ preset, agent, tool, input: event?.input })
       if (reason) {
         const counters = countersBySession.get(sessionID) ?? newCounters()
@@ -229,7 +232,7 @@ async function registerEnforcement(ctx: any, root: string, home: string, session
         const tool = event?.tool
         if (typeof sessionID !== "string" || typeof tool !== "string") return
         const agent = sessionAgents.get(sessionID)
-        const preset = readPresetSafe(root)
+        const preset = readPresetSafe(root, home)
         if (!shouldEnforce(preset, agent)) return
         const counters = countersBySession.get(sessionID) ?? newCounters()
         countTool(counters, tool, false)
@@ -255,7 +258,7 @@ export default Plugin.define({
     // hanya bila API plugin menyediakannya (engine lama tanpa ctx.event /
     // ctx.session.switchModel dilewati diam-diam — plugin RPC tetap jalan).
     if (typeof ctx.event?.subscribe === "function" && typeof ctx.session?.switchModel === "function") {
-      watchSessionCreated(ctx, root, sessionAgents)
+      watchSessionCreated(ctx, root, home, sessionAgents)
       watchExecutionEnds(ctx, root, home, sessionAgents, countersBySession)
     }
     // Penegakan delegasi native (v0.3.70) — dijaga kapabilitas engine.
@@ -265,7 +268,7 @@ export default Plugin.define({
       // hook tidak tersedia di engine ini: file permissions + RPC tetap jalan
     }
     ctx.rpc.register(SubagentRpc, {
-      getPreset: async () => ({ preset: readPreset(root) }),
+      getPreset: async () => ({ preset: readPreset(root, home) }),
       getLiveModels: async () => {
         const live = loadLiveModels()
         if (!live) return { models: [DEFAULT_MODEL], live: false }
@@ -278,7 +281,7 @@ export default Plugin.define({
         // bukan error); tanpa ini dialog yang mempertahankan model tersimpan
         // tetap gagal disimpan (bug H2 lanjutan, terbukti live: toast
         // "Gagal menyimpan preset" untuk model tersimpan).
-        const stored = readPreset(root)
+        const stored = readPreset(root, home)
         const guard = canSavePreset(stored, preset)
         if (!guard.ok) {
           return context.error("invalid_preset", guard.reason, { errors: [guard.reason] })
@@ -288,7 +291,7 @@ export default Plugin.define({
         if (errors.length) {
           return context.error("invalid_preset", errors.join("; "), { errors })
         }
-        fs.writeFileSync(presetPath(root), JSON.stringify(preset, null, 2) + "\n")
+        saveUserPreset({ home, preset })
         const applied = applyPreset({ root, preset, liveModels: live, stored })
         if (applied.errors.length) {
           return context.error("invalid_preset", applied.errors.join("; "), { errors: applied.errors })
@@ -296,9 +299,9 @@ export default Plugin.define({
         return { ok: true, applied: true, warnings: [...new Set([...warnings, ...applied.warnings])] }
       },
       setEnabled: async (input) => {
-        const preset = readPreset(root)
+        const preset = readPreset(root, home)
         const next = setEnabled(preset, input.enabled === true)
-        fs.writeFileSync(presetPath(root), JSON.stringify(next, null, 2) + "\n")
+        saveUserPreset({ home, preset: next })
         // v0.3.67: baris mode di orchestrator.md ikut saklar — tanpa ini
         // aturan peran tetap berlaku di sesi baru walau sistem dimatikan.
         // v0.3.68: blok konfigurasi di rules/subagent.md ikut saklar juga

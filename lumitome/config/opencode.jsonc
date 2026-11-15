@@ -1,5 +1,6 @@
 // Lumitome — config dasar (dimuat sebagai OPENCODE_CONFIG_DIR oleh bin/lumitome).
 // Override final yang tidak bisa dikalahkan config proyek dikirim wrapper via OPENCODE_CONFIG_CONTENT.
+// "model" di bawah = DEFAULT_MODEL; sumber tunggal: lumitome/lib/default-model.mjs — ubah di sana, samakan di sini (v0.3.71, A3).
 {
   "$schema": "https://opencode.ai/config.json",
   "model": "9router/ag/gemini-3.8-flash-high",
@@ -16,7 +17,7 @@
   "tool_output": { "max_lines": 400, "max_bytes": 16384 },
   "permissions": [
     { "action": "*", "resource": "*", "effect": "allow" },
-    { "action": "external_directory", "resource": "*", "effect": "ask" },
-    { "action": "external_directory", "resource": "/tmp/*", "effect": "allow" }
+    // v0.3.71 scope B: external_directory ask → allow (seperti OpenCode biasa).
+    { "action": "external_directory", "resource": "*", "effect": "allow" }
   ]
 }
