@@ -42,6 +42,13 @@
 //   v0.3.66 juga: model default sesi TUI ikut preset Thinking (wrapper
 //   lumitome.mjs) — akar bug live v0.3.65: TUI menimpa switchModel watcher
 //   dengan model default config (gemini) saat pesan pertama dikirim.
+//   v0.3.69: (a) sesi baru "Ya, mulai" dibuat DENGAN location.directory =
+//     cwd proses TUI (folder proyek) — tanpa itu server memakai cwd-nya
+//     sendiri (/home/hatch); (b) toast singkat "<Peran> jalan" saat subagent
+//     mulai (langganan event session.tool.called — baris TUI hanya
+//     "Running subagent…" generik); (c) model tersimpan yang tidak ada di
+//     daftar live tetap ditawarkan + ditandai, bukan diam-diam diganti
+//     models[0] (bug H2 terbukti live: kr opus → ag gemini).
 import { Plugin, usePlugin } from "@opencode/plugin/tui"
 import { createSignal } from "solid-js"
 import { SubagentRpc } from "./rpc.js"
@@ -63,6 +70,9 @@ import {
   callRpcWithRetry,
   splitModelId,
   thinkingSessionModel,
+  sessionCreateLocation,
+  subagentStartInfo,
+  modelOptionsForRole,
 } from "./flow.mjs"
 import { buildSubagentNotice } from "./prompt.mjs"
 
@@ -78,6 +88,32 @@ function toastCancelled(context) {
 function currentSessionID(context) {
   const route = context.ui.router.current()
   return route && route.type === "session" && typeof route.sessionID === "string" ? route.sessionID : undefined
+}
+
+/**
+ * Beri tahu user peran mana yang mulai berjalan (v0.3.69 — jawaban atas
+ * temuan Fahmi: baris TUI hanya "Running subagent…" generik saat anak
+ * berjalan; nama peran baru muncul sesudah selesai).
+ * Langganan event server via client.event.subscribe (SSE /api/event):
+ * session.tool.called di sesi yang sedang ditampilkan, input.agent salah
+ * satu peran → toast singkat "<Label> jalan" + deskripsi delegasi.
+ * Fire-and-forget + fail-silent: toast tidak boleh mematikan plugin.
+ */
+function watchSubagentStarts(context) {
+  if (typeof context?.client?.event?.subscribe !== "function") return
+  void (async () => {
+    try {
+      for await (const event of context.client.event.subscribe({ types: ["session.tool.called"] })) {
+        try {
+          if (event?.type !== "session.tool.called") continue
+          if (event?.data?.sessionID !== currentSessionID(context)) continue
+          const info = subagentStartInfo(event?.data?.input)
+          if (!info) continue
+          toast(context, `${info.label} jalan`, info.description || "Delegasi peran dimulai.")
+        } catch {}
+      }
+    } catch {}
+  })()
 }
 
 /**
@@ -132,8 +168,12 @@ async function sendSubagentNotice(context, preset, task, sessionIDOverride) {
  * Bila belum ada sesi: sesi baru DIBUKA di sini (client.session.create
  * dengan model Thinking) lalu TUI diarahkan ke sesi itu (router.navigate);
  * watcher server plugin melewatinya (model awal sudah Thinking, bukan
- * default terpin). Gagal di langkah mana pun → kembalikan catatan jujur
- * (preset sudah tersimpan; user bisa buka sesi manual).
+ * default terpin). v0.3.69: create DENGAN location.directory = cwd proses
+ * TUI (folder proyek) — tanpa location, server memakai cwd prosesnya
+ * sendiri (/home/hatch), terbukti dari DB sesi uji end-to-end v0.3.68
+ * (117/117 sesi directory=/home/hatch). Gagal di langkah mana pun →
+ * kembalikan catatan jujur (preset sudah tersimpan; user bisa buka sesi
+ * manual).
  */
 async function enterSubagentMode(context, preset, task) {
   const full = thinkingSessionModel(preset)
@@ -150,7 +190,7 @@ async function enterSubagentMode(context, preset, task) {
     }
   } else {
     try {
-      const created = await context.client.session.create({ model: { providerID: parts.providerID, id: parts.id }, agent: "orchestrator" })
+      const created = await context.client.session.create({ model: { providerID: parts.providerID, id: parts.id }, agent: "orchestrator", ...sessionCreateLocation(process.cwd()) })
       sessionID = created?.id ?? created?.sessionID ?? created?.data?.id
       if (!sessionID) return "Sesi baru gagal dibuat (tidak ada ID) — konfigurasi tersimpan; buka sesi baru manual."
       if (typeof context.ui.router?.navigate === "function") {
@@ -174,6 +214,9 @@ async function saveAndDelegate(context, rpc, next, task) {
     toast(context, "Gagal menyimpan preset", String(e?.message ?? e), "error")
     return
   }
+  // v0.3.69: peringatan "model tersimpan dipertahankan" datang dari server
+  // (validatePreset grandfathering, saved.warnings) — ditempel ke toast di
+  // bawah; dialog tidak perlu mencatatnya lagi.
   const warn = saved.warnings?.length ? ` ${saved.warnings.join(" ")}` : ""
   // v0.3.66: langkah akhir — SATU pilihan, bahasa pendek (ide Fahmi: jangan
   // paksa user "buka sesi dulu, baru /subagent, baru Ctrl+S"). Esc/batal =
@@ -218,12 +261,16 @@ function safeModels(preset) {
 async function runSelects(context, rpc, preset, models, live, task) {
   // v0.3.65: keempat peran SELALU aktif — langsung tanya model per peran.
   const byRole = safeModels(preset)
+  // v0.3.69: model tersimpan yang tidak ada di daftar live tetap ditawarkan
+  // (modelOptionsForRole) + ditandai "Tersimpan — tidak ada di daftar live";
+  // server meng-grandfather-nya saat save (peringatan, bukan error).
   if (live && models.length > 1) {
     for (const role of ROLES) {
+      const { options, current, storedMissing } = modelOptionsForRole(models, byRole[role])
       const m = await context.ui.dialog.select({
         title: `Model — ${ROLE_LABELS[role]} (tier ${ROLE_TIERS[role]})`,
-        current: models.includes(byRole[role]) ? byRole[role] : models[0],
-        options: models.map((id) => ({ title: id, value: id, description: `Tier ${ROLE_TIERS[role]} — ${ROLE_DESC[role]}` })),
+        current,
+        options: options.map((id) => ({ title: id, value: id, description: id === byRole[role] && storedMissing ? "Tersimpan — tidak ada di daftar live" : `Tier ${ROLE_TIERS[role]} — ${ROLE_DESC[role]}` })),
       })
       if (m === undefined) return toastCancelled(context)
       byRole[role] = m
@@ -269,10 +316,13 @@ async function runTable(context, rpc, preset, models, live, task) {
         focus = action.focus
         continue
       }
+      // v0.3.69: seperti Stage A — model tersimpan yang tidak ada di daftar
+      // live tetap ditawarkan + ditandai, bukan diam-diam diganti models[0].
+      const { options, current, storedMissing } = modelOptionsForRole(models, state.models[action.role])
       const m = await context.ui.dialog.select({
         title: `Model — ${ROLE_LABELS[action.role]} (tier ${ROLE_TIERS[action.role]})`,
-        current: models.includes(state.models[action.role]) ? state.models[action.role] : models[0],
-        options: models.map((id) => ({ title: id, value: id, description: `Tier ${ROLE_TIERS[action.role]}` })),
+        current,
+        options: options.map((id) => ({ title: id, value: id, description: id === state.models[action.role] && storedMissing ? "Tersimpan — tidak ada di daftar live" : `Tier ${ROLE_TIERS[action.role]}` })),
       })
       if (m !== undefined) state = applyTableModel(state, action.role, m)
       focus = action.focus
@@ -395,6 +445,9 @@ async function run(context, input) {
 export default Plugin.define({
   id: "lumitome.subagent.tui",
   setup(context) {
+    // v0.3.69: pengamat peran berjalan — toast "<Peran> jalan" saat subagent
+    // mulai di sesi yang sedang ditampilkan (fire-and-forget, fail-silent).
+    watchSubagentStarts(context)
     context.keymap.layer(() => ({
       mode: "global",
       priority: 10,

@@ -178,6 +178,55 @@ export function thinkingSessionModel(preset) {
 }
 
 /**
+ * Lokasi proyek untuk `session.create` (v0.3.69 — perbaikan BUG DIREKTORI):
+ * sesi "Ya, mulai" yang dibuat tanpa location lahir di direktori proses
+ * server (/home/hatch), BUKAN folder proyek — terbukti dari DB sesi uji
+ * end-to-end v0.3.68 (117/117 sesi directory=/home/hatch). API session.create
+ * menerima `location: { directory }` (terverifikasi live di VM: sesi yang
+ * dibuat dengan location.directory = folder proyek tercatat di folder itu;
+ * field top-level `directory` / `projectID` DIABAIKAN server).
+ * Direktori yang dipakai = cwd proses TUI (wrapper menjalankannya dengan
+ * cwd = folder proyek). Kosong/bukan string → {} (perilaku lama).
+ */
+export function sessionCreateLocation(directory) {
+  if (typeof directory !== "string" || directory.length === 0) return {};
+  return { location: { directory } };
+}
+
+/**
+ * Info mulai subagent dari input tool call (v0.3.69 — untuk toast peran).
+ * Event `session.tool.called` TIDAK membawa nama tool — panggilan subagent
+ * dikenali dari `input.agent` yang berisi salah satu nama peran. Kembalikan
+ * { role, label, description } (awalan label "[Peran]" di deskripsi dibuang
+ * supaya toast tidak mengulang label); selain panggilan subagent → null.
+ */
+export function subagentStartInfo(input) {
+  const agent = input?.agent;
+  if (typeof agent !== "string" || !ROLES.includes(agent)) return null;
+  const raw = typeof input?.description === "string" ? input.description : "";
+  const description = raw.replace(/^\[[^\]]+\]\s*/, "").trim();
+  return { role: agent, label: ROLE_LABELS[agent], description };
+}
+
+/**
+ * Opsi model untuk dialog satu peran (v0.3.69 — perbaikan H2, terbukti live:
+ * model tersimpan yang tidak ada di daftar live membuat dialog diam-diam
+ * memilih models[0] — Enter tanpa ubah MENIMPA preset tersimpan dengan
+ * model itu, mis. kr opus → ag gemini).
+ * Model tersimpan yang valid (9router/) tapi tidak ada di daftar live TETAP
+ * ditawarkan (paling akhir, ditandai storedMissing) dan jadi `current` —
+ * Enter mempertahankannya, bukan menggantinya. Tersimpan tidak valid →
+ * current = models[0] (perilaku lama).
+ */
+export function modelOptionsForRole(models, stored) {
+  const live = Array.isArray(models) ? [...models] : [];
+  const keep = typeof stored === "string" && stored.startsWith("9router/");
+  const storedMissing = keep && !live.includes(stored);
+  if (storedMissing) live.push(stored);
+  return { options: live, current: keep ? stored : live[0], storedMissing };
+}
+
+/**
  * Retry panggilan RPC (v0.3.64).
  *
  * Plugin dimuat LAZY oleh engine: panggilan RPC pertama bisa datang

@@ -117,7 +117,19 @@ export function loadLiveModels(home = process.env.LUMI_HOME || path.join(os.home
   } catch { return null; }
 }
 
-export function validatePreset(preset, liveModels) {
+/**
+ * Validasi preset peran/model (v0.3.69: param ketiga `stored` opsional —
+ * preset yang SUDAH tersimpan; model tersimpan yang tidak ada di daftar
+ * live saat ini TIDAK ditolak, hanya diperingatkan ("dipertahankan") —
+ * daftar live bisa sesaat tidak memuat model yang sebenarnya ada (tunnel
+ * flaky / model diganti nama), dan menolaknya membuat preset TIDAK BISA
+ * disimpan sama sekali walau user hanya mempertahankan pilihannya (bug H2:
+ * dialog diam-diam memilih models[0], lalu save menolak model tersimpan).
+ * Model BARU (berbeda dari tersimpan) yang tidak ada di live TETAP ditolak
+ * — mencegah typo / model yang memang tidak ada. Tanpa `stored`, semua
+ * model di luar live ditolak seperti sebelumnya.
+ */
+export function validatePreset(preset, liveModels, stored) {
   const errors = [], warnings = [];
   if (!preset || typeof preset !== "object" || !preset.roles || typeof preset.roles !== "object")
     return { errors: ["preset tidak valid: butuh objek {roles:{...}}"], warnings };
@@ -131,10 +143,28 @@ export function validatePreset(preset, liveModels) {
     if (!ROLES.includes(role)) { errors.push(`peran tidak dikenal: '${role}' (yang ada: ${ROLES.join(", ")})`); continue; }
     const m = cfg?.model;
     if (typeof m !== "string" || !MODEL_RE.test(m)) { errors.push(`model peran '${role}' tidak valid: '${m}' (harus 9router/<id>)`); continue; }
-    if (liveModels && !liveModels.includes(m.replace(/^9router\//, ""))) errors.push(`model peran '${role}' tidak ada di daftar 9router live: '${m}'`);
+    if (liveModels && !liveModels.includes(m.replace(/^9router\//, ""))) {
+      if (stored?.roles?.[role]?.model === m) warnings.push(`model peran '${role}' tidak ada di daftar 9router live saat ini — dipertahankan karena sudah tersimpan: '${m}'`);
+      else errors.push(`model peran '${role}' tidak ada di daftar 9router live: '${m}'`);
+    }
   }
   if (!liveModels) warnings.push("daftar model 9router live tidak bisa dibaca (tidak ada providers.json / server tidak merespons) — hanya cek format 9router/");
   return { errors, warnings };
+}
+
+/** Model yang sedang diterapkan di file agent (sumber "tersimpan" untuk
+ * grandfathering di jalur CLI — di sana preset JSON di disk adalah preset
+ * BARU, jadi model lama dibaca dari baris `model:` file agent). */
+export function readAppliedModels(root = ".") {
+  const out = {};
+  for (const role of ROLES) {
+    try {
+      const t = fs.readFileSync(path.join(root, ".opencode", "agents", `${role}.md`), "utf8");
+      const m = t.match(/^model:\s*(\S+)\s*$/m);
+      if (m) out[role] = m[1];
+    } catch {}
+  }
+  return out;
 }
 
 /** Baris mode di orchestrator.md — saklar baca untuk orchestrator (v0.3.67).
@@ -178,8 +208,11 @@ export function syncOrchestratorMode({ root = ".", preset, check = false } = {})
  * sendiri bila baris mode orchestrator OFF). {disabled:true} — --check
  * tetap exit 0 bila tidak ada yang basi (validate tidak boleh gagal hanya
  * karena sistem dimatikan). */
-export function applyPreset({ root = ".", preset, liveModels = null, check = false } = {}) {
-  const { errors, warnings } = validatePreset(preset, liveModels);
+export function applyPreset({ root = ".", preset, liveModels = null, stored, check = false } = {}) {
+  // v0.3.69: tanpa `stored` eksplisit, model tersimpan dibaca dari file agent
+  // (jalur CLI — preset JSON di disk adalah preset baru).
+  const effectiveStored = stored ?? { roles: Object.fromEntries(Object.entries(readAppliedModels(root)).map(([r, m]) => [r, { model: m }])) };
+  const { errors, warnings } = validatePreset(preset, liveModels, effectiveStored);
   if (errors.length) return { changed: [], modeChanged: false, configChanged: false, warnings, errors };
   if (!isEnabled(preset)) {
     const m = syncOrchestratorMode({ root, preset, check });

@@ -120,17 +120,23 @@ export default Plugin.define({
       },
       savePreset: async (input, context) => {
         const preset = input.preset
-        const guard = canSavePreset(readPreset(root), preset)
+        // v0.3.69: `stored` = preset SEBELUM save — model tersimpan yang
+        // tidak ada di daftar live saat ini di-grandfather (peringatan,
+        // bukan error); tanpa ini dialog yang mempertahankan model tersimpan
+        // tetap gagal disimpan (bug H2 lanjutan, terbukti live: toast
+        // "Gagal menyimpan preset" untuk model tersimpan).
+        const stored = readPreset(root)
+        const guard = canSavePreset(stored, preset)
         if (!guard.ok) {
           return context.error("invalid_preset", guard.reason, { errors: [guard.reason] })
         }
         const live = loadLiveModels()
-        const { errors, warnings } = validatePreset(preset, live)
+        const { errors, warnings } = validatePreset(preset, live, stored)
         if (errors.length) {
           return context.error("invalid_preset", errors.join("; "), { errors })
         }
         fs.writeFileSync(presetPath(root), JSON.stringify(preset, null, 2) + "\n")
-        const applied = applyPreset({ root, preset, liveModels: live })
+        const applied = applyPreset({ root, preset, liveModels: live, stored })
         if (applied.errors.length) {
           return context.error("invalid_preset", applied.errors.join("; "), { errors: applied.errors })
         }
