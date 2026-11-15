@@ -1,4 +1,5 @@
 // Swanwright v0.1.6 — konfigurasi native OpenCode V2 (diuji v2.2.4). Model hanya via 9router.
+// "model" di bawah = DEFAULT_MODEL; sumber tunggal: lumitome/lib/default-model.mjs — ubah di sana, samakan di sini (v0.3.71, A3).
 // Skema: https://opencode.ai/config.json · MCP: https://opencode.ai/v2/docs/mcp-servers/
 // Rahasia HANYA via {env:NAME}. Tidak ada token di file ini. Lihat docs/MCP.md.
 // MCP deny-by-default (`*_*`), tiap agent sektor meng-allow servernya sendiri (scripts/gen-policy.mjs).
@@ -72,9 +73,11 @@
       "effect": "deny"
     },
     {
+      // v0.3.71 scope B: external_directory ask → allow (seperti OpenCode biasa;
+      // aturan eksplisit sesudah wildcard yang menang — tanpanya `*_*` deny menelannya).
       "action": "external_directory",
       "resource": "*",
-      "effect": "ask"
+      "effect": "allow"
     }
   ],
   "mcp": {

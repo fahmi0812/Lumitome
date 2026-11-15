@@ -1,6 +1,10 @@
 // flow.mjs — logika murni (tanpa I/O) untuk popup /subagent (v0.3.63).
 // Dipakai TUI plugin (Bun) dan tes Node — JANGAN impor node:fs di sini
 // (path ada di paths.mjs, dipakai bagian server saja).
+// v0.3.71 (A3): DEFAULT_MODEL satu sumber di lumitome/lib/default-model.mjs.
+import { DEFAULT_MODEL } from "../../../lib/default-model.mjs";
+
+export { DEFAULT_MODEL };
 export const ROLES = ["thinking", "search", "builder", "reviewer"];
 
 export const ROLE_LABELS = {
@@ -23,8 +27,6 @@ export const ROLE_DESC = {
   builder: "Pelaksana — implementasi per tiket + tes",
   reviewer: "Pemeriksa — verifikasi kerja Build sebelum DONE",
 };
-
-export const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
 
 /** Perintah yang dikenali plugin dari argumen sesudah `/subagent`. */
 export const COMMANDS = ["off", "on", "status", "tabel", "table", "pilih"];

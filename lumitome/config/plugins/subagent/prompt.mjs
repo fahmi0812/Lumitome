@@ -38,7 +38,7 @@
 // dinamis (mode + urutan + model Thinking + tugas); aturan statisnya
 // dibaca sesi BARU dari file. Toast sesudah simpan tetap menyebut
 // "Model peran berlaku mulai sesi TUI berikutnya."
-import { activeRoles } from "./flow.mjs";
+import { activeRoles, DEFAULT_MODEL } from "./flow.mjs";
 
 /**
  * Pemberitahuan singkat mode /subagent (maks 2 baris).
@@ -47,7 +47,7 @@ import { activeRoles } from "./flow.mjs";
  */
 export function buildSubagentNotice(preset, task) {
   const order = activeRoles(preset).join(" → ");
-  const thinking = preset?.roles?.thinking?.model ?? "9router/ag/gemini-3.8-flash-high";
+  const thinking = preset?.roles?.thinking?.model ?? DEFAULT_MODEL;
   const first = `Mode subagent aktif: ${preset?.mode === "paralel" ? "paralel" : "serial"} · ${order} · Thinking: ${thinking}.`;
   const second = task
     ? `Tugas: ${task}`

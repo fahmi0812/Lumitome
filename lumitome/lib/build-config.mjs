@@ -85,7 +85,10 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
       { action: "read", resource: "*.env", effect: "deny" }, { action: "read", resource: "*.env.*", effect: "deny" },
       { action: "read", resource: "*.env.example", effect: "allow" }, { action: "read", resource: "*secrets.env", effect: "deny" },
       { action: "read", resource: "*id_rsa*", effect: "deny" }, { action: "read", resource: "*/.ssh/*", effect: "deny" },
-      { action: "external_directory", resource: "*", effect: "ask" },
+      // v0.3.71 scope B: external_directory ask → allow (seperti OpenCode biasa;
+      // default upstream = allow). Aturan eksplisit HARUS ada — tanpanya wildcard
+      // `*_*` deny di frontmatter agent menelan external_directory (terbukti live 0371).
+      { action: "external_directory", resource: "*", effect: "allow" },
     ],
   };
   // provider custom → config final (key hanya via env {env:LUMI_KEY_*}); timeout berlaku untuk semua provider

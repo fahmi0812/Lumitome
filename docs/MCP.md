@@ -3,7 +3,7 @@
 Sumber pemetaan: `router/mcp-sectors.json` → `scripts/gen-policy.mjs` → frontmatter `permissions` agent.
 Aturan OpenCode v2 (https://opencode.ai/v2/docs/permissions/ , /v2/docs/mcp-servers/): aksi MCP = nama tool ternormalisasi `<server>_<tool>`, aturan **terakhir yang cocok menang**, agent rules ditambahkan setelah global.
 
-Pola tiap agent: `{"action":"*_*","effect":"deny"}` → `external_directory: ask` (dipulihkan karena ikut tertangkap `*_*`) → `allow <server>_*` untuk server sektor itu → `ask` untuk tool tulis/destruktif.
+Pola tiap agent: `{"action":"*_*","effect":"deny"}` → `allow <server>_*` untuk server sektor itu → `ask` untuk tool tulis/destruktif. (v0.3.71: `external_directory: ask` → `allow` — baca/tulis seperti OpenCode biasa; aturan eksplisit ini HARUS ada sesudah `*_*` deny, tanpanya wildcard menelan external_directory.)
 
 | Server | Jenis | Default | Pin | Sektor | Catatan |
 |---|---|---|---|---|---|

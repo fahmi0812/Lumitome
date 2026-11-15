@@ -15,12 +15,13 @@ import path from "node:path";
 import os from "node:os";
 import crypto from "node:crypto";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { DEFAULT_MODEL } from "../lib/default-model.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
 const REPO = path.resolve(ROOT, "..");                 // repo Swanwright
 const VERSION = fs.readFileSync(path.join(REPO, "VERSION"), "utf8").trim(); // single-source: jangan hardcode (bump via scripts/bump-version.mjs)
-const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
+// DEFAULT_MODEL: satu sumber — lumitome/lib/default-model.mjs (v0.3.71, A3).
 const env = { ...process.env };
 const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process.exit(code); };
 
@@ -54,7 +55,7 @@ if (sub === "trust") {
   const targs = argv.slice(1);
   const showScope = () => {
     const s = G.buildSandboxScope(cwd, { home, lumiHome: ISO_HOME, env });
-    console.log(`proyek: ${s.root}\ntier: ${s.tier}\nsumber tier: ${s.tierSource === "env" ? "env LUMI_TRUST_TIER (bukan file trust)" : s.tierSource === "file" ? "file trust" : "default"}\ntulis: ${s.write.join(", ")}\nsandbox: ${s.tier === "strict" ? "bwrap (wajib; gagal bila bubblewrap tidak ada)" : "off (guard saja)"}\nssh: ${s.tier === "trusted" ? "bebas (tier trusted)" : "hanya -i kunci deploy (~/.lumitome/<nama>)"}\ntrust file: ${s.trustFile}`);
+    console.log(`proyek: ${s.root}\ntier: ${s.tier}\nsumber tier: ${s.tierSource === "env" ? "env LUMI_TRUST_TIER (bukan file trust)" : s.tierSource === "file" ? "file trust" : "default"}\ntulis: ${s.write.join(", ")}\nsandbox: off (default sejak v0.3.71 — hanya bila LUMI_SANDBOX=bwrap)\nssh: ${s.tier === "trusted" ? "bebas (tier trusted)" : "hanya -i kunci deploy (~/.lumitome/<nama>)"}\ntrust file: ${s.trustFile}`);
   };
   // --deploy-key [nama]: buat keypair ed25519 khusus deploy di LUMI_HOME (bukan ~/.ssh, bukan id_*)
   if (targs.includes("--deploy-key")) {
@@ -207,14 +208,42 @@ const MODEL = chooseModel();
 // → diam, pakai MODEL lama.
 let TUI_MODEL = MODEL;
 if (sub !== "run" && !env.LUMI_MODEL) {
+  // v0.3.71 (A1+A2): preset dari file user $LUMI_HOME (migrasi dari seed
+  // repo bila belum ada); keputusan Thinking-vs-default SATU tempat
+  // (resolveSessionDefault di scripts/apply-subagent-preset.mjs, dipakai
+  // juga `lumitome subagent-preset status`). Gagal memakai Thinking yang
+  // diminta user → BERSUARA di LUMI_DEBUG (diam-diam jatuh ke gemini =
+  // akar bug ini); tanpa preset / bila Thinking memang gemini → diam.
   try {
-    const F = await import(pathToFileURL(path.join(ROOT, "config", "plugins", "subagent", "flow.mjs")).href);
-    const preset = JSON.parse(fs.readFileSync(path.join(REPO, ".opencode", "lumitome-subagent.json"), "utf8"));
-    if (preset?.enabled !== false) {
-      const t = F.thinkingSessionModel(preset);
-      if (t && FRAG.providers["9router"]?.models?.[t.slice("9router/".length)]) TUI_MODEL = t;
+    const SP = await import(pathToFileURL(path.join(ROOT, "lib", "subagent-preset.mjs")).href);
+    const ASP = await import(pathToFileURL(path.join(REPO, "scripts", "apply-subagent-preset.mjs")).href);
+    const loaded = SP.loadPreset({ home: ISO_HOME, root: REPO });
+    const d = ASP.resolveSessionDefault(loaded.preset, ASP.loadLiveModels(ISO_HOME));
+    if (d.model !== DEFAULT_MODEL) TUI_MODEL = d.model;
+    // v0.3.71 (A4): sinkronkan file agent peran dari preset user SEBELUM
+    // engine start — engine memuat definisi agent saat startup dan TIDAK
+    // membaca ulang sesudah popup save (terbukti live 0371: popup save
+    // menulis opus ke disk 16:56, sesi anak sesudahnya tetap gemini-high).
+    // Tanpa ini A1 hanya memperbaiki sesi utama; sesi anak memakai model
+    // seed dari file agent. liveModels: null = validasi format saja —
+    // preset sudah divalidasi saat save, dan cache live yang basi tidak
+    // boleh menggagalkan sinkronisasi (itu kelas bug yang sama). Diam
+    // kecuali LUMI_DEBUG; gagal sinkron tidak menggagalkan launch.
+    if (loaded.preset) {
+      try {
+        const r = ASP.applyPreset({ root: REPO, preset: loaded.preset, liveModels: null });
+        if (env.LUMI_DEBUG && r.changed.length) process.stderr.write(`lumitome: sinkron file agent /subagent: ${r.changed.join(", ")}\n`);
+        if (env.LUMI_DEBUG && r.errors.length) process.stderr.write(`lumitome: sinkron file agent gagal: ${r.errors.join("; ")}\n`);
+      } catch (e) {
+        if (env.LUMI_DEBUG) process.stderr.write(`lumitome: sinkron file agent gagal (${e.message})\n`);
+      }
     }
-  } catch {}
+    if (env.LUMI_DEBUG && d.model === DEFAULT_MODEL && d.thinking && d.thinking !== DEFAULT_MODEL) {
+      process.stderr.write(`lumitome: model default sesi TUI jatuh ke default terpin (${DEFAULT_MODEL}) — ${d.reason} (preset: ${loaded.source ?? "tidak ada"})\n`);
+    }
+  } catch (e) {
+    if (env.LUMI_DEBUG) process.stderr.write(`lumitome: preset /subagent tidak bisa dimuat (${e.message}) — sesi TUI memakai default terpin\n`);
+  }
 }
 if (!HAS_PROVIDER) {
   if (sub === "run") die(2, "belum ada provider. Tambah: `lumitome connect` (Custom OpenAI/Anthropic-compatible) atau export NINEROUTER_API_KEY");
@@ -311,8 +340,8 @@ try { fs.chmodSync(path.join(CFG_DIR, "service.json"), 0o600); } catch {}
 if (TRUST) process.stderr.write("lumitome: PERINGATAN — LUMI_TRUST_PROJECT=1: config, plugin, agent & MCP proyek di workspace ini DIMUAT dan dapat menjalankan kode. Pakai hanya untuk repo tepercaya.\n");
 // P1-2 (2): tier dari env (bukan file trust) — peringatan persisten + jurnal.
 // Dicetak untuk TUI/run; plugin juga mencatatnya saat engine jalan, tapi baris
-// wrapper ini yang ada walau engine gagal start. LUMI_SANDBOX=off yang menurunkan
-// tier strict (kehilangan bwrap) ikut diperingatkan + dicatat.
+// wrapper ini yang ada walau engine gagal start. (v0.3.71: peringatan
+// "sandbox-downgraded" DIHAPUS — sandbox off kini default, bukan penurunan.)
 if (sub === "" || sub === "run") {
   try {
     const G = await import(pathToFileURL(path.join(REPO, "harness", "lumi-guard.mjs")).href);
@@ -320,10 +349,6 @@ if (sub === "" || sub === "run") {
     if (td.source === "env") {
       process.stderr.write(`lumitome: PERINGATAN — tier sandbox '${td.tier}' berasal dari env LUMI_TRUST_TIER, bukan file trust (~/.lumitome/trust.json). Periksa dengan: lumitome trust\n`);
       jotTrust({ kind: "tier-env", runId: RUN_ID, tier: td.tier, source: "env", workspace: WS, reason: "tier dari env LUMI_TRUST_TIER, bukan file trust (~/.lumitome/trust.json)" });
-    }
-    if ((env.LUMI_SANDBOX || "") === "off" && td.tier === "strict") {
-      process.stderr.write("lumitome: PERINGATAN — LUMI_SANDBOX=off menurunkan tier strict (kehilangan bwrap).\n");
-      jotTrust({ kind: "sandbox-downgraded", runId: RUN_ID, tier: td.tier, sandbox: "off", workspace: WS, reason: "LUMI_SANDBOX=off menurunkan tier strict (kehilangan bwrap)" });
     }
   } catch {}
 }
@@ -341,7 +366,7 @@ if ((sub === "" || sub === "run") && process.stderr.isTTY && env.LUMI_VERBOSE ==
   try {
     const G = await import(pathToFileURL(path.join(REPO, "harness", "lumi-guard.mjs")).href);
     const s = G.buildSandboxScope(WS, { home: os.homedir(), lumiHome: ISO_HOME, env });
-    process.stderr.write(`lumitome: sandbox ${s.tier} · tulis: ${s.write.join(", ")} · ${s.tier === "strict" ? "bwrap" : "guard saja"}\n`);
+    process.stderr.write(`lumitome: tier ${s.tier} · tulis: ${s.write.join(", ")} · sandbox off (opt-in: LUMI_SANDBOX=bwrap)\n`);
   } catch {}
 }
 

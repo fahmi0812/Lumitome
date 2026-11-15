@@ -334,6 +334,25 @@ import { frontmatter } from "../router/parse.mjs";
   fs.rmSync(home39, { recursive: true, force: true });
   const UPD = fs.readFileSync("lumitome/lib/update.mjs", "utf8");
   ok("update: setelah pasang → migrasi config + stop service LUMI_HOME; engine tidak disentuh", /migrateConfigFile/.test(UPD) && /S\.stop\(home\)/.test(UPD) && !/bin[\\/"', ]+opencode/.test(UPD.replace(/^\s*\*.*$/gm, "")));
+  // v0.3.71 (A1b): update mode npm mengganti SELURUH direktori paket —
+  // preset repo lama harus selamat ke file user (bukan ikut terhapus).
+  {
+    const home71 = fs.mkdtempSync(path.join(osm.tmpdir(), "lumiupd71-"));
+    const repo71 = path.join(home71, "src"); fs.mkdirSync(path.join(repo71, ".opencode"), { recursive: true });
+    const custom = { enabled: true, mode: "serial", roles: {
+      thinking: { active: true, model: "9router/kr/claude-opus-5.5", tier: "terkuat" },
+      search: { active: true, model: "9router/ag/gemini-3.8-flash", tier: "cepat-murah" },
+      builder: { active: true, model: "9router/kr/claude-sonnet-5.5", tier: "menengah-kuat" },
+      reviewer: { active: true, model: "9router/kr/claude-opus-5.5", tier: "terkuat" } } };
+    fs.writeFileSync(path.join(repo71, ".opencode", "lumitome-subagent.json"), JSON.stringify(custom, null, 2) + "\n");
+    const o71 = sink();
+    const r71 = await U.update({ argv: ["--yes"], version: "0.3.70", repo: repo71, home: home71, env: { LUMI_INSTALL: "npm" }, out: o71,
+      tagsImpl: async () => [{ tag: "v0.3.71", sha: "b" }],
+      runImpl: async (cmd, args, o) => { o.log(`$ ${cmd} ${args.join(" ")}`); return ""; } });
+    ok("update npm-mode v0.3.71 (A1b): preset repo lama selamat ke file user",
+      r71 === 0 && JSON.parse(fs.readFileSync(path.join(home71, "lumitome-subagent.json"), "utf8")).roles.thinking.model === "9router/kr/claude-opus-5.5");
+    fs.rmSync(home71, { recursive: true, force: true });
+  }
   fs.rmSync(home, { recursive: true, force: true });
 }
 
