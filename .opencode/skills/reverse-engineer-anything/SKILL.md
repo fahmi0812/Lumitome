@@ -4,7 +4,7 @@ description: Reverse engineer native, managed, Electron/JavaScript, packaged, fi
 metadata:
   version: "62"
   swanwright_src: morluto/rea
-  swanwright_sha: 5cddc69c51a0fb18d021417199046314581ba9c2
+  swanwright_sha: da53dce1f729d33abe0d269061412af7662f2a09
 ---
 
 # REA
@@ -365,7 +365,7 @@ explicit path or endpoint and do not need it.
   `CONFIG_IKCONFIG`. Non-gzip payloads are unsupported; decompress externally,
   then inspect the result. See the
   [kernel build config guide](https://github.com/morluto/rea/blob/main/docs/guides/native/kernel-build-config.md).
-- CPython 3.7–3.13 `.pyc` header, nested marshal code objects and bytecode
+- CPython 3.7–3.15 `.pyc` header, nested marshal code objects and bytecode
   identity: `inspect_python_pyc` with the explicit local file. This built-in
   target-free inspection requires no Python installation. Preserve magic,
   PEP 552 hash or mtime/size, nested names, and bytecode SHA-256. Bytecode is

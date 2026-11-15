@@ -22,6 +22,9 @@ permissions:
   - { action: "stitch_apply_*", resource: "*", effect: ask }
   - { action: "stitch_create_design_system*", resource: "*", effect: ask }
   - { action: "stitch_update_design_system", resource: "*", effect: ask }
+  - { action: "blender_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "blender", effect: allow }
+  - { action: "blender_execute_blender_code", resource: "*", effect: ask }
   - { action: "gw-media_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "gw-media", effect: allow }
   - { action: "skills_media_*", resource: "*", effect: allow }
@@ -167,6 +170,7 @@ permissions:
   - { action: "skill", resource: "reverse-any-video", effect: allow }
   - { action: "skill", resource: "review-loop", effect: allow }
   - { action: "skill", resource: "rigging", effect: allow }
+  - { action: "skill", resource: "scan-to-threejs", effect: allow }
   - { action: "skill", resource: "scene-assembly", effect: allow }
   - { action: "skill", resource: "sci-fi-punk-worlds", effect: allow }
   - { action: "skill", resource: "sculpting", effect: allow }

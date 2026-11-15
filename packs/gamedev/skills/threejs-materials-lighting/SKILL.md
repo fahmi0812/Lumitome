@@ -39,7 +39,8 @@ GLSL/`ShaderMaterial` is its own topic; for the portable concept see
    fit the light's shadow camera to the scene.
 5. **Use an environment map for grounded reflections.** Assign an equirectangular or
    PMREM-processed texture to `scene.environment`; PBR materials pick it up
-   automatically.
+   automatically. Tekstur PBR + HDRI gratis (lisensi CC0) untuk envMap dan peta
+   material: ambientcg.com.
 6. **Verify under real lighting** — confirm the surface responds to the key light
    (highlights move), shadows land where expected, and reflections look plausible.
 

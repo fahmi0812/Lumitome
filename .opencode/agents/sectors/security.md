@@ -16,14 +16,40 @@ permissions:
   - { action: "skills_security_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "skills", effect: allow }
   - { action: "skill", resource: "*", effect: deny }
+  - { action: "skill", resource: "audit-context-building", effect: allow }
+  - { action: "skill", resource: "bb-methodology", effect: allow }
+  - { action: "skill", resource: "c-review", effect: allow }
   - { action: "skill", resource: "code-audit", effect: allow }
+  - { action: "skill", resource: "cvss-scoring", effect: allow }
+  - { action: "skill", resource: "differential-review", effect: allow }
+  - { action: "skill", resource: "evidence-hygiene", effect: allow }
+  - { action: "skill", resource: "fp-check", effect: allow }
   - { action: "skill", resource: "full-audit-keamanan", effect: allow }
+  - { action: "skill", resource: "hunt-auth-bypass", effect: allow }
+  - { action: "skill", resource: "hunt-csrf", effect: allow }
+  - { action: "skill", resource: "hunt-deserialization", effect: allow }
+  - { action: "skill", resource: "hunt-graphql", effect: allow }
+  - { action: "skill", resource: "hunt-idor", effect: allow }
+  - { action: "skill", resource: "hunt-jwt-crypto", effect: allow }
+  - { action: "skill", resource: "hunt-lfi", effect: allow }
+  - { action: "skill", resource: "hunt-llm-ai", effect: allow }
+  - { action: "skill", resource: "hunt-oauth", effect: allow }
+  - { action: "skill", resource: "hunt-rce", effect: allow }
+  - { action: "skill", resource: "hunt-session", effect: allow }
+  - { action: "skill", resource: "hunt-sqli", effect: allow }
+  - { action: "skill", resource: "hunt-ssrf", effect: allow }
+  - { action: "skill", resource: "hunt-ssti", effect: allow }
+  - { action: "skill", resource: "hunt-xss", effect: allow }
+  - { action: "skill", resource: "hunt-xxe", effect: allow }
+  - { action: "skill", resource: "owasp-security", effect: allow }
   - { action: "skill", resource: "rea-analysis-optimization", effect: allow }
   - { action: "skill", resource: "rea-changelog-update", effect: allow }
   - { action: "skill", resource: "rea-ci-tests-audit", effect: allow }
   - { action: "skill", resource: "rea-tool-design", effect: allow }
+  - { action: "skill", resource: "redteam-mindset", effect: allow }
   - { action: "skill", resource: "reverse-engineer-anything", effect: allow }
   - { action: "skill", resource: "security-audit", effect: allow }
+  - { action: "skill", resource: "triage-validation", effect: allow }
   - { action: "skill", resource: "*offensive*", effect: ask }
 ---
 

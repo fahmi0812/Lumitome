@@ -87,7 +87,9 @@ Aturan audit:
   gambar — konfirmasi pengguna]`.
 - Ganti tipografi bawaan yang generik: hasil yang memakai font default
   terlihat seperti AI-slop. Pilih pasangan font yang punya karakter
-  (delegasi ke `design-taste-frontend` bila perlu).
+  (delegasi ke `design-taste-frontend` bila perlu). Font gratis berkualitas
+  (Satoshi, Clash Display, General Sans — gratis untuk pemakaian komersial):
+  fontshare.com.
 - Sebutkan inkonsistensi yang terlihat (mis. dua ukuran tombol berbeda
   untuk fungsi yang sama) dan usulkan satu token untuk masing-masing.
 - Simpan artefak di folder kerja pengguna (mis. `design/design.md`,

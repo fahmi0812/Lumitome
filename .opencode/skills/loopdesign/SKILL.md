@@ -78,6 +78,13 @@ radius, motion) ada di `references/unslop-tokens.md` — **titik awal,
 BUKAN house style dan BUKAN aturan gate**; arah yang menggerakkan nilai,
 bukan kebiasaan.
 
+**Referensi desain (tautan, bukan aturan):** font gratis berkualitas untuk
+Tipografi di atas — **fontshare.com** (Satoshi, Clash Display, General Sans,
+gratis untuk pemakaian komersial) — jangan pakai font default generik.
+Bank referensi arah + golden — **prettysites.io** (49 desain website high-end,
+masing-masing dengan prompt lengkap): tiru struktur/layout/animasi yang cocok
+dengan arah, bukan jiplak mentah.
+
 `DESIGN.md` adalah source of truth: **Maker hanya memakai token deklarasi
 di CSS — tidak ada raw hex di luar DESIGN.md.** Warna di luar token =
 finding `token-fidelity` di gate (fail) — finding-nya menyebut nama

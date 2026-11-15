@@ -10,14 +10,16 @@
  * 17715 tok): coding 6580, security 145, riset 104,
  * penulisan 4148, media 4033, finance 97, misc 2559. Cap = terukur x1,25,
  * dibulatkan ke atas ke kelipatan 100 (minimum 200 untuk seksi kecil).
- * Total = jumlah cap seksi (22400). Bila seksi tumbuh melewati cap,
+ * v0.3.60: security terukur 783 (+26 skill keamanan: owasp, BugHunter 20,
+ * trailofbits 5) → cap security 200 → 1000 (783 x1,25 ≈ 979 → 1000).
+ * Total = jumlah cap seksi (23200). Bila seksi tumbuh melewati cap,
  * naikkan cap DI SINI secara sadar — jangan ubah asersi di suite/validate.
  * Desain: satu file indeks, asersi per seksi (bukan satu file per sektor) —
  * diff terkecil: generator, --check, dan konsumen sudah berbentuk satu file.
  */
-export const INDEX_SECTION_BUDGETS = { coding: 8300, security: 200, riset: 200, penulisan: 5200, media: 5100, finance: 200, misc: 3200 };
+export const INDEX_SECTION_BUDGETS = { coding: 8300, security: 1000, riset: 200, penulisan: 5200, media: 5100, finance: 200, misc: 3200 };
 export const INDEX_DEFAULT_SECTION_BUDGET = 1000;
-export const INDEX_TOTAL_BUDGET = 22400;
+export const INDEX_TOTAL_BUDGET = 23200;
 
 /** Token per seksi (len/4) + total dari teks router/skills-index.md. */
 export function indexSectionTokens(text) {

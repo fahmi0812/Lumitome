@@ -3,7 +3,7 @@ name: rea-ci-tests-audit
 description: Audit REA CI and test suites for correctness, fixture drift, false passes, and measured performance; use for suite or workflow investigations and efficiency changes, rather than ordinary feature testing or a single test failure.
 metadata:
   swanwright_src: morluto/rea
-  swanwright_sha: 5cddc69c51a0fb18d021417199046314581ba9c2
+  swanwright_sha: da53dce1f729d33abe0d269061412af7662f2a09
   swanwright_original_id: morluto-rea__rea-ci-tests-audit
 ---
 
@@ -101,7 +101,10 @@ Run the repository's applicable checks and inspect complete current-head CI
 results before an authorized merge. Preserve required coverage and discovery
 gates. Do not suppress a failure, add blanket retries, raise timeouts, or delete
 distinct assertions solely to make CI green. Changes to these controls need
-their own demonstrated reason and retained failure detection.
+their own demonstrated reason and retained failure detection. A slow-host
+failure at a literal test, child, or wait deadline belongs to the
+[test deadline policy](../../../docs/development/testing.md#developer-commands):
+remove the literal rather than raise it, and keep promptness oracles explicit.
 
 Report each confirmed issue with exact revision, reproduction, consequence,
 proposed correction, and validation limits. Report performance with workload

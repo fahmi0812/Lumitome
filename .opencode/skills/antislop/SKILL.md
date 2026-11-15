@@ -6,7 +6,7 @@ license: MIT
 metadata:
   swanwright_sector: coding
   swanwright_src: miqdadbadjuber/anti-slop
-  swanwright_sha: 54e39872aeba6a699b40f6a68f51307c3eea2901
+  swanwright_sha: 35b54dc660aa7d11428ee62c5788ad36bc18ac3c
   swanwright_original_id: miqdadbadjuber-anti-slop__antislop
   swanwright_original_name: antislop
 ---

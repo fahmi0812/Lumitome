@@ -3,7 +3,7 @@ name: rea-tool-design
 description: Audit, investigate, design, or change REA investigation tools, CLI/MCP contracts, provider capabilities, and Evidence semantics.
 metadata:
   swanwright_src: morluto/rea
-  swanwright_sha: 5cddc69c51a0fb18d021417199046314581ba9c2
+  swanwright_sha: da53dce1f729d33abe0d269061412af7662f2a09
   swanwright_original_id: morluto-rea__rea-tool-design
 ---
 
