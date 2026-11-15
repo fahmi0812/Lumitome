@@ -22,6 +22,16 @@
 // urutan + model Thinking + tugas (bila ada). Tanpa kata "Protokol
 // BLOCKED", tanpa format laporan, tanpa penjelasan batasan.
 //
+// v0.3.68: pemberitahuan ini HANYA dikirim ke sesi yang SUDAH BERJALAN
+// sebelum save (tui.tsx: sendSubagentNotice dari jalur "Simpan saja" dan
+// dari enterSubagentMode bila sesi sudah ada). Sesi BARU (dibuat lewat
+// "Ya, mulai") TIDAK menerima pemberitahuan ini — ia membaca konfigurasi
+// dari blok "Konfigurasi aktif" di .opencode/rules/subagent.md (mapping
+// peran→model + urutan + mode, ditulis otomatis saat preset disimpan oleh
+// scripts/apply-subagent-preset.mjs). Alasannya: pemberitahuan ke sesi baru
+// terasa seperti prompt injection (Fahmi 17:20 WIB), padahal sesi baru
+// sudah memuat aturan dari file.
+//
 // Batasan jujur: sesi yang sudah BERJALAN sebelum upgrade tidak memuat
 // aturan baru dari orchestrator.md sampai TUI di-restart (file agent
 // dimuat saat TUI dimulai). Pemberitahuan singkat hanya membawa delta

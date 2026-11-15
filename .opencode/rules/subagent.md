@@ -11,3 +11,12 @@ Berlaku HANYA bila `.opencode/agents/orchestrator.md` menyebut
 - Review dua sumbu: panggil reviewer 2× paralel — (a) Standards (lint/aturan repo), (b) Spec (kesetiaan terhadap acceptance). Temuan critical → kembali ke builder (maks 3 iterasi gagal → anti-spin), lalu review ulang.
 - Protokol BLOCKED (satu pintu tanya): worker yang mentok MELAPOR ke orchestrator (`BLOCKED: butuh X, sudah mencoba Y, bukti Z`) — TIDAK BOLEH bertanya langsung ke user. Orchestrator men-triase berurutan: (1) jawab HANYA bila jawabannya sudah ada sebagai FACT di konteks → delegasi ulang dengan info lebih lengkap (bila tidak ada FACT-nya, JANGAN menebak — lanjut ke langkah 2); (2) minta Thinking memperjelas spec (re-planning); (3) SATU pertanyaan gabungan ke user (bila ada beberapa blocker, gabung); (4) 3 iterasi gagal → berhenti, laporkan premis yang diserang, tanya Fahmi. Thinking yang butuh klarifikasi menulis di bagian TANYA laporannya — orchestrator yang menanyakan ke user, bukan Thinking sendiri.
 - Peran TIDAK BOLEH mendelegasikan lagi (depth 1; permission subagent deny di file agent peran).
+
+<!-- KONFIG-SUBAGENT -->
+Konfigurasi aktif (ditulis otomatis saat preset disimpan — jangan edit manual):
+- Mode: serial. Urutan: thinking → search → builder → reviewer.
+- Thinking: 9router/ag/gemini-3.8-flash-high
+- Search: 9router/ag/gemini-3.8-flash-high
+- Builder: 9router/ag/gemini-3.8-flash-high
+- Reviewer: 9router/ag/gemini-3.8-flash-high
+<!-- /KONFIG-SUBAGENT -->

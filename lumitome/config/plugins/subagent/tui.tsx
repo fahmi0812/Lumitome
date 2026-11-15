@@ -21,10 +21,15 @@
 //   Sesudah simpan, MODEL SESI langsung beralih ke model peran Thinking
 //   (session.switchModel — mekanisme yang sama dipakai /models; terverifikasi
 //   ke sumber opencode v2.3.0 + v2.2.4), lalu pemberitahuan SINGKAT dikirim
-//   ke sesi lewat session.prompt (fire-and-forget). Aturan lengkap TIDAK
-//   lagi di-inject sebagai prompt raksasa (v0.3.67 — Fahmi menilai aneh):
-//   aturan statis tinggal di file agent (orchestrator.md + file peran),
-//   ke sesi hanya mode + urutan + model Thinking + tugas (maks 2 baris).
+//   ke sesi lewat session.prompt (fire-and-forget) — TAPI sejak v0.3.68
+//   HANYA bila sesi sudah berjalan sebelum save. Sesi BARU (dibuat lewat
+//   "Ya, mulai") tidak menerima notice: ia membaca konfigurasi dari blok
+//   di .opencode/rules/subagent.md (mapping peran→model + urutan + mode,
+//   disinkronkan saat save) — tanpa kesan prompt injection.
+//   Aturan lengkap TIDAK di-inject sebagai prompt raksasa (v0.3.67 — Fahmi
+//   menilai aneh): aturan statis tinggal di file agent (orchestrator.md +
+//   file peran + rules/subagent.md); ke sesi lama hanya mode + urutan +
+//   model Thinking + tugas (maks 2 baris).
 //   Model PERAN berlaku mulai sesi TUI berikutnya — jujur di toast.
 //   Bila belum ada sesi saat menyimpan (home screen), sesi baru yang dibuat
 //   sesudah itu otomatis dialihkan ke Thinking oleh server plugin
@@ -116,8 +121,14 @@ async function sendSubagentNotice(context, preset, task, sessionIDOverride) {
 
 /**
  * Masuk mode subagent SEKARANG (v0.3.66 — pilihan akhir sesudah simpan):
- * sesi (baru atau yang aktif) langsung pakai model Thinking + pemberitahuan
- * singkat dikirim — user tidak perlu ketik pesan dulu atau restart TUI.
+ * sesi (baru atau yang aktif) langsung pakai model Thinking — user tidak
+ * perlu ketik pesan dulu atau restart TUI.
+ * v0.3.68: pemberitahuan singkat HANYA dikirim bila sesi SUDAH BERJALAN
+ * sebelum save (sesi lama butuh diberi tahu karena tidak memuat file agent
+ * baru). Sesi BARU yang dibuat di sini TIDAK menerima notice sama sekali —
+ * ia memuat konfigurasi (mapping peran→model + urutan + mode) dari blok
+ * di .opencode/rules/subagent.md — bersih, tanpa kesan prompt injection
+ * (keluhan Fahmi 17:20 WIB).
  * Bila belum ada sesi: sesi baru DIBUKA di sini (client.session.create
  * dengan model Thinking) lalu TUI diarahkan ke sesi itu (router.navigate);
  * watcher server plugin melewatinya (model awal sudah Thinking, bukan
@@ -130,6 +141,7 @@ async function enterSubagentMode(context, preset, task) {
   const parts = splitModelId(full)
   if (!parts) return "Model sesi tidak diubah (model Thinking tidak valid)."
   let sessionID = currentSessionID(context)
+  const preExisting = sessionID !== undefined
   if (sessionID) {
     try {
       await context.client.session.switchModel({ sessionID, model: { providerID: parts.providerID, id: parts.id } })
@@ -148,7 +160,9 @@ async function enterSubagentMode(context, preset, task) {
       return `Sesi baru gagal dibuat (${String(e?.message ?? e)}) — konfigurasi tersimpan; buka sesi baru manual.`
     }
   }
-  await sendSubagentNotice(context, preset, task, sessionID)
+  if (preExisting) {
+    await sendSubagentNotice(context, preset, task, sessionID)
+  }
   return `Sesi memakai ${full} (Thinking).`
 }
 
@@ -183,7 +197,12 @@ async function saveAndDelegate(context, rpc, next, task) {
     "Subagent disimpan",
     `${summarizePreset(next)} — ${switched.note} Model peran berlaku mulai sesi TUI berikutnya.${warn}`,
   )
-  await sendSubagentNotice(context, next, task)
+  // v0.3.68: tanpa sesi, sendSubagentNotice hanya menampilkan toast
+  // "Tidak ada sesi aktif" — toast itu menimpa "Subagent disimpan" sebelum
+  // sempat dirender (durasi 9 detik, satu toast tampil). Lewati bila tidak
+  // ada sesi: tidak ada yang dikirimi notice; info "tidak ada sesi aktif"
+  // sudah ada di badan toast di atas (switched.note).
+  if (currentSessionID(context)) await sendSubagentNotice(context, next, task)
 }
 
 /** Model per peran yang aman dipakai (model tersimpan yang bukan 9router → fallback terpin). */

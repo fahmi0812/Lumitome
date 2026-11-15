@@ -939,4 +939,140 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     /short confirmation/.test(fm("README.md")) && /orchestrator\.md/.test(fm("README.md")));
 }
 
+// (v0.3.68) /subagent — notice hanya untuk sesi lama, sesi baru bersih.
+// Keluhan Fahmi (17:20 WIB): notice 2 baris v0.3.67 ("Mode subagent aktif:
+// ... Aturan lengkap di .opencode/rules/subagent.md — beri tugas untuk
+// mulai.") masih terasa seperti prompt injection — terutama untuk sesi BARU
+// (via "Ya, mulai") yang sebenarnya sudah memuat aturan dari file.
+// Perbaikan: (a) mapping peran→model + urutan + mode ditulis ke FILE saat
+// save — blok "Konfigurasi aktif" di .opencode/rules/subagent.md,
+// disinkronkan apply-subagent-preset (ON/OFF) + dijaga validate
+// fail-closed seperti baris mode; (b) notice HANYA dikirim bila sesi sudah
+// berjalan SEBELUM save; (c) sesi BARU via "Ya, mulai" TIDAK menerima
+// notice sama sekali; (d) tanpa sesi + "Simpan saja" tetap toast singkat
+// (bukan pesan chat — bukan injection).
+{
+  const fm = (p) => fs.readFileSync(p, "utf8");
+  const PLUG = "lumitome/config/plugins/subagent";
+  const PINNED = "9router/ag/gemini-3.8-flash-high";
+  const OPUS = "9router/kr/claude-opus-5.5-test-agentic";
+  const ASP = await import("../scripts/apply-subagent-preset.mjs");
+  const os = await import("node:os");
+  const preset = JSON.parse(fm(".opencode/lumitome-subagent.json"));
+  ok("/subagent v0.3.68: subagentConfigBlock — mode + urutan + keempat peran→model, satu blok berpenanda",
+    (() => { const b = ASP.subagentConfigBlock({ enabled: true, mode: "paralel", roles: { thinking: { model: OPUS }, search: { model: PINNED }, builder: { model: PINNED }, reviewer: { model: PINNED } } });
+      return b.startsWith("<!-- KONFIG-SUBAGENT -->") && b.endsWith("<!-- /KONFIG-SUBAGENT -->")
+        && /- Mode: paralel\. Urutan: thinking → search → builder → reviewer\./.test(b)
+        && new RegExp(`- Thinking: ${OPUS.replace(/\//g, "\\/")}`).test(b)
+        && /- Search: 9router\/ag\/gemini-3\.8-flash-high/.test(b); })());
+  ok("/subagent v0.3.68: subagentConfigBlock saat OFF — mode OFF tertulis di blok (file rules mengabaikan dirinya bila baris mode OFF)",
+    /- Mode: OFF\./.test(ASP.subagentConfigBlock({ enabled: false, mode: "serial", roles: { thinking: { model: OPUS } } })));
+  ok("/subagent v0.3.68: blok konfigurasi di repo cocok dengan preset repo (serial, keempat peran = model preset)",
+    (() => { const r = fm(".opencode/rules/subagent.md");
+      return /<!-- KONFIG-SUBAGENT -->/.test(r) && /- Mode: serial\. Urutan: thinking → search → builder → reviewer\./.test(r)
+        && ["thinking", "search", "builder", "reviewer"].every((role) => r.includes(preset.roles[role].model)); })());
+  // syncSubagentRulesConfig + applyPreset di temp dir (salin file peran +
+  // orchestrator + rules + preset).
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-subagent-0368-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".opencode", "agents"), { recursive: true });
+    fs.mkdirSync(path.join(tmp, ".opencode", "rules"), { recursive: true });
+    for (const r of ["thinking", "search", "builder", "reviewer"]) fs.copyFileSync(`.opencode/agents/${r}.md`, path.join(tmp, ".opencode", "agents", `${r}.md`));
+    fs.copyFileSync(".opencode/agents/orchestrator.md", path.join(tmp, ".opencode", "agents", "orchestrator.md"));
+    fs.copyFileSync(".opencode/rules/subagent.md", path.join(tmp, ".opencode", "rules", "subagent.md"));
+    const rulesTmp = () => fm(path.join(tmp, ".opencode", "rules", "subagent.md"));
+    fs.writeFileSync(path.join(tmp, ".opencode", "lumitome-subagent.json"), JSON.stringify(preset, null, 2) + "\n");
+    const pOpus = JSON.parse(JSON.stringify(preset)); pOpus.roles.thinking.model = OPUS; pOpus.mode = "paralel";
+    const r1 = ASP.applyPreset({ root: tmp, preset: pOpus, liveModels: null });
+    ok("/subagent v0.3.68: applyPreset menulis blok konfigurasi (configChanged) — mode paralel + Thinking opus di rules/subagent.md",
+      r1.configChanged === true && r1.errors.length === 0
+      && /- Mode: paralel\. Urutan: thinking → search → builder → reviewer\./.test(rulesTmp())
+      && rulesTmp().includes(`- Thinking: ${OPUS}`) && r1.modeChanged === true);
+    const r2 = ASP.applyPreset({ root: tmp, preset: pOpus, liveModels: null });
+    ok("/subagent v0.3.68: applyPreset idempotent — blok sudah cocok → configChanged false, tidak ada tulis ulang",
+      r2.configChanged === false && r2.modeChanged === false && r2.changed.length === 0);
+    const pStale = JSON.parse(JSON.stringify(pOpus)); pStale.roles.search.model = "9router/ag/gemini-3.8-flash";
+    ok("/subagent v0.3.68: applyPreset --check mendeteksi blok konfigurasi basi (tanpa menulis)",
+      ASP.applyPreset({ root: tmp, preset: pStale, liveModels: null, check: true }).configChanged === true
+      && !rulesTmp().includes("- Search: 9router/ag/gemini-3.8-flash\n"));
+    const pOff = JSON.parse(JSON.stringify(pOpus)); pOff.enabled = false;
+    const r3 = ASP.applyPreset({ root: tmp, preset: pOff, liveModels: null });
+    ok("/subagent v0.3.68: applyPreset saat OFF — blok konfigurasi jadi OFF + baris mode OFF (model peran tetap tidak ditulis)",
+      r3.disabled === true && r3.configChanged === true && /- Mode: OFF\./.test(rulesTmp())
+      && /Mode \/subagent saat ini: OFF\./.test(fm(path.join(tmp, ".opencode", "agents", "orchestrator.md"))));
+    ok("/subagent v0.3.68: cli() --check exit 1 saat blok konfigurasi basi, exit 0 sesudah diterapkan",
+      ASP.cli({ argv: ["--check"], root: tmp, log: () => {}, err: () => {} }) === 1
+      && ASP.cli({ argv: [], root: tmp, log: () => {}, err: () => {} }) === 0
+      && ASP.cli({ argv: ["--check"], root: tmp, log: () => {}, err: () => {} }) === 0);
+    const logs = [];
+    // cli() membaca preset dari DISK — tulis pOpus dulu supaya off/on
+    // menguji preset itu (seperti tes v0.3.67).
+    fs.writeFileSync(path.join(tmp, ".opencode", "lumitome-subagent.json"), JSON.stringify(pOpus, null, 2) + "\n");
+    ok("/subagent v0.3.68: cli() off menulis blok OFF; cli() on mengembalikan blok paralel + Thinking opus",
+      ASP.cli({ argv: ["off"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
+      && /- Mode: OFF\./.test(rulesTmp())
+      && ASP.cli({ argv: ["on"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
+      && /- Mode: paralel\./.test(rulesTmp()) && rulesTmp().includes(`- Thinking: ${OPUS}`));
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+  // Fixture tanpa rules/subagent.md: sync blok = peringatan, bukan error.
+  const tmp2 = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-subagent-0368b-"));
+  try {
+    fs.mkdirSync(path.join(tmp2, ".opencode", "agents"), { recursive: true });
+    for (const r of ["thinking", "search", "builder", "reviewer"]) fs.copyFileSync(`.opencode/agents/${r}.md`, path.join(tmp2, ".opencode", "agents", `${r}.md`));
+    fs.copyFileSync(".opencode/agents/orchestrator.md", path.join(tmp2, ".opencode", "agents", "orchestrator.md"));
+    const r = ASP.syncSubagentRulesConfig({ root: tmp2, preset });
+    ok("/subagent v0.3.68: tanpa rules/subagent.md, sync blok konfigurasi hanya peringatan (bukan error, changed false)",
+      r.errors.length === 0 && r.changed === false && r.warnings.length >= 1);
+  } finally { fs.rmSync(tmp2, { recursive: true, force: true }); }
+  // TUI: notice hanya untuk sesi yang sudah berjalan sebelum save.
+  const tui = fm(`${PLUG}/tui.tsx`);
+  ok("/subagent v0.3.68: 'Ya, mulai' ke sesi BARU tanpa notice — enterSubagentMode hanya kirim notice bila sesi sudah ada sebelum save (preExisting)",
+    (() => { const seg = tui.slice(tui.indexOf("async function enterSubagentMode"), tui.indexOf("async function saveAndDelegate"));
+      return /const preExisting = sessionID !== undefined/.test(seg)
+        && /if \(preExisting\) \{\s*await sendSubagentNotice\(context, preset, task, sessionID\)\s*\}/.test(seg); })());
+  ok("/subagent v0.3.68: 'Simpan saja' di sesi berjalan TETAP kirim notice singkat (sesi lama butuh diberi tahu)",
+    /sendSubagentNotice\(context, next, task\)/.test(tui));
+  ok("/subagent v0.3.68: server setEnabled ikut sinkronkan blok konfigurasi (OFF tidak boleh tinggalkan blok aktif)",
+    /syncSubagentRulesConfig\(\{ root, preset: next \}\)/.test(fm(`${PLUG}/index.ts`))
+    && /syncSubagentRulesConfig/.test(fm("scripts/apply-subagent-preset.mjs")));
+  ok("/subagent v0.3.68: prompt.mjs mendokumentasikan gating notice v0.3.68 (hanya sesi lama; sesi baru baca dari file)",
+    /v0\.3\.68/.test(fm(`${PLUG}/prompt.mjs`)) && /Sesi BARU/.test(fm(`${PLUG}/prompt.mjs`)));
+  // BUG VALIDATOR v0.3.68 (Fahmi 17:34 WIB): model `9router/kn/dots-3-note-preview:free`
+  // ditawarkan dropdown live tapi ditolak validatePreset — `:` tidak lolos
+  // MODEL_RE lama, sehingga preset apa pun yang membawanya TIDAK BISA disimpan
+  // sama sekali (termasuk beralih kembali ke model lain lewat popup).
+  const DOTS = "9router/kn/dots-3-note-preview:free";
+  const dotsPreset = () => ({ enabled: true, mode: "serial", roles: Object.fromEntries(["thinking", "search", "builder", "reviewer"].map((r) => [r, { active: true, model: DOTS, tier: "terkuat" }])) });
+  ok("/subagent v0.3.68: validator menerima ID dengan sufiks `:free` (keempat peran) — format + keanggotaan live",
+    ASP.validatePreset(dotsPreset(), null).errors.length === 0
+    && ASP.validatePreset(dotsPreset(), ["kn/dots-3-note-preview:free", "ag/gemini-3.8-flash-high"]).errors.length === 0);
+  // Toast "Simpan saja" tanpa sesi (temuan uji live v0.3.68): sendSubagentNotice
+  // tanpa sesi hanya menampilkan toast "Tidak ada sesi aktif" yang menimpa
+  // toast "Subagent disimpan" sebelum sempat dirender — cabang simpan hanya
+  // memanggilnya bila ada sesi; info tanpa-sesi sudah ada di switched.note.
+  const tuiSave = fm(`${PLUG}/tui.tsx`);
+  ok("/subagent v0.3.68: cabang 'Simpan saja' hanya mengirim notice bila ada sesi (toast 'Subagent disimpan' tidak tertimpa saat tanpa sesi)",
+    /if \(currentSessionID\(context\)\) await sendSubagentNotice\(context, next, task\)/.test(tuiSave));
+  ok("/subagent v0.3.68: validator tetap menolak provider lain / ID kosong / spasi (9router saja)",
+    ASP.validatePreset({ enabled: true, mode: "serial", roles: { thinking: { active: true, model: "openai/gpt-5" } } }, null).errors.length >= 1
+    && ASP.validatePreset({ enabled: true, mode: "serial", roles: { thinking: { active: true, model: "9router/" } } }, null).errors.length >= 1
+    && ASP.validatePreset({ enabled: true, mode: "serial", roles: { thinking: { active: true, model: "9router/kn/dots 3" } } }, null).errors.length >= 1);
+  const F68 = await import("../lumitome/config/plugins/subagent/flow.mjs");
+  ok("/subagent v0.3.68: buildPreset mempertahankan model `:free` (bukan fallback ke terpin)",
+    F68.buildPreset(preset, { models: { thinking: DOTS, search: DOTS, builder: DOTS, reviewer: DOTS }, mode: "serial" }).roles.thinking.model === DOTS);
+  const tmp3 = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-subagent-0368c-"));
+  try {
+    fs.mkdirSync(path.join(tmp3, ".opencode", "agents"), { recursive: true });
+    fs.mkdirSync(path.join(tmp3, ".opencode", "rules"), { recursive: true });
+    for (const r of ["thinking", "search", "builder", "reviewer"]) fs.copyFileSync(`.opencode/agents/${r}.md`, path.join(tmp3, ".opencode", "agents", `${r}.md`));
+    fs.copyFileSync(".opencode/agents/orchestrator.md", path.join(tmp3, ".opencode", "agents", "orchestrator.md"));
+    fs.copyFileSync(".opencode/rules/subagent.md", path.join(tmp3, ".opencode", "rules", "subagent.md"));
+    const rDots = ASP.applyPreset({ root: tmp3, preset: dotsPreset(), liveModels: ["kn/dots-3-note-preview:free"] });
+    ok("/subagent v0.3.68: applyPreset menulis model `:free` ke keempat file agent + blok konfigurasi (save berhasil ujung-ke-ujung)",
+      rDots.errors.length === 0
+      && ["thinking", "search", "builder", "reviewer"].every((role) => fm(path.join(tmp3, ".opencode", "agents", `${role}.md`)).includes(`model: ${DOTS}`))
+      && fm(path.join(tmp3, ".opencode", "rules", "subagent.md")).includes(`- Thinking: ${DOTS}`));
+  } finally { fs.rmSync(tmp3, { recursive: true, force: true }); }
+}
+
 finish();

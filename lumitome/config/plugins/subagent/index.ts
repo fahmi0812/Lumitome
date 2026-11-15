@@ -14,6 +14,7 @@ import {
   loadLiveModels,
   setEnabled,
   syncOrchestratorMode,
+  syncSubagentRulesConfig,
   DEFAULT_MODEL,
 } from "../../../../scripts/apply-subagent-preset.mjs"
 import { resolveRepoRoot, presetPath } from "./paths.mjs"
@@ -141,7 +142,10 @@ export default Plugin.define({
         fs.writeFileSync(presetPath(root), JSON.stringify(next, null, 2) + "\n")
         // v0.3.67: baris mode di orchestrator.md ikut saklar — tanpa ini
         // aturan peran tetap berlaku di sesi baru walau sistem dimatikan.
+        // v0.3.68: blok konfigurasi di rules/subagent.md ikut saklar juga
+        // (mode OFF tertulis di blok; sesi baru tanpa notice membaca dari file).
         syncOrchestratorMode({ root, preset: next })
+        syncSubagentRulesConfig({ root, preset: next })
         return { enabled: next.enabled }
       },
     })

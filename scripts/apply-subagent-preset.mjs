@@ -10,6 +10,11 @@
  * pindah ke orchestrator.md akan berlaku juga saat sistem dimatikan
  * (regresi saklar OFF v0.3.62) — karena orchestrator tidak membaca preset
  * JSON. Baris mode ditulis tiap preset disimpan/diubah (apply, on, off).
+ * PLUS (v0.3.68): blok "Konfigurasi aktif" di `.opencode/rules/subagent.md`
+ * — mapping peran→model + urutan + mode. Sesi BARU tidak lagi menerima
+ * notice injeksi (Fahmi 17:20 WIB); sesi baru membaca konfigurasi dari
+ * blok ini saat tugas pertama masuk. Blok ditulis tiap preset
+ * disimpan/diubah juga (apply, on, off); --check gagal bila basi.
  *
  * Aturan keras (bukti dari kode, v0.3.61):
  *  - Model HANYA 9router: ID harus `9router/<id>`. Provider/URL lain
@@ -35,8 +40,65 @@ import os from "node:os";
 import path from "node:path";
 
 export const ROLES = ["thinking", "search", "builder", "reviewer"];
-export const MODEL_RE = /^9router\/[A-Za-z0-9][A-Za-z0-9._/-]*$/;
+export const ROLE_LABELS = { thinking: "Thinking", search: "Search", builder: "Builder", reviewer: "Reviewer" };
+/** Format ID model peran: HARUS `9router/<id>`. Ekornya memuat huruf,
+ * angka, `.` `_` `/` `-` DAN `:` — daftar live 9router mengembalikan
+ * ID gaya OpenRouter dengan sufiks `:free` (mis.
+ * `9router/kn/dots-3-note-preview:free`, v0.3.68: validator lama menolak
+ * `:` sehingga preset apa pun yang membawa model itu TIDAK BISA disimpan
+ * sama sekali). Keanggotaan terhadap daftar live tetap menjadi cek
+ * otoritatif bila daftarnya bisa dibaca (validatePreset di bawah);
+ * regex ini hanya penjaga format saat offline. Provider selain 9router
+ * tetap ditolak (prefix wajib). */
+export const MODEL_RE = /^9router\/[A-Za-z0-9][A-Za-z0-9._\/:-]*$/;
 export const DEFAULT_MODEL = "9router/ag/gemini-3.8-flash-high";
+
+/** Blok konfigurasi di `.opencode/rules/subagent.md` (v0.3.68) — mapping
+ * peran→model + urutan + mode, ditulis otomatis tiap preset disimpan.
+ * Sesi BARU tidak lagi menerima pemberitahuan notice (terasa seperti prompt
+ * injection — Fahmi 17:20 WIB); sebagai gantinya sesi baru membaca
+ * konfigurasi dari file ini saat tugas pertama masuk (bersama aturan
+ * delegasi — file ini dibaca orchestrator lewat gerbang butir 11).
+ * Penanda HTML agar sinkronisasi bisa mengganti bloknya saja. */
+export const RULES_CONFIG_START = "<!-- KONFIG-SUBAGENT -->";
+export const RULES_CONFIG_END = "<!-- /KONFIG-SUBAGENT -->";
+export function subagentConfigBlock(preset) {
+  const mode = !isEnabled(preset) ? "OFF" : (preset?.mode === "paralel" ? "paralel" : "serial");
+  const lines = [
+    RULES_CONFIG_START,
+    "Konfigurasi aktif (ditulis otomatis saat preset disimpan — jangan edit manual):",
+    `- Mode: ${mode}. Urutan: thinking → search → builder → reviewer.`,
+  ];
+  for (const role of ROLES) {
+    const m = preset?.roles?.[role]?.model ?? DEFAULT_MODEL;
+    lines.push(`- ${ROLE_LABELS[role]}: ${m}`);
+  }
+  lines.push(RULES_CONFIG_END);
+  return lines.join("\n");
+}
+
+/** Sinkronkan blok konfigurasi di `.opencode/rules/subagent.md` dengan
+ * preset (v0.3.68). File hilang → peringatan, bukan error (bukan konteks
+ * repo penuh — sama seperti syncOrchestratorMode). check:true tanpa menulis.
+ * Kembali {changed, warnings, errors}. */
+export function syncSubagentRulesConfig({ root = ".", preset, check = false } = {}) {
+  const f = path.join(root, ".opencode", "rules", "subagent.md");
+  let t;
+  try { t = fs.readFileSync(f, "utf8"); }
+  catch { return { changed: false, warnings: [`rules/subagent.md tidak ditemukan — blok konfigurasi /subagent tidak ditulis (${f})`], errors: [] }; }
+  const block = subagentConfigBlock(preset);
+  const start = t.indexOf(RULES_CONFIG_START);
+  const end = t.indexOf(RULES_CONFIG_END);
+  if (start !== -1 && end !== -1 && end > start) {
+    const next = t.slice(0, start) + block + t.slice(end + RULES_CONFIG_END.length);
+    if (next === t) return { changed: false, warnings: [], errors: [] };
+    if (!check) fs.writeFileSync(f, next);
+    return { changed: true, warnings: [], errors: [] };
+  }
+  const next = `${t.replace(/\n*$/, "\n")}\n${block}\n`;
+  if (!check) fs.writeFileSync(f, next);
+  return { changed: true, warnings: [], errors: [] };
+}
 
 /** Saklar global /subagent (v0.3.62): preset tanpa field `enabled` = ON
  * (backward compatible — preset v0.3.61 tetap jalan). Hanya `false` yang
@@ -107,18 +169,22 @@ export function syncOrchestratorMode({ root = ".", preset, check = false } = {})
   return { changed: true, warnings: [], errors: [] };
 }
 
-/** Terapkan preset ke file agent. Kembali {changed:[file], modeChanged, warnings, errors} — check:true tanpa menulis.
+/** Terapkan preset ke file agent. Kembali {changed:[file], modeChanged, configChanged, warnings, errors} — check:true tanpa menulis.
  * Saat OFF (v0.3.62): model peran tidak ditulis — tapi baris mode di
  * orchestrator.md TETAP disinkronkan ke OFF (itu saklar baca yang mematikan
  * aturan peran; tanpa ini orchestrator tetap mendelegasikan ke peran walau
- * sistem dimatikan). {disabled:true} — --check tetap exit 0 bila tidak
- * ada yang basi (validate tidak boleh gagal hanya karena sistem dimatikan). */
+ * sistem dimatikan) — begitu pula blok konfigurasi di rules/subagent.md
+ * (v0.3.68: mode OFF tertulis di blok; file rules mengabaikan dirinya
+ * sendiri bila baris mode orchestrator OFF). {disabled:true} — --check
+ * tetap exit 0 bila tidak ada yang basi (validate tidak boleh gagal hanya
+ * karena sistem dimatikan). */
 export function applyPreset({ root = ".", preset, liveModels = null, check = false } = {}) {
   const { errors, warnings } = validatePreset(preset, liveModels);
-  if (errors.length) return { changed: [], modeChanged: false, warnings, errors };
+  if (errors.length) return { changed: [], modeChanged: false, configChanged: false, warnings, errors };
   if (!isEnabled(preset)) {
     const m = syncOrchestratorMode({ root, preset, check });
-    return { changed: [], modeChanged: m.changed, warnings: [...warnings, ...m.warnings], errors: [...errors, ...m.errors], disabled: true };
+    const c = syncSubagentRulesConfig({ root, preset, check });
+    return { changed: [], modeChanged: m.changed, configChanged: c.changed, warnings: [...warnings, ...m.warnings, ...c.warnings], errors: [...errors, ...m.errors, ...c.errors], disabled: true };
   }
   const changed = [];
   for (const role of ROLES) {
@@ -133,7 +199,8 @@ export function applyPreset({ root = ".", preset, liveModels = null, check = fal
     if (!check) fs.writeFileSync(f, next);
   }
   const m = syncOrchestratorMode({ root, preset, check });
-  return { changed, modeChanged: m.changed, warnings: [...warnings, ...m.warnings], errors: [...errors, ...m.errors] };
+  const c = syncSubagentRulesConfig({ root, preset, check });
+  return { changed, modeChanged: m.changed, configChanged: c.changed, warnings: [...warnings, ...m.warnings, ...c.warnings], errors: [...errors, ...m.errors, ...c.errors] };
 }
 
 /** CLI: `lumitome subagent-preset [--check]` (dispatch di lumitome/bin/lumitome.mjs)
@@ -151,7 +218,8 @@ export function cli({ argv = process.argv.slice(2), root = ".", log = console.lo
     const next = setEnabled(preset, cmd === "on");
     fs.writeFileSync(presetPath, JSON.stringify(next, null, 2) + "\n");
     const m = syncOrchestratorMode({ root, preset: next });
-    for (const w of m.warnings) err(`peringatan: ${w}`);
+    const c = syncSubagentRulesConfig({ root, preset: next });
+    for (const w of [...m.warnings, ...c.warnings]) err(`peringatan: ${w}`);
     log(`apply-subagent-preset: subagent ${cmd === "on" ? "ON" : "OFF"} (preset ${presetPath})`);
     return 0;
   }
@@ -162,12 +230,12 @@ export function cli({ argv = process.argv.slice(2), root = ".", log = console.lo
   for (const w of r.warnings) err(`peringatan: ${w}`);
   if (r.errors.length) { for (const e of r.errors) err(`GAGAL: ${e}`); return 1; }
   if (check) {
-    if (r.changed.length || r.modeChanged) { log(`apply-subagent-preset: STALE ${[...r.changed, ...(r.modeChanged ? ["orchestrator.md (baris mode)"] : [])].join(", ")} → lumitome subagent-preset`); return 1; }
+    if (r.changed.length || r.modeChanged || r.configChanged) { log(`apply-subagent-preset: STALE ${[...r.changed, ...(r.modeChanged ? ["orchestrator.md (baris mode)"] : []), ...(r.configChanged ? ["rules/subagent.md (blok konfigurasi)"] : [])].join(", ")} → lumitome subagent-preset`); return 1; }
     log("apply-subagent-preset: OK (file agent = preset)");
   } else if (r.disabled) {
     log("apply-subagent-preset: subagent OFF — preset tidak diterapkan (nyalakan: lumitome subagent-preset on)");
   } else {
-    const wrote = [...r.changed, ...(r.modeChanged ? ["orchestrator.md (baris mode)"] : [])];
+    const wrote = [...r.changed, ...(r.modeChanged ? ["orchestrator.md (baris mode)"] : []), ...(r.configChanged ? ["rules/subagent.md (blok konfigurasi)"] : [])];
     log(wrote.length ? `apply-subagent-preset: tulis ${wrote.join(", ")} (berlaku mulai sesi TUI berikutnya)` : "apply-subagent-preset: sudah sesuai preset, tidak ada perubahan");
   }
   return 0;
