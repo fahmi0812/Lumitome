@@ -1,0 +1,1 @@
+{"description":"Plugin TUI /subagent Lumitome — popup peran × model 9router (Stage A select berurutan + Stage B tabel satu-layar).","exports":{".":"./index.ts","./rpc":"./rpc.ts","./tui":"./tui.tsx"},"name":"lumitome-subagent","private":true,"type":"module","version":"0.3.63"}
