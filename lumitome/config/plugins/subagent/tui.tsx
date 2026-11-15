@@ -36,6 +36,7 @@ import {
   moveFocus,
   toggleRole,
   applyTableModel,
+  callRpcWithRetry,
 } from "./flow.mjs"
 import { buildDelegationPrompt } from "./prompt.mjs"
 
@@ -271,29 +272,25 @@ async function run(context, input) {
   try {
     const rpc = context.client.rpc(SubagentRpc)
     const { command, task } = parseSubagentArgs(input)
+    // Aturan keras: OFF = jangan delegasi ke agent peran apa pun; orchestrator
+    // bekerja seperti biasa tanpa delegasi peran (dinyalakan lagi via /subagent on).
     if (command === "off" || command === "on") {
       const enabled = command === "on"
-      await rpc.setEnabled({ enabled })
-      toast(
-        context,
-        enabled ? "Subagent dinyalakan" : "Subagent dimatikan",
-        enabled
-          ? "Sistem /subagent dinyalakan kembali."
-          : "Sistem /subagent dimatikan (enabled: false). Orchestrator bekerja seperti biasa tanpa delegasi peran. Nyalakan lagi dengan /subagent on.",
-      )
+      await callRpcWithRetry("setEnabled", () => rpc.setEnabled({ enabled }))
+      toast(context, enabled ? "Subagent ON" : "Subagent OFF", enabled ? "Dinyalakan." : "Dimatikan.")
       return
     }
     if (command === "status") {
-      const { preset } = await rpc.getPreset()
+      const { preset } = await callRpcWithRetry("getPreset", () => rpc.getPreset({}))
       toast(context, `Subagent: ${isEnabled(preset) ? "ON" : "OFF"}`, summarizePreset(preset))
       return
     }
-    const { preset } = await rpc.getPreset()
+    const { preset } = await callRpcWithRetry("getPreset", () => rpc.getPreset({}))
     if (!isEnabled(preset)) {
       toast(context, "Subagent OFF", "Sistem /subagent sedang OFF — peran tidak aktif. Panggil /subagent on untuk menyalakannya.")
       return
     }
-    const live = await rpc.getLiveModels()
+    const live = await callRpcWithRetry("getLiveModels", () => rpc.getLiveModels({}))
     const models = filterNineRouterModels(live.models)
     if (command === "tabel") {
       await runTable(context, rpc, preset, models, live.live, task)

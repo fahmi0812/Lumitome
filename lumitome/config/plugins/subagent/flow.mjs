@@ -155,3 +155,39 @@ export function applyTableModel(state, role, model) {
   if (!ROLES.includes(role) || typeof model !== "string" || !model.startsWith("9router/")) return state;
   return { ...state, models: { ...state.models, [role]: model } };
 }
+
+/**
+ * Retry panggilan RPC (v0.3.64).
+ *
+ * Plugin dimuat LAZY oleh engine: panggilan RPC pertama bisa datang
+ * sebelum registrasi selesai, dan engine menjawab `RPC is unavailable`
+ * (HTTP 400). Tanpa retry, `/subagent` langsung gagal dengan toast
+ * "Subagent gagal" padahal sepersekian detik kemudian RPC sudah ada.
+ * Hanya error itu yang di-retry (maks 3 percobaan, jeda 400 ms);
+ * error lain langsung dilempar dengan label method supaya toast
+ * menyebut konteksnya (bukan pesan JSON mentah).
+ */
+export const RPC_UNAVAILABLE_MESSAGE = "RPC is unavailable";
+export const RPC_RETRY_ATTEMPTS = 3;
+export const RPC_RETRY_DELAY_MS = 400;
+
+export function isRpcUnavailableError(e) {
+  return String(e?.message ?? e).includes(RPC_UNAVAILABLE_MESSAGE);
+}
+
+export async function callRpcWithRetry(label, fn, opts = {}) {
+  const attempts = opts.attempts ?? RPC_RETRY_ATTEMPTS;
+  const delayMs = opts.delayMs ?? RPC_RETRY_DELAY_MS;
+  const sleep = opts.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
+  let last;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await fn();
+    } catch (e) {
+      last = e;
+      if (!isRpcUnavailableError(e) || attempt === attempts) break;
+      await sleep(delayMs);
+    }
+  }
+  throw new Error(`${label}: ${String(last?.message ?? last)}`);
+}
