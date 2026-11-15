@@ -25,7 +25,11 @@
     "orchestrator": [],
     "synthesizer": [],
     "elephant": ["context7", "codemem"],
-    "goldfish": ["codemem"]
+    "goldfish": ["codemem"],
+    "thinking": ["context7", "codemem"],
+    "search": ["context7", "codemem"],
+    "builder": ["context7", "codemem"],
+    "reviewer": ["codemem"]
   },
   "gateway": {
     "default": "disabled",

@@ -104,6 +104,9 @@ const mcpErr = checkMcpPolicy(); mcpErr.forEach(fail); if (!mcpErr.length) pass(
   const { execFileSync } = await import("node:child_process");
   try { execFileSync(process.execPath, ["scripts/gen-policy.mjs", "--check"], { stdio: "pipe" }); pass("permissions agent = hasil gen-policy (skill+MCP per sektor)"); }
   catch (e) { fail(`permissions agent basi: ${String(e.stdout || e.message).trim()} → npm run policy`); }
+  // v0.3.61 (/subagent): model file agent peran harus = preset .opencode/lumitome-subagent.json
+  try { execFileSync(process.execPath, ["scripts/apply-subagent-preset.mjs", "--check"], { stdio: "pipe" }); pass("model agent peran = preset /subagent"); }
+  catch (e) { fail(`model agent peran basi: ${String(e.stdout || e.message).trim()} → lumitome subagent-preset`); }
   const act = fs.readdirSync(".opencode/skills").filter((d) => fs.existsSync(`.opencode/skills/${d}/SKILL.md`));
   // P2-2: jumlah skill aktif TIDAK di-hardcode (pelajaran v0.3.20 untuk pack,
   // kini berlaku juga untuk aktif — dulu `act.length !== 127` di sini).

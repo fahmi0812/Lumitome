@@ -152,6 +152,13 @@ if (sub === "connect" && process.stdin.isTTY && process.stdout.isTTY && !argv.in
 if (sub === "connect" || (sub === "models" && argv.includes("--refresh")) || (sub === "models" && argv.includes("--lumitome"))) {
   process.exit(await PV.cli({ argv: argv.slice(1), home: ISO_HOME, sub }));
 }
+// v0.3.61 (/subagent): terapkan preset peran ke file agent peran. Dipanggil
+// orchestrator dari command /subagent — path repo diselesaikan di sini (REPO),
+// bukan relatif ke workspace user (di proyek user, `scripts/` tidak ada).
+if (sub === "subagent-preset") {
+  const ASP = await import(pathToFileURL(path.join(REPO, "scripts", "apply-subagent-preset.mjs")).href);
+  process.exit(ASP.cli({ argv: argv.slice(1), root: REPO }));
+}
 // v0.3.38: auto-refresh model saat startup — provider baru yang ditambah di
 // dashboard 9router (GET {base}/models berubah) langsung terbaca tanpa
 // `lumitome models --refresh` manual. Best-effort, timeout pendek, gagal →

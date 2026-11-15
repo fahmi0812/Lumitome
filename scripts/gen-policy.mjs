@@ -29,9 +29,15 @@ export function skillRules(names) {
 function rebuild(file, extra) {
   const t = fs.readFileSync(file, "utf8");
   const m = /^---\n([\s\S]*?)\n---\n?/.exec(t);
-  const keep = m[1].split("\n").filter((l) => /^(description|mode):/.test(l));
-  // pertahankan rules non-generated (edit/subagent orchestrator)
-  const manual = m[1].split("\n").filter((l) => /^\s+- \{ action: (edit|subagent|shell)\b/.test(l));
+  // v0.3.61 (/subagent): pertahankan juga `model:` + `color:` — model per peran
+  // adalah data tier (bukan hasil generate), dan gen-policy tidak boleh
+  // menghapusnya saat regenerasi permissions.
+  const keep = m[1].split("\n").filter((l) => /^(description|mode|model|color):/.test(l));
+  // pertahankan rules non-generated (edit/subagent/shell/task/question)
+  // v0.3.61: `task` (peluncur subagent, aksi resmi OpenCode) + `question`
+  // (tool tanya) ikut dipertahankan agar deny depth-1 / anti-tanya worker
+  // di file agent peran tidak hilang saat regenerasi.
+  const manual = m[1].split("\n").filter((l) => /^\s+- \{ action: (edit|subagent|shell|task|question)\b/.test(l));
   const fm = [...keep, "# permissions: DIBANGKITKAN scripts/gen-policy.mjs — jangan edit manual (kecuali edit/subagent/shell)", "permissions:", ...manual, ...extra].join("\n");
   return `---\n${fm}\n---\n${t.slice(m[0].length).replace(/^\n*/, "\n")}`;
 }

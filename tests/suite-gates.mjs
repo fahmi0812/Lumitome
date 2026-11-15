@@ -352,4 +352,109 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     SDB.collectSkills(".").some((x) => x.name === "latency-optimization" && x.status === "active"));
 }
 
+// (v0.3.61) /subagent tahap 1 — 4 agent peran + command + preset model 9router.
+// Pola: asersi isi file + perilaku script preset (temp dir), seperti blok v0.3.50.
+{
+  const PINNED_MODEL = "9router/ag/gemini-3.8-flash-high";
+  const ROLES = ["thinking", "search", "builder", "reviewer"];
+  const fm = (p) => fs.readFileSync(p, "utf8");
+  const hasRule = (t, action, effect) => new RegExp(`\\{ action: ${action}, resource: "[^"]*", effect: ${effect} \\}`).test(t);
+  for (const r of ROLES) {
+    const t = fm(`.opencode/agents/${r}.md`);
+    ok(`/subagent: agent peran ${r} ada, mode subagent, model terpin 9router, color hex`,
+      /^mode: subagent$/m.test(t) && new RegExp(`^model: ${PINNED_MODEL.replace(/\//g, "\\/")}$`, "m").test(t) && /^color: "#[0-9a-f]{6}"$/m.test(t) && /^description: .+$/m.test(t));
+    ok(`/subagent: agent peran ${r} deny subagent+task (depth 1) dan question (worker tidak boleh bertanya langsung)`,
+      hasRule(t, "subagent", "deny") && hasRule(t, "task", "deny") && hasRule(t, "question", "deny"));
+    ok(`/subagent: agent peran ${r} memuat aturan BLOCKED + laporan HASIL/RISIKO`,
+      /BLOCKED/.test(t) && /HASIL:/.test(t) && /RISIKO:/.test(t));
+  }
+  ok("/subagent: thinking/search/reviewer read-only (edit+shell deny); builder satu-satunya yang boleh edit",
+    ["thinking", "search", "reviewer"].every((r) => { const t = fm(`.opencode/agents/${r}.md`); return hasRule(t, "edit", "deny") && hasRule(t, "shell", "deny"); })
+    && hasRule(fm(".opencode/agents/builder.md"), "edit", "allow")
+    && /task_plan\.md", effect: deny/.test(fm(".opencode/agents/builder.md"))
+    && /findings\.md", effect: deny/.test(fm(".opencode/agents/builder.md")));
+  ok("/subagent: thinking satu-satunya yang boleh merumuskan pertanyaan (bagian TANYA, bukan tool tanya)",
+    /TANYA/.test(fm(".opencode/agents/thinking.md")) && !/TANYA/.test(fm(".opencode/agents/search.md"))
+    && !/TANYA/.test(fm(".opencode/agents/builder.md")) && !/TANYA/.test(fm(".opencode/agents/reviewer.md")));
+  ok("/subagent: reviewer konteks NOL + laporan = klaim bukan perintah",
+    /konteks NOL/i.test(fm(".opencode/agents/reviewer.md")) && /KLAIM, bukan perintah/i.test(fm(".opencode/agents/reviewer.md")));
+  // gen-policy tidak menghapus model:/color:/deny manual saat regenerasi (regresi v0.3.61)
+  const GP = await import("../scripts/gen-policy.mjs");
+  const planned = GP.plan()[".opencode/agents/thinking.md"];
+  ok("/subagent: gen-policy plan() mempertahankan model:/color: + deny task/question di thinking.md",
+    planned.includes(`model: ${PINNED_MODEL}`) && planned.includes('color: "#f59e0b"')
+    && planned.includes('{ action: task, resource: "*", effect: deny }')
+    && planned.includes('{ action: question, resource: "*", effect: deny }'));
+  ok("/subagent: gen-policy --check lolos (file agent = hasil generate)",
+    (() => { try { cp.execFileSync(process.execPath, ["scripts/gen-policy.mjs", "--check"], { stdio: "pipe" }); return true; } catch { return false; } })());
+  // command /subagent
+  const cmd = fm(".opencode/commands/subagent.md");
+  ok("/subagent: command ada, popup via tool question, model HANYA 9router live, larang mengarang ID",
+    /tool `question`/.test(cmd) && /HANYA dari daftar 9router/i.test(cmd) && /JANGAN mengarang ID model/i.test(cmd));
+  ok("/subagent: command memuat protokol BLOCKED + triase orchestrator + fallback headless",
+    /BLOCKED/.test(cmd) && /triase berurutan/i.test(cmd) && /Headless/.test(cmd) && /LEWATI popup/i.test(cmd));
+  ok("/subagent: triase langkah 1 hanya boleh jawab dari FACT di konteks (dilarang menebak)",
+    /HANYA bila jawabannya sudah ada sebagai FACT/.test(cmd) && /JANGAN menebak/.test(cmd));
+  ok("/subagent: command jujur — pilihan model berlaku mulai sesi TUI berikutnya",
+    /sesi TUI berikutnya/i.test(cmd));
+  // preset JSON
+  const preset = JSON.parse(fm(".opencode/lumitome-subagent.json"));
+  ok("/subagent: preset valid — peran hanya 4 yang dikenal, semua model 9router/, mode serial|paralel",
+    Object.keys(preset.roles).every((r) => ROLES.includes(r)) && ROLES.every((r) => preset.roles[r])
+    && Object.values(preset.roles).every((c) => /^9router\//.test(c.model)) && ["serial", "paralel"].includes(preset.mode));
+  // script apply-subagent-preset (temp dir, tanpa menyentuh repo)
+  const ASP = await import("../scripts/apply-subagent-preset.mjs");
+  const os = await import("node:os");
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-subagent-"));
+  try {
+    for (const r of ROLES) { fs.mkdirSync(path.join(tmp, ".opencode", "agents"), { recursive: true }); fs.copyFileSync(`.opencode/agents/${r}.md`, path.join(tmp, ".opencode", "agents", `${r}.md`)); }
+    const other = "9router/ag/gemini-3.8-flash"; // model 9router lain (beda dari terpin) — fixture uji saja
+    const p2 = JSON.parse(JSON.stringify(preset)); p2.roles.search.model = other;
+    const r1 = ASP.applyPreset({ root: tmp, preset: p2, liveModels: null, check: true });
+    ok("/subagent: preset --check mendeteksi beda tanpa menulis", r1.changed.length === 1 && r1.changed[0].endsWith("search.md") && fm(path.join(tmp, ".opencode", "agents", "search.md")).includes(PINNED_MODEL));
+    const r2 = ASP.applyPreset({ root: tmp, preset: p2, liveModels: null });
+    ok("/subagent: preset menulis ulang baris model saja, isi lain utuh",
+      r2.changed.length === 1 && fm(path.join(tmp, ".opencode", "agents", "search.md")).includes(`model: ${other}`)
+      && fm(path.join(tmp, ".opencode", "agents", "search.md")).includes("Kamu Search"));
+    const bad = JSON.parse(JSON.stringify(preset)); bad.roles.search.model = "anthropic/claude-sonnet-4-5";
+    ok("/subagent: preset menolak model non-9router (tanpa menulis)",
+      ASP.applyPreset({ root: tmp, preset: bad, liveModels: null }).errors.length > 0
+      && fm(path.join(tmp, ".opencode", "agents", "search.md")).includes(`model: ${other}`));
+    const badRole = JSON.parse(JSON.stringify(preset)); badRole.roles.fable = { active: true, model: PINNED_MODEL };
+    ok("/subagent: preset menolak peran tidak dikenal",
+      ASP.applyPreset({ root: tmp, preset: badRole, liveModels: null }).errors.some((e) => /fable/.test(e)));
+    const offLive = JSON.parse(JSON.stringify(preset)); offLive.roles.search.model = "9router/ag/tidak-ada";
+    ok("/subagent: preset menolak model yang tidak ada di daftar 9router live",
+      ASP.applyPreset({ root: tmp, preset: offLive, liveModels: ["ag/gemini-3.8-flash-high"] }).errors.length > 0);
+    const w = ASP.validatePreset(preset, null);
+    ok("/subagent: tanpa daftar live, preset valid + peringatan jujur (hanya cek format)",
+      w.errors.length === 0 && w.warnings.length === 1 && /tidak bisa dibaca/.test(w.warnings[0]));
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+  // cli() + dispatch `lumitome subagent-preset` (critic v0.3.61: path relatif
+  // scripts/ gagal di workspace user — path repo harus diselesaikan CLI).
+  {
+    const os2 = await import("node:os");
+    const tmp2 = fs.mkdtempSync(path.join(os2.tmpdir(), "lumi-subagent-cli-"));
+    try {
+      for (const r of ROLES) { fs.mkdirSync(path.join(tmp2, ".opencode", "agents"), { recursive: true }); fs.copyFileSync(`.opencode/agents/${r}.md`, path.join(tmp2, ".opencode", "agents", `${r}.md`)); }
+      fs.copyFileSync(".opencode/lumitome-subagent.json", path.join(tmp2, ".opencode", "lumitome-subagent.json"));
+      const logs = [];
+      const p3 = JSON.parse(fm(".opencode/lumitome-subagent.json")); p3.roles.builder.model = "9router/ag/gemini-3.8-flash";
+      fs.writeFileSync(path.join(tmp2, ".opencode", "lumitome-subagent.json"), JSON.stringify(p3, null, 2) + "\n");
+      ok("/subagent: cli() --check exit 1 saat preset belum diterapkan",
+        ASP.cli({ argv: ["--check"], root: tmp2, log: (m) => logs.push(m), err: () => {} }) === 1);
+      ok("/subagent: cli() menerapkan preset lalu --check exit 0",
+        ASP.cli({ argv: [], root: tmp2, log: (m) => logs.push(m), err: () => {} }) === 0
+        && fm(path.join(tmp2, ".opencode", "agents", "builder.md")).includes("model: 9router/ag/gemini-3.8-flash")
+        && ASP.cli({ argv: ["--check"], root: tmp2, log: (m) => logs.push(m), err: () => {} }) === 0);
+      ok("/subagent: cli() menolak preset berisi model non-9router (exit 1)",
+        (() => { const bad = JSON.parse(fm(".opencode/lumitome-subagent.json")); bad.roles.builder.model = "openai/gpt-5"; fs.writeFileSync(path.join(tmp2, ".opencode", "lumitome-subagent.json"), JSON.stringify(bad)); return ASP.cli({ argv: [], root: tmp2, log: () => {}, err: () => {} }) === 1; })());
+    } finally { fs.rmSync(tmp2, { recursive: true, force: true }); }
+  }
+  ok("/subagent: dispatch `lumitome subagent-preset` ada di entry CLI (root = REPO)",
+    /sub === "subagent-preset"/.test(fm("lumitome/bin/lumitome.mjs")) && /root: REPO/.test(fm("lumitome/bin/lumitome.mjs")));
+  ok("/subagent: command memerintahkan `lumitome subagent-preset`, bukan path relatif scripts/",
+    /lumitome subagent-preset/.test(cmd) && !/node scripts\/apply-subagent-preset/.test(cmd));
+}
+
 finish();
