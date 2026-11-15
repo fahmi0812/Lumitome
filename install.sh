@@ -246,6 +246,9 @@ else
     echo "$OC_FLAVOR" > "$BIN/opencode.flavor"
     oc_engine --version 2>>"$LOG_FILE" | grep -q "v$OC_VERSION" || die "versi opencode tidak sesuai"
     note "$(oc_engine --version 2>>"$LOG_FILE") ($OC_FLAVOR)"
+    # Bersihkan temp engine segera (tarball ~120MB + hasil ekstrak): /tmp kecil
+    # (mis. tmpfs 512MB) bisa penuh sebelum langkah berikut (cbm/uv) jalan.
+    rm -rf "$TMP/oc" "$TMP/$1"
   fi
 fi
 command -v opencode >/dev/null 2>&1 && note "opencode global user dibiarkan apa adanya ($(command -v opencode); tidak dijalankan); engine lumitome terpisah di $BIN"

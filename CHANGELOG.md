@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.59 — install.sh: bersihkan temp engine sesudah pasang
+
+- Akar masalah: `install.sh` menyimpan tarball engine (~120MB) + hasil ekstraknya di `$TMP` sampai skrip selesai (trap EXIT). Di sistem dengan `/tmp` kecil (mis. tmpfs 512MB di VM ini), `/tmp` penuh di tengah jalan — instalasi segar v0.3.57 mati di langkah `codebase-memory` dengan "No space left on device" (tar gagal tulis), padahal langkah engine-nya sudah lolos.
+- Perbaikan: sesudah engine terpasang dan terverifikasi (`opencode --version` cocok), `rm -rf "$TMP/oc" "$TMP/$1"` langsung menghapus tarball + hasil ekstrak engine. Langkah berikut (cbm/uv) hanya butuh ~70MB temp, jadi instalasi kini muat di `/tmp` 512MB.
+- Verifikasi: instalasi segar dari working copy v0.3.59 (tanpa `TMPDIR`, `/tmp` tmpfs 512MB) berhasil sampai selesai + `lumitome --version` = `lumitome 0.3.59 (opencode v2.3.0)`; `/tmp` hanya terpakai ~11MB di akhir. (Catatan: instalasi segar v0.3.57 sebelumnya diverifikasi berhasil dengan `TMPDIR` di disk — perbaikan ini yang membuatnya berhasil tanpa workaround.)
+
 ## 0.3.58 — perbaiki tes e2e: cp tanpa preservasi ownership
 
 - Akar masalah: dua tes e2e di `tests/suite-gates.mjs` (P2-2 `p22-e2e-`, P2-3 `p23-val-`) menyalin repo dengan `cp -al` (hardlink, murah). Di bawah badai EPERM (filesystem menolak `chown` sejak 15 Nov 2026 04:22 WIB), `cp` mati dengan "failed to preserve ownership: Operation not permitted" → `execFileSync` melempar → seluruh file `suite-gates.mjs` crash → suite jadi 756 passed / 1 failed / 2 skipped (2.351 baris EPERM di log).
