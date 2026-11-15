@@ -1,21 +1,31 @@
-// tui.tsx — bagian TUI plugin /subagent (v0.3.63).
+// tui.tsx — bagian TUI plugin /subagent (v0.3.63; v0.3.65: peran selalu aktif
+// + model sesi ikut Thinking saat disimpan).
 // `/subagent` didaftarkan sebagai slash command lewat keymap.layer; run-nya
 // LANGSUNG membuka dialog TANPA melibatkan model — popup muncul deterministik
 // (inilah yang gagal di Tahap 1 v0.3.61/62: file .md hanya template prompt,
 // model flash tidak memanggil tool `question`, isi file tercetak mentah).
 //
 // Alur:
-//   Stage A (default, dijamin docs): dialog.select() berurutan — peran aktif
-//     → model per peran aktif → mode. Bila daftar model hanya satu, atau
-//     daftar live tidak bisa dibaca, pertanyaan model dilewati (model lama
-//     dipertahankan, bukan ditimpa fallback).
+//   Stage A (default, dijamin docs): dialog.select() berurutan — model per
+//     peran → mode. Keempat peran SELALU aktif (Thinking, Search, Build,
+//     Review); tidak ada lagi pertanyaan/toggle aktif-nonaktif per peran.
+//     Bila daftar model hanya satu, atau daftar live tidak bisa dibaca,
+//     pertanyaan model dilewati (model lama dipertahankan, bukan ditimpa
+//     fallback).
 //   Stage B (`/subagent tabel`): tabel satu-layar peran × model via dialog
 //     JSX kustom (dialog.show, size large) + navigasi keyboard sendiri.
-//     Enter = ganti model/mode (dialog.select bersarang), Spasi = aktif/
-//     nonaktif, Ctrl+S = simpan, Esc = batal.
+//     Enter = ganti model/mode (dialog.select bersarang), Ctrl+S = simpan,
+//     Esc = batal. Checkbox [✓] di tiap baris hanya penanda visual bahwa
+//     peran itu aktif (selalu tercentang — Spasi TIDAK menonaktifkan peran).
 //   `/subagent off|on|status` ditangani di sini (tanpa popup).
-//   Sesudah simpan, prompt delegasi dikirim ke sesi lewat session.prompt
-//   (fire-and-forget; model berlaku mulai sesi TUI berikutnya — jujur di toast).
+//   Sesudah simpan, MODEL SESI langsung beralih ke model peran Thinking
+//   (session.switchModel — mekanisme yang sama dipakai /models; terverifikasi
+//   ke sumber opencode v2.3.0 + v2.2.4), lalu prompt delegasi dikirim ke sesi
+//   lewat session.prompt (fire-and-forget; model PERAN berlaku mulai sesi TUI
+//   berikutnya — jujur di toast). Bila belum ada sesi saat menyimpan (home
+//   screen), sesi baru yang dibuat sesudah itu otomatis dialihkan ke Thinking
+//   oleh server plugin (index.ts, langganan session.created) — jadi status
+//   line menunjukkan Thinking sejak pesan pertama.
 import { Plugin, usePlugin } from "@opencode/plugin/tui"
 import { createSignal } from "solid-js"
 import { SubagentRpc } from "./rpc.js"
@@ -28,15 +38,15 @@ import {
   parseSubagentArgs,
   filterNineRouterModels,
   isEnabled,
-  allActive,
   buildPreset,
   summarizePreset,
   tableState,
   TABLE_ROWS,
   moveFocus,
-  toggleRole,
   applyTableModel,
   callRpcWithRetry,
+  splitModelId,
+  thinkingSessionModel,
 } from "./flow.mjs"
 import { buildDelegationPrompt } from "./prompt.mjs"
 
@@ -48,15 +58,47 @@ function toastCancelled(context) {
   toast(context, "Dibatalkan", "Tidak ada perubahan.")
 }
 
-async function sendDelegationPrompt(context, preset, live, task) {
+/** ID sesi aktif saat ini (undefined bila belum ada sesi — mis. layar awal). */
+function currentSessionID(context) {
   const route = context.ui.router.current()
-  const sessionID = route && route.type === "session" && typeof route.sessionID === "string" ? route.sessionID : undefined
+  return route && route.type === "session" && typeof route.sessionID === "string" ? route.sessionID : undefined
+}
+
+/**
+ * Alihkan model SESI ke model peran Thinking (v0.3.65 — jawaban atas laporan
+ * Fahmi: status line TUI menampilkan model SESI (orchestrator), bukan model
+ * peran; sesudah save dari popup, sesi harus memakai model Thinking yang
+ * dipilih user. Memakai `session.switchModel` — endpoint resmi yang sama
+ * dipakai /models (POST /api/session/:id/model; ada di client 2.3.0 dan
+ * 2.2.4). Kegagalan TIDAK menggagalkan save (preset sudah tersimpan) —
+ * kembalikan catatan jujur untuk toast.
+ */
+async function switchSessionToThinking(context, preset) {
+  const full = thinkingSessionModel(preset)
+  if (!full) return { switched: false, note: "Model sesi tidak diubah (Thinking nonaktif)." }
+  const sessionID = currentSessionID(context)
+  if (!sessionID) return { switched: false, note: "Tidak ada sesi aktif — sesi baru nanti otomatis pakai model Thinking." }
+  const parts = splitModelId(full)
+  if (!parts) return { switched: false, note: "Model sesi tidak diubah (model Thinking tidak valid)." }
+  try {
+    await context.client.session.switchModel({ sessionID, model: { providerID: parts.providerID, id: parts.id } })
+    return { switched: true, note: `Model sesi kini ${full} (Thinking).` }
+  } catch (e) {
+    return { switched: false, note: `Model sesi gagal dialihkan (${String(e?.message ?? e)}) — preset tetap tersimpan; ganti manual via /models.` }
+  }
+}
+
+async function sendDelegationPrompt(context, preset, live, task) {
+  const sessionID = currentSessionID(context)
   if (!sessionID) {
     toast(context, "Tidak ada sesi aktif", "Konfigurasi tersimpan — delegasi menunggu sesi.")
     return
   }
   const text = buildDelegationPrompt(preset, task, live)
-  context.client.session.prompt({ sessionID, parts: [{ type: "text", text }] }).catch((e) => {
+  // Bentuk resmi opencode 2.3.0 + 2.2.4: session.prompt({ sessionID, text })
+  // (SessionPromptInput — tidak ada field `parts`; bentuk v0.3.63 dengan
+  // `parts: [{ type: "text", text }]` gagal live: "Missing key at ["text"]".)
+  context.client.session.prompt({ sessionID, text }).catch((e) => {
     toast(context, "Gagal mengirim ke sesi", String(e?.message ?? e), "error")
   })
 }
@@ -70,10 +112,11 @@ async function saveAndDelegate(context, rpc, next, live, task) {
     return
   }
   const warn = saved.warnings?.length ? ` ${saved.warnings.join(" ")}` : ""
+  const switched = await switchSessionToThinking(context, next)
   toast(
     context,
     "Subagent disimpan",
-    `${summarizePreset(next)} — Model berlaku mulai sesi TUI berikutnya; peran + mode berlaku langsung.${warn}`,
+    `${summarizePreset(next)} — ${switched.note} Model peran berlaku mulai sesi TUI berikutnya.${warn}`,
   )
   await sendDelegationPrompt(context, next, live, task)
 }
@@ -89,38 +132,10 @@ function safeModels(preset) {
 }
 
 async function runSelects(context, rpc, preset, models, live, task) {
-  const active = {}
-  for (const r of ROLES) active[r] = preset.roles?.[r]?.active !== false
-  const choice = await context.ui.dialog.select({
-    title: "Peran aktif /subagent",
-    current: allActive(preset) ? "all" : "custom",
-    options: [
-      { title: "Semua peran", value: "all", description: "Thinking, Search, Build, Review aktif" },
-      { title: "Atur per peran…", value: "custom", description: "Nyalakan/matikan tiap peran satu per satu" },
-    ],
-  })
-  if (choice === undefined) return toastCancelled(context)
-  if (choice === "custom") {
-    for (const role of ROLES) {
-      const v = await context.ui.dialog.select({
-        title: `Peran — ${ROLE_LABELS[role]}`,
-        current: active[role] ? "on" : "off",
-        options: [
-          { title: "Aktif", value: "on", description: ROLE_DESC[role] },
-          { title: "Nonaktif", value: "off", description: "Peran ini tidak dipakai" },
-        ],
-      })
-      if (v === undefined) return toastCancelled(context)
-      active[role] = v === "on"
-    }
-  }
-  if (!ROLES.some((r) => active[r])) {
-    toast(context, "Tidak ada peran aktif", "Tidak ada yang disimpan — minimal satu peran harus aktif.")
-    return
-  }
+  // v0.3.65: keempat peran SELALU aktif — langsung tanya model per peran.
   const byRole = safeModels(preset)
   if (live && models.length > 1) {
-    for (const role of ROLES.filter((r) => active[r])) {
+    for (const role of ROLES) {
       const m = await context.ui.dialog.select({
         title: `Model — ${ROLE_LABELS[role]} (tier ${ROLE_TIERS[role]})`,
         current: models.includes(byRole[role]) ? byRole[role] : models[0],
@@ -139,7 +154,7 @@ async function runSelects(context, rpc, preset, models, live, task) {
     ],
   })
   if (mode === undefined) return toastCancelled(context)
-  const next = buildPreset(preset, { active, models: byRole, mode })
+  const next = buildPreset(preset, { models: byRole, mode })
   await saveAndDelegate(context, rpc, next, live, task)
 }
 
@@ -160,7 +175,7 @@ async function runTable(context, rpc, preset, models, live, task) {
     const action = await showTableOnce(context, state, focus, models)
     if (action.type === "cancel") return toastCancelled(context)
     if (action.type === "save") {
-      const next = buildPreset(preset, { active: action.state.active, models: action.state.models, mode: action.state.mode })
+      const next = buildPreset(preset, { models: action.state.models, mode: action.state.mode })
       await saveAndDelegate(context, rpc, next, live, task)
       return
     }
@@ -192,28 +207,28 @@ async function runTable(context, rpc, preset, models, live, task) {
       focus = action.focus
       continue
     }
-    if (action.type === "toggle") {
-      state = toggleRole(state, action.role)
-      focus = action.focus
-      continue
-    }
   }
 }
 
 /** Tabel satu-layar peran × model (Stage B). State hidup di Solid signal
  *  supaya panah keyboard merender ulang sorotan langsung; hasil akhir
- *  dikirim keluar lewat onAction (save/cancel/model/mode/toggle). */
+ *  dikirim keluar lewat onAction (save/cancel/model/mode). */
 function SubagentTable(props) {
   const plugin = usePlugin()
   const theme = plugin.theme
   const [focus, setFocus] = createSignal(props.focus)
-  const [active, setActive] = createSignal({ ...props.initial.active })
   const [models, setModels] = createSignal({ ...props.initial.models })
   const [mode, setMode] = createSignal(props.initial.mode)
-  const snapshot = () => ({ active: active(), models: models(), mode: mode() })
+  const snapshot = () => ({ models: models(), mode: mode() })
   const close = (action) => {
-    plugin.ui.dialog.clear()
+    // URUTAN PENTING (bug v0.3.63, ketemu saat uji live Stage B v0.3.65):
+    // onAction dulu, baru dialog.clear(). clear() memicu on-close dialog
+    // (showTableOnce: resolve "cancel") — bila clear() duluan, "cancel"
+    // menang atas "save" dan Ctrl+S selalu berakhir "Dibatalkan" tanpa
+    // menyimpan apa pun. Dengan onAction duluan, promise sudah settle
+    // dengan aksi yang dimaksud sebelum on-close dipanggil.
     props.onAction(action)
+    plugin.ui.dialog.clear()
   }
   plugin.keymap.layer(() => ({
     mode: "global",
@@ -230,15 +245,6 @@ function SubagentTable(props) {
           props.onAction({ type: "model", role: row, state: snapshot(), focus: focus() })
         },
       },
-      {
-        id: "subagent-table-space",
-        bind: "space",
-        run: () => {
-          const row = TABLE_ROWS[focus()]
-          if (row === "mode") return setMode((m) => (m === "paralel" ? "serial" : "paralel"))
-          setActive((a) => ({ ...a, [row]: !a[row] }))
-        },
-      },
       { id: "subagent-table-save", bind: "ctrl+s", run: () => close({ type: "save", state: snapshot(), focus: focus() }) },
       { id: "subagent-table-esc", bind: "escape", run: () => close({ type: "cancel", focus: focus() }) },
     ],
@@ -250,20 +256,20 @@ function SubagentTable(props) {
         {TABLE_ROWS.map((row, i) => {
           const isMode = row === "mode"
           const label = isMode ? "Mode" : ROLE_LABELS[row]
-          const mid = isMode ? mode() : active()[row] ? "Aktif" : "Nonaktif"
+          const mid = isMode ? mode() : "[✓]"
           const right = isMode ? mode() : models()[row]
           const hint = isMode ? "serial/paralel" : `tier ${ROLE_TIERS[row]}`
           const focused = i === focus()
           return (
             <box flexDirection="row">
               <text fg={focused ? theme.text.accent : theme.text.muted}>{focused ? "❯ " : "  "}</text>
-              <text fg={focused ? theme.text.accent : theme.text.base}>{`${label.padEnd(9)} ${mid.padEnd(9)} ${right}  (${hint})`}</text>
+              <text fg={focused ? theme.text.accent : theme.text.base}>{`${label.padEnd(9)} ${mid.padEnd(4)} ${right}  (${hint})`}</text>
             </box>
           )
         })}
       </box>
-      <text fg={theme.text.muted}>↑↓ pindah • Enter ganti model/mode • Spasi aktif/nonaktif • Ctrl+S simpan • Esc batal</text>
-      <text fg={theme.text.muted}>Model berlaku mulai sesi TUI berikutnya; peran + mode berlaku langsung.</text>
+      <text fg={theme.text.muted}>↑↓ pindah • Enter ganti • Ctrl+S simpan • Esc batal</text>
+      <text fg={theme.text.muted}>Model sesi ikut Thinking saat disimpan.</text>
     </box>
   )
 }

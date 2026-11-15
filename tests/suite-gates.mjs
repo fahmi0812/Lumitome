@@ -593,10 +593,10 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     F.isEnabled({}) === true && F.isEnabled({ enabled: false }) === false
     && JSON.stringify(F.activeRoles({ roles: { thinking: { active: true }, search: { active: false }, builder: { active: true }, reviewer: { active: true } } })) === JSON.stringify(["thinking", "builder", "reviewer"])
     && F.allActive({ roles: { thinking: { active: true }, search: { active: true }, builder: { active: true }, reviewer: { active: true } } }) === true);
-  ok("/subagent flow: buildPreset — gabung pilihan, tier tetap, model non-9router ditolak (pakai lama)",
-    (() => { const base = { $comment: "c", enabled: true, mode: "serial", roles: { thinking: { active: true, model: PINNED, tier: "terkuat" }, search: { active: true, model: PINNED, tier: "cepat-murah" }, builder: { active: true, model: PINNED, tier: "menengah-kuat" }, reviewer: { active: true, model: PINNED, tier: "terkuat" } } };
-      const next = F.buildPreset(base, { active: { thinking: true, search: false, builder: true, reviewer: true }, models: { thinking: "9router/x", search: PINNED, builder: "anthropic/z", reviewer: PINNED }, mode: "paralel" });
-      return next.$comment === "c" && next.enabled === true && next.mode === "paralel" && next.roles.search.active === false
+  ok("/subagent flow: buildPreset — gabung pilihan, tier tetap, model non-9router ditolak (pakai lama), keempat peran SELALU aktif",
+    (() => { const base = { $comment: "c", enabled: true, mode: "serial", roles: { thinking: { active: false, model: PINNED, tier: "terkuat" }, search: { active: true, model: PINNED, tier: "cepat-murah" }, builder: { active: true, model: PINNED, tier: "menengah-kuat" }, reviewer: { active: true, model: PINNED, tier: "terkuat" } } };
+      const next = F.buildPreset(base, { models: { thinking: "9router/x", search: PINNED, builder: "anthropic/z", reviewer: PINNED }, mode: "paralel" });
+      return next.$comment === "c" && next.enabled === true && next.mode === "paralel" && F.ROLES.every((r) => next.roles[r].active === true)
         && next.roles.thinking.model === "9router/x" && next.roles.builder.model === PINNED && next.roles.reviewer.tier === "terkuat"; })());
   ok("/subagent flow: canSavePreset — menolak ON menimpa OFF (balapan dua TUI), selain itu lolos",
     F.canSavePreset({ enabled: false }, { enabled: true }).ok === false
@@ -606,9 +606,9 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     && F.canSavePreset({}, { enabled: true }).ok === true);
   ok("/subagent flow: summarizePreset — satu baris, model sama disebut sekali",
     F.summarizePreset({ mode: "serial", roles: { thinking: { active: true, model: PINNED }, search: { active: true, model: PINNED }, builder: { active: true, model: PINNED }, reviewer: { active: true, model: PINNED } } }).includes(PINNED));
-  ok("/subagent flow: tabel — moveFocus membungkus, toggleRole membalik, applyTableModel menolak non-9router",
+  ok("/subagent flow: tabel — moveFocus membungkus, applyTableModel menolak non-9router (toggleRole dihapus v0.3.65 — peran selalu aktif)",
     F.moveFocus(4, 1) === 0 && F.moveFocus(0, -1) === 4
-    && F.toggleRole({ active: { thinking: true } }, "thinking").active.thinking === false
+    && F.toggleRole === undefined
     && F.applyTableModel({ models: { thinking: PINNED } }, "thinking", "anthropic/x").models.thinking === PINNED
     && F.applyTableModel({ models: { thinking: PINNED } }, "thinking", "9router/y").models.thinking === "9router/y");
   const PR = await import("../lumitome/config/plugins/subagent/prompt.mjs");
@@ -700,6 +700,90 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
         return n === 3 && /getLiveModels: RPC is unavailable/.test(e.message);
       }
     })());
+}
+
+// (v0.3.65) /subagent — model sesi ikut Thinking saat disimpan + peran selalu aktif.
+// Laporan Fahmi (13:54 WIB): sesudah pilih model (Thinking = opus 5.5), status
+// line TUI tetap "gemini-3.8-flash-high". Penyebab (dari kode): status line
+// menampilkan model SESI (orchestrator, default terpin di opencode.jsonc),
+// sedangkan popup hanya menulis model PERAN ke file agent (berlaku sesi
+// berikutnya). Perbaikan: sesudah save, plugin memanggil session.switchModel
+// (mekanisme resmi yang sama dipakai /models — POST /api/session/:id/model;
+// terverifikasi ke client opencode v2.3.0 DAN v2.2.4) ke model Thinking.
+// Bonus (ditemukan saat uji live alur save): pengiriman prompt delegasi v0.3.63
+// memakai bentuk `parts` yang tidak ada di SessionPromptInput — gagal live
+// "Missing key at [\"text\"]", jadi prompt tidak pernah terkirim. Bentuk resmi:
+// session.prompt({ sessionID, text }) — sama di 2.3.0 dan 2.2.4.
+// Bonus 2 (ditemukan saat uji live Stage B): close() tabel memanggil
+// dialog.clear() SEBELUM onAction — clear() memicu on-close "cancel" sehingga
+// Ctrl+S selalu berakhir "Dibatalkan" tanpa menyimpan. Urutan dibalik:
+// onAction dulu, baru clear().
+// Celah yang DITEMUKAN tapi TIDAK ditutup di slice ini (jujur, lihat CHANGELOG):
+// sesi baru yang dibuat dari TUI berakhir dengan model default terpin
+// (gemini), bukan Thinking — TUI menerapkan model pilihannya saat pesan
+// pertama dikirim, menimpa pengalihan watcher (session.created). Watcher
+// tetap berguna untuk sesi yang dibuat via API/headless (`lumitome run`);
+// perbaikan penuh butuh mengubah model default wrapper (slice terpisah).
+// Koreksi Fahmi (14:03 WIB): keempat peran SELALU aktif — toggle per peran
+// dihapus (Spasi tidak lagi menonaktifkan peran; [✓] hanya penanda visual);
+// saklar global /subagent on/off tetap ada.
+{
+  const fm = (p) => fs.readFileSync(p, "utf8");
+  const PLUG = "lumitome/config/plugins/subagent";
+  const PINNED = "9router/ag/gemini-3.8-flash-high";
+  const OPUS = "9router/kr/claude-opus-5.5-test-agentic";
+  const F = await import("../lumitome/config/plugins/subagent/flow.mjs");
+  ok("/subagent v0.3.65: splitModelId — pisah di '/' pertama (id boleh mengandung '/')",
+    JSON.stringify(F.splitModelId("9router/ag/gemini-3.8-flash-high")) === JSON.stringify({ providerID: "9router", id: "ag/gemini-3.8-flash-high" })
+    && JSON.stringify(F.splitModelId(OPUS)) === JSON.stringify({ providerID: "9router", id: "kr/claude-opus-5.5-test-agentic" })
+    && F.splitModelId("tanpa-slash") === null && F.splitModelId("") === null && F.splitModelId(null) === null && F.splitModelId("/kosong") === null);
+  ok("/subagent v0.3.65: thinkingSessionModel — model Thinking bila aktif + 9router; null bila nonaktif/tidak valid",
+    F.thinkingSessionModel({ roles: { thinking: { active: true, model: OPUS } } }) === OPUS
+    && F.thinkingSessionModel({ roles: { thinking: { active: false, model: OPUS } } }) === null
+    && F.thinkingSessionModel({ roles: { thinking: { active: true, model: "anthropic/x" } } }) === null
+    && F.thinkingSessionModel({ roles: {} }) === null
+    && F.thinkingSessionModel({}) === null);
+  ok("/subagent v0.3.65: tableState — tanpa field active (peran selalu aktif, preset lama yang nonaktif pun ikut)",
+    (() => { const s = F.tableState({ mode: "serial", roles: { thinking: { active: false, model: OPUS }, search: { active: false, model: PINNED }, builder: { active: false, model: PINNED }, reviewer: { active: false, model: PINNED } } }); return !("active" in s) && s.models.thinking === OPUS && s.mode === "serial"; })());
+  const tui = fm(`${PLUG}/tui.tsx`);
+  ok("/subagent v0.3.65: save memanggil session.switchModel ke model Thinking (mekanisme /models)",
+    /switchSessionToThinking/.test(tui) && /context\.client\.session\.switchModel\(\{ sessionID, model: \{ providerID: parts\.providerID, id: parts\.id \} \}\)/.test(tui)
+    && /thinkingSessionModel\(/.test(tui) && /splitModelId\(/.test(tui));
+  ok("/subagent v0.3.65: prompt delegasi memakai bentuk resmi session.prompt({ sessionID, text }) — bukan parts (v0.3.63 salah bentuk, gagal live 'Missing key at [\"text\"]')",
+    /session\.prompt\(\{ sessionID, text \}\)/.test(tui) && !/session\.prompt\(\{ sessionID, parts/.test(tui));
+  const idx = fm(`${PLUG}/index.ts`);
+  ok("/subagent v0.3.65: sesi baru otomatis ikut Thinking — server plugin langganan session.created + switchModel (terverifikasi ke API plugin 2.3.0 + 2.2.4)",
+    /ctx\.event\.subscribe\(\{ types: \["session\.created"\] \}\)/.test(idx)
+    && /ctx\.session\.switchModel\(\{\s*sessionID: data\.sessionID,\s*model: \{ providerID: parts\.providerID, id: parts\.id \},\s*\}\)/.test(idx)
+    && /thinkingSessionModel\(preset\)/.test(idx) && /splitModelId\(thinking\)/.test(idx));
+  ok("/subagent v0.3.65: watcher sesi baru punya pengaman — lewati anak subagent (parentID) + agent bukan orchestrator + /subagent off + model awal bukan default terpin",
+    /data\.parentID/.test(idx) && /data\.agent !== "orchestrator"/.test(idx)
+    && /preset\.enabled === false/.test(idx) && /initial !== DEFAULT_MODEL/.test(idx));
+  ok("/subagent v0.3.65: watcher fail-silent + dijaga kapabilitas engine (engine lama tanpa ctx.event/switchModel tidak mematikan plugin)",
+    /typeof ctx\.event\?\.subscribe === "function"/.test(idx) && /typeof ctx\.session\?\.switchModel === "function"/.test(idx)
+    && (idx.match(/catch \{/g) ?? []).length >= 3);
+  ok("/subagent v0.3.65: note tanpa sesi jujur — sesi baru nanti otomatis pakai Thinking; prompt + README menyebut hal yang sama",
+    /sesi baru nanti otomatis pakai model Thinking/.test(tui)
+    && /sesi baru yang dibuat sesudah ini pun otomatis memakai model Thinking/.test(fm(`${PLUG}/prompt.mjs`))
+    && /New sessions created afterwards start with the Thinking model too/.test(fm("README.md")));
+  ok("/subagent v0.3.65: tabel close() — onAction DULU baru dialog.clear() (bug v0.3.63: clear() duluan memicu on-close 'cancel' sehingga Ctrl+S selalu Dibatalkan tanpa menyimpan)",
+    (() => { const a = tui.search(/^\s*props\.onAction\(action\)$/m); const b = tui.search(/^\s*plugin\.ui\.dialog\.clear\(\)$/m); return a !== -1 && b !== -1 && a < b; })());
+  ok("/subagent v0.3.65: on/off TIDAK mengubah model sesi (cabang off/on tanpa switchModel, toast tetap singkat)",
+    (() => { const seg = tui.slice(tui.indexOf('if (command === "off"'), tui.indexOf('if (command === "status"')); return !/switchModel/.test(seg) && /"Subagent ON"/.test(seg) && /"Subagent OFF"/.test(seg); })());
+  ok("/subagent v0.3.65: toast simpan menyebut model sesi kini Thinking + model peran sesi berikutnya",
+    /Model sesi kini/.test(tui) && /Model peran berlaku mulai sesi TUI berikutnya/.test(tui));
+  ok("/subagent v0.3.65: Stage A tanpa dialog peran aktif (langsung model per peran)",
+    !/Peran aktif/.test(tui) && !/Atur per peran/.test(tui) && !/Tidak ada peran aktif/.test(tui));
+  ok("/subagent v0.3.65: tabel tanpa Spasi — tidak ada bind space, baris peran selalu [✓], teks minimal",
+    !/bind: "space"/.test(tui) && /"\[✓\]"/.test(tui) && !/Spasi aktif\/nonaktif/.test(tui)
+    && /↑↓ pindah • Enter ganti • Ctrl\+S simpan • Esc batal/.test(tui) && /Model sesi ikut Thinking saat disimpan/.test(tui));
+  const PR = await import("../lumitome/config/plugins/subagent/prompt.mjs");
+  const dlg = PR.buildDelegationPrompt(JSON.parse(fm(".opencode/lumitome-subagent.json")), "uji", true);
+  ok("/subagent v0.3.65: prompt delegasi jujur — model SESI langsung ikut Thinking, model PERAN sesi berikutnya",
+    /model SESI langsung beralih ke model Thinking/.test(dlg) && /sesi TUI berikutnya/.test(dlg));
+  ok("/subagent v0.3.65: README — peran selalu aktif, model sesi ikut Thinking, tanpa Spasi toggle",
+    /always all active/.test(fm("README.md")) && /switches the current session's model to the Thinking role's model/.test(fm("README.md"))
+    && !/Space toggles a role/.test(fm("README.md")));
 }
 
 finish();

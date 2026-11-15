@@ -32,7 +32,7 @@ export function buildDelegationPrompt(preset, task, liveModel) {
     `Urutan delegasi: ${order}`,
     `Mode: ${preset.mode} (paralel maks 3 peran).`,
     modelNote,
-    "JUJUR soal batasnya: konfigurasi agent dimuat saat TUI dimulai — pilihan MODEL berlaku mulai sesi TUI berikutnya (restart); pilihan PERAN + MODE berlaku langsung di sesi ini, dengan delegasi memakai model yang terpin di file agent.",
+    "JUJUR soal batasnya: model SESI langsung beralih ke model Thinking saat preset disimpan (status line TUI ikut berubah); sesi baru yang dibuat sesudah ini pun otomatis memakai model Thinking (server plugin mengalihkannya saat sesi dibuat); model PERAN (file agent) berlaku mulai sesi TUI berikutnya (restart) — konfigurasi agent dimuat saat TUI dimulai. Mode berlaku langsung di sesi ini.",
     "",
     "Delegasi via tool subagent (satu-satunya jalur; prompt harus mandiri — subagent tidak melihat riwayat percakapan):",
     "- fast-path: tugas kecil 1-file berisiko rendah → langsung builder.",

@@ -96,8 +96,10 @@ export function allActive(preset) {
 /**
  * Bangun preset baru dari preset lama + pilihan dialog.
  * $comment + enabled dipertahankan; tier per peran tetap (bukan pilihan bebas).
+ * v0.3.65: keempat peran SELALU aktif — tidak ada lagi toggle per peran,
+ * jadi `active` selalu true untuk semua peran (pilihan dialog hanya model + mode).
  */
-export function buildPreset(base, { active, models, mode }) {
+export function buildPreset(base, { models, mode }) {
   const next = {
     ...(base?.$comment !== undefined ? { $comment: base.$comment } : {}),
     enabled: isEnabled(base),
@@ -106,7 +108,7 @@ export function buildPreset(base, { active, models, mode }) {
   };
   for (const role of ROLES) {
     next.roles[role] = {
-      active: Boolean(active?.[role]),
+      active: true,
       model: typeof models?.[role] === "string" && models[role].startsWith("9router/")
         ? models[role]
         : (base?.roles?.[role]?.model ?? DEFAULT_MODEL),
@@ -125,11 +127,10 @@ export function summarizePreset(preset) {
   return `${names} • mode ${preset.mode} • ${modelText}`;
 }
 
-/** Keadaan awal tabel Stage B dari preset. */
+/** Keadaan awal tabel Stage B dari preset (v0.3.65: tanpa `active` — peran selalu aktif). */
 export function tableState(preset) {
-  const state = { active: {}, models: {}, mode: preset?.mode === "paralel" ? "paralel" : "serial" };
+  const state = { models: {}, mode: preset?.mode === "paralel" ? "paralel" : "serial" };
   for (const role of ROLES) {
-    state.active[role] = preset?.roles?.[role]?.active !== false;
     state.models[role] = preset?.roles?.[role]?.model ?? DEFAULT_MODEL;
   }
   return state;
@@ -144,16 +145,36 @@ export function moveFocus(focus, delta) {
   return ((focus + delta) % n + n) % n;
 }
 
-/** Balik aktif/nonaktif satu peran (tombol Spasi di tabel). */
-export function toggleRole(state, role) {
-  if (!ROLES.includes(role)) return state;
-  return { ...state, active: { ...state.active, [role]: !state.active[role] } };
-}
-
 /** Terapkan pilihan model dari dialog bersarang ke keadaan tabel. */
 export function applyTableModel(state, role, model) {
   if (!ROLES.includes(role) || typeof model !== "string" || !model.startsWith("9router/")) return state;
   return { ...state, models: { ...state.models, [role]: model } };
+}
+
+/**
+ * Pecah ID model "provider/id" menjadi { providerID, id } (v0.3.65 — untuk
+ * `session.switchModel` yang butuh provider dan id terpisah; pisah di "/"
+ * pertama, jadi id boleh mengandung "/" lagi, mis. "kr/claude-opus-5.5-x").
+ * Tanpa "/" (atau kosong di salah satu sisi) → null.
+ */
+export function splitModelId(fullId) {
+  if (typeof fullId !== "string") return null;
+  const i = fullId.indexOf("/");
+  if (i <= 0 || i === fullId.length - 1) return null;
+  return { providerID: fullId.slice(0, i), id: fullId.slice(i + 1) };
+}
+
+/**
+ * Model sesi yang harus dipakai sesudah save (v0.3.65): model peran Thinking,
+ * bila Thinking aktif dan modelnya ID 9router yang valid; selain itu null
+ * (model sesi TIDAK diubah — mis. Thinking nonaktif di preset lama).
+ */
+export function thinkingSessionModel(preset) {
+  const cfg = preset?.roles?.thinking;
+  if (!cfg || cfg.active === false) return null;
+  const m = cfg.model;
+  if (typeof m !== "string" || !m.startsWith("9router/")) return null;
+  return m;
 }
 
 /**
