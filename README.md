@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.65-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.66-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -40,7 +40,7 @@ While it installs (and uninstalls) you see one status line and one line when it 
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.65.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.66.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
@@ -135,7 +135,7 @@ lumitome update --rollback  # go back to the version you had before
 
 This works the same for npm installs: `lumitome update` runs npm for you. You see one status line while it works and one line when it is done. If something goes wrong you get a short message; the full details are in `~/.lumitome/logs/update.log` (Windows: `%USERPROFILE%\.lumitome\logs\update.log`), or add `--verbose` to see them on screen. After updating, Lumitome stops its old background service so the next start uses the new version. `--rollback` is only for git installs. On npm installs, the version check no longer needs Git: if `git` is missing, Lumitome falls back to the GitHub API to find the latest release (if that fails too, the message says Git is missing and shows the manual install command).
 
-Lumitome does not update itself. It only updates when you run `lumitome update`. That command does not change the OpenCode version. On v0.3.1, which has no `update` command, run the install line again once.
+Lumitome does not update itself. It only updates when you run `lumitome update`. That command does not change the OpenCode version. To upgrade the OpenCode engine itself, run `lumitome upgrade` — no arguments, it installs the pinned version (2.3.0) and verifies its checksum for you. (`lumitome upgrade-engine <version> --sha256 <hash>` is still there for manual/advanced use.) Restart the TUI after an engine upgrade so the new engine takes effect. On v0.3.1, which has no `update` command, run the install line again once.
 
 ### About the OpenCode copy
 
@@ -165,7 +165,7 @@ LUMI_AUTO_REFRESH=0 lumitome
 
 A running TUI session does not pick up new models until you restart it — the model list is loaded when the TUI starts. Inside the TUI, `/refresh-models` refreshes the list and reminds you to restart. To see the saved list, `lumitome models --lumitome` (it refreshes first, like startup does).
 
-In the TUI (orchestrator agent), `/subagent` opens a popup to configure role delegation for the task: which 9router model each of the four roles uses (Thinking, Search, Build, Review — always all active, no per-role on/off), and serial/parallel mode. The popup is a real TUI plugin dialog (`lumitome/config/plugins/subagent/`, Stage A sequential selects by default; `/subagent tabel` opens the one-screen roles × model table, Stage B — arrow keys + Enter, Ctrl+S saves, Esc cancels; the [✓] on each row is just a visual marker that the role is active). Saving also switches the current session's model to the Thinking role's model, so the status line shows the model you picked as Thinking. New sessions created afterwards start with the Thinking model too (the server plugin switches them on `session.created`, unless the session was created with an explicit model or is a subagent child). The choice is saved to `.opencode/lumitome-subagent.json` and applied with `lumitome subagent-preset`; mode choices apply immediately, role model choices apply from the next TUI session (same restart rule as above). Workers never ask you questions directly — if one gets stuck it reports BLOCKED to the orchestrator instead. `/subagent off` disables the role system entirely (no popup, the orchestrator works as before without role delegation); `/subagent on` re-enables it. Default is on — a fresh install behaves exactly as before /subagent existed (dormant until called). Headless (`lumitome run`) has no popup: manage roles with `lumitome subagent-preset status|on|off`.
+In the TUI (orchestrator agent), `/subagent` opens a popup to configure role delegation for the task: which 9router model each of the four roles uses (Thinking, Search, Build, Review — always all active, no per-role on/off), and serial/parallel mode. The popup is a real TUI plugin dialog (`lumitome/config/plugins/subagent/`, Stage A sequential selects by default; `/subagent tabel` opens the one-screen roles × model table, Stage B — arrow keys + Enter, Ctrl+S saves, Esc cancels; the [✓] on each row is just a visual marker that the role is active). Saving also switches the current session's model to the Thinking role's model, so the status line shows the model you picked as Thinking. New sessions created afterwards start with the Thinking model too (the wrapper's TUI default follows the preset, and the server plugin also switches them on `session.created`, unless the session was created with an explicit model or is a subagent child). After saving, one final choice asks whether to enter subagent mode now: "Ya, mulai" opens a new subagent session with the Thinking model (or switches the active session to it in place, no TUI restart) and starts role delegation right away, while "Simpan saja" only saves the configuration. The choice is saved to `.opencode/lumitome-subagent.json` and applied with `lumitome subagent-preset`; mode choices apply immediately, role model choices apply from the next TUI session (same restart rule as above). Workers never ask you questions directly — if one gets stuck it reports BLOCKED to the orchestrator instead. `/subagent off` disables the role system entirely (no popup, the orchestrator works as before without role delegation); `/subagent on` re-enables it. Default is on — a fresh install behaves exactly as before /subagent existed (dormant until called). Headless (`lumitome run`) has no popup: manage roles with `lumitome subagent-preset status|on|off`.
 
 ### Windows: optional Defender exclusion
 
@@ -219,7 +219,7 @@ Lumitome adalah asisten coding yang berjalan di terminal. Dibangun di atas OpenC
 
 **Mulai:** ketik `lumitome`. Kalau belum ada provider, layar provider muncul sendiri (buka lagi dengan `lumitome provider`). Isi nama, alamat (base URL), dan API key; key tampil sebagai titik (•). Layanan apa pun yang mirip API OpenAI atau Anthropic bisa dipakai. Daftar model diambil otomatis. Pilih model dengan `/model`.
 
-**Update:** `lumitome update` (instalasi npm: jalankan lagi `npm install -g https://github.com/fahmi0812/Lumitome/tarball/main`). Cek dulu dengan `lumitome update --check`. Batalkan dengan `lumitome update --rollback`.
+**Update:** `lumitome update` (instalasi npm: jalankan lagi `npm install -g https://github.com/fahmi0812/Lumitome/tarball/main`). Cek dulu dengan `lumitome update --check`. Batalkan dengan `lumitome update --rollback`. **Upgrade engine:** `lumitome upgrade` (tanpa argumen — naikkan engine OpenCode ke versi terpin, checksum terverifikasi otomatis; restart TUI sesudahnya).
 
 **Bedanya:**
 
