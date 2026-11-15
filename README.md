@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.62-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.63-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -40,7 +40,7 @@ While it installs (and uninstalls) you see one status line and one line when it 
 npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.62.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.63.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
@@ -165,7 +165,7 @@ LUMI_AUTO_REFRESH=0 lumitome
 
 A running TUI session does not pick up new models until you restart it — the model list is loaded when the TUI starts. Inside the TUI, `/refresh-models` refreshes the list and reminds you to restart. To see the saved list, `lumitome models --lumitome` (it refreshes first, like startup does).
 
-In the TUI (orchestrator agent), `/subagent` opens a popup to configure role delegation for the task: which roles are active (Thinking, Search, Build, Review), which 9router model each role uses, and serial/parallel mode. The choice is saved to `.opencode/lumitome-subagent.json` and applied with `lumitome subagent-preset`; role and mode choices apply immediately, model choices apply from the next TUI session (same restart rule as above). Workers never ask you questions directly — if one gets stuck it reports BLOCKED to the orchestrator instead. `/subagent off` disables the role system entirely (no popup, the orchestrator works as before without role delegation); `/subagent on` re-enables it. Default is on — a fresh install behaves exactly as before /subagent existed (dormant until called).
+In the TUI (orchestrator agent), `/subagent` opens a popup to configure role delegation for the task: which roles are active (Thinking, Search, Build, Review), which 9router model each role uses, and serial/parallel mode. The popup is a real TUI plugin dialog (`lumitome/config/plugins/subagent/`, Stage A sequential selects by default; `/subagent tabel` opens the one-screen roles × model table, Stage B — arrow keys + Enter, Space toggles a role, Ctrl+S saves, Esc cancels). The choice is saved to `.opencode/lumitome-subagent.json` and applied with `lumitome subagent-preset`; role and mode choices apply immediately, model choices apply from the next TUI session (same restart rule as above). Workers never ask you questions directly — if one gets stuck it reports BLOCKED to the orchestrator instead. `/subagent off` disables the role system entirely (no popup, the orchestrator works as before without role delegation); `/subagent on` re-enables it. Default is on — a fresh install behaves exactly as before /subagent existed (dormant until called). Headless (`lumitome run`) has no popup: manage roles with `lumitome subagent-preset status|on|off`.
 
 ### Windows: optional Defender exclusion
 
