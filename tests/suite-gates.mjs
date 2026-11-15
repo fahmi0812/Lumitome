@@ -828,7 +828,7 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     /Masuk mode subagent sekarang\?/.test(tui) && /"Ya, mulai"/.test(tui) && /"Simpan saja"/.test(tui)
     && /current: "start"/.test(tui));
   ok("/subagent v0.3.66: 'Ya, mulai' tanpa sesi → buka sesi baru (session.create + model Thinking) lalu arahkan TUI (router.navigate) + kirim pemberitahuan singkat",
-    /enterSubagentMode/.test(tui) && /context\.client\.session\.create\(\{ model: \{ providerID: parts\.providerID, id: parts\.id \}, agent: "orchestrator" \}\)/.test(tui)
+    /enterSubagentMode/.test(tui) && /context\.client\.session\.create\(\{ model: \{ providerID: parts\.providerID, id: parts\.id \}, agent: "orchestrator", \.\.\.sessionCreateLocation\(process\.cwd\(\)\) \}\)/.test(tui)
     && /context\.ui\.router\.navigate\(\{ type: "session", sessionID \}\)/.test(tui)
     && /sendSubagentNotice\(context, preset, task, sessionID\)/.test(tui));
   ok("/subagent v0.3.66: 'Ya, mulai' dengan sesi aktif → switchModel ke Thinking di tempat (tanpa restart); gagal create/switch → catatan jujur, preset tetap tersimpan",
@@ -1073,6 +1073,127 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
       && ["thinking", "search", "builder", "reviewer"].every((role) => fm(path.join(tmp3, ".opencode", "agents", `${role}.md`)).includes(`model: ${DOTS}`))
       && fm(path.join(tmp3, ".opencode", "rules", "subagent.md")).includes(`- Thinking: ${DOTS}`));
   } finally { fs.rmSync(tmp3, { recursive: true, force: true }); }
+}
+
+// (v0.3.69) /subagent — perbaiki SEMUA temuan uji end-to-end v0.3.68.
+// (1) BUG DIREKTORI: sesi "Ya, mulai" dibuat di cwd server (/home/hatch),
+//     bukan folder proyek — DB sesi uji 0368b: 117/117 directory=/home/hatch.
+//     Perbaikan: session.create dengan location: { directory: cwd TUI }
+//     (API: field top-level directory/projectID diabaikan server —
+//     terverifikasi live: location.directory = ws → sesi tercatat di ws).
+// (2) INDIKATOR PERAN: baris TUI hanya "Running subagent…" generik —
+//     toast "<Peran> jalan" dari event session.tool.called (input.agent +
+//     input.description; event TIDAK membawa nama tool) + aturan deskripsi
+//     delegasi harus diawali label peran di rules/subagent.md.
+// (3) H2 TERBUKTI live: model tersimpan yang tidak ada di daftar live →
+//     dialog diam-diam memilih models[0]; Enter menimpa preset (kr opus
+//     → ag gemini — dan di mesin Fahmi kemungkinan kn/... lalu 402).
+//     Perbaikan: model tersimpan tetap ditawarkan + ditandai, jadi current.
+{
+  const fm = (p) => fs.readFileSync(p, "utf8");
+  const PLUG = "lumitome/config/plugins/subagent";
+  const F69 = await import("../lumitome/config/plugins/subagent/flow.mjs");
+  const ASP = await import("../scripts/apply-subagent-preset.mjs");
+  const os = await import("node:os");
+  const LIVE = ["9router/ag/gemini-3.8-flash", "9router/kr/claude-haiku-5.5", "9router/kr/claude-opus-5.5"];
+  ok("/subagent v0.3.69: sessionCreateLocation — direktori proyek jadi location.directory; kosong/bukan string → {} (perilaku lama)",
+    JSON.stringify(F69.sessionCreateLocation("/home/hatch/ws")) === JSON.stringify({ location: { directory: "/home/hatch/ws" } })
+    && JSON.stringify(F69.sessionCreateLocation("")) === "{}"
+    && JSON.stringify(F69.sessionCreateLocation(undefined)) === "{}"
+    && JSON.stringify(F69.sessionCreateLocation(42)) === "{}");
+  ok("/subagent v0.3.69: subagentStartInfo — panggilan subagent dikenali dari input.agent; awalan label '[Peran]' di deskripsi dibuang",
+    (() => { const i = F69.subagentStartInfo({ agent: "thinking", description: "[Thinking] Rencanakan pencarian+filter" });
+      return i && i.role === "thinking" && i.label === "Thinking" && i.description === "Rencanakan pencarian+filter"; })()
+    && F69.subagentStartInfo({ agent: "search", description: "Cari pola filter" }).description === "Cari pola filter"
+    && F69.subagentStartInfo({ agent: "builder" }).description === ""
+    && F69.subagentStartInfo({ agent: "reviewer", description: "[Reviewer] Periksa hasil" }).label === "Review");
+  ok("/subagent v0.3.69: subagentStartInfo — input tool lain (read/write) / agent bukan peran / null → null (tidak ada toast)",
+    F69.subagentStartInfo({ path: "index.html" }) === null
+    && F69.subagentStartInfo({ agent: "orchestrator", description: "x" }) === null
+    && F69.subagentStartInfo(null) === null
+    && F69.subagentStartInfo({ agent: "fable", description: "x" }) === null);
+  ok("/subagent v0.3.69: modelOptionsForRole — tersimpan ada di live → opsi utuh, current = tersimpan, storedMissing false",
+    (() => { const r = F69.modelOptionsForRole(LIVE, "9router/kr/claude-opus-5.5");
+      return r.current === "9router/kr/claude-opus-5.5" && r.storedMissing === false && r.options.length === LIVE.length && r.options[0] === LIVE[0]; })());
+  ok("/subagent v0.3.69: modelOptionsForRole — tersimpan TIDAK ada di live → tetap ditawarkan (paling akhir), current = tersimpan, storedMissing true (H2)",
+    (() => { const r = F69.modelOptionsForRole(LIVE, "9router/kr/claude-opus-5.5-GONE");
+      return r.current === "9router/kr/claude-opus-5.5-GONE" && r.storedMissing === true
+        && r.options.length === LIVE.length + 1 && r.options[r.options.length - 1] === "9router/kr/claude-opus-5.5-GONE"; })());
+  ok("/subagent v0.3.69: modelOptionsForRole — tersimpan tidak valid / kosong → current = models[0] (perilaku lama), tanpa storedMissing",
+    F69.modelOptionsForRole(LIVE, "openai/gpt-5").current === LIVE[0]
+    && F69.modelOptionsForRole(LIVE, "openai/gpt-5").storedMissing === false
+    && F69.modelOptionsForRole(LIVE, undefined).current === LIVE[0]
+    && F69.modelOptionsForRole(LIVE, "9router/kn/dots-3-note-preview:free").storedMissing === true);
+  const tui = fm(`${PLUG}/tui.tsx`);
+  ok("/subagent v0.3.69: 'Ya, mulai' membuat sesi dengan location.directory = cwd TUI (folder proyek)",
+    /session\.create\(\{ model: \{ providerID: parts\.providerID, id: parts\.id \}, agent: "orchestrator", \.\.\.sessionCreateLocation\(process\.cwd\(\)\) \}\)/.test(tui));
+  ok("/subagent v0.3.69: plugin punya SATU call-site session.create (tidak ada lagi pembuatan sesi tanpa location di plugin)",
+    (tui.match(/session\.create\(/g) || []).length === 1
+    && !/session\.create\(/.test(fm(`${PLUG}/index.ts`)));
+  ok("/subagent v0.3.69: pengamat peran — watchSubagentStarts dipanggil di setup, langganan session.tool.called, toast '<Label> jalan' + deskripsi",
+    /watchSubagentStarts\(context\)/.test(tui)
+    && /function watchSubagentStarts\(context\)/.test(tui)
+    && /context\.client\.event\.subscribe\(\{ types: \["session\.tool\.called"\] \}\)/.test(tui)
+    && /toast\(context, `\$\{info\.label\} jalan`, info\.description/.test(tui)
+    && /event\?\.data\?\.sessionID !== currentSessionID\(context\)/.test(tui));
+  ok("/subagent v0.3.69: pengamat peran fail-silent — langganan dibungkus try/catch, toast tidak menggagalkan plugin bila event gagal",
+    (() => { const seg = tui.slice(tui.indexOf("function watchSubagentStarts"), tui.indexOf("async function switchSessionToThinking"));
+      return /void \(async \(\) => \{/.test(seg) && /try \{/.test(seg) && /catch \{\}/.test(seg) && /catch \{\}/.test(seg); })());
+  ok("/subagent v0.3.69: dialog Stage A + Stage B memakai modelOptionsForRole (tersimpan dipertahankan) + deskripsi 'Tersimpan — tidak ada di daftar live'",
+    /modelOptionsForRole\(models, byRole\[role\]\)/.test(tui)
+    && /modelOptionsForRole\(models, state\.models\[action\.role\]\)/.test(tui)
+    && /Tersimpan — tidak ada di daftar live/.test(tui));
+  // Grandfathering server (v0.3.69 — tanpa ini dialog di atas percuma: save
+  // tetap menolak model tersimpan yang tidak ada di live, terbukti live
+  // toast "Gagal menyimpan preset" untuk model tersimpan).
+  const GONE = "9router/kr/claude-opus-5.5-GONE";
+  const storedGone = { enabled: true, mode: "serial", roles: { thinking: { active: true, model: GONE }, search: { active: true, model: "9router/kr/claude-haiku-5.5" } } };
+  const keepGone = { enabled: true, mode: "serial", roles: { thinking: { active: true, model: GONE }, search: { active: true, model: "9router/kr/claude-haiku-5.5" } } };
+  const newGone = { enabled: true, mode: "serial", roles: { thinking: { active: true, model: "9router/kr/claude-opus-5.5-GONE2" }, search: { active: true, model: "9router/kr/claude-haiku-5.5" } } };
+  ok("/subagent v0.3.69: validatePreset meng-grandfather model TERSIMPAN yang tidak ada di live (peringatan 'dipertahankan', bukan error)",
+    (() => { const r = ASP.validatePreset(keepGone, ["kr/claude-haiku-5.5"], storedGone);
+      return r.errors.length === 0 && r.warnings.some((w) => /thinking/.test(w) && /dipertahankan/.test(w) && w.includes(GONE)); })());
+  ok("/subagent v0.3.69: validatePreset tetap MENOLAK model BARU (bukan tersimpan) yang tidak ada di live",
+    ASP.validatePreset(newGone, ["kr/claude-haiku-5.5"], storedGone).errors.some((e) => /thinking/.test(e) && /tidak ada di daftar 9router live/.test(e)));
+  ok("/subagent v0.3.69: validatePreset tanpa stored = perilaku lama (model di luar live ditolak)",
+    ASP.validatePreset(keepGone, ["kr/claude-haiku-5.5"]).errors.length >= 1);
+  ok("/subagent v0.3.69: validatePreset tidak memperingatkan model tersimpan yang ADA di live",
+    ASP.validatePreset(keepGone, ["kr/claude-opus-5.5-GONE", "kr/claude-haiku-5.5"], storedGone).warnings.length === 0);
+  ok("/subagent v0.3.69: readAppliedModels membaca baris model: dari file agent (fixture sintetis, tidak tergantung working copy)",
+    (() => { const tmpR = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-subagent-0369r-"));
+      try {
+        fs.mkdirSync(path.join(tmpR, ".opencode", "agents"), { recursive: true });
+        for (const r of ["thinking", "search", "builder", "reviewer"]) fs.writeFileSync(path.join(tmpR, ".opencode", "agents", `${r}.md`), `---\nname: ${r}\n---\nmodel: 9router/kr/${r}-model-x\n`);
+        const m = ASP.readAppliedModels(tmpR);
+        return m.thinking === "9router/kr/thinking-model-x" && m.search === "9router/kr/search-model-x"
+          && m.builder === "9router/kr/builder-model-x" && m.reviewer === "9router/kr/reviewer-model-x";
+      } finally { fs.rmSync(tmpR, { recursive: true, force: true }); } })());
+  const tmpG = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-subagent-0369g-"));
+  try {
+    fs.mkdirSync(path.join(tmpG, ".opencode", "agents"), { recursive: true });
+    fs.mkdirSync(path.join(tmpG, ".opencode", "rules"), { recursive: true });
+    for (const r of ["thinking", "search", "builder", "reviewer"]) fs.copyFileSync(`.opencode/agents/${r}.md`, path.join(tmpG, ".opencode", "agents", `${r}.md`));
+    fs.copyFileSync(".opencode/agents/orchestrator.md", path.join(tmpG, ".opencode", "agents", "orchestrator.md"));
+    fs.copyFileSync(".opencode/rules/subagent.md", path.join(tmpG, ".opencode", "rules", "subagent.md"));
+    // File agent thinking.md di tmp masih model repo (gemini terpin) — tulis
+    // GONE ke sana supaya jalur CLI (stored = file agent) meng-grandfather.
+    const thTmp = path.join(tmpG, ".opencode", "agents", "thinking.md");
+    fs.writeFileSync(thTmp, fm(thTmp).replace(/^model:.*$/m, `model: ${GONE}`));
+    const rG = ASP.applyPreset({ root: tmpG, preset: keepGone, liveModels: ["kr/claude-haiku-5.5"] });
+    ok("/subagent v0.3.69: applyPreset jalur CLI meng-grandfather via file agent — preset dengan model tersimpan di luar live TERSIMPAN (peringatan, bukan error)",
+      rG.errors.length === 0 && rG.warnings.some((w) => /dipertahankan/.test(w))
+      && fm(thTmp).includes(`model: ${GONE}`));
+    const rN = ASP.applyPreset({ root: tmpG, preset: newGone, liveModels: ["kr/claude-haiku-5.5"] });
+    ok("/subagent v0.3.69: applyPreset jalur CLI tetap menolak model baru di luar live (bukan tersimpan di file agent)",
+      rN.errors.length >= 1);
+  } finally { fs.rmSync(tmpG, { recursive: true, force: true }); }
+  ok("/subagent v0.3.69: server savePreset meneruskan preset tersimpan (stored) ke validatePreset + applyPreset (grandfathering ujung-ke-ujung)",
+    /const stored = readPreset\(root\)/.test(fm(`${PLUG}/index.ts`))
+    && /validatePreset\(preset, live, stored\)/.test(fm(`${PLUG}/index.ts`))
+    && /applyPreset\(\{ root, preset, liveModels: live, stored \}\)/.test(fm(`${PLUG}/index.ts`)));
+  ok("/subagent v0.3.69: rules/subagent.md — deskripsi delegasi WAJIB diawali label peran '[Peran]' (yang tampil di TUI saat berjalan/selesai)",
+    /Deskripsi delegasi: tiap panggilan tool subagent WAJIB diawali label peran dalam kurung siku/.test(fm(".opencode/rules/subagent.md"))
+    && /contoh "\[Thinking\] Rencanakan/.test(fm(".opencode/rules/subagent.md")));
 }
 
 finish();
