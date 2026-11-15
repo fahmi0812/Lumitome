@@ -4,8 +4,13 @@
 // menyetel OPENCODE_CONFIG_DIR=$LUMI_HOME/config dengan plugins/ disymlink
 // dari lumitome/config/plugins; terverifikasi empiris di engine 2.3.0:
 // direktori tanpa package.json di plugins/ config TIDAK dimuat, direktori
-// DENGAN package.json dimuat). Karena itu preset + agent tetap di root repo,
-// bukan di direktori proyek pengguna (ctx.location.directory).
+// DENGAN package.json dimuat).
+// v0.3.71 (A1): sumber kebenaran preset PINDAH ke $LUMI_HOME
+// (lumitome-subagent.json) — lihat lumitome/lib/subagent-preset.mjs.
+// File repo `.opencode/lumitome-subagent.json` tinggal SEED default;
+// resolveRepoRoot tetap memastikan seed itu ada (plugin harus berada
+// di <root>/lumitome/config/plugins/subagent/), dan presetPath(root)
+// tetap menunjuk seed (fallback bila file user hilang/rusak).
 import fs from "node:fs";
 import path from "node:path";
 

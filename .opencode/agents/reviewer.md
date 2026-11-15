@@ -11,7 +11,7 @@ permissions:
   - { action: subagent, resource: "*", effect: deny }
   - { action: task, resource: "*", effect: deny }
   - { action: "*_*", resource: "*", effect: deny }
-  - { action: "external_directory", resource: "*", effect: ask }
+  - { action: "external_directory", resource: "*", effect: allow }
   - { action: "codemem_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "codemem", effect: allow }
   - { action: "codemem_delete_project", resource: "*", effect: ask }

@@ -16,6 +16,7 @@ import readline from "node:readline";
 import { pathToFileURL } from "node:url";
 import { createUI, uiMode } from "./update-ui.mjs";
 import { windowsCodepage } from "./provider-ui.mjs";
+import { preservePresetAcrossUpdate, preservePresetObject, readPresetFile } from "./subagent-preset.mjs";
 
 export const DEFAULT_URL = "https://github.com/fahmi0812/Lumitome.git";
 export const TARBALL = (tag) => `https://github.com/fahmi0812/Lumitome/tarball/${tag}`;
@@ -117,6 +118,9 @@ export async function update({ argv, version, repo, home, env = process.env, out
     if (npm) return fail("Rollback tidak tersedia untuk instalasi npm.", `Pasang versi lama: npm install -g ${TARBALL("v<versi>")}`);
     const r = rollback({ repo, bdir });
     if (!r) return fail("Belum ada versi sebelumnya untuk dipulihkan.");
+    // v0.3.71 (A1b): rollback mengembalikan repo lama (preset lama ikut
+    // kembali); pastikan nilainya juga selamat ke file user bila belum ada.
+    try { const p = preservePresetAcrossUpdate({ oldRepo: repo, home }); if (p.preserved) log(`preset /subagent: ${p.reason}`); } catch {}
     ui.done("Dikembalikan ke versi sebelumnya"); log(`rollback dari ${r}`); log.close(); return 0;
   }
 
@@ -162,11 +166,15 @@ export async function update({ argv, version, repo, home, env = process.env, out
   if (npm) {
     ui.step("Mengunduh");
     const t = setTimeout(() => ui.step("Memasang"), 4000); t.unref?.();
+    // v0.3.71 (A1b): mode npm mengganti SELURUH direktori paket — stash
+    // preset repo SEBELUM install, karena sesudahnya file lama hilang.
+    const oldPresetNpm = readPresetFile(path.join(repo, ".opencode", "lumitome-subagent.json"));
     try { await R("npm", ["install", "-g", "--no-audit", "--no-fund", "--loglevel=error", TARBALL(target.tag)]); }
     catch (e) { clearTimeout(t); return fail("Pemasangan gagal.", `Coba lagi, atau: npm install -g ${TARBALL(target.tag)}`, e); }
     clearTimeout(t);
     ui.step("Merapikan");
     await afterUpdate({ repo, home, log });
+    try { const p = preservePresetObject(oldPresetNpm, home); if (p.preserved) log(`preset /subagent: ${p.reason}`); } catch {}
     ui.done(`Selesai — ${target.tag}`); log.close(); return 0;
   }
 
@@ -203,8 +211,15 @@ export async function update({ argv, version, repo, home, env = process.env, out
   try { chkOut = await R(process.execPath, [path.join(repo, "lumitome/bin/lumitome.mjs"), "--version"], { env: { ...env, LUMI_HOME: home } }); okv = chkOut.includes(`lumitome ${sver} `); } catch (e) { chkOut = e.detail || e.message; }
   if (!okv || env.LUMI_UPDATE_FAIL_INJECT === "post") {
     fs.renameSync(repo, `${bak}.failed`); fs.renameSync(bak, repo); fs.rmSync(`${bak}.failed`, { recursive: true, force: true });
+    // v0.3.71 (A1b): repo lama kembali — presetnya ikut kembali; pastikan
+    // nilainya juga selamat ke file user bila belum ada.
+    try { const p = preservePresetAcrossUpdate({ oldRepo: repo, home }); if (p.preserved) log(`preset /subagent: ${p.reason}`); } catch {}
     return fail("Versi baru tidak bisa dijalankan; dikembalikan ke versi lama.", null, `cek pasca-pasang: ${chkOut || "inject"}`);
   }
+  // v0.3.71 (A1b): swap berhasil — preset repo LAMA (di backup) harus
+  // selamat ke file user sebelum backup dipangkas; tanpa ini update
+  // mengembalikan preset ke seed gemini (akar bug v0.3.71).
+  try { const p = preservePresetAcrossUpdate({ oldRepo: bak, home }); if (p.preserved) log(`preset /subagent: ${p.reason}`); } catch {}
   // simpan 2 backup terbaru
   const olds = fs.readdirSync(bdir).filter((d) => d.startsWith("src-v")).sort(); for (const d of olds.slice(0, Math.max(0, olds.length - 2))) fs.rmSync(path.join(bdir, d), { recursive: true, force: true });
   ui.step("Merapikan");

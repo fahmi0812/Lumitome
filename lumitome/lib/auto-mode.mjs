@@ -10,12 +10,12 @@
  * that would otherwise ask for approval." TUI juga menampilkan indikator `auto`
  * di samping nama agent saat aktif.
  *
- * Kenapa Lumitome kehilangan mode auto: wrapper tidak pernah meneruskan --auto,
+ * Kenapa Lumitome kehilangan mode auto (dulu): wrapper tidak pernah meneruskan --auto,
  * sementara config final Lumitome menambah aturan `ask` yang tidak ada di
- * `opencode` polos (`external_directory` di luar workspace, `git push *`,
- * plus keputusan `ask` plugin guard untuk push branch) — jadi agent berhenti
- * minta konfirmasi. `opencode` polos jalan auto karena default bawaannya
- * permisif (kebanyakan `allow`).
+ * `opencode` polos (`git push *`, plus keputusan `ask` plugin guard untuk
+ * push branch) — jadi agent berhenti minta konfirmasi. (`external_directory`
+ * di luar workspace dulu ikut menambah `ask`, tapi dihapus v0.3.71.)
+ * `opencode` polos jalan auto karena default bawaannya permisif (kebanyakan `allow`).
  *
  * Default: auto AKTIF. Opt-out: env LUMI_AUTO_MODE=0 atau flag --no-auto
  * (flag menang atas env). Yang tetap TIDAK auto: semua aturan `deny` —

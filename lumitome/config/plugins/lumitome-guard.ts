@@ -58,17 +58,18 @@ export default {
     const headless = env.LUMI_HEADLESS === "1";
     // v0.3.19: tier kepercayaan per proyek (strict/standard/trusted) + akar proyek + file memori ancestor.
     // Tier dibaca dari file trust milik user di luar workspace (tidak bisa diubah agent) atau env LUMI_TRUST_TIER.
-    // Default standard: kebijakan tulis sama, tanpa bwrap. strict: bwrap wajib (fail-closed bila tidak ada).
+    // v0.3.71: sandbox (bwrap) TIDAK LAGI aktif default — hanya bila LUMI_SANDBOX=bwrap
+    // eksplisit (Fahmi: seperti OpenCode biasa). Tier strict TIDAK lagi memaksa
+    // bwrap; tanpa bwrap, guard (deny rahasia/destruktif, anti-spin) tetap jalan.
     let SP: any = null; let TIER = "standard"; let SCOPE: any = null;
     if (g) { try { SCOPE = g.buildSandboxScope(WS, { home: env.HOME || os.homedir(), lumiHome: env.LUMI_HOME || path.join(env.HOME || os.homedir(), ".lumitome"), env }); SP = SCOPE.sp; TIER = SCOPE.tier; } catch (e) { closed ||= `LUMI_GUARD_CLOSED: kebijakan sandbox gagal dibuat (${String(e)}) — shell & tool tulis ditolak`; } }
-    const sandbox = env.LUMI_SANDBOX || (TIER === "strict" ? "bwrap" : "off");
+    const sandbox = env.LUMI_SANDBOX === "bwrap" ? "bwrap" : "off";
     const sandboxSource = env.LUMI_SANDBOX ? "env" : "default";
     const tierSource = SCOPE?.tierSource || "default";
-    if (g && sandbox === "bwrap" && !g.bwrapAvailable()) closed = "SANDBOX_CLOSED: bwrap tidak tersedia/tidak bisa membuat namespace. Shell ditolak (fail-closed). Pasang bubblewrap (apt install bubblewrap), turunkan tier (lumitome trust standard), atau set LUMI_SANDBOX=off secara sadar.";
+    if (g && sandbox === "bwrap" && !g.bwrapAvailable()) closed = "SANDBOX_CLOSED: bwrap tidak tersedia/tidak bisa membuat namespace. Shell ditolak (fail-closed). Pasang bubblewrap (apt install bubblewrap), atau jalankan tanpa LUMI_SANDBOX=bwrap (sandbox mati default).";
     jot({ kind: "guard", status: closed ? "closed" : "ok", sandbox, sandboxSource, tier: TIER, tierSource, ws: WS, root: SCOPE?.root, write: SP?.write, reason: closed || undefined });
-    // P1-2 (2): tier dari env (bukan file trust) + penurunan sandbox via env — visibilitas, bukan blokir.
+    // P1-2 (2): tier dari env (bukan file trust) — visibilitas, bukan blokir.
     if (tierSource === "env") jot({ kind: "tier-env", tier: TIER, source: "env", ws: WS, reason: "tier dari env LUMI_TRUST_TIER, bukan file trust (~/.lumitome/trust.json)" });
-    if (sandbox === "off" && TIER === "strict" && sandboxSource === "env") jot({ kind: "sandbox-downgraded", tier: TIER, sandbox, ws: WS, reason: "LUMI_SANDBOX=off menurunkan tier strict (kehilangan bwrap)" });
 
     await ctx.tool.hook("execute.before", (e: any) => {
       const tool = String(e.tool);
@@ -81,8 +82,11 @@ export default {
         return;
       }
       // Urutan penegakan tinggal di guard (harness/lumi-guard.mjs: evaluateTool); plugin hanya wiring.
+      // v0.3.71: sandbox mati default — scope (SP) hanya diteruskan bila
+      // bwrap aktif eksplisit; bila off, evaluateTool dipanggil dengan
+      // sandbox: null supaya cek scope dilewati (seperti OpenCode biasa).
       const command = SHELL.has(tool) ? String(e.input?.command ?? "") : "";
-      const r = g.evaluateTool(tool, e.input || {}, { workspace: WS, sandbox: SP, tier: TIER, headless, toolDirs, argsDir: env.LUMI_SBX_DIR, sandboxMode: sandbox, spin, closed, lumiHome: env.LUMI_HOME || "" });
+      const r = g.evaluateTool(tool, e.input || {}, { workspace: WS, sandbox: sandbox === "bwrap" ? SP : null, tier: TIER, headless, toolDirs, argsDir: env.LUMI_SBX_DIR, sandboxMode: sandbox, spin, closed, lumiHome: env.LUMI_HOME || "" });
       if (r.effect === "deny") {
         jot(r.rule === "spin" ? { kind: "spin", tool, reason: r.reason } : { kind: "deny", tool, rule: r.rule, ...(r.command ? { command: r.command } : {}) });
         throw new Error(r.reason);

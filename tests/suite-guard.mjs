@@ -68,7 +68,32 @@ import { evaluateDoneGate } from "../harness/done-gate.ts";
   ok("evaluateTool: shell rahasia → deny secret; file .env → deny secret", ev("shell", { command: "cat .env" }).rule === "secret" && ev("read", { path: ".env" }).rule === "secret");
   ok("evaluateTool: closed → tulis deny, baca allow", ev("shell", { command: "ls" }, { closed: "LUMI_GUARD_CLOSED: x" }).effect === "deny" && ev("read", { path: "a.md" }, { closed: "LUMI_GUARD_CLOSED: x" }).effect === "allow");
   ok("evaluateTool: push branch non-headless → ask diteruskan", G.evaluateTool("shell", { command: "git push origin feat/a" }, { workspace: W, sandbox: evSp, tier: "standard", headless: false }).effect === "ask");
-  ok("evaluateTool: tulis di luar sandbox → deny sandbox-outside", ev("shell", { command: "echo x > /etc/passwd" }).rule === "sandbox-outside");
+  ok("evaluateTool: tulis di luar sandbox → deny sandbox-outside (jalur opt-in: sandbox eksplisit)", ev("shell", { command: "echo x > /etc/passwd" }).rule === "sandbox-outside");
+  // v0.3.71: sandbox mati DEFAULT — evaluateTool dengan sandbox:null (jalur
+  // plugin normal) mengizinkan baca/tulis di luar folder proyek, seperti
+  // OpenCode biasa; rahasia + destruktif + anti-spin TETAP berlaku.
+  const evOff = (tool, input, o = {}) => G.evaluateTool(tool, input, { workspace: W, sandbox: null, tier: "standard", headless: true, ...o });
+  ok("v0.3.71: sandbox off (default) — baca/tulis di luar proyek diizinkan",
+    evOff("read", { path: "/etc/hostname" }).effect === "allow"
+    && evOff("write", { filePath: "/tmp/lain/x.txt" }).effect === "allow"
+    && evOff("shell", { command: "echo x > /tmp/lain/y.txt" }).effect === "allow"
+    && G.classifyFileTool("write", { filePath: "/srv/data/a.txt" }, { workspace: W, sandbox: null }).effect === "allow");
+  ok("v0.3.71: sandbox off — rahasia + destruktif TETAP ditolak",
+    evOff("read", { path: ".env" }).rule === "secret" && evOff("shell", { command: "rm -rf /" }).rule !== "sandbox-outside"
+    && evOff("shell", { command: "rm -rf /" }).effect === "deny" && evOff("read", { path: "~/.ssh/id_rsa" }).rule === "secret");
+  // v0.3.71 scope B (koreksi — terbukti live 0371): external_directory ask →
+  // ALLOW di semua lapisan, bukan dihapus. Menghapusnya membuat aturan
+  // `*_*` deny di frontmatter agent menelan external_directory (engine:
+  // aturan eksplisit sesudah wildcard yang menang) → read di luar proyek
+  // ditolak "Permission denied: external_directory".
+  const extAllow = (f) => { const t = fs.readFileSync(f, "utf8"); return /external_directory/.test(t) && /external_directory[\s\S]{0,160}allow/.test(t) && !/external_directory[\s\S]{0,160}"ask"/.test(t) && !/external_directory[\s\S]{0,160}effect: "ask"/.test(t); };
+  ok("v0.3.71: scope B — external_directory = allow (bukan ask/deny) di config/policy",
+    extAllow("lumitome/config/opencode.jsonc") && extAllow("opencode.jsonc")
+    && extAllow("lumitome/lib/build-config.mjs") && extAllow("scripts/gen-policy.mjs")
+    && !/external_directory/.test(fs.readFileSync("scripts/check-opencode.mjs", "utf8")));
+  ok("v0.3.71: scope B — file agent hasil generate membawa external_directory allow",
+    /external_directory", resource: "\*", effect: allow/.test(fs.readFileSync(".opencode/agents/orchestrator.md", "utf8"))
+    && /external_directory", resource: "\*", effect: allow/.test(fs.readFileSync(".opencode/agents/thinking.md", "utf8")));
   const evTmp = (await import("node:os")).tmpdir() + "/lumi-sbx-test";
   ok("evaluateTool: mode bwrap → rewrite, bukan deny", (() => { const r = G.evaluateTool("shell", { command: "echo hi" }, { workspace: process.cwd(), sandbox: G.sandboxPaths(process.cwd(), { home: "/home/u" }), sandboxMode: "bwrap", argsDir: evTmp }); return r.effect === "allow" && /^bwrap --args 3 /.test(r.rewrite.command); })());
   ok("evaluateTool: spin trip lewat urutan (identik >4x → deny spin)", (() => { const s = new G.RuntimeSpin({ maxFail: 3, maxRepeat: 4 }); let r; for (let i = 0; i < 5; i++) r = G.evaluateTool("shell", { command: "echo hi" }, { workspace: W, sandbox: evSp, spin: s }); return r.rule === "spin"; })());
@@ -225,8 +250,11 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
     G.buildSandboxScope(tp43, { ...o43, env: { LUMI_TRUST_TIER: "strict" } }).tierSource === "env"
     && G.buildSandboxScope(tp43, o43).tierSource === "default"
     && (() => { fs.writeFileSync(path.join(lh43, "trust.json"), JSON.stringify({ projects: { [path.join(th43, "Bindo")]: "trusted" } })); const s = G.buildSandboxScope(tp43, o43); fs.rmSync(path.join(lh43, "trust.json")); return s.tierSource === "file" && s.tier === "trusted"; })());
-  ok("P1-2 (2): plugin mencatat tierSource + sandbox-downgraded di jurnal",
-    /tierSource/.test(PG43) && /sandbox-downgraded/.test(PG43) && /kind: "tier-env"/.test(PG43));
+  // v0.3.71: "sandbox-downgraded" DIHAPUS — sandbox off kini default, bukan
+  // penurunan; plugin hanya mencatat tier-env + wiring opt-in bwrap.
+  ok("P1-2 (2): plugin mencatat tierSource di jurnal; tanpa lagi sandbox-downgraded (off = default)",
+    /tierSource/.test(PG43) && /kind: "tier-env"/.test(PG43) && !/kind: "sandbox-downgraded"/.test(PG43)
+    && /LUMI_SANDBOX === "bwrap"/.test(PG43) && /sandbox === "bwrap" \? SP : null/.test(PG43));
   ok("P1-2 (2): wrapper memperingatkan tier dari env (bukan file trust)",
     /berasal dari env LUMI_TRUST_TIER/.test(W43));
   {

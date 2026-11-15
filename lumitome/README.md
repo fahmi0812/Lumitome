@@ -49,7 +49,7 @@ Skill: harness memakai skill & DB router miliknya sendiri (`config/skills` → `
 | `LUMI_IDLE_TIMEOUT_MS` | `900000` | batas jeda antar-chunk stream; lewat batas ini muncul "Timed out waiting for response data" |
 | `LUMI_TOTAL_TIMEOUT_MS` | `3600000` | batas total satu permintaan provider |
 | `LUMI_RETRIES` | `2` | retry wrapper bila timeout sebelum ada aksi |
-| `LUMI_SANDBOX` | `bwrap` | `off` hanya untuk debug; `off` + tier strict diperingatkan + dicatat di jurnal (kehilangan bwrap) |
+| `LUMI_SANDBOX` | `off` | `bwrap` = opt-in sandbox Linux; default `off` sejak v0.3.71 (seperti OpenCode biasa) |
 | `LUMI_DONE_GATE` | `on` | `off` mematikan done-gate |
 | `LUMI_SPIN_MAX_FAIL` / `LUMI_SPIN_MAX_REPEAT` | `3` / `4` | ambang anti-spin |
 | `LUMI_SERVE_PASSWORD_FILE` | `$LUMI_HOME/serve.password` | file password `serve`/`web` (0600) |

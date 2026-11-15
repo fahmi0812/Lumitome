@@ -12,7 +12,13 @@ const q = (s) => JSON.stringify(s);
 const rule = (a, r, e) => `  - { action: ${q(a)}, resource: ${q(r)}, effect: ${e} }`;
 
 export function mcpRules(servers, sector) {
-  const out = [rule("*_*", "*", "deny"), rule("external_directory", "*", "ask")];
+  // v0.3.71: batas baca-direktori diubah ask → allow (Fahmi: seperti OpenCode
+  // biasa — default upstream external_directory = allow). Aturan eksplisit
+  // HARUS tetap ada sesudah `*_*` deny: aturan itulah yang menang atas
+  // wildcard (terbukti live 0371 — menghapusnya membuat `*_*` deny menelan
+  // external_directory → read di luar proyek ditolak engine). Deny-by-default
+  // MCP (*_*) + deny perintah destruktif + rahasia TETAP berlaku.
+  const out = [rule("*_*", "*", "deny"), rule("external_directory", "*", "allow")];
   const own = [...servers, ...(sector ? [`gw-${sector}`] : [])];
   for (const s of own) {
     out.push(rule(`${s}_*`, "*", "allow"));
