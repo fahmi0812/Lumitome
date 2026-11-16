@@ -1,5 +1,51 @@
 # Changelog
 
+## 0.3.72 — ARCHITECTURE.md diperbarui ke keadaan v0.3.71
+
+- Slice docs-only (tanpa perubahan perilaku kode): `ARCHITECTURE.md` diperbarui dari
+  header v0.3.47 ke v0.3.72 agar cocok dengan kode v0.3.71. Pemicu: Fahmi mem-paste
+  koreksi dari AI lain yang mempelajari repo — koreksi itu sendiri menggambarkan repo
+  era ~v0.3.57, jadi SEMUA angkanya diverifikasi ulang dari kode + CHANGELOG + registry
+  sebelum ditulis (audit lengkap: `~/workspace/lumitome-test-0372/NOTES.md`).
+- Angka yang diperbaiki: skill 900 (734 routable) → **928 (762 aktif, 166 red-team
+  disabled)** — bukti `router/skills-registry.json` (928 entri, `pack='red-team'` 166,
+  sisanya `active` per `router/skill-db.mjs:167`); suite 863/0/1 (angka lama) →
+  **1134/0/2** (v0.3.71, dibuktikan ulang gates slice ini); metrik routing katalog 734
+  → 762 (top-1 0,8304 / held-out 0,8333 tetap, dikunci suite-routing).
+- §6 Sandbox ditulis ulang ke keadaan v0.3.71: bwrap HANYA bila `LUMI_SANDBOX=bwrap`
+  eksplisit, default off; tier strict TIDAK lagi memaksa bwrap; `external_directory`
+  ask → allow (bukan dihapus); cek scope hanya bila sandbox non-null. Kode tier +
+  `lumitome trust` + `buildSandboxScope` MASIH ADA (tidak dihapus) — yang berubah
+  penegakannya, bukan keberadaan kodenya. `sandbox-downgraded` jot dihapus (off kini
+  default). Tetap berlaku: deny rahasia/destruktif, MCP deny-by-default, anti-spin,
+  jurnal, aturan SSH deploy, `LUMI_TRUST_PROJECT=1`, `LUMI_HARNESS`.
+- Baru: §7 Subagent (v0.3.61–v0.3.71) — 4 peran selalu aktif + saklar global on/off;
+  preset pindah ke `$LUMI_HOME/lumitome-subagent.json` (A1), file repo jadi seed,
+  update mempertahankan preset (A1b), TUI_MODEL gagal bersuara (A2), satu
+  `DEFAULT_MODEL` (A3), wrapper sinkronkan file agent sebelum engine start (A4);
+  penegakan native v0.3.70 (context hook, guard `execute.before`, metrik JSONL,
+  TANPA re-drive, TANPA wrapper `delegate`).
+- Baru: §3 tabel MCP dilengkapi figcraft/stitch/drawio/blender (semua OFF by default);
+  §5 invarian ditambah preset/`DEFAULT_MODEL`/sandbox-off/mode-auto/lint-gate;
+  §4 menyebut konsultasi MWG (v0.3.55) + rujukan §7; §1 menyebut `lumitome upgrade`.
+  `README.md` baris 21 diperbaiki (900/734 → 928/762 — `bump-version` tidak
+  menyinkronkan kalimat ini, hanya badge + tarball); `docs/ARCHITECTURE.md`
+  (redirect) diperbarui v0.3.47 → v0.3.72.
+- Yang dari paste TERBUKTI masih benar dan dipertahankan: done-gate modul kode
+  (FACT/JUDGMENT, waiver NOT_CONFIGURED beralasan + bukti, blokir push/rilis/scan/CVE);
+  guard plugin (hook before tolak/bungkus bwrap, after jurnal + anti-spin); mode auto
+  default sejak v0.3.51 (baris status dihapus v0.3.53); lint gate v0.3.54; MWG v0.3.55;
+  sync upstream 3-way merge v0.3.56; engine OpenCode 2.3.0; model default 9router
+  gemini-3.8-flash-high; orchestrator 6 sektor; routing skill maksimal 5.
+- Batasan jujur: metrik routing TIDAK diukur ulang live di slice ini (nilai dari
+  `runtime/metrics.json` + gates v0.3.71; latensi ditulis sebagai rentang ber-noise
+  ~1–2 ms p50 / ~4–5 ms p95). Isu role-bleed Kritikus loopdesign (15 Nov) dicatat
+  satu kalimat di §7 sebagai isu terbuka (rencana P0–P2 belum diimplementasi).
+  Komentar kode kadaluarsa yang SENGAJA tidak disentuh: `scripts/validate.mjs:140`
+  dan `tests/suite-routing.mjs:65` (menyebut 734 entri) — komentar internal, di luar
+  scope slice dokumen.
+- Verifikasi: `npm run validate` OK (warns 0), lint OK (68 file), `npm test` 1134 passed / 0 failed / 2 skipped (sama dengan v0.3.71, tanpa asersi baru — slice dokumen).
+
 ## 0.3.71 — Preset /subagent pindah ke home + sandbox mati default
 
 - Akar (laporan Fahmi 15 Nov ~23:13 WIB + audit fullcheck §2, TERBUKTI dari kode + git): preset `.opencode/lumitome-subagent.json` adalah state mesin yang TER-COMMIT di git — isinya di HEAD = keempat peran `9router/ag/gemini-3.8-flash-high` (sejak v0.3.61, tak pernah diubah) — sementara `lumitome update` mode git menukar SELURUH direktori repo dengan clone segar dan `afterUpdate` TIDAK menyelamatkan preset. Akibatnya tiap update mengembalikan preset ke seed gemini; watcher v0.3.65 tidak bisa menolong (berhenti saat thinking === initial, sama-sama gemini). Jalur jatuh kedua (independen, silent): TUI_MODEL di `bin/lumitome.mjs` hanya memakai model Thinking bila ada di cache `providers.json`; auto-refresh startup (budget 3 detik, best-effort) gagal diam-diam → cache basi → tetap gemini tanpa peringatan. Literal default tersebar di 8 situs. BUKAN bug: gemini di sesi anak Search adalah perilaku benar (preset Fahmi memang Search = gemini flash) — yang diperbaiki adalah gemini sebagai model sesi utama/orchestrator. Baseline sebelum perbaikan (kode v0.3.70 + preset tes, `~/workspace/lumitome-test-0371/results-{plain,full}.json`): launch biasa lahir `kr/claude-opus-5.5` + tugas penuh 5 sesi model preset benar + 0 request gemini-flash-high — dengan preset UTUH, launch sudah benar; bocornya = update menghapus preset.
