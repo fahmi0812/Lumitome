@@ -18,6 +18,7 @@ Pola tiap agent: `{"action":"*_*","effect":"deny"}` → `allow <server>_*` untuk
 | drawio | local npx | **OFF** | `@next-ai-drawio/mcp-server@0.4.15` | penulisan | preview browser lokal; nyalakan `LUMI_MCP=<default>,drawio`; v0.4.15: batas body HTTP 10 MiB + bind 127.0.0.1, `create_new_diagram` diperketat agar tidak menghancurkan diagram yang ada |
 | blender | local uvx | **OFF** | `mcp-for-blender==2.2.9` (ahujasid/mcp-for-blender) | media | Claude mengendalikan Blender (bangun scene, render, iterasi); nyalakan `LUMI_MCP=<default>,blender`; butuh Blender terpasang + addon MCP for Blender aktif (`uvx mcp-for-blender install-addon`); **PERINGATAN: `execute_blender_code` menjalankan Python arbitrer di Blender dengan akses penuh user (ask), safe mode OFF default — opt-in via `BLENDER_MCP_SAFE_MODE=1`** |
 | github | remote | **OFF** | `https://api.githubcopilot.com/mcp/` | coding (devops) | `Authorization: Bearer {env:GITHUB_PERSONAL_ACCESS_TOKEN}`; tool tulis = ask |
+| parallel | remote | **OFF** | `https://mcp.parallel.ai/mcp` | riset | web search/fetch/decisions + research; tanpa key gratis (rate limit, tidak ditagih); `PARALLEL_API_KEY` (env) untuk `web_research` + limit 600/menit; nyalakan `LUMI_MCP=<default>,parallel` |
 | skills | local node | ON | `router/skill-search-mcp.mjs` | semua sektor | `skill_search` read-only, allowlist sektor |
 | gw-&lt;sektor&gt; (6) | remote | **OFF** | `http://127.0.0.1:8811..8816/mcp` | sektornya saja | gateway opsional, lihat `docs/MCP-GATEWAY.md` |
 

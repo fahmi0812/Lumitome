@@ -99,7 +99,7 @@ if (cfgErr.length) cfgErr.forEach((e) => fail(`config schema: ${e}`)); else pass
 const agErr = checkAgents(); agErr.forEach(fail); if (!agErr.length) pass("agents frontmatter valid");
 const plErr = checkPlugins(); plErr.forEach(fail); if (!plErr.length) pass("plugins v2: export default {id, setup}");
 const v2Err = checkV2Config(); v2Err.forEach(fail); if (!v2Err.length) pass("opencode.jsonc native V2 (tanpa kunci V1 deprecated)");
-const mcpErr = checkMcpPolicy(); mcpErr.forEach(fail); if (!mcpErr.length) pass("MCP: secret {env:} saja, versi dipin, figma/github/gateway disabled, deny-by-default, tanpa Kali/trading");
+const mcpErr = checkMcpPolicy(); mcpErr.forEach(fail); if (!mcpErr.length) pass("MCP: secret {env:} saja, versi dipin, figma/github/parallel/gateway disabled, deny-by-default, tanpa Kali/trading");
 {
   const { execFileSync } = await import("node:child_process");
   try { execFileSync(process.execPath, ["scripts/gen-policy.mjs", "--check"], { stdio: "pipe" }); pass("permissions agent = hasil gen-policy (skill+MCP per sektor)"); }

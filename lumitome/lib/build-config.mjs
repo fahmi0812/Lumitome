@@ -59,6 +59,14 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
     const fcArgs = FC.endsWith(".AppImage") ? ["cli", "mcp"] : ["mcp"];
     mcpOverride.figcraft = { type: "local", command: [FC, ...fcArgs, "--automation-read-root", WS, "--automation-write-root", WS], timeout: { startup: 30000, catalog: 30000, execution: 300000 } };
   }
+  // parallel (parallel.ai MCP, remote) — opsional, mati default; hanya bila disebut eksplisit di LUMI_MCP (tidak ikut "all").
+  // Tanpa key: web_search/web_fetch/web_decisions gratis (rate limit lebih rendah, tidak ditagih). Dengan PARALLEL_API_KEY: web_research + limit lebih tinggi.
+  // Header hanya ditambahkan bila key ada di env — nilai key TIDAK PERNAH ditulis ke config, hanya literal {env:...} (engine yang men-resolve).
+  if (wantMcp.includes("parallel")) {
+    mcpOverride.parallel = { type: "remote", url: "https://mcp.parallel.ai/mcp",
+      ...(env.PARALLEL_API_KEY ? { headers: { Authorization: "Bearer {env:PARALLEL_API_KEY}" } } : {}),
+      timeout: { startup: 30000, catalog: 30000, execution: 300000 } };
+  }
   // codemem global: binary absolut di LUMI_HOME/bin (bukan PATH, bukan config proyek). Tidak pernah `install`.
   const CM = await import(pathToFileURL(path.join(ROOT, "lib", "codemem.mjs")).href);
   if (wantMcp.includes("all") || wantMcp.includes("codemem")) {

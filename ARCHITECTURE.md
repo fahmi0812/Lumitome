@@ -36,7 +36,7 @@ Catatan jujur: golden berisi banyak prompt templat berulang ("kasus N") → angk
 |---|---|
 | coding | context7, codemem, github (mati), playwright, chromedev |
 | media (design/web) | figma (mati, OAuth), stitch (mati), figcraft (mati), blender (mati), playwright, chromedev |
-| riset | context7, markitdown, playwright |
+| riset | context7, markitdown, playwright, parallel (mati) |
 | penulisan | context7, markitdown, drawio (mati) |
 | security (defensif) | context7, codemem |
 | finance (tanpa trading) | markitdown |

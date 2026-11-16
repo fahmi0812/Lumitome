@@ -18,6 +18,8 @@ permissions:
   - { action: "opencode_list_mcp_resources", resource: "codemem", effect: allow }
   - { action: "codemem_delete_project", resource: "*", effect: ask }
   - { action: "codemem_manage_adr", resource: "*", effect: ask }
+  - { action: "parallel_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "parallel", effect: allow }
 ---
 
 Kamu Search — pencari peran /subagent Lumitome (pola Explore).

@@ -220,6 +220,24 @@ import { frontmatter } from "../router/parse.mjs";
   const r5 = await BC.buildFinalConfig({ env: env5, ...base, HOME: h5, CFG_DIR: c5, JOURNAL: path.join(h5, "j.jsonl"), RUN_ID: "t5", sub: "models" });
   ok("buildFinalConfig blender: LUMI_MCP=all → blender TIDAK ikut (opt-in eksplisit)", !r5.finalCfg.mcp.servers.blender);
   fs.rmSync(h5, { recursive: true, force: true });
+  // v0.3.75: MCP Parallel — opt-in eksplisit saja; tidak ikut "all" maupun default; tanpa key = tanpa header (free tier).
+  const { h: h6, c: c6 } = mk();
+  const env6 = { LUMI_MCP: "skills,parallel", LUMI_ROUTER_L1: "0" };
+  const r6 = await BC.buildFinalConfig({ env: env6, ...base, HOME: h6, CFG_DIR: c6, JOURNAL: path.join(h6, "j.jsonl"), RUN_ID: "t6", sub: "models" });
+  ok("buildFinalConfig parallel: LUMI_MCP=skills,parallel tanpa key → server remote tanpa header",
+    r6.finalCfg.mcp.servers.parallel?.type === "remote" && r6.finalCfg.mcp.servers.parallel?.url === "https://mcp.parallel.ai/mcp" && !r6.finalCfg.mcp.servers.parallel?.headers);
+  fs.rmSync(h6, { recursive: true, force: true });
+  const { h: h7, c: c7 } = mk();
+  const env7 = { LUMI_MCP: "skills,parallel", PARALLEL_API_KEY: "pk-test-jangan-dipakai", LUMI_ROUTER_L1: "0" };
+  const r7 = await BC.buildFinalConfig({ env: env7, ...base, HOME: h7, CFG_DIR: c7, JOURNAL: path.join(h7, "j.jsonl"), RUN_ID: "t7", sub: "models" });
+  ok("buildFinalConfig parallel: dengan PARALLEL_API_KEY → header Bearer {env:PARALLEL_API_KEY} (nilai key tidak tertulis di config)",
+    r7.finalCfg.mcp.servers.parallel?.headers?.Authorization === "Bearer {env:PARALLEL_API_KEY}" && !JSON.stringify(r7.finalCfg).includes("pk-test-jangan-dipakai"));
+  fs.rmSync(h7, { recursive: true, force: true });
+  const { h: h8, c: c8 } = mk();
+  const env8 = { LUMI_MCP: "all", LUMI_ROUTER_L1: "0" };
+  const r8 = await BC.buildFinalConfig({ env: env8, ...base, HOME: h8, CFG_DIR: c8, JOURNAL: path.join(h8, "j.jsonl"), RUN_ID: "t8", sub: "models" });
+  ok("buildFinalConfig parallel: LUMI_MCP=all → parallel TIDAK ikut (opt-in eksplisit)", !r8.finalCfg.mcp.servers.parallel);
+  fs.rmSync(h8, { recursive: true, force: true });
 }
 
 {

@@ -11,6 +11,8 @@ permissions:
   - { action: "opencode_list_mcp_resources", resource: "markitdown", effect: allow }
   - { action: "playwright_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "playwright", effect: allow }
+  - { action: "parallel_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "parallel", effect: allow }
   - { action: "gw-riset_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "gw-riset", effect: allow }
   - { action: "skills_riset_*", resource: "*", effect: allow }

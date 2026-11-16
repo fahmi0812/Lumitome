@@ -1,5 +1,60 @@
 # Changelog
 
+## 0.3.75 — Parallel MCP opt-in — web search untuk Search role (P4 lanjutan)
+
+- Baru (opt-in, OFF by default): MCP **Parallel** (`https://mcp.parallel.ai/mcp`,
+  remote) untuk Search role — `web_search`, `web_fetch`, `web_decisions`,
+  `find_verticals`, `search_vertical`, `image_search`, `send_feedback`
+  (+ `web_research` bila pakai API key). Alasan: Search role sampai hari ini
+  TIDAK punya tool pencarian web sama sekali — izinnya hanya context7
+  (dokumen library) + codemem (memori codebase lokal); prompt-nya bilang
+  "cari web" tapi untuk info live ia harus menebak dari data latih atau
+  lapor BLOCKED. Playwright (sektor riset) adalah otomasi browser — berat,
+  lambat, boros token — bukan API search; markitdown butuh URL dulu.
+  Parallel menutup kekurangan itu tanpa menggusur apa pun.
+- Cara pakai: `LUMI_MCP=<default>,parallel` lalu restart service (tanpa key
+  pun jalan — tier gratis anonim). Opsional, untuk `web_research` + limit
+  lebih tinggi: buat key di platform.parallel.ai lalu
+  `PARALLEL_API_KEY=<key>` di env proses (key TIDAK PERNAH masuk config —
+  hanya literal `{env:PARALLEL_API_KEY}` sebagai header
+  `Authorization: Bearer`, mengikuti aturan secret repo; tanpa key, header
+  tidak dikirim). Harga berbayar (bila pakai key): search fast/turbo
+  $1/1.000 req, basic/advanced $5/1.000, extract $1/1.000 URL, decisions
+  $1/1.000, web_research dari $10/1.000; limit anonim "variable, cukup
+  untuk personal use" (tanpa angka pasti — overage = rate-limit, bukan tagihan).
+- Perubahan (minimal, pola opt-in figcraft/blender): entri `parallel` di
+  `router/mcp-sectors.json` (sektor riset + agents.search) → `npm run policy`
+  meregenerasi izin Search (`parallel_*` allow) + `sectors/riset.md`; blok
+  opt-in di `lumitome/lib/build-config.mjs` (hanya bila `LUMI_MCP`
+  menyebut `parallel` eksplisit — TIDAK ikut `all`); blok disabled di
+  `opencode.jsonc`; `docs/MCP.md` + `ARCHITECTURE.md` §3; `check-opencode`
+  + `validate` (pesan pass). Body teks Search role TIDAK diubah. Tes baru
+  (3) di `tests/suite-services.mjs`: tanpa key → remote + URL benar + TANPA
+  header; dengan `PARALLEL_API_KEY` → header `{env:...}` + nilai key tidak
+  muncul di config; `LUMI_MCP=all` → parallel TIDAK ikut.
+- Verifikasi (VM, engine 2.3.0, tanpa key): probe MCP langsung —
+  `tools/list` 7 tool + `web_search` asli mengembalikan hasil nyata
+  (info rilis OpenCode v2.3.0); `opencode mcp list` → `✓ parallel
+  connected`. E2E lewat engine (mock 9router, orchestrator → subagent
+  Search): TERBUKTI eksekusi nyata — Search child menerima hasil Parallel
+  asli (`search_id: search_94ce41903f9f6474695fcfea176100cf`, excerpts halaman
+  rilis OpenCode incl. v2.3.0 13 Nov 2026), lalu parent menerima HASIL-nya.
+  Gates: validate OK (warns 0, lint 70 file), suite **1168/0/2** (+3).
+- Batasan jujur: (1) Engine 2.3.0 TIDAK menawarkan tool MCP sebagai
+  function call langsung ke model — toolDefs sesi Search hanya 7 tool
+  built-in; jalur pemanggilan yang didokumentasikan engine sendiri
+  (`<mcp_instructions>`) adalah lewat tool `execute` (Code Mode JS):
+  `tools["parallel"].web_search(...)` — dan E2E di atas membuktikan jalur
+  itu bekerja. Model nyata akan memakai jalur yang sama (instruksi sudah
+  ada di system prompt-nya). (2) Live dengan API key asli BELUM teruji —
+  hanya config (header `{env:...}`, key tidak bocor). (3) Limit tier gratis
+  anonim tidak dipublikasi angkanya ("variable"); privasi: query search
+  dikirim ke server parallel.ai, tier Launch TIDAK tercakup SOC 2 dan tanpa
+  ZDR default — opt-in saja, pengguna yang memilih. (4) `web_decisions`
+  masih early-release; `send_feedback` adalah write outbound ke pihak
+  ketiga (bagian dari tool set default vendor). Bukti lengkap:
+  `~/workspace/lumitome-test-0375/NOTES.md`.
+
 ## 0.3.74 — Plugin TUI /subagent gagal load di Windows — bawa react sendiri
 
 - Perbaiki: plugin TUI /subagent gagal load di install npm-global Windows

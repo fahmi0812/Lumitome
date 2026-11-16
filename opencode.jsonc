@@ -211,6 +211,11 @@
         },
         "disabled": true
       },
+      "parallel": {
+        "type": "remote",
+        "url": "https://mcp.parallel.ai/mcp",
+        "disabled": true
+      },
       "skills": {
         "type": "local",
         "command": [
