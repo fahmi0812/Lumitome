@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.3.74 — Plugin TUI /subagent gagal load di Windows — bawa react sendiri
+
+- Perbaiki: plugin TUI /subagent gagal load di install npm-global Windows
+  (`Cannot find package 'react'` dari `tui.tsx`) — plugin kini membawa react
+  sendiri: `"react": "19.3.1"` (pin eksak) di `dependencies` root + entri
+  lockfile. `npm install -g` (fresh install maupun `lumitome update` mode
+  npm) memasangnya otomatis ke `node_modules` paket; tidak ada perubahan
+  jalur update/install.
+- Akar masalah (TERBUKTI di VM, bukan asumsi): `tui.tsx` berisi JSX Stage B
+  (baris 296) → engine (Bun) mentranspile `.tsx` dengan automatic JSX
+  runtime default (`jsxImportSource: "react"`) sehingga menyuntikkan import
+  `react/jsx-runtime`. File plugin di DALAM `node_modules` (layout
+  npm-global) di-resolve filesystem-only → tidak ada react di parent
+  node_modules mana pun → gagal. File di LUAR `node_modules` (layout repo)
+  memakai react/jsx-runtime dari bundle engine yang ter-embed → lolos.
+  Inilah sebabnya VM tidak pernah menangkap bug ini dan mengapa upgrade
+  engine 2.2.4 → 2.3.0 di Windows tidak mengubah apa pun (bukan soal versi
+  engine).
+- Bukti isolasi (probe plugin minimal, layout npm-global): hanya-JSX gagal
+  react; hanya-`@opencode/plugin/tui` lolos; hanya-`solid-js` lolos;
+  probe-JSX di jalur repo gagal `No renderer found` (react ter-resolve);
+  salinan paket di jalur biasa (bukan `node_modules`) lolos.
+- Verifikasi (VM, engine 2.3.0, simulasi layout npm-global):
+  sebelum perbaikan palet `Subagent roles` TIDAK ada + log
+  `Cannot find package 'react'` (plugins=14); sesudah perbaikan palet ADA,
+  0 `Cannot find package`, `plugins=15`, 0 WARN plugin. Gates: validate OK
+  (warns 0, lint 70 file), suite 1165/0/2 (sama seperti v0.3.73).
+- Batasan jujur: belum teruji di Windows ASLI Fahmi — hanya simulasi layout
+  npm-global di VM (Linux). Perintah sesudah rilis: `lumitome update`
+  (atau `npm install -g .../tarball/v0.3.74`); `lumitome upgrade` TIDAK
+  perlu (engine sudah 2.3.0). Bukti lengkap:
+  `~/workspace/lumitome-test-0374/NOTES.md`.
+
 ## 0.3.73 — Eval harness peran /subagent (P4)
 
 - Baru: eval harness peran (`harness/role-eval.mjs`, `scripts/role-eval.mjs`,
