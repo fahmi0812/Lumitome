@@ -1,0 +1,90 @@
+{
+  "tasksTotal": 3,
+  "tasksPassed": 3,
+  "tasksPassedJudge": 3,
+  "judgeTotal": 3,
+  "judgeAgreement": 1,
+  "censusTotal": 3,
+  "fullDelegation": 3,
+  "rolesCoverage": 1,
+  "delegationRateMedian": null,
+  "delegationRateMeasured": 0,
+  "tasks": [
+    {
+      "taskId": "search-filter",
+      "pass": true,
+      "judgeVerdict": "PASS",
+      "rolesDelegated": [
+        "builder",
+        "reviewer",
+        "search",
+        "thinking"
+      ],
+      "rolesCompleted": [
+        "builder",
+        "reviewer",
+        "search",
+        "thinking"
+      ],
+      "parentSubagentCalls": 4,
+      "delegationRate": null,
+      "durationMs": 6263,
+      "exitCode": 3,
+      "timedOut": false
+    },
+    {
+      "taskId": "add-footer",
+      "pass": true,
+      "judgeVerdict": "PASS",
+      "rolesDelegated": [
+        "builder",
+        "reviewer",
+        "search",
+        "thinking"
+      ],
+      "rolesCompleted": [
+        "builder",
+        "reviewer",
+        "search",
+        "thinking"
+      ],
+      "parentSubagentCalls": 4,
+      "delegationRate": null,
+      "durationMs": 5024,
+      "exitCode": 3,
+      "timedOut": false
+    },
+    {
+      "taskId": "fix-typo-add-item",
+      "pass": true,
+      "judgeVerdict": "PASS",
+      "rolesDelegated": [
+        "builder",
+        "reviewer",
+        "search",
+        "thinking"
+      ],
+      "rolesCompleted": [
+        "builder",
+        "reviewer",
+        "search",
+        "thinking"
+      ],
+      "parentSubagentCalls": 4,
+      "delegationRate": null,
+      "durationMs": 4874,
+      "exitCode": 3,
+      "timedOut": false
+    }
+  ],
+  "mode": "mock",
+  "engine": "opencode v2.3.0",
+  "startedAt": "2026-11-16T03:57:05.537Z",
+  "preset": {
+    "enabled": true,
+    "thinking": "9router/kr/claude-opus-5.5",
+    "search": "9router/ag/gemini-3.8-flash",
+    "build": "9router/kr/claude-sonnet-5.5",
+    "review": "9router/kr/claude-opus-5.5"
+  }
+}

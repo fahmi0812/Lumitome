@@ -182,6 +182,13 @@ if (sub === "subagent-preset") {
   const ASP = await import(pathToFileURL(path.join(REPO, "scripts", "apply-subagent-preset.mjs")).href);
   process.exit(ASP.cli({ argv: argv.slice(1), root: REPO }));
 }
+// v0.3.73 (eval harness peran P4): `lumitome role-eval` — golden task +
+// blind judge + sensus delegasi. Dispatch sebelum auto-refresh/startup
+// (eval menjalankan `lumitome run` sendiri per task).
+if (sub === "role-eval") {
+  const RE = await import(pathToFileURL(path.join(REPO, "scripts", "role-eval.mjs")).href);
+  process.exit(await RE.cli({ argv: argv.slice(1), root: REPO }));
+}
 // v0.3.38: auto-refresh model saat startup — provider baru yang ditambah di
 // dashboard 9router (GET {base}/models berubah) langsung terbaca tanpa
 // `lumitome models --refresh` manual. Best-effort, timeout pendek, gagal →
