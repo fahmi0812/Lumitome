@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>TokoBajuKu</title>
+<style>
+  body { font-family: sans-serif; margin: 2rem; }
+  .produk { border: 1px solid #ccc; padding: 1rem; margin: 0.5rem 0; }
+</style>
+</head>
+<body>
+<h1>TokoBajuKu</h1>
+<div id="daftar-produk"></div>
+<script>
+const PRODUK = [
+  { id: 1, nama: "Kaos Polos Putih", harga: 59000 },
+  { id: 2, nama: "Kemeja Flanel", harga: 149000 },
+  { id: 3, nama: "Celana Jeans", harga: 199000 },
+  { id: 4, nama: "Jaket Hoodie", harga: 249000 },
+  { id: 5, nama: "Sepatu Larii", harga: 299000 }
+];
+function renderProduk() {
+  document.getElementById("daftar-produk").innerHTML = PRODUK.map(p =>
+    `<div class="produk"><strong>${p.nama}</strong> — Rp ${p.harga}</div>`).join("");
+}
+renderProduk();
+</script>
+</body>
+</html>

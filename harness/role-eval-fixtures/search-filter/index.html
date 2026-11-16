@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>TokoBajuKu</title>
+<style>
+  body { font-family: sans-serif; margin: 2rem; }
+  .produk { border: 1px solid #ccc; padding: 1rem; margin: 0.5rem 0; }
+</style>
+</head>
+<body>
+<h1>TokoBajuKu</h1>
+<div id="daftar-produk"></div>
+<h2>Keranjang</h2>
+<ul id="keranjang"></ul>
+<p>Total: Rp <span id="total">0</span></p>
+<h2>Checkout</h2>
+<form id="checkout">
+  <input id="nama" placeholder="Nama" required>
+  <input id="alamat" placeholder="Alamat" required>
+  <button type="submit">Pesan</button>
+</form>
+<div id="ringkasan"></div>
+<script>
+const PRODUK = [
+  { id: 1, nama: "Kaos Polos Putih", harga: 59000 },
+  { id: 2, nama: "Kemeja Flanel", harga: 149000 },
+  { id: 3, nama: "Celana Jeans", harga: 199000 },
+  { id: 4, nama: "Jaket Hoodie", harga: 249000 },
+  { id: 5, nama: "Kaos Stripe", harga: 69000 },
+  { id: 6, nama: "Kemeja Linen", harga: 179000 }
+];
+let keranjang = JSON.parse(localStorage.getItem("keranjang") || "[]");
+function renderProduk() {
+  document.getElementById("daftar-produk").innerHTML = PRODUK.map(p =>
+    `<div class="produk"><strong>${p.nama}</strong> — Rp ${p.harga}
+     <button onclick="tambah(${p.id})">+ Keranjang</button></div>`).join("");
+}
+function tambah(id) {
+  const item = keranjang.find(i => i.id === id);
+  if (item) item.jumlah++; else keranjang.push({ id, jumlah: 1 });
+  simpan(); renderKeranjang();
+}
+function simpan() { localStorage.setItem("keranjang", JSON.stringify(keranjang)); }
+function renderKeranjang() {
+  const ul = document.getElementById("keranjang");
+  ul.innerHTML = keranjang.map(i => {
+    const p = PRODUK.find(x => x.id === i.id);
+    return `<li>${p.nama} x ${i.jumlah} — Rp ${p.harga * i.jumlah}
+      <button onclick="hapus(${i.id})">Hapus</button></li>`;
+  }).join("");
+  document.getElementById("total").textContent =
+    keranjang.reduce((s, i) => s + PRODUK.find(x => x.id === i.id).harga * i.jumlah, 0);
+}
+function hapus(id) { keranjang = keranjang.filter(i => i.id !== id); simpan(); renderKeranjang(); }
+document.getElementById("checkout").addEventListener("submit", e => {
+  e.preventDefault();
+  const nama = document.getElementById("nama").value;
+  const alamat = document.getElementById("alamat").value;
+  document.getElementById("ringkasan").textContent =
+    `Pesanan atas nama ${nama} (${alamat}): total Rp ${document.getElementById("total").textContent}`;
+});
+renderProduk(); renderKeranjang();
+</script>
+</body>
+</html>
