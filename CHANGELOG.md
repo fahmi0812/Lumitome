@@ -1,5 +1,52 @@
 # Changelog
 
+## 0.3.73 — Eval harness peran /subagent (P4)
+
+- Baru: eval harness peran (`harness/role-eval.mjs`, `scripts/role-eval.mjs`,
+  `lumitome role-eval`) — 3 golden task deterministik kecil (search-filter,
+  add-footer, fix-typo-add-item) + checker file murni + blind judge (hanya
+  artefak hasil kerja, tanpa transkrip/diagnosis — protokol blind forward-test
+  Codex dari evaluasi CL4R1T4S) + sensus delegasi dari DB sesi engine
+  (`harness/role-eval-census.py`, stdlib sqlite3) + delegation-rate dari
+  metrics JSONL v0.3.70 bila ada. Baseline mock tercatat di
+  `harness/role-eval-baseline.json`; protokol lengkap `harness/role-eval.md`.
+- CLI: `lumitome role-eval` (`--task/--home/--out/--model/--judge-model/
+  --no-judge/--timeout-ms/--mode/--save-baseline/--compare-baseline`,
+  `--list`, `--score`); mock 9router scripted di
+  `tests/fixtures/role-eval-mock-9router.mjs`; 31 tes baru
+  (`tests/suite-role-eval.mjs`, termasuk 2 tes regresi mock).
+- Baseline (VM, mock 9router, engine 2.3.0, run6 — bukti
+  `~/workspace/lumitome-test-0373/`): checker 3/3, blind judge 3/3
+  (kesepakatan 100%), delegasi penuh 4 peran 3/3 (100%); delegation-rate
+  median tidak terukur (0/3, lihat batasan); durasi eval 29,7 detik; exit
+  code tiap task run 3 (DONE-GATE FAIL — diharapkan, file berubah tanpa
+  perintah tes).
+- Gates: validate OK (warns 0, lint 70 file), suite 1165/0/2 (+31).
+- Batasan jujur:
+  - Hook plugin v0.3.70 tidak andal di mode headless `run`: snapshot tool
+    orchestrator tetap penuh (12 tool) dan metrik JSONL hanya tertulis bila
+    langganan `session.created` menang balapan startup server
+    (`shouldEnforce` butuh agent `"orchestrator"`; `undefined` → false).
+    Bukti: run4-task1 menulis 8 baris (rate 100%), run4-task2/3 + run5 +
+    run6 menulis 0 baris. Delegation-rate headless = best-effort/racy;
+    sensus DB adalah sumber delegasi utama (stabil 6/6 run). Ini temuan
+    mode headless, bukan TUI.
+  - Fakta headless yang dipegang CLI: stdin harus tertutup (kalau tidak, run
+    menggantung); wajib `--agent orchestrator` (default engine = "build");
+    A4 dilewati untuk `run` → CLI terapkan preset ke file agent sebelum run
+    dan kembalikan sesudahnya (terbukti: `git status` bersih dari modifikasi
+    agent).
+  - Dua bug mock ditemukan + diperbaiki selama baseline (dengan tes regresi):
+    cabang parent-first-turn ikut kena giliran anak; ws ditebak dari
+    tool-call (read ke path salah → ANTI_SPIN → loop 300×). Satu insiden
+    prosedural: mock lama tak mati saat restart (pola pkill tak cocok) →
+    run2 tidak valid; mock statis `EVAL_OUT` menulis ke run lama → run5
+    tidak valid. Baseline resmi hanya run6.
+  - Baseline dari mock, BUKAN model asli; live hanya engine 2.3.0; judge
+    blind tetap model yang sama, bukan manusia. Scope hanya P4 — doctor (#2)
+    dan memori persisten (#3) tidak masuk slice ini. Tidak ada perubahan
+    perilaku v0.3.70–v0.3.72.
+
 ## 0.3.72 — ARCHITECTURE.md diperbarui ke keadaan v0.3.71
 
 - Slice docs-only (tanpa perubahan perilaku kode): `ARCHITECTURE.md` diperbarui dari
