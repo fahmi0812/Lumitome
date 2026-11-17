@@ -30,7 +30,9 @@ import {
   filterNineRouterModels,
   canSavePreset,
   thinkingSessionModel,
+  childSessionModel,
   splitModelId,
+  ROLES,
 } from "./flow.mjs"
 import {
   ORCHESTRATOR_AGENT,
@@ -63,50 +65,82 @@ function readPresetSafe(root: string, home?: string) {
   }
 }
 
+// Model awal sesi dari event (provider/id) — bila event tidak membawa
+// model, dicek ulang via session.get; tidak diketahui → null (jangan menebak).
+async function initialModel(ctx: any, data: any) {
+  if (data?.model?.providerID && data?.model?.id) {
+    return `${data.model.providerID}/${data.model.id}`
+  }
+  try {
+    const info = await ctx.session.get({ sessionID: data.sessionID })
+    return info?.model?.providerID && info?.model?.id
+      ? `${info.model.providerID}/${info.model.id}`
+      : null
+  } catch {
+    return null // model awal tidak diketahui: jangan menebak
+  }
+}
+
+async function switchSessionModel(ctx: any, sessionID: string, target: string) {
+  const parts = splitModelId(target)
+  if (!parts) return false
+  await ctx.session.switchModel({
+    sessionID,
+    model: { providerID: parts.providerID, id: parts.id },
+  })
+  return true
+}
+
 // Sesi baru lahir dengan model default terpin → alihkan ke model Thinking.
 // (v0.3.65: menutup celah "save di home screen" — di home belum ada sesi,
 // jadi switch saat save tidak punya sasaran; sesi pertama yang dibuat
 // sesudah itu tetap lahir dengan gemini. Watcher ini memastikan sesi baru
 // pun langsung memakai Thinking, jadi status line menunjukkan model yang
 // dipilih Fahmi sejak pesan pertama.)
-// Pengaman, semuanya harus lolos sebelum switch:
-//  - sesi anak subagent (parentID terisi) JANGAN disentuh — model peran
-//    mereka datang dari file agent;
+// Pengaman, semuanya harus lolos sebelum switch (sesi utama):
 //  - agent bukan orchestrator JANGAN disentuh;
 //  - pilihan model eksplisit dihormati: hanya sesi yang lahir dengan model
 //    default terpin (atau tanpa model di event — dicek ulang via session.get)
 //    yang dialihkan, jadi `lumitome run -m <model>` / LUMI_MODEL tetap menang;
 //  - /subagent off (enabled: false) → tidak ada pengalihan;
 //  - Thinking nonaktif / bukan 9router → tidak ada pengalihan.
+//
+// v0.3.76 (LEAK #1/A): sesi ANAK peran JUGA dialihkan — ke
+// preset.roles[agent].model (bukan ke Thinking). Daemon memuat file agent
+// sekali saat boot, jadi anak yang lahir sesudah preset disimpan lewat
+// popup di tengah sesi tetap memakai model basi dari cache daemon bila
+// tidak dialihkan di sini. Anak non-peran (agent bukan peran) tidak
+// disentuh. switchModel pada anak bisa gagal/terlambat (balapan dengan
+// giliran pertama anak) — kegagalan dicatat ke metrik (child-switch-failed),
+// bukan dilempar; bila API tidak mengizinkan sama sekali, perbaikan B
+// (fingerprint daemon) yang menanggung — lihat CHANGELOG v0.3.76.
 async function maybeSwitchNewSession(ctx: any, root: string, home: string, event: any) {
   if (event?.type !== "session.created") return
   const data = event.data ?? {}
-  if (!data.sessionID || data.parentID) return
-  if (data.agent && data.agent !== "orchestrator") return
-  let initial = data.model?.providerID && data.model?.id
-    ? `${data.model.providerID}/${data.model.id}`
-    : null
-  if (!initial) {
-    try {
-      const info = await ctx.session.get({ sessionID: data.sessionID })
-      initial = info?.model?.providerID && info?.model?.id
-        ? `${info.model.providerID}/${info.model.id}`
-        : null
-    } catch {
-      return // model awal tidak diketahui: jangan menebak
-    }
-  }
-  if (initial && initial !== DEFAULT_MODEL) return
+  if (!data.sessionID) return
   const preset = readPresetSafe(root, home)
   if (!preset || preset.enabled === false) return
+  if (data.parentID) {
+    const agent = data.agent
+    if (typeof agent !== "string" || !ROLES.includes(agent)) return
+    const initial = await initialModel(ctx, data)
+    const target = childSessionModel(preset, agent, initial)
+    if (!target) return
+    try {
+      if (await switchSessionModel(ctx, data.sessionID, target)) {
+        appendMetrics(home, { kind: "child-switch", sessionID: data.sessionID, parentID: data.parentID, agent, from: initial, to: target })
+      }
+    } catch (e) {
+      appendMetrics(home, { kind: "child-switch-failed", sessionID: data.sessionID, parentID: data.parentID, agent, from: initial, to: target, error: String((e as any)?.message ?? e) })
+    }
+    return
+  }
+  if (data.agent && data.agent !== "orchestrator") return
+  const initial = await initialModel(ctx, data)
+  if (initial && initial !== DEFAULT_MODEL) return
   const thinking = thinkingSessionModel(preset)
   if (!thinking || thinking === initial) return
-  const parts = splitModelId(thinking)
-  if (!parts) return
-  await ctx.session.switchModel({
-    sessionID: data.sessionID,
-    model: { providerID: parts.providerID, id: parts.id },
-  })
+  await switchSessionModel(ctx, data.sessionID, thinking)
 }
 
 function watchSessionCreated(ctx: any, root: string, home: string, sessionAgents: Map<string, string>) {
@@ -120,6 +154,14 @@ function watchSessionCreated(ctx: any, root: string, home: string, sessionAgents
         try {
           if (typeof event?.data?.sessionID === "string" && typeof event?.data?.agent === "string") {
             sessionAgents.set(event.data.sessionID, event.data.agent)
+          }
+          // v0.3.76 (LEAK #5/E): catat kelahiran sesi anak (peran + model
+          // awal) — tanpa ini metrik buta terhadap kebocoran model anak.
+          if (typeof event?.data?.sessionID === "string" && typeof event?.data?.parentID === "string") {
+            const m = event.data.model?.providerID && event.data.model?.id
+              ? `${event.data.model.providerID}/${event.data.model.id}`
+              : null
+            appendMetrics(home, { kind: "child-session", sessionID: event.data.sessionID, parentID: event.data.parentID, agent: event.data.agent ?? null, model: m })
           }
           await maybeSwitchNewSession(ctx, root, home, event)
         } catch {
@@ -237,7 +279,11 @@ async function registerEnforcement(ctx: any, root: string, home: string, session
         const counters = countersBySession.get(sessionID) ?? newCounters()
         countTool(counters, tool, false)
         countersBySession.set(sessionID, counters)
-        appendMetrics(home, { kind: "tool", sessionID, agent, tool, toolKind: classifyTool(tool), status: event?.status })
+        // v0.3.76 (LEAK #5/E): sertakan peran target panggilan subagent
+        // (input.agent) bila ada — tanpa ini metrik tidak tahu peran mana
+        // yang dipanggil, hanya bahwa "subagent" dipanggil.
+        const targetAgent = typeof event?.input?.agent === "string" ? event.input.agent : undefined
+        appendMetrics(home, { kind: "tool", sessionID, agent, tool, toolKind: classifyTool(tool), status: event?.status, ...(targetAgent ? { targetAgent } : {}) })
         if (debug) appendMetrics(home, { kind: "debug", hook: "execute.after", sessionID, agent, tool, status: event?.status, keys: Object.keys(event ?? {}) })
       } catch {
         // metrik tidak boleh mematikan plugin
@@ -254,9 +300,11 @@ export default Plugin.define({
     // Peta sesi → agent + counter tool call per sesi (v0.3.70: guard + metrik).
     const sessionAgents = new Map<string, string>()
     const countersBySession = new Map<string, any>()
-    // Sesi baru otomatis memakai model Thinking (v0.3.65). Dijaga ketat:
-    // hanya bila API plugin menyediakannya (engine lama tanpa ctx.event /
-    // ctx.session.switchModel dilewati diam-diam — plugin RPC tetap jalan).
+    // Sesi baru otomatis memakai model Thinking (v0.3.65); sesi anak peran
+    // otomatis memakai model preset perannya (v0.3.76, LEAK #1/A). Dijaga
+    // ketat: hanya bila API plugin menyediakannya (engine lama tanpa
+    // ctx.event / ctx.session.switchModel dilewati diam-diam — plugin RPC
+    // tetap jalan).
     if (typeof ctx.event?.subscribe === "function" && typeof ctx.session?.switchModel === "function") {
       watchSessionCreated(ctx, root, home, sessionAgents)
       watchExecutionEnds(ctx, root, home, sessionAgents, countersBySession)

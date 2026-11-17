@@ -219,8 +219,9 @@ if (sub !== "run" && !env.LUMI_MODEL) {
   // repo bila belum ada); keputusan Thinking-vs-default SATU tempat
   // (resolveSessionDefault di scripts/apply-subagent-preset.mjs, dipakai
   // juga `lumitome subagent-preset status`). Gagal memakai Thinking yang
-  // diminta user → BERSUARA di LUMI_DEBUG (diam-diam jatuh ke gemini =
-  // akar bug ini); tanpa preset / bila Thinking memang gemini → diam.
+  // diminta user → BERSUARA di stderr (v0.3.76: tanpa syarat LUMI_DEBUG;
+  // diam-diam jatuh ke gemini = akar kebocoran #2); tanpa preset / bila
+  // Thinking memang gemini → diam.
   try {
     const SP = await import(pathToFileURL(path.join(ROOT, "lib", "subagent-preset.mjs")).href);
     const ASP = await import(pathToFileURL(path.join(REPO, "scripts", "apply-subagent-preset.mjs")).href);
@@ -245,12 +246,32 @@ if (sub !== "run" && !env.LUMI_MODEL) {
         if (env.LUMI_DEBUG) process.stderr.write(`lumitome: sinkron file agent gagal (${e.message})\n`);
       }
     }
-    if (env.LUMI_DEBUG && d.model === DEFAULT_MODEL && d.thinking && d.thinking !== DEFAULT_MODEL) {
-      process.stderr.write(`lumitome: model default sesi TUI jatuh ke default terpin (${DEFAULT_MODEL}) — ${d.reason} (preset: ${loaded.source ?? "tidak ada"})\n`);
+    // v0.3.76 (LEAK #2/C): fallback ke default terpin BERSUARA — selalu
+    // (tanpa syarat LUMI_DEBUG). Diam-diam jatuh ke gemini adalah akar
+    // kebocoran #2: user meminta Thinking lain tapi sesi jalan dengan
+    // default, tanpa jejak apa pun.
+    if (d.model === DEFAULT_MODEL && d.thinking && d.thinking !== DEFAULT_MODEL) {
+      process.stderr.write(`lumitome: PERINGATAN — model default sesi TUI jatuh ke default terpin (${DEFAULT_MODEL}) — ${d.reason} (preset: ${loaded.source ?? "tidak ada"})\n`);
     }
   } catch (e) {
     if (env.LUMI_DEBUG) process.stderr.write(`lumitome: preset /subagent tidak bisa dimuat (${e.message}) — sesi TUI memakai default terpin\n`);
   }
+}
+// v0.3.76 (LEAK #2/C): `lumitome run` memakai MODEL langsung — preset
+// /subagent hanya memengaruhi sesi TUI (perilaku lama, tidak diubah). Bila
+// MODEL adalah default terpin padahal preset meminta Thinking lain,
+// bersuara di stderr (bukan diam). -m / LUMI_MODEL eksplisit tetap menang
+// tanpa peringatan.
+if (sub === "run" && !env.LUMI_MODEL && MODEL === DEFAULT_MODEL) {
+  try {
+    const SP2 = await import(pathToFileURL(path.join(ROOT, "lib", "subagent-preset.mjs")).href);
+    const ASP2 = await import(pathToFileURL(path.join(REPO, "scripts", "apply-subagent-preset.mjs")).href);
+    const loaded2 = SP2.loadPreset({ home: ISO_HOME, root: REPO });
+    const d2 = ASP2.resolveSessionDefault(loaded2.preset, ASP2.loadLiveModels(ISO_HOME));
+    if (d2.thinking && d2.thinking !== DEFAULT_MODEL) {
+      process.stderr.write(`lumitome: PERINGATAN — run headless memakai model default terpin (${DEFAULT_MODEL}) — ${d2.reason}; preset meminta Thinking ${d2.thinking} (preset hanya memengaruhi sesi TUI; pakai -m untuk run)\n`);
+    }
+  } catch {}
 }
 if (!HAS_PROVIDER) {
   if (sub === "run") die(2, "belum ada provider. Tambah: `lumitome connect` (Custom OpenAI/Anthropic-compatible) atau export NINEROUTER_API_KEY");
@@ -360,9 +381,12 @@ if (sub === "" || sub === "run") {
   } catch {}
 }
 // service dipakai ulang hanya bila config/key/versi sama; beda → service lama milik LUMI_HOME dihentikan dulu
+// v0.3.76 (LEAK #1/B): sidik ikut menghitung hash preset + baris model
+// file agent (presetAgentHash) — TUI baru sesudah preset diganti TIDAK
+// boleh me-reuse daemon yang cache agent-nya masih preset lama.
 if (sub === "" || sub === "service") {
   const SCX = await import(pathToFileURL(path.join(ROOT, "lib", "service-ctl.mjs")).href);
-  const fp = SCX.fingerprint([VERSION, env.OPENCODE_CONFIG_CONTENT, FRAG.env, env.LUMI_SANDBOX || "", env.LUMI_9ROUTER_URL || "", TRUST, JSON.stringify(Object.fromEntries(Object.entries(FRAG.providers).map(([n, p]) => [n, [...Object.keys(p.models)].sort()]))) ]);
+  const fp = SCX.fingerprint([VERSION, env.OPENCODE_CONFIG_CONTENT, FRAG.env, env.LUMI_SANDBOX || "", env.LUMI_9ROUTER_URL || "", TRUST, JSON.stringify(Object.fromEntries(Object.entries(FRAG.providers).map(([n, p]) => [n, [...Object.keys(p.models)].sort()]))) , SCX.presetAgentHash({ home: HOME, root: REPO }) ]);
   try { const r = SCX.ensureFresh(HOME, fp); if (env.LUMI_DEBUG) process.stderr.write(`lumitome: service ${r}\n`); } catch (e) { if (env.LUMI_DEBUG) process.stderr.write(`lumitome: cek service gagal (${e.message})\n`); }
 }
 

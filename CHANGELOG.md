@@ -1,5 +1,63 @@
 # Changelog
 
+## 0.3.76 — Perbaiki kebocoran model /subagent (LEAK #1, #2, #3, #5)
+
+- Latar: laporan diagnosis lapangan Fahmi (Linux, v0.3.71) — preset di disk
+  sudah benar tapi 4/4 sesi anak tetap jalan dengan model basi dari cache
+  daemon; fallback ke default gemini terjadi diam-diam; footer file agent
+  menyebut lokasi preset yang salah; metrik tidak mencatat model anak.
+  Skenario auditor direproduksi dulu di VM (engine 2.3.0, mock 9router):
+  SEBELUM perbaikan anak tugas-2 4/4 memakai model preset lama (REPRO-BOCOR);
+  SESUDAH perbaikan 4/4 memakai model preset baru (FIXED) — bukti di
+  `~/workspace/lumitome-test-0376/` (`results-0376-repro-BEFORE.json` vs
+  `results-0376-repro.json`).
+- A (LEAK #1): plugin server TIDAK lagi melewati sesi anak di
+  `maybeSwitchNewSession` — sesi anak peran (thinking/search/builder/
+  reviewer) dialihkan ke `preset.roles[agent].model` lewat
+  `ctx.session.switchModel` saat `session.created` (keputusan murni
+  `childSessionModel()` di `flow.mjs`; hasil switch dicatat ke metrik
+  `child-switch` / `child-switch-failed`). Spike live TERBUKTI: switch pada
+  sesi anak diizinkan engine 2.3.0 dan tiba tepat waktu — cache daemon
+  masih basi (P1) tapi anak tugas-2 tetap jalan P2 (8 switch, 0 gagal).
+- B (LEAK #1): sidik service (`lumitome/bin/lumitome.mjs`) kini ikut
+  menghitung hash isi preset + baris `model:` 4 file agent
+  (`presetAgentHash()` di `lumitome/lib/service-ctl.mjs`) — TUI baru
+  sesudah ganti preset tidak me-reuse daemon basi (ensureFresh → restart).
+  Bukti modul-level: `test-fingerprint-live.mjs` 3/3 (reuse bila sidik sama;
+  sidik berubah bila preset berubah; restart + service basi mati).
+- C (LEAK #2): fallback ke `DEFAULT_MODEL` kini BERSUARA — peringatan
+  stderr SELALU (tanpa syarat `LUMI_DEBUG`) + alasan, untuk sesi TUI
+  maupun `lumitome run` headless (preset meminta Thinking lain). Perilaku
+  fallback tidak berubah (tetap memakai default yang aman).
+- D (LEAK #3): footer 4 file agent diperbaiki — model dari frontmatter
+  `model:`, disinkron dari preset `$LUMI_HOME/lumitome-subagent.json`
+  (bukan "model 9router default", bukan `.opencode/lumitome-subagent.json`).
+  Footer ini teks statis (applyPreset hanya menulis baris `model:`,
+  gen-policy hanya menulis frontmatter) — tidak ada generator yang diubah.
+  README + ARCHITECTURE.md diselaraskan (anak peran kini dialihkan di
+  tengah sesi; sidik daemon ikut preset).
+- E (LEAK #5): metrik kini mencatat kelahiran sesi anak
+  (`child-session`: sessionID, parentID, agent, model awal),
+  peran target panggilan subagent (`targetAgent` di baris tool), dan
+  ringkasan per (peran, model) di `lumitome subagent-metrics`
+  (baris `child-session` kembar dari engine di-dedupe per sessionID).
+- TIDAK diperbaiki (jujur): LEAK #4 penuh — isolasi preset per-sesi TUI
+  tetap tidak ada (satu preset file, satu folder agent, satu daemon);
+  mitigasi: jangan jalankan dua TUI dengan preset berbeda; restart TUI
+  sesudah ganti preset di TUI lain. Kontaminasi konteks engine/9router
+  (reviewer mengaku thinking) tidak bisa diperbaiki di repo ini.
+  Catatan engine: `session.created` dikirim DUA kali per sesi anak
+  (baris metrik kembar, timestamp identik) — switch idempotent jadi tidak
+  berbahaya; `summarize()` menduplikasi baris `child-session` kembar.
+- Tes: `npm run validate` OK (warns 0); suite **1179/0/2** (+11 regresi:
+  childSessionModel, presetAgentHash + wrapper, footer, metrik + dedupe,
+  gates A/C). Dua tes lama yang mengunci perilaku lama diperbarui dengan
+  sengaja (v0.3.65 switchModel kini lewat helper + anak dialihkan;
+  v0.3.71 A2 peringatan fallback kini tanpa syarat LUMI_DEBUG).
+  Secret scan: gitleaks UNRUN (biner tidak ada di VM); grep manual pola
+  rahasia di diff — bersih (satu-satunya cocok: nama env
+  `NINEROUTER_API_KEY` di pesan error lama, bukan nilai).
+
 ## 0.3.75 — Parallel MCP opt-in — web search untuk Search role (P4 lanjutan)
 
 - Baru (opt-in, OFF by default): MCP **Parallel** (`https://mcp.parallel.ai/mcp`,

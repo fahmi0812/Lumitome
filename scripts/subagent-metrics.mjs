@@ -6,6 +6,9 @@
  * Per sesi orchestrator (mode ON): panggilan subagent vs percobaan mutasi
  * (edit/write/patch/shell/execute) vs yang diblokir guard, plus audit
  * akhir giliran (giliran tanpa delegasi = delta.subagent 0).
+ * v0.3.76: plus daftar sesi anak (peran + model awal) dari baris
+ * `child-session` plugin — bandingkan dengan preset untuk menemukan
+ * kebocoran model (LEAK #5/E).
  *
  * Pakai: node scripts/subagent-metrics.mjs [--home <dir>] [--json]
  *   --home: home Lumitome (default $LUMI_HOME atau ~/.lumitome)
@@ -19,9 +22,15 @@ export function metricsPath(home = process.env.LUMI_HOME || path.join(os.homedir
   return path.join(home, "subagent-metrics.jsonl");
 }
 
-/** Agregasi per sesi dari baris JSONL (baris rusak dilewati, dihitung). */
+/** Agregasi per sesi dari baris JSONL (baris rusak dilewati, dihitung).
+ * v0.3.76 (LEAK #5/E): baris `child-session` (kelahiran sesi anak: peran +
+ * model awal) dikumpulkan ke `children` + hitungan per (peran, model) di
+ * `childModels` — tanpa ini metrik buta terhadap kebocoran model anak.
+ * Bentuk lama {sessions, malformed} dipertahankan (tes lama tetap lolos). */
 export function summarize(lines) {
   const sessions = new Map();
+  const children = [];
+  const childModels = {};
   let malformed = 0;
   const get = (sid) => {
     if (!sessions.has(sid)) sessions.set(sid, { sessionID: sid, agent: "", subagent: 0, mutating: 0, other: 0, blocked: 0, turns: 0, turnsWithoutDelegation: 0 });
@@ -46,21 +55,41 @@ export function summarize(lines) {
       s.agent = e.agent || s.agent;
       s.turns += 1;
       if (e.delegated === false) s.turnsWithoutDelegation += 1;
+    } else if (e.kind === "child-session" && typeof e.sessionID === "string") {
+      // Engine 2.3.0 mengirim session.created DUA kali per sesi anak
+      // (baris kembar, timestamp identik — terbukti live 0376): dedupe per
+      // sessionID supaya hitungan anak tidak ganda. Switch-nya sendiri
+      // idempotent (target sama), jadi duplikasi event tidak berbahaya.
+      if (children.some((c) => c.sessionID === e.sessionID)) continue;
+      const row = { sessionID: e.sessionID, parentID: e.parentID ?? null, agent: e.agent ?? null, model: e.model ?? null };
+      children.push(row);
+      if (typeof row.agent === "string" && typeof row.model === "string") {
+        const k = `${row.agent}|${row.model}`;
+        childModels[k] = (childModels[k] ?? 0) + 1;
+      }
     }
   }
   const list = [...sessions.values()].map((s) => ({
     ...s,
     delegationRate: s.subagent + s.mutating + s.blocked === 0 ? null : s.subagent / (s.subagent + s.mutating + s.blocked),
   }));
-  return { sessions: list, malformed };
+  return { sessions: list, malformed, children, childModels };
 }
 
-export function renderText({ sessions, malformed }) {
-  if (sessions.length === 0) return "subagent-metrics: belum ada data (file kosong / tidak ada).";
+export function renderText({ sessions, malformed, children = [], childModels = {} }) {
+  if (sessions.length === 0 && children.length === 0) return "subagent-metrics: belum ada data (file kosong / tidak ada).";
   const out = ["sesi orchestrator (mode ON) — subagent | mutasi | diblokir guard | giliran tanpa delegasi"];
   for (const s of sessions) {
     const rate = s.delegationRate === null ? "-" : `${(s.delegationRate * 100).toFixed(0)}%`;
     out.push(`${s.sessionID.slice(0, 8)} ${s.agent || "?"}: ${s.subagent} | ${s.mutating} | ${s.blocked} | ${s.turnsWithoutDelegation}/${s.turns} giliran (delegasi ${rate})`);
+  }
+  if (children.length) {
+    out.push("sesi anak — peran | model awal (bandingkan dengan preset: model lain = bocor)");
+    for (const c of children) {
+      out.push(`  ${c.agent || "?"}: ${c.model || "(tidak diketahui)"} (induk ${(c.parentID || "?").slice(0, 8)})`);
+    }
+    const keys = Object.keys(childModels).sort();
+    if (keys.length) out.push(`ringkasan peran+model: ${keys.map((k) => `${k.replace("|", " = ")} (x${childModels[k]})`).join(", ")}`);
   }
   if (malformed) out.push(`peringatan: ${malformed} baris rusak dilewati`);
   return out.join("\n");

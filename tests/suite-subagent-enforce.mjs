@@ -241,4 +241,106 @@ const OFF = { ...ON, enabled: false };
     })());
 }
 
+// --- v0.3.76 (LEAK #1/A): childSessionModel — model target sesi anak ---
+{
+  const F = await import("../lumitome/config/plugins/subagent/flow.mjs");
+  const P = { enabled: true, mode: "serial", roles: {
+    thinking: { active: true, model: "9router/kr/claude-opus-5.5", tier: "terkuat" },
+    search: { active: true, model: "9router/ag/gemini-3.8-flash-high", tier: "cepat-murah" },
+    builder: { active: true, model: "9router/kr/claude-sonnet-5.5", tier: "menengah-kuat" },
+    reviewer: { active: true, model: "9router/kr/claude-opus-5.5", tier: "terkuat" },
+  } };
+  ok("/subagent v0.3.76 A: childSessionModel — peran dikembalikan ke model preset bila beda dari model awal",
+    F.childSessionModel(P, "thinking", "9router/kr/claude-sonnet-5.5") === "9router/kr/claude-opus-5.5"
+    && F.childSessionModel(P, "search", null) === "9router/ag/gemini-3.8-flash-high"
+    && F.childSessionModel(P, "reviewer", "9router/kr/claude-haiku-5.5") === "9router/kr/claude-opus-5.5");
+  ok("/subagent v0.3.76 A: childSessionModel — null bila model sudah sama / bukan peran / OFF / nonaktif / bukan 9router",
+    F.childSessionModel(P, "thinking", "9router/kr/claude-opus-5.5") === null
+    && F.childSessionModel(P, "orchestrator", "9router/kr/claude-opus-5.5") === null
+    && F.childSessionModel(P, "general", null) === null
+    && F.childSessionModel({ ...P, enabled: false }, "thinking", null) === null
+    && F.childSessionModel({ ...P, roles: { ...P.roles, builder: { active: false, model: "9router/kr/claude-sonnet-5.5" } } }, "builder", null) === null
+    && F.childSessionModel({ ...P, roles: { ...P.roles, search: { active: true, model: "openai/gpt-4" } } }, "search", null) === null);
+}
+
+// --- v0.3.76 (LEAK #1/B): presetAgentHash — sidik daemon ikut preset + model agent ---
+{
+  const SC = await import("../lumitome/lib/service-ctl.mjs");
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-fp-home-"));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-fp-root-"));
+  try {
+    const agents = path.join(root, ".opencode", "agents");
+    fs.mkdirSync(agents, { recursive: true });
+    for (const r of ROLES) fs.writeFileSync(path.join(agents, `${r}.md`), `---\nmodel: 9router/ag/gemini-3.8-flash-high\n---\nisi\n`);
+    fs.writeFileSync(path.join(home, "lumitome-subagent.json"), JSON.stringify({ enabled: true, roles: {} }));
+    const h1 = SC.presetAgentHash({ home, root });
+    ok("/subagent v0.3.76 B: presetAgentHash — stabil bila tidak ada perubahan; berubah bila preset berubah",
+      (() => {
+        const same = SC.presetAgentHash({ home, root }) === h1;
+        fs.writeFileSync(path.join(home, "lumitome-subagent.json"), JSON.stringify({ enabled: true, mode: "serial", roles: {} }));
+        return same && SC.presetAgentHash({ home, root }) !== h1;
+      })());
+    ok("/subagent v0.3.76 B: presetAgentHash — berubah bila satu baris model agent berubah; null bila tidak ada file",
+      (() => {
+        const before = SC.presetAgentHash({ home, root });
+        fs.writeFileSync(path.join(agents, "search.md"), `---\nmodel: 9router/kr/claude-haiku-5.5\n---\nisi\n`);
+        const after = SC.presetAgentHash({ home, root });
+        fs.rmSync(home, { recursive: true, force: true });
+        fs.rmSync(root, { recursive: true, force: true });
+        const none = SC.presetAgentHash({ home: path.join(os.tmpdir(), "lumi-fp-tidak-ada-home"), root: path.join(os.tmpdir(), "lumi-fp-tidak-ada-root") });
+        return before !== after && none === null;
+      })());
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+  ok("/subagent v0.3.76 B: wrapper memasukkan presetAgentHash ke sidik service (daemon basi tidak di-reuse)",
+    /SCX\.presetAgentHash\(\{ home: HOME, root: REPO \}\)/.test(fm("lumitome/bin/lumitome.mjs"))
+    && /presetAgentHash/.test(fm("lumitome/bin/lumitome.mjs")));
+}
+
+// --- v0.3.76 (LEAK #3/D): footer file agent — model dari frontmatter + preset $LUMI_HOME ---
+{
+  ok("/subagent v0.3.76 D: footer 4 file agent menyebut frontmatter model: + preset $LUMI_HOME (bukan 'model 9router default' / seed repo)",
+    ROLES.every((r) => {
+      const t = fm(`.opencode/agents/${r}.md`);
+      return /memakai model dari frontmatter `model:`/.test(t)
+        && /\$LUMI_HOME\/lumitome-subagent\.json/.test(t)
+        && /popup \/subagent/.test(t)
+        && !/memakai model 9router default/.test(t)
+        && !/\.opencode\/lumitome-subagent\.json/.test(t);
+    }));
+}
+
+// --- v0.3.76 (LEAK #5/E): metrik mencatat sesi anak + peran target ---
+{
+  const M = await import("../scripts/subagent-metrics.mjs");
+  const lines = [
+    JSON.stringify({ t: "2026-11-17T00:00:00Z", kind: "child-session", sessionID: "ses-anak-1", parentID: "ses-induk", agent: "thinking", model: "9router/kr/claude-opus-5.5" }),
+    JSON.stringify({ t: "2026-11-17T00:00:01Z", kind: "child-session", sessionID: "ses-anak-2", parentID: "ses-induk", agent: "search", model: "9router/ag/gemini-3.8-flash" }),
+    JSON.stringify({ t: "2026-11-17T00:00:02Z", kind: "child-session", sessionID: "ses-anak-3", parentID: "ses-induk", agent: "thinking", model: "9router/kr/claude-opus-5.5" }),
+    JSON.stringify({ t: "2026-11-17T00:00:03Z", kind: "tool", sessionID: "ses-induk", agent: "orchestrator", tool: "subagent", toolKind: "subagent", targetAgent: "thinking" }),
+  ];
+  const s = M.summarize(lines);
+  ok("/subagent v0.3.76 E: summarize — baris child-session terkumpul ke children + hitungan per (peran, model)",
+    s.children.length === 3
+    && s.children[0].agent === "thinking" && s.children[0].model === "9router/kr/claude-opus-5.5"
+    && s.childModels["thinking|9router/kr/claude-opus-5.5"] === 2
+    && s.childModels["search|9router/ag/gemini-3.8-flash"] === 1
+    && s.sessions.length === 1 && s.sessions[0].subagent === 1);
+  ok("/subagent v0.3.76 E: renderText — sesi anak + ringkasan peran+model tampil (untuk bandingkan dengan preset)",
+    /sesi anak/.test(M.renderText(s)) && /thinking: 9router\/kr\/claude-opus-5\.5/.test(M.renderText(s))
+    && /ringkasan peran\+model/.test(M.renderText(s)) && /\(x2\)/.test(M.renderText(s)));
+  ok("/subagent v0.3.76 E: summarize — baris child-session kembar (session.created ganda engine 2.3.0) dihitung sekali per sesi",
+    (() => {
+      const dup = [...lines, lines[0], lines[1]];
+      const s2 = M.summarize(dup);
+      return s2.children.length === 3 && s2.childModels["thinking|9router/kr/claude-opus-5.5"] === 2;
+    })());
+  const idx = fm("lumitome/config/plugins/subagent/index.ts");
+  ok("/subagent v0.3.76 E: plugin menulis baris child-session saat sesi anak lahir + targetAgent di execute.after",
+    /kind: "child-session", sessionID: event\.data\.sessionID, parentID: event\.data\.parentID/.test(idx)
+    && /targetAgent/.test(idx));
+}
+
 finish();

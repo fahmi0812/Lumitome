@@ -57,6 +57,30 @@ export function stop(home, { wait = 1000 } = {}) {
 /** Sidik config service: berubah (versi, config, key provider) → service lama dihentikan agar config baru terpakai. */
 export function fingerprint(parts) { return crypto.createHash("sha256").update(JSON.stringify(parts)).digest("hex"); }
 
+/**
+ * Hash isi preset + baris model file agent (v0.3.76, LEAK #1/B).
+ * Fingerprint daemon WAJIB berubah bila preset/file agent berubah, supaya
+ * TUI baru sesudah ganti preset tidak me-reuse daemon basi (cache agent
+ * dari boot lama — daemon hanya memuat .opencode/agents/*.md sekali).
+ * Preset di-hash mentah (byte file); file agent di-hash baris `model:`-nya
+ * saja (isi prompt lain tidak memengaruhi model). File tidak ada → dilewati
+ * (bukan error); tidak ada satu pun → null (fingerprint lama tidak berubah).
+ */
+export function presetAgentHash({ home, root }) {
+  const h = crypto.createHash("sha256");
+  let found = false;
+  const feed = (s) => { h.update(s); h.update("\0"); found = true; };
+  try { feed(fs.readFileSync(path.join(home, "lumitome-subagent.json"))); } catch {}
+  for (const role of ["thinking", "search", "builder", "reviewer"]) {
+    try {
+      const t = fs.readFileSync(path.join(root, ".opencode", "agents", `${role}.md`), "utf8");
+      const m = t.match(/^model:\s*(\S+)\s*$/m);
+      if (m) feed(`${role}:${m[1]}`);
+    } catch {}
+  }
+  return found ? h.digest("hex") : null;
+}
+
 /** Pastikan service yang hidup memakai sidik `fp`; bila beda → stop. Return "reuse" | "restart" | "none". */
 export function ensureFresh(home, fp) {
   const st = status(home);

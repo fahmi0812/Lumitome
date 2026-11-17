@@ -167,6 +167,28 @@ export function splitModelId(fullId) {
 }
 
 /**
+ * Model yang harus dipakai sesi anak peran (v0.3.76, LEAK #1/A).
+ * Daemon memuat file agent sekali saat boot; preset yang disimpan lewat
+ * popup di tengah sesi berjalan tidak sampai ke cache daemon — sesi anak
+ * lahir dengan model basi. Keputusan murni ini dipakai maybeSwitchNewSession
+ * di plugin server: bila sesi anak dibuat dengan agent peran yang dikenal,
+ * alihkan ke preset.roles[agent].model.
+ * Kembalikan model target (string "provider/id") atau null bila tidak ada
+ * pengalihan (bukan peran / sistem OFF / peran nonaktif / model sama atau
+ * tidak valid). Peran nonaktif di preset lama = tidak dialihkan.
+ */
+export function childSessionModel(preset, agent, currentModel) {
+  if (!ROLES.includes(agent)) return null;
+  if (!isEnabled(preset)) return null;
+  const cfg = preset?.roles?.[agent];
+  if (!cfg || cfg.active === false) return null;
+  const m = cfg.model;
+  if (typeof m !== "string" || !m.startsWith("9router/")) return null;
+  if (typeof currentModel === "string" && m === currentModel) return null;
+  return m;
+}
+
+/**
  * Model sesi yang harus dipakai sesudah save (v0.3.65): model peran Thinking,
  * bila Thinking aktif dan modelnya ID 9router yang valid; selain itu null
  * (model sesi TIDAK diubah — mis. Thinking nonaktif di preset lama).

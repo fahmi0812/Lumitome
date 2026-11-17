@@ -32,4 +32,4 @@ TANYA: pertanyaan yang butuh jawaban user (bila ada — kosong bila tidak ada)
 BLOCKED: apa yang dibutuhkan bila mentok (tanpa pertanyaan ke user)
 RISIKO: asumsi tersembunyi / hal yang tidak diverifikasi
 
-Model: file ini memakai model 9router default. Tier "terkuat" berlaku saat daftar 9router berisi lebih dari satu model — pilihan popup /subagent dicatat di `.opencode/lumitome-subagent.json` dan diterapkan `lumitome subagent-preset` (berlaku mulai sesi TUI berikutnya).
+Model: peran ini memakai model dari frontmatter `model:` di atas, disinkron dari preset `$LUMI_HOME/lumitome-subagent.json` (tier "terkuat") oleh `lumitome subagent-preset`. Ganti model lewat popup /subagent — jangan edit file ini. Berlaku mulai sesi TUI berikutnya.

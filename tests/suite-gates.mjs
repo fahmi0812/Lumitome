@@ -766,8 +766,13 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
   const idx = fm(`${PLUG}/index.ts`);
   ok("/subagent v0.3.65: sesi baru otomatis ikut Thinking — server plugin langganan session.created + switchModel (terverifikasi ke API plugin 2.3.0 + 2.2.4)",
     /ctx\.event\.subscribe\(\{ types: \["session\.created"\] \}\)/.test(idx)
-    && /ctx\.session\.switchModel\(\{\s*sessionID: data\.sessionID,\s*model: \{ providerID: parts\.providerID, id: parts\.id \},\s*\}\)/.test(idx)
-    && /thinkingSessionModel\(preset\)/.test(idx) && /splitModelId\(thinking\)/.test(idx));
+    && /switchSessionModel\(ctx, data\.sessionID, thinking\)/.test(idx)
+    && /thinkingSessionModel\(preset\)/.test(idx) && /splitModelId\(target\)/.test(idx));
+  ok("/subagent v0.3.76 (LEAK #1/A): sesi anak peran JUGA dialihkan ke preset.roles[agent].model — bukan dilewati (dulu: parentID return)",
+    /childSessionModel\(preset, agent, initial\)/.test(idx)
+    && /switchSessionModel\(ctx, data\.sessionID, target\)/.test(idx)
+    && !/if \(!data\.sessionID \|\| data\.parentID\) return/.test(idx)
+    && /child-switch/.test(idx) && /child-switch-failed/.test(idx));
   ok("/subagent v0.3.65: watcher sesi baru punya pengaman — lewati anak subagent (parentID) + agent bukan orchestrator + /subagent off + model awal bukan default terpin",
     /data\.parentID/.test(idx) && /data\.agent !== "orchestrator"/.test(idx)
     && /preset\.enabled === false/.test(idx) && /initial !== DEFAULT_MODEL/.test(idx));
@@ -1285,10 +1290,13 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     ok("v0.3.71 A2: preset OFF / tanpa preset → default terpin",
       ASP.resolveSessionDefault({ ...customPreset(), enabled: false }, LIVE).model === PINNED
       && ASP.resolveSessionDefault(null, LIVE).model === PINNED);
-    ok("v0.3.71 A2: wrapper memakai resolveSessionDefault (bukan logika duplikat) + bersuara di LUMI_DEBUG",
+    ok("v0.3.71 A2: wrapper memakai resolveSessionDefault (bukan logika duplikat) + bersuara SELALU saat jatuh ke default terpin (v0.3.76 LEAK #2/C: tanpa syarat LUMI_DEBUG)",
       /resolveSessionDefault/.test(fm("lumitome/bin/lumitome.mjs"))
       && /loadPreset\(\{ home: ISO_HOME, root: REPO \}\)/.test(fm("lumitome/bin/lumitome.mjs"))
-      && /LUMI_DEBUG && d\.model === DEFAULT_MODEL/.test(fm("lumitome/bin/lumitome.mjs")));
+      && /if \(d\.model === DEFAULT_MODEL && d\.thinking && d\.thinking !== DEFAULT_MODEL\)/.test(fm("lumitome/bin/lumitome.mjs"))
+      && !/LUMI_DEBUG && d\.model === DEFAULT_MODEL/.test(fm("lumitome/bin/lumitome.mjs"))
+      && /PERINGATAN — model default sesi TUI jatuh ke default terpin/.test(fm("lumitome/bin/lumitome.mjs"))
+      && /PERINGATAN — run headless memakai model default terpin/.test(fm("lumitome/bin/lumitome.mjs")));
     // --- A1 di update.mjs (jalur kode) + plugin server ---
     ok("v0.3.71 A1b: update.mjs memanggil preserve di swap git + rollback + npm",
       /preservePresetAcrossUpdate\(\{ oldRepo: bak, home \}\)/.test(fm("lumitome/lib/update.mjs"))
