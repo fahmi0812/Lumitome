@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.3.77 — PlatformIO MCP (PIO Agent)
+
+- Daftarkan `platformio-mcp` (PIO Agent, `jl-codes`, MIT, pin
+  `platformio-mcp@3.1.0`) sebagai MCP opt-in sektor coding — mati
+  default, hanya bila disebut eksplisit di `LUMI_MCP` (tidak ikut
+  `all`): entri `router/mcp-sectors.json` (kind `direct`, risk `S`,
+  `ask: upload_*, agent_flash_monitor_verify, reset_server_state`),
+  blok opt-in di `lumitome/lib/build-config.mjs` (pola drawio: npx
+  terpin, stdio `serve`, timeout 30/30/300 detik), entri
+  `opencode.jsonc` (`disabled: true`), dan baris `docs/MCP.md`.
+  Alasan pin 3.1.0: npm `latest` saat ini; 3.2.0 di repo upstream
+  masih Unreleased (dicek 2026-11-18).
+- Skill baru `platformio` (sektor coding, CLI-first): validasi proyek,
+  diagnosa build terstruktur, audit pin GPIO ESP32, flash +
+  verifikasi serial — dengan batas jujur (flash butuh board fisik +
+  approval; tier standard/trusted bukan strict; tanpa sudo; jangan
+  profil `standalone`/`lab_admin`; jangan tebak target).
+- Validasi + tes: `npm run policy` (agen coding dapat aturan
+  `platformio_*` allow + `ask` tulis/flash), `validate` OK (warns 0),
+  suite hijau (lihat laporan `~/workspace/lumitome-v0.3.77-report.md`).
+- UNVERIFIED (butuh mesin Fahmi + board nyata): install
+  `platformio-mcp@3.1.0` + PlatformIO Core (`pio` di PATH), build
+  contoh ESP32, flash + `agent-flash-monitor-verify`, akses serial di
+  tier standard/trusted, dan penolakan build/flash di luar workspace
+  oleh policy default platformio-mcp.
+
 ## 0.3.76 — Perbaiki kebocoran model /subagent (LEAK #1, #2, #3, #5)
 
 - Latar: laporan diagnosis lapangan Fahmi (Linux, v0.3.71) — preset di disk

@@ -149,6 +149,21 @@
           "execution": 300000
         }
       },
+      "platformio": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "platformio-mcp@3.1.0",
+          "serve"
+        ],
+        "disabled": true,
+        "timeout": {
+          "startup": 30000,
+          "catalog": 30000,
+          "execution": 300000
+        }
+      },
       "playwright": {
         "type": "local",
         "command": [

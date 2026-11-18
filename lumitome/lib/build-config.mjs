@@ -59,6 +59,10 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
     const fcArgs = FC.endsWith(".AppImage") ? ["cli", "mcp"] : ["mcp"];
     mcpOverride.figcraft = { type: "local", command: [FC, ...fcArgs, "--automation-read-root", WS, "--automation-write-root", WS], timeout: { startup: 30000, catalog: 30000, execution: 300000 } };
   }
+  // platformio (jl-codes/platformio-mcp, terpin 3.1.0) — opsional, mati default; hanya bila disebut eksplisit di LUMI_MCP (tidak ikut "all").
+  // Profil policy default upstream = flash_requires_approval (upload/flash-verify wajib approval); JANGAN profil standalone (mematikan workspace boundary + device lock + redaksi secret + audit).
+  // Prasyarat runtime: PlatformIO Core (pio di PATH) + board fisik buat flash; kerja firmware di tier standard/trusted (bukan strict — bwrap memblokir serial).
+  if (wantMcp.includes("platformio")) mcpOverride.platformio = { type: "local", command: ["npx", "-y", "platformio-mcp@3.1.0", "serve"], timeout: { startup: 30000, catalog: 30000, execution: 300000 } };
   // parallel (parallel.ai MCP, remote) — opsional, mati default; hanya bila disebut eksplisit di LUMI_MCP (tidak ikut "all").
   // Tanpa key: web_search/web_fetch/web_decisions gratis (rate limit lebih rendah, tidak ditagih). Dengan PARALLEL_API_KEY: web_research + limit lebih tinggi.
   // Header hanya ditambahkan bila key ada di env — nilai key TIDAK PERNAH ditulis ke config, hanya literal {env:...} (engine yang men-resolve).

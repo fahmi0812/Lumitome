@@ -2134,6 +2134,23 @@
       "original_name": "Penulis Ilmiah"
     },
     {
+      "id": "platformio",
+      "name": "platformio",
+      "sektor": "coding",
+      "description": "Bangun, flash, dan monitor firmware PlatformIO/Arduino/ESP32: validasi proyek, diagnosa build terstruktur, audit pin GPIO, flash + verifikasi serial. Use for PlatformIO, ESP32, Arduino, firmware, flash firmware, serial monitor, build firmware, diagnosa build gagal, audit pin GPIO.",
+      "triggers": [],
+      "champion": false,
+      "fallback": null,
+      "cost": "low",
+      "requires_consent": false,
+      "pack": "",
+      "src": "fahmi0812/Lumitome",
+      "sha": "ee5a0758d814e0775aac22a8b2f7dbc999a98536",
+      "license": "MIT",
+      "original_id": "lumitome__platformio",
+      "original_name": "platformio"
+    },
+    {
       "id": "poteto-mode",
       "name": "poteto-mode",
       "sektor": "coding",

@@ -89,7 +89,7 @@ ok("mcp figcraft v0.18.1 (sectors + docs + komentar build-config)", MS.servers.f
 ok("mcp figcraft lama v0.16.0 hilang dari sectors+docs", MS.servers.figcraft?.pin !== "v0.16.0" && !MCPDOC.includes("v0.16.0"));
 
 // ---------- 2b. v0.3.60 — skill baru (27), lisensi CC BY-SA, MCP Blender, ref 9router ----------
-ok("v0.3.60: registry 928 skill (901 + 27 baru)", reg.skills.length === 928);
+ok("v0.3.77: registry 929 skill (928 + platformio baru)", reg.skills.length === 929);
 const BH = ["bb-methodology", "redteam-mindset", "triage-validation", "evidence-hygiene", "hunt-sqli", "hunt-xss", "hunt-ssrf", "hunt-idor", "hunt-auth-bypass", "hunt-jwt-crypto", "hunt-csrf", "hunt-rce", "hunt-ssti", "hunt-xxe", "hunt-lfi", "hunt-deserialization", "hunt-oauth", "hunt-session", "hunt-graphql", "hunt-llm-ai"];
 const bhSkills = reg.skills.filter((s) => s.src === "elementalsouls/Claude-BugHunter");
 ok("v0.3.60: BugHunter SELEKTIF 20 skill (bukan 83)", bhSkills.length === 20 && BH.every((n) => bhSkills.some((s) => s.name === n)));

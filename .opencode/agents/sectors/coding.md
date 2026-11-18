@@ -30,6 +30,11 @@ permissions:
   - { action: "opencode_list_mcp_resources", resource: "playwright", effect: allow }
   - { action: "chromedev_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "chromedev", effect: allow }
+  - { action: "platformio_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "platformio", effect: allow }
+  - { action: "platformio_upload_*", resource: "*", effect: ask }
+  - { action: "platformio_agent_flash_monitor_verify", resource: "*", effect: ask }
+  - { action: "platformio_reset_server_state", resource: "*", effect: ask }
   - { action: "gw-coding_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "gw-coding", effect: allow }
   - { action: "skills_coding_*", resource: "*", effect: allow }
@@ -202,6 +207,7 @@ permissions:
   - { action: "skill", resource: "pick-ui-library", effect: allow }
   - { action: "skill", resource: "pixijs-rendering", effect: allow }
   - { action: "skill", resource: "platformer", effect: allow }
+  - { action: "skill", resource: "platformio", effect: allow }
   - { action: "skill", resource: "port-a-mod", effect: allow }
   - { action: "skill", resource: "poteto-mode", effect: allow }
   - { action: "skill", resource: "procedural-gen", effect: allow }
