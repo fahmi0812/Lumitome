@@ -13,6 +13,21 @@ permissions:
   - { action: "opencode_list_mcp_resources", resource: "playwright", effect: allow }
   - { action: "parallel_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "parallel", effect: allow }
+  - { action: "tableau_*", resource: "*", effect: allow }
+  - { action: "opencode_list_mcp_resources", resource: "tableau", effect: allow }
+  - { action: "tableau_publish-*", resource: "*", effect: ask }
+  - { action: "tableau_request-*-upload", resource: "*", effect: ask }
+  - { action: "tableau_delete-*", resource: "*", effect: ask }
+  - { action: "tableau_confirm-*", resource: "*", effect: ask }
+  - { action: "tableau_update-*", resource: "*", effect: ask }
+  - { action: "tableau_move-workbook", resource: "*", effect: ask }
+  - { action: "tableau_run-flow", resource: "*", effect: ask }
+  - { action: "tableau_run-flow-task", resource: "*", effect: ask }
+  - { action: "tableau_cancel-flow-run", resource: "*", effect: ask }
+  - { action: "tableau_revoke-access-token", resource: "*", effect: ask }
+  - { action: "tableau_reset-consent", resource: "*", effect: ask }
+  - { action: "tableau_manage-knowledge-context", resource: "*", effect: ask }
+  - { action: "tableau_scaffold-data-app", resource: "*", effect: ask }
   - { action: "gw-riset_*", resource: "*", effect: allow }
   - { action: "opencode_list_mcp_resources", resource: "gw-riset", effect: allow }
   - { action: "skills_riset_*", resource: "*", effect: allow }
@@ -23,6 +38,7 @@ permissions:
   - { action: "skill", resource: "geo-sleuth", effect: allow }
   - { action: "skill", resource: "interrogate", effect: allow }
   - { action: "skill", resource: "research", effect: allow }
+  - { action: "skill", resource: "tableau", effect: allow }
   - { action: "skill", resource: "*offensive*", effect: ask }
 ---
 

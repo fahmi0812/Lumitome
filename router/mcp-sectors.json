@@ -13,12 +13,13 @@
     "platformio": { "kind": "direct", "default": "disabled", "risk": "S", "src": "https://github.com/jl-codes/platformio-mcp", "pin": "platformio-mcp@3.1.0", "needs": "PlatformIO Core terpasang (pio di PATH); opt-in LUMI_MCP=...,platformio", "ask": ["upload_*", "agent_flash_monitor_verify", "reset_server_state"] },
     "blender":    { "kind": "direct", "default": "disabled", "risk": "T", "src": "https://github.com/ahujasid/mcp-for-blender", "pin": "mcp-for-blender@2.2.9", "needs": "opt-in LUMI_MCP=...,blender; Blender terpasang + addon MCP for Blender aktif di Blender; uv terpasang (uvx). PERINGATAN: execute_blender_code menjalankan Python arbitrer di Blender dengan akses penuh user; safe mode OFF default — opt-in via BLENDER_MCP_SAFE_MODE=1", "ask": ["execute_blender_code"] },
     "stitch":     { "kind": "direct", "default": "disabled", "risk": "S", "src": "https://stitch.withgoogle.com/docs/mcp/setup/", "needs": "env STITCH_API_KEY (Stitch Settings > API Keys); opt-in LUMI_MCP=...,stitch", "ask": ["create_project", "delete_project", "generate_*", "edit_*", "apply_*", "create_design_system*", "update_design_system"] },
-    "parallel":  { "kind": "direct", "default": "disabled", "risk": "R", "src": "https://parallel.ai/mcp", "needs": "opt-in LUMI_MCP=...,parallel (tidak ikut all); tanpa key: web_search/web_fetch/web_decisions gratis (rate limit, tidak ditagih); PARALLEL_API_KEY (env) untuk web_research + limit lebih tinggi" }
+    "parallel":  { "kind": "direct", "default": "disabled", "risk": "R", "src": "https://parallel.ai/mcp", "needs": "opt-in LUMI_MCP=...,parallel (tidak ikut all); tanpa key: web_search/web_fetch/web_decisions gratis (rate limit, tidak ditagih); PARALLEL_API_KEY (env) untuk web_research + limit lebih tinggi" },
+    "tableau":   { "kind": "direct", "default": "disabled", "risk": "S", "src": "https://github.com/tableau/tableau-mcp", "pin": "@tableau/mcp-server@6.0.4", "needs": "Akun Tableau Cloud/Server + PAT (TABLEAU_SERVER, TABLEAU_SITE_NAME, TABLEAU_PAT_NAME, TABLEAU_PAT_VALUE di env); opt-in LUMI_MCP=...,tableau", "ask": ["publish-*", "request-*-upload", "delete-*", "confirm-*", "update-*", "move-workbook", "run-flow", "run-flow-task", "cancel-flow-run", "revoke-access-token", "reset-consent", "manage-knowledge-context", "scaffold-data-app"] }
   },
   "sectors": {
     "coding":    ["context7", "codemem", "github", "playwright", "chromedev", "platformio"],
     "media":     ["figma", "playwright", "chromedev", "figcraft", "stitch", "blender"],
-    "riset":     ["context7", "markitdown", "playwright", "parallel"],
+    "riset":     ["context7", "markitdown", "playwright", "parallel", "tableau"],
     "penulisan": ["context7", "markitdown", "drawio"],
     "security":  ["context7", "codemem"],
     "finance":   ["markitdown"]

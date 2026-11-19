@@ -63,6 +63,10 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
   // Profil policy default upstream = flash_requires_approval (upload/flash-verify wajib approval); JANGAN profil standalone (mematikan workspace boundary + device lock + redaksi secret + audit).
   // Prasyarat runtime: PlatformIO Core (pio di PATH) + board fisik buat flash; kerja firmware di tier standard/trusted (bukan strict — bwrap memblokir serial).
   if (wantMcp.includes("platformio")) mcpOverride.platformio = { type: "local", command: ["npx", "-y", "platformio-mcp@3.1.0", "serve"], timeout: { startup: 30000, catalog: 30000, execution: 300000 } };
+  // tableau (tableau/tableau-mcp, terpin 6.0.4) — opsional, mati default; hanya bila disebut eksplisit di LUMI_MCP (tidak ikut "all").
+  // Web-only (paket npm tidak berisi Desktop authoring server). Auth PAT via env — JANGAN tulis nilai PAT ke file/config.
+  // Prasyarat runtime: akun Tableau Cloud/Server + PAT dengan permission "API access"; Node >= 22.7.5.
+  if (wantMcp.includes("tableau")) mcpOverride.tableau = { type: "local", command: ["npx", "-y", "@tableau/mcp-server@6.0.4"], environment: { TRANSPORT: "stdio", SERVER: env.TABLEAU_SERVER || "", SITE_NAME: env.TABLEAU_SITE_NAME || "", AUTH: "pat", PAT_NAME: env.TABLEAU_PAT_NAME || "", PAT_VALUE: env.TABLEAU_PAT_VALUE || "" }, timeout: { startup: 30000, catalog: 30000, execution: 300000 } };
   // parallel (parallel.ai MCP, remote) — opsional, mati default; hanya bila disebut eksplisit di LUMI_MCP (tidak ikut "all").
   // Tanpa key: web_search/web_fetch/web_decisions gratis (rate limit lebih rendah, tidak ditagih). Dengan PARALLEL_API_KEY: web_research + limit lebih tinggi.
   // Header hanya ditambahkan bila key ada di env — nilai key TIDAK PERNAH ditulis ke config, hanya literal {env:...} (engine yang men-resolve).

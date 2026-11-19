@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.3.78 — Tableau MCP (opt-in sektor riset)
+
+- Daftarkan `@tableau/mcp-server` (Tableau resmi, Apache-2.0, pin
+  `6.0.4`) sebagai MCP opt-in sektor riset — mati default, hanya bila
+  disebut eksplisit di `LUMI_MCP` (tidak ikut `all`): entri
+  `router/mcp-sectors.json` (kind `direct`, risk `S`, `ask` 13 pola),
+  blok opt-in di `lumitome/lib/build-config.mjs` (npx terpin, env PAT
+  via `environment`, timeout 30/30/300 detik), entri `opencode.jsonc`
+  (`disabled: true`), dan baris `docs/MCP.md`.
+  Alasan pin 6.0.4: npm `latest` saat ini (rilis 2026-11-09); 6.5.2 di
+  main upstream masih Unreleased (dicek 2026-11-19).
+- Koreksi fakta upstream: tool Web = 55, bukan 56 (dihitung ulang dari
+  `toolName.ts` v6.0.4 + cross-check bundle npm); pola `ask` memakai
+  `-`, bukan `_` — dibuktikan dari kode engine OpenCode 2.3.0
+  (`normalizedName` mempertahankan strip), jadi `publish_*` akan gagal
+  cocok dengan `publish-workbook` asli.
+- Skill baru `tableau` (sektor riset): cari workbook/view, baca
+  metadata datasource, query data, ambil data & gambar view, baca
+  Pulse metrics — dengan batas jujur (Web-only, konten harus sudah
+  ter-publish, file `.twb`/`.twbx` lokal tidak bisa dibuka, Desktop
+  authoring di luar cakupan, PAT kedaluwarsa setelah 15 hari tidak
+  dipakai, tool tulis = ask).
+- Validasi + tes: `npm run policy` (agen riset dapat aturan
+  `tableau_*` allow + 13 ask), `validate` 19 PASS (warns 0), suite
+  1181/0/2 (baseline v0.3.77 di mesin ini 1180/0/2 → +1 tes tableau
+  baru).
+- UNVERIFIED (butuh kredensial Tableau Fahmi): tes baca live
+  (`list-workbooks`, `get-datasource-metadata`, `query-datasource`)
+  dan katalog `tableau_*` live — server menolak start tanpa Tableau
+  yang terjangkau (probe kredensial dummy gagal TLS sebelum
+  `tools/list`).
+
 ## 0.3.77 — PlatformIO MCP (PIO Agent)
 
 - Daftarkan `platformio-mcp` (PIO Agent, `jl-codes`, MIT, pin

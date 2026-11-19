@@ -231,6 +231,20 @@
         "url": "https://mcp.parallel.ai/mcp",
         "disabled": true
       },
+      "tableau": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "@tableau/mcp-server@6.0.4"
+        ],
+        "disabled": true,
+        "timeout": {
+          "startup": 30000,
+          "catalog": 30000,
+          "execution": 300000
+        }
+      },
       "skills": {
         "type": "local",
         "command": [
