@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.3.79 — Startup tenang saat /subagent OFF
+
+- Peringatan startup `lumitome: PERINGATAN — model default sesi TUI
+  jatuh ke default terpin` tidak lagi tercetak di setiap launch saat
+  sistem /subagent OFF. Fallback ke default terpin dalam keadaan OFF
+  itu DIHARAPKAN (sesi memang memakai default terpin), bukan kebocoran
+  — sebelumnya kondisi peringatan terpenuhi di setiap launch padahal
+  tidak ada yang salah.
+- Cara kerja: `resolveSessionDefault` (scripts/apply-subagent-preset.mjs)
+  menandai cabang OFF dengan `expected: true`; wrapper
+  (lumitome/bin/lumitome.mjs, blok TUI dan `run` headless) hanya
+  bersuara bila fallback TIDAK expected. Alasan string tidak berubah;
+  jalur diagnosis tetap ada: `lumitome subagent-preset status`
+  menampilkan model default + alasannya.
+- Yang TETAP bersuara (proteksi LEAK #2 v0.3.76, tidak diubah):
+  fallback tak terduga — tanpa preset, model Thinking tidak valid,
+  cache providers.json tidak bisa dibaca, atau Thinking tidak ada di
+  cache live. Peringatan LUMI_TRUST_PROJECT / tier env, preflight
+  `run`, dan `lumitome: auto-index started` juga tidak diubah.
+- Validasi + tes: `validate` 19 PASS (warns 0), suite 1184/0/2
+  (baseline v0.3.78 di mesin ini 1181/0/2 → +3 tes baru: OFF →
+  `expected: true`; ON + Thinking di cache → Thinking; ON + Thinking
+  tidak di cache → pinned + `expected` falsy), `lint` OK, gitleaks
+  PASS. Bukti perilaku (probe jalur resolusi wrapper dengan LUMI_HOME
+  sementara berisi preset OFF): kondisi peringatan TRUE sebelum
+  perbaikan, FALSE sesudahnya.
+
 ## 0.3.78 — Tableau MCP (opt-in sektor riset)
 
 - Daftarkan `@tableau/mcp-server` (Tableau resmi, Apache-2.0, pin

@@ -250,7 +250,10 @@ if (sub !== "run" && !env.LUMI_MODEL) {
     // (tanpa syarat LUMI_DEBUG). Diam-diam jatuh ke gemini adalah akar
     // kebocoran #2: user meminta Thinking lain tapi sesi jalan dengan
     // default, tanpa jejak apa pun.
-    if (d.model === DEFAULT_MODEL && d.thinking && d.thinking !== DEFAULT_MODEL) {
+    // v0.3.79: DIAM bila fallback DIHARAPKAN (d.expected — sistem
+    // /subagent OFF: sesi memang memakai default terpin, bukan bocor).
+    // Jalur diagnosis tetap ada: `lumitome subagent-preset status`.
+    if (d.model === DEFAULT_MODEL && d.thinking && d.thinking !== DEFAULT_MODEL && !d.expected) {
       process.stderr.write(`lumitome: PERINGATAN — model default sesi TUI jatuh ke default terpin (${DEFAULT_MODEL}) — ${d.reason} (preset: ${loaded.source ?? "tidak ada"})\n`);
     }
   } catch (e) {
@@ -268,7 +271,8 @@ if (sub === "run" && !env.LUMI_MODEL && MODEL === DEFAULT_MODEL) {
     const ASP2 = await import(pathToFileURL(path.join(REPO, "scripts", "apply-subagent-preset.mjs")).href);
     const loaded2 = SP2.loadPreset({ home: ISO_HOME, root: REPO });
     const d2 = ASP2.resolveSessionDefault(loaded2.preset, ASP2.loadLiveModels(ISO_HOME));
-    if (d2.thinking && d2.thinking !== DEFAULT_MODEL) {
+    // v0.3.79: diam bila fallback diharapkan (sistem /subagent OFF).
+    if (d2.thinking && d2.thinking !== DEFAULT_MODEL && !d2.expected) {
       process.stderr.write(`lumitome: PERINGATAN — run headless memakai model default terpin (${DEFAULT_MODEL}) — ${d2.reason}; preset meminta Thinking ${d2.thinking} (preset hanya memengaruhi sesi TUI; pakai -m untuk run)\n`);
     }
   } catch {}

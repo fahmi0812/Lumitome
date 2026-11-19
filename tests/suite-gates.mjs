@@ -1290,10 +1290,17 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     ok("v0.3.71 A2: preset OFF / tanpa preset → default terpin",
       ASP.resolveSessionDefault({ ...customPreset(), enabled: false }, LIVE).model === PINNED
       && ASP.resolveSessionDefault(null, LIVE).model === PINNED);
-    ok("v0.3.71 A2: wrapper memakai resolveSessionDefault (bukan logika duplikat) + bersuara SELALU saat jatuh ke default terpin (v0.3.76 LEAK #2/C: tanpa syarat LUMI_DEBUG)",
+    ok("v0.3.79 A2: preset OFF → default terpin + expected: true (fallback diharapkan, wrapper diam)",
+      (() => { const d = ASP.resolveSessionDefault({ ...customPreset(), enabled: false }, LIVE); return d.model === PINNED && d.expected === true && /sistem \/subagent OFF/.test(d.reason); })());
+    ok("v0.3.79 A2: preset ON + Thinking ada di cache live → model = Thinking (tanpa expected)",
+      (() => { const d = ASP.resolveSessionDefault(customPreset(), LIVE); return d.model === "9router/kr/claude-opus-5.5" && !d.expected; })());
+    ok("v0.3.79 A2: preset ON + Thinking TIDAK ada di cache → default terpin + expected falsy (fallback tak terduga, wrapper tetap bersuara)",
+      (() => { const d = ASP.resolveSessionDefault(customPreset(), ["ag/gemini-3.8-flash-high"]); return d.model === PINNED && !d.expected; })());
+    ok("v0.3.71 A2: wrapper memakai resolveSessionDefault (bukan logika duplikat) + bersuara saat fallback TAK TERDUGA ke default terpin, diam saat OFF expected (v0.3.76 LEAK #2/C: tanpa syarat LUMI_DEBUG; v0.3.79: OFF = diharapkan)",
       /resolveSessionDefault/.test(fm("lumitome/bin/lumitome.mjs"))
       && /loadPreset\(\{ home: ISO_HOME, root: REPO \}\)/.test(fm("lumitome/bin/lumitome.mjs"))
-      && /if \(d\.model === DEFAULT_MODEL && d\.thinking && d\.thinking !== DEFAULT_MODEL\)/.test(fm("lumitome/bin/lumitome.mjs"))
+      && /if \(d\.model === DEFAULT_MODEL && d\.thinking && d\.thinking !== DEFAULT_MODEL && !d\.expected\)/.test(fm("lumitome/bin/lumitome.mjs"))
+      && /if \(d2\.thinking && d2\.thinking !== DEFAULT_MODEL && !d2\.expected\)/.test(fm("lumitome/bin/lumitome.mjs"))
       && !/LUMI_DEBUG && d\.model === DEFAULT_MODEL/.test(fm("lumitome/bin/lumitome.mjs"))
       && /PERINGATAN — model default sesi TUI jatuh ke default terpin/.test(fm("lumitome/bin/lumitome.mjs"))
       && /PERINGATAN — run headless memakai model default terpin/.test(fm("lumitome/bin/lumitome.mjs")));

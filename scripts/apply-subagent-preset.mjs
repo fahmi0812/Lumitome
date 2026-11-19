@@ -309,12 +309,17 @@ export function applyPreset({ root = ".", preset, liveModels = null, stored, che
  * ada di cache live providers.json; selain itu default terpin
  * (DEFAULT_MODEL) — dan alasannya SELALU disertakan supaya kegagalan
  * terlihat, bukan diam-diam jatuh ke gemini (akar bug v0.3.71).
+ * v0.3.79: fallback yang DIHARAPKAN (sistem OFF — sesi memang memakai
+ * default terpin) ditandai `expected: true` supaya wrapper diam;
+ * fallback TAK TERDUGA (tanpa preset / Thinking tidak valid / cache
+ * tidak bisa dibaca / Thinking tidak ada di cache) tetap tanpa penanda
+ * — wrapper TETAP bersuara (proteksi LEAK #2 v0.3.76).
  */
 export function resolveSessionDefault(preset, liveModels) {
   const t0 = thinkingSessionModel(preset);
   const no = (reason) => ({ model: DEFAULT_MODEL, reason, thinking: t0 });
   if (!preset) return no("tidak ada preset — default terpin");
-  if (!isEnabled(preset)) return no("sistem /subagent OFF — default terpin");
+  if (!isEnabled(preset)) return { ...no("sistem /subagent OFF — default terpin"), expected: true };
   if (!t0) return no("model Thinking tidak valid di preset — default terpin");
   if (!liveModels) return no(`model Thinking ${t0} tidak bisa diverifikasi (cache providers.json tidak bisa dibaca) — default terpin`);
   if (!liveModels.includes(t0.slice("9router/".length))) return no(`model Thinking ${t0} tidak ada di cache providers.json — default terpin (jalankan: lumitome models --refresh)`);
