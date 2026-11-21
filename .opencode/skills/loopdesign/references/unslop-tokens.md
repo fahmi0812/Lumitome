@@ -90,6 +90,18 @@ Warna semantik, dijinakkan supaya duduk di dalam ramp apa pun: positif
 - Aksen menutupi beberapa persen layar saja: aksi primer, seleksi, dan
   satu angka kunci.
 
+## Proporsi palet
+
+- **60-30-10 (perencanaan):** Dominan 60 / Sekunder 30 / Aksen 10.
+  Aksen menutupi paling sedikit — aksi primer + maks 1 hal lain.
+- **Ground 70–90% halaman; aksen <5% per layar app**
+  (`design-taste-frontend/references/colour.md` §3). Angka 10% dipakai
+  saat merencanakan palet, angka <5% dipakai saat mengukur satu layar
+  render — keduanya dipakai, bukan dipaksa satu angka.
+- Rasa dulu baru hex: tulis Rasa yang mau dibuat sebelum memilih hex.
+  Tabel rasa → palet + contoh palet + contoh hitung ada di
+  `references/color-feel.md`.
+
 ## Tombol
 
 - Tombol hero 44–48 tinggi, tombol navigasi 32–36, padding samping 16–20.

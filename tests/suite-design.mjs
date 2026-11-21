@@ -203,6 +203,71 @@ import { ok, skip, finish } from "./harness.mjs";
       return d.character === "tenang, teliti, sedikit hangat" && d.world === "kertas dan tinta" && d.moments === "grafik utama + kartu perangkat"; })() &&
     (() => { const d = DM.parseDesignFile("tests/fixtures/design/DESIGN-neutral.md");
       return d.character === null && d.world === null && d.moments === null; })());
+  // ---- cek warna taste (v0.3.80): banned-palette + accent-share + parse baru ----
+  // banned-palette (taste-skill colour.md §9): krim jenuh + terracotta
+  // BERSAMAAN gagal; masing-masing lolos; allow mengecualikan; tanpa
+  // tokens dan tanpa usedColors tidak dicek.
+  ok("design-gate: banned-palette — krim + terracotta bersamaan gagal; masing-masing lolos; allow mengecualikan",
+    (() => { const f = DG.checkBannedPalette(["#F2D8A0", "#C1440E"]);
+      return f.length === 1 && f[0].check === "banned-palette" && f[0].severity === "fail" && f[0].detail.includes("#F2D8A0") && f[0].detail.includes("#C1440E"); })() &&
+    (() => { const f = DG.checkBannedPalette([], [{ rgb: [242, 216, 160], alpha: 1 }, { rgb: [193, 68, 14], alpha: 1 }]);
+      return f.length === 1 && f[0].check === "banned-palette"; })() &&
+    DG.checkBannedPalette(["#F2D8A0"]).length === 0 &&
+    DG.checkBannedPalette(["#C1440E"]).length === 0 &&
+    DG.checkBannedPalette(["#F2D8A0", "#C1440E"], [], { allow: ["banned-palette"] }).length === 0 &&
+    DG.checkBannedPalette([], []).length === 0);
+  // Pasangan Kopi Senja HARUS lolos: #FFF8F0 krim sangat pucat (HSV sat
+  // 0.059 < 0.20 — bukan krim jenuh), jadi meski #A0591E terracotta,
+  // pasangannya tidak kena. Ini yang membedakan definisi HSV dari HSL.
+  ok("design-gate: banned-palette — pasangan Kopi Senja #FFF8F0 + #A0591E HARUS lolos",
+    DG.checkBannedPalette(["#FFF8F0", "#A0591E"]).length === 0 &&
+    DG.checkBannedPalette(["#2C1A14", "#A0591E", "#FFF8F0", "#FFFFFF"]).length === 0 &&
+    DG.checkBannedPalette([], [{ rgb: [255, 248, 240], alpha: 1 }, { rgb: [160, 89, 30], alpha: 1 }]).length === 0);
+  // accent-share: ambang dari konstanta — 4% lolos, 12% warn (pass tetap
+  // true), 30% fail. Tanpa area (count saja) / tanpa aksen → tidak dicek.
+  ok("design-gate: accent-share — konstanta 0.10 warn / 0.25 fail; 4% lolos, 12% warn, 30% fail; tanpa area / tanpa aksen tidak dicek",
+    DG.MAX_ACCENT_SHARE_WARN === 0.10 && DG.MAX_ACCENT_SHARE_FAIL === 0.25 &&
+    DG.checkAccentProportion({ accent: "#1A4BE0", usedColors: [{ rgb: [26, 75, 224], area: 4 }, { rgb: [255, 255, 255], area: 96 }] }).length === 0 &&
+    (() => { const f = DG.checkAccentProportion({ accent: "#1A4BE0", usedColors: [{ rgb: [26, 75, 224], area: 12 }, { rgb: [255, 255, 255], area: 88 }] });
+      return f.length === 1 && f[0].check === "accent-share" && f[0].severity === "warn" && f[0].detail.includes("12%") && f[0].detail.includes("aksen maks 10%"); })() &&
+    (() => { const f = DG.checkAccentProportion({ paletteRoles: { accent: "#1A4BE0" }, usedColors: [{ rgb: [26, 75, 224], area: 30 }, { rgb: [255, 255, 255], area: 70 }] });
+      return f.length === 1 && f[0].check === "accent-share" && f[0].severity === "fail" && f[0].detail.includes("30%"); })() &&
+    (() => { const f = DG.checkAccentProportion({ paletteRoles: [{ role: "aksen", color: "#1A4BE0" }], usedColors: [{ rgb: [26, 75, 224], area: 30 }, { rgb: [255, 255, 255], area: 70 }] });
+      return f.length === 1 && f[0].severity === "fail"; })() &&
+    DG.checkAccentProportion({ accent: "#1A4BE0", usedColors: [{ rgb: [26, 75, 224] }, { rgb: [255, 255, 255] }] }).length === 0 &&
+    DG.checkAccentProportion({ usedColors: [{ rgb: [26, 75, 224], area: 30 }, { rgb: [255, 255, 255], area: 70 }] }).length === 0 &&
+    DG.checkAccentProportion({ accent: "#1A4BE0", usedColors: [] }).length === 0 &&
+    DG.checkAccentProportion({ accent: "#1A4BE0", usedColors: [{ rgb: [26, 75, 224], area: 30 }, { rgb: [255, 255, 255], area: 70 }], allow: ["accent-share"] }).length === 0 &&
+    DG.evaluateDesign({ accent: "#1A4BE0", usedColors: [{ rgb: [26, 75, 224], area: 12 }, { rgb: [255, 255, 255], area: 88 }] }).pass === true &&
+    DG.evaluateDesign({ accent: "#1A4BE0", usedColors: [{ rgb: [26, 75, 224], area: 30 }, { rgb: [255, 255, 255], area: 70 }] }).pass === false);
+  // evaluateDesign wiring: tokens krim+terracotta → pass false dengan check
+  // banned-palette; allow mengecualikan → pass true.
+  ok("design-gate: evaluateDesign wiring — tokens krim+terracotta → pass false (banned-palette); allow → pass true",
+    (() => { const g = DG.evaluateDesign({ tokens: ["#F2D8A0", "#C1440E"] });
+      return g.pass === false && g.findings.some((f) => f.check === "banned-palette" && f.severity === "fail"); })() &&
+    DG.evaluateDesign({ tokens: ["#F2D8A0", "#C1440E"], allow: ["banned-palette"] }).pass === true &&
+    DG.evaluateDesign({ tokens: ["#FFF8F0", "#A0591E"] }).pass === true);
+  // parseDesignFile taste (v0.3.80): Rasa + Palet + peran 60-30-10 + Field
+  // dari DESIGN-taste.md; fixture lama tanpa baris itu → null/[] aman.
+  ok("design-gate: parseDesignFile baca Rasa + Palet + peran Dominan/Sekunder/Aksen + Field; tanpa itu → null",
+    (() => { const d = DM.parseDesignFile("tests/fixtures/design/DESIGN-taste.md");
+      return d.feel === "lega dan menenangkan" && d.palette === "white-link-blue" &&
+        JSON.stringify(d.paletteRoles) === JSON.stringify({ dominant: "#FFFFFF", secondary: "#F4F4F4", accent: "#1A4BE0" }) &&
+        d.accent === "#1A4BE0" && JSON.stringify(d.fields) === JSON.stringify(["#111111"]) &&
+        d.direction === "Lega editorial" && d.tokens.includes("#1A4BE0"); })() &&
+    (() => { const d = DM.parseDesignFile("tests/fixtures/design/DESIGN.md");
+      return d.feel === null && d.palette === null && d.accent === null && JSON.stringify(d.fields) === "[]" &&
+        JSON.stringify(d.paletteRoles) === JSON.stringify({ dominant: null, secondary: null, accent: null }); })() &&
+    (() => { const d = DM.parseDesignFile("tests/fixtures/design/DESIGN-neutral.md");
+      return d.feel === null && d.palette === null && d.accent === null; })());
+  // criticInput (v0.3.80): direction membawa feel + palette + paletteRoles
+  // dari design; tanpa design → null (seperti dulu).
+  ok("design-gate: criticInput direction membawa feel + palette + paletteRoles dari design; tanpa design → null",
+    (() => { const d = DM.parseDesignFile("tests/fixtures/design/DESIGN-taste.md");
+      const ci = DG.criticInput({ screenshots: [], gate: { pass: true, findings: [] }, design: d });
+      return ci.direction && ci.direction.feel === "lega dan menenangkan" && ci.direction.palette === "white-link-blue" &&
+        ci.direction.paletteRoles && ci.direction.paletteRoles.accent === "#1A4BE0" && ci.direction.name === "Lega editorial"; })() &&
+    DG.criticInput({ screenshots: [], gate: { pass: true, findings: [] } }).direction === null);
   // anti-slop (v0.3.28 §3.2, dikoreksi v0.3.29): subset kurasi native dari
   // Impeccable (Apache-2.0, 62 aturan = 31 slop + 31 quality) dan ui-craft
   // (MIT, registry 43 aturan di scripts/detect/rules.mjs — terverifikasi;

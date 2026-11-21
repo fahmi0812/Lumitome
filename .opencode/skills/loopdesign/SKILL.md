@@ -48,6 +48,12 @@ Arah: <nama arah estetika, mis. "Hangat artisanal">
 Karakter: <2–3 kata konkret, mis. "tenang, teliti, sedikit hangat">
 Dunia: <tempat/material produk, mis. "kertas dan tinta">
 Momen: <1–2 titik yang boleh kaya warna, mis. "grafik utama + kartu perangkat">
+Rasa: <rasa yang mau dibuat, mis. "lega dan menenangkan">
+Palet: <id palet dari design-taste-frontend/library/palettes.json, mis. white-link-blue> — atau "merek sendiri" bila brand sudah punya warna
+- Dominan 60% — #RRGGBB — <peran, mis. ground>
+- Sekunder 30% — #RRGGBB — <peran, mis. surface / teks sekunder>
+- Aksen 10% — #RRGGBB — <peran: aksi primer + 1 hal lain saja>
+Field: <opsional — daftar field + ink-nya, mis. "hitam #111111 / putih">
 Token:
 - #RRGGBB — <peran, mis. kopi (teks/heading)>
 - ... (4–6 hex)
@@ -57,6 +63,14 @@ Netral:
 Tipografi: <font display> (display), <font body> (body)
 Signature: <satu elemen signature>
 ```
+
+**Rekonsiliasi angka proporsi (jujur, jangan dipaksa satu angka):**
+`60-30-10` adalah rasio **perencanaan** brand/landing — Dominan 60 /
+Sekunder 30 / Aksen 10. Di **layar app**, aksen yang terukur harus
+**<5% per layar** (`design-taste-frontend/references/colour.md` §3) dan
+Ground **70–90%** halaman. Keduanya dipakai, bukan dipaksa satu angka:
+60-30-10 untuk merencanakan palet, <5% untuk mengukur hasil render per
+layar. Detail + contoh hitung ada di `references/color-feel.md`.
 
 **Karakter / Dunia / Momen (v0.3.36, diadaptasi dari unslop — CC BY 4.0,
 Damir Sokolovsky):** tiga baris ini yang membedakan arah yang diputuskan
@@ -101,6 +115,41 @@ sebelum coding — jangan mulai dari CSS tanpa arah tertulis.
 token-fidelity, Maker memperbaiki persis itu dulu sebelum poles apa pun —
 jangan menghabiskan iterasi untuk polesan sementara warna di luar token
 masih ada.
+
+**Cara berpikir warna — rasa dulu, hex belakangan (v0.3.80)**
+
+Ini cara berpikirnya, bukan daftar hex. Hex dipilih belakangan, setelah
+Rasa diputuskan. Panduan lengkap (tabel rasa → palet, contoh palet,
+contoh hitung 60-30-10) ada di `references/color-feel.md`.
+
+1. **Rasa dulu baru hex.** Tulis `Rasa:` di DESIGN.md sebelum memilih
+   hex. Kritikus menilai cocok/tidaknya palet dengan Rasa + Karakter —
+   bukan sekadar "warnanya bagus".
+2. **60-30-10.** Dominan 60 / Sekunder 30 / Aksen 10 (rasio perencanaan,
+   lihat rekonsiliasi di atas). Aksen menutupi paling sedikit: aksi
+   primer + maks 1 hal lain. Begitu aksen muncul di lima tempat, ia
+   berhenti berarti "di sini".
+3. **Satu aksen, satu elemen terang, chrome diam.** Chrome (nav, tombol,
+   teks, border) pakai netral tint + satu aksen. Kekayaan warna hanya di
+   1–2 Momen — satu elemen terang, sisanya diam.
+4. **Aksen bukan untuk heading/ikon/border/underline** kecuali direction
+   sheet bilang begitu. Headline itu ink.
+5. **Cek palet lawan subjek** (`design-taste-frontend/references/colour.md`).
+   Palet yang cocok untuk kopi belum tentu cocok untuk travel; palet
+   pastel manis untuk whisky gambut atau neon untuk gubuk gunung itu
+   salah alamat. Kalau tidak cocok, redraw palet sekali — jangan
+   memaksa palet yang salah dengan menambah warna lain.
+6. **Keluarga terlarang.** Krim + terracotta bersamaan, dan violet/indigo,
+   dilarang — kecuali merek memang punya warna itu. Pengecualian wajib
+   dicatat di DESIGN.md (seperti `--keep palette` di taste-skill), kalau
+   tidak, gate menganggapnya pelanggaran.
+
+**Aturan deal palet (v0.3.80):** Maker WAJIB deal/pilih **1 palet** dari
+`design-taste-frontend/library/palettes.json` (tulis id-nya di baris
+`Palet:` DESIGN.md) atau pakai palet merek bila brand sudah punya warna
+(tulis "merek sendiri"). Dilarang mengarang 4–6 token dari kepala tanpa
+rujukan — token 4–6 di DESIGN.md diturunkan dari palet yang di-deal atau
+dari palet merek itu.
 
 Lalu, Maker wajib mendeklarasikan **kontrak interaksi** halaman — daftar
 interaksi + keadaan awal yang diharapkan + hasil klik yang diharapkan —
@@ -197,7 +246,7 @@ hasil dengan dan tanpa MWG bisa dibandingkan (findings per iterasi).
 |---|---|
 | 1. Maker bangun | Sektor agent pemilik skill desain itu: desain UI = coding (`design-taste-frontend`, `impeccable`, `hallmark`, `ui-ux-pro-max`, `stitch-ui`); motion/video = media (`motion-design`, `review-loop`, `web-sims`). Per iterasi router pilih **≤5 skill** yang relevan buat iterasi itu; set-nya boleh ganti antar iterasi. Tidak pernah >5 dalam satu konteks. |
 | 2. Render | Figcraft export (desain Figcraft, `figcraft-cli export`) atau screenshot browser (web, via `.opencode/skills/design-taste-frontend/scripts/inspect.mjs` / playwright / chromedev). Dua renderer, satu gate: desain yang sama harus dapat vonis yang sama dari renderer mana pun. **Mode input situs live (v0.3.36 §5):** untuk mendesain ulang situs yang sudah tayang, simpan dulu salinannya dengan `node harness/design-snapshot.mjs <url\|file> <out.html> [--dark\|--light] [--width 1440]` — menyimpan HTML halaman + screenshot `<out>.live.png`, scroll dulu agar lazy-load ketangkap. **Caveat:** background animasi dari script tidak selamat — hasil snapshot adalah salinan statis; perilaku dibangun ulang dari kontrak. **File sementara/scratch SELALU di dalam workspace (`<workspace>/.tmp/` atau subdir tugas), JANGAN `/tmp`** — guard menolak `rm` di luar workspace. |
-| 3. Gate ukur | `harness/design-gate.mjs` + Design Stress-Test: viewport ekstrem 1440/768/390 (overflow, elemen bertumpuk, teks terpotong), edge-case data & teks (teks sangat panjang, empty state, loading, error, data tidak konsisten = finding), aksesibilitas (rasio kontras dihitung dari piksel, minimal 4,5:1 WCAG AA; tombol sentuh <44px langsung gagal; font/gambar gagal muat — gambar yang gagal di browser dicek HTTP-nya dulu: 200 + byte gambar valid = warn artefak lingkungan, bukan fail), kesetiaan token (warna render vs token DESIGN.md — solid di luar token = finding bernama + bersaran), anti-slop `purple-gradient`: gagal hanya bila SATU gradien mengandung stop ungu DAN stop cyan/biru (AND, v0.3.33 — gradien ungu murni kini lolos; dulu OR), due diligence (aksesibilitas, lisensi aset, konsistensi data). **Tiap iterasi juga menjalankan behavior gate — SELALU, tidak bisa dilewati**: `probeBehavior` menjalankan kontrak interaksi dari `DESIGN.md` (keadaan awal + hasil klik); bila tidak ada kontrak, gate menurunkan kontrak default otomatis dari DOM (`deriveDefaultContract`) dan probe tetap jalan; bila tidak ada check yang bisa diturunkan, hasilnya finding warn "tidak ada interaksi yang bisa diprobe" — bukan skip diam-diam. Hasilnya findings `behavior`/`probe-gagal` yang ikut menentukan vonis gate. Jumlah findings tiap iterasi dicatat ke `<workspace>/.tmp/loopdesign/loop-history.jsonl` (`recordLoopIteration`, beserta penanda MWG `mwg: { consulted, guides, source }` — lihat §1) untuk aturan mentok (§4). |
+| 3. Gate ukur | `harness/design-gate.mjs` + Design Stress-Test: viewport ekstrem 1440/768/390 (overflow, elemen bertumpuk, teks terpotong), edge-case data & teks (teks sangat panjang, empty state, loading, error, data tidak konsisten = finding), aksesibilitas (rasio kontras dihitung dari piksel, minimal 4,5:1 WCAG AA; tombol sentuh <44px langsung gagal; font/gambar gagal muat — gambar yang gagal di browser dicek HTTP-nya dulu: 200 + byte gambar valid = warn artefak lingkungan, bukan fail), kesetiaan token (warna render vs token DESIGN.md — solid di luar token = finding bernama + bersaran), anti-slop `purple-gradient`: gagal hanya bila SATU gradien mengandung stop ungu DAN stop cyan/biru (AND, v0.3.33 — gradien ungu murni kini lolos; dulu OR), proporsi aksen (warn bila aksen >10% luas terukur, fail bila >25%) dan banned-palette krim + terracotta (fail, kecuali pengecualian merek yang dicatat di DESIGN.md) — keduanya diimplementasi di `harness/design-gate.mjs`, bukan di skill ini — due diligence (aksesibilitas, lisensi aset, konsistensi data). **Tiap iterasi juga menjalankan behavior gate — SELALU, tidak bisa dilewati**: `probeBehavior` menjalankan kontrak interaksi dari `DESIGN.md` (keadaan awal + hasil klik); bila tidak ada kontrak, gate menurunkan kontrak default otomatis dari DOM (`deriveDefaultContract`) dan probe tetap jalan; bila tidak ada check yang bisa diturunkan, hasilnya finding warn "tidak ada interaksi yang bisa diprobe" — bukan skip diam-diam. Hasilnya findings `behavior`/`probe-gagal` yang ikut menentukan vonis gate. Jumlah findings tiap iterasi dicatat ke `<workspace>/.tmp/loopdesign/loop-history.jsonl` (`recordLoopIteration`, beserta penanda MWG `mwg: { consulted, guides, source }` — lihat §1) untuk aturan mentok (§4). |
 | 4. Kritikus menyerang | §3 — red team + pairwise (iterasi sekarang vs sebelumnya, dua urutan presentasi). Pairwise MENGINFORMASIKAN, never-gate. |
 | 5. Maker perbaiki | Dari findings gate + kritik. Perbaiki dalam **9 pass
 berurutan** (v0.3.36, diadaptasi dari unslop — instruksi Maker, BUKAN
@@ -218,8 +267,9 @@ kembali ke langkah 2. |
 Input kritikus: screenshot + hasil ukur gate + brief/token (arah + token +
 ringkasan brief/data dari DESIGN.md) + hasil probe perilaku (`behavior` di
 `criticInput`) + arah yang dideklarasikan Maker (`direction` di
-`criticInput`: nama arah + Karakter + Dunia + Momen + Signature dari
-`parseDesignFile` — v0.3.36 §1, supaya kritikus menilai kesetiaan iterasi
+`criticInput`: nama arah + Karakter + Dunia + Momen + Signature + Rasa +
+Palet dari `parseDesignFile` — v0.3.36 §1, Rasa + Palet ditambah v0.3.80
+(diimplementasi di `criticInput`) — supaya kritikus menilai kesetiaan iterasi
 pada arah, bukan sekadar "terlihat bagus"). Urutan kerjanya:
 
 1. **Steelmanning — duluan, sebelum menyerang.** Nyatakan dulu versi terkuat
@@ -253,6 +303,15 @@ pada arah, bukan sekadar "terlihat bagus"). Urutan kerjanya:
    Maker kandidat mana yang lebih baik dan di mana — tidak pernah mengubah
    vonis lolos/gagal gate.** Vonis tetap milik gate deterministik +
    behavior gate.
+7. **Checklist warna (advisory, bukan gate).** Kritikus memakai
+   `references/color-feel.md` + Rasa dan Palet di DESIGN.md, dan menjawab
+   tujuh ini — semuanya advisory, tidak pernah mengubah vonis gate:
+   (1) aksen ≤10%? (2) ada keluarga terlarang (krim + terracotta,
+   violet/indigo) tanpa pengecualian merek? (3) palet cocok dengan Rasa
+   + Karakter? (4) ganti ground antar-section terasa seperti bab atau
+   tempelan? (5) satu elemen terang + chrome diam? (6) foto membawa
+   warna atau interface netral? (7) tiap field punya ink sendiri, bukan
+   `--muted` di atas field berwarna?
 
 ### Golden — kritik berjangkar referensi (v0.3.32 §2)
 
@@ -314,6 +373,7 @@ default N = 3.
 | Motion / simulasi interaktif | `motion-design`, `web-sims` |
 | Screenshot + inspeksi browser | `design-taste-frontend/scripts/inspect.mjs` |
 | Panduan web modern (Baseline + fallback) | `modern-web-guidance` — konsultasi runtime via `harness/mwg-consult.mjs`, BUKAN skill impor |
+| Cara berpikir warna (rasa → palet, 60-30-10, keluarga terlarang) | `references/color-feel.md` di loopdesign |
 
 ## Guardrails
 

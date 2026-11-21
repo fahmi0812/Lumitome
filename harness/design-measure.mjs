@@ -75,10 +75,12 @@ export function measureInPage() {
   // (keduanya tidak pernah bounce) — kalau tidak, computed value default
   // akan jadi noise.
   const easings = [];
-  const addColor = (raw, where) => {
+  // Luas elemen (v0.3.80, taste warna): area dipakai cek accent-share —
+  // aksen diukur dari luas terukur, bukan jumlah kemunculan warna.
+  const addColor = (raw, where, area) => {
     const p = parseRgb(raw);
     if (!p) return;
-    usedColors.push({ rgb: p.rgb, alpha: p.a, where });
+    usedColors.push({ rgb: p.rgb, alpha: p.a, where, area: typeof area === "number" && Number.isFinite(area) ? area : 0 });
   };
   for (const el of document.body.querySelectorAll("*")) {
     if (texts.length >= 500) break;
@@ -107,12 +109,16 @@ export function measureInPage() {
     const cs = getComputedStyle(el);
     const tag = el.tagName.toLowerCase();
     const where = `${tag}: ${(el.innerText || "").replace(/\s+/g, " ").trim().slice(0, 50)}`;
-    addColor(cs.color, where);
-    addColor(cs.backgroundColor, where);
-    addColor(cs.borderTopColor, where);
-    addColor(cs.borderRightColor, where);
-    addColor(cs.borderBottomColor, where);
-    addColor(cs.borderLeftColor, where);
+    // Luas elemen (v0.3.80): rect.width*rect.height; 0 bila tidak valid.
+    // Loop teks di atas sengaja TIDAK diubah — area hanya untuk warna.
+    const rect = el.getBoundingClientRect();
+    const area = Number.isFinite(rect.width) && Number.isFinite(rect.height) && rect.width > 0 && rect.height > 0 ? rect.width * rect.height : 0;
+    addColor(cs.color, where, area);
+    addColor(cs.backgroundColor, where, area);
+    addColor(cs.borderTopColor, where, area);
+    addColor(cs.borderRightColor, where, area);
+    addColor(cs.borderBottomColor, where, area);
+    addColor(cs.borderLeftColor, where, area);
     const bi = cs.backgroundImage;
     if (bi && bi !== "none" && /gradient\(/i.test(bi)) {
       backgrounds.push({ value: bi.slice(0, 500), where });
@@ -380,7 +386,20 @@ export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } 
     input.cssVars.map((v) => ({ name: v.name, rgb: parseColor(v.value) })).filter((v) => v.rgb),
     (v) => `${v.name}|${v.rgb.join(",")}`,
   );
-  input.usedColors = dedupe(input.usedColors, (c) => `${c.rgb.join(",")}|${c.alpha}`);
+  // usedColors (v0.3.80): dedupe per rgb|alpha JANGAN lagi membuang duplikat
+  // mentah — JUMLAHKAN area per kunci, simpan where pertama. Luas total
+  // per warna inilah yang dipakai cek accent-share.
+  {
+    const byColor = new Map();
+    for (const c of input.usedColors) {
+      const key = `${c.rgb.join(",")}|${c.alpha}`;
+      const area = typeof c.area === "number" && Number.isFinite(c.area) ? c.area : 0;
+      const prev = byColor.get(key);
+      if (prev) prev.area += area;
+      else byColor.set(key, { rgb: c.rgb, alpha: c.alpha, where: c.where, area });
+    }
+    input.usedColors = [...byColor.values()];
+  }
   input.headings = dedupe(input.headings, (h) => `${h.level}|${h.where}`);
   input.easings = dedupe(input.easings, (e) => e.value);
   input.backgrounds = dedupe(input.backgrounds, (b) => b.value);
@@ -491,9 +510,18 @@ export function fromFigcraftExport(dir) {
  * Token = SEMUA kode hex (#rrggbb/#rgb) yang ditemukan di file (dedupe,
  * huruf besar). Arah/tipografi/signature/karakter/dunia/momen dibaca dari
  * baris berlabel bila ada.
+ * Taste warna (v0.3.80) — TANPA mengubah field lama:
+ *   Rasa: <rasa yang mau dibuat, mis. "lega dan menenangkan">
+ *   Palet: <id palet, mis. "white-link-blue — Sheet and biro"> — diambil
+ *     token pertama sebelum "—" atau spasi.
+ *   Peran palet (60-30-10): baris bullet "- Dominan ... #HEX",
+ *     "- Sekunder ... #HEX", "- Aksen ... #HEX" (terima juga ejaan Inggris
+ *     Dominant/Secondary/Accent, case-insensitive, hex uppercase).
+ *   Field: baris "Field:" — semua hex di baris itu (field ground section).
  * → {direction, character, world, moments, tokens, typography, signature,
- *    fonts, tokenVars, neutrals}
- * (null bila tidak ada).
+ *    fonts, tokenVars, neutrals, feel, palette, paletteRoles, accent, fields}
+ * (null bila tidak ada; paletteRoles = {dominant, secondary, accent} dengan
+ * nilai null per peran bila barisnya tidak ada; fields = [] bila tidak ada).
  * fonts = nama font (lowercase) dari baris Tipografi — "Fraunces (display),
  * Inter (body)" → ["fraunces", "inter"]; dipakai pengecualian overused-font.
  * tokenVars = peta nama variabel CSS → hex dari baris `--nama: #HEX` di mana
@@ -519,6 +547,28 @@ export function parseDesignFile(path) {
   for (const m of raw.matchAll(/^\s*-\s*(--[a-zA-Z0-9-_]+)\s*:\s*tint\s+(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})\b/gm)) {
     neutrals.push({ name: m[1], base: m[2].toUpperCase() });
   }
+  // Taste warna (v0.3.80): Rasa + Palet + peran 60-30-10 + Field.
+  // Toleran: bila tidak ada → null / [] — fixture lama tanpa baris ini
+  // (DESIGN.md, DESIGN-neutral.md) harus tetap parse dengan aman.
+  const feel = line(/^Rasa\s*:\s*(.+)$/m);
+  const paletteRaw = line(/^Palet\s*:\s*(.+)$/m);
+  const palette = paletteRaw ? paletteRaw.split("—")[0].trim().split(/\s+/)[0] || null : null;
+  const roleHex = (id, en) => {
+    const m = raw.match(new RegExp(`^\\s*-\\s*(?:${id}|${en})\\b[^#]*?(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})\\b`, "im"));
+    return m ? m[1].toUpperCase() : null;
+  };
+  const paletteRoles = {
+    dominant: roleHex("Dominan", "Dominant"),
+    secondary: roleHex("Sekunder", "Secondary"),
+    accent: roleHex("Aksen", "Accent"),
+  };
+  const fields = [];
+  const fieldLine = raw.match(/^Fields?\s*:\s*(.+)$/m);
+  if (fieldLine) {
+    for (const m of fieldLine[1].matchAll(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g)) {
+      fields.push("#" + m[1].toUpperCase());
+    }
+  }
   return {
     direction: line(/^(?:Arah|Direction)\s*:\s*(.+)$/m),
     character: line(/^Karakter\s*:\s*(.+)$/m),
@@ -530,6 +580,11 @@ export function parseDesignFile(path) {
     fonts,
     tokenVars,
     neutrals,
+    feel,
+    palette,
+    paletteRoles,
+    accent: paletteRoles.accent,
+    fields,
   };
 }
 
@@ -556,6 +611,10 @@ export async function measureAndGate(target, opts = {}) {
     input.tokens = design.tokens;
     input.design = design;
     input.declaredFonts = design.fonts;
+    // Taste warna (v0.3.80): peran palet + aksen diteruskan ke gate
+    // (checkAccentProportion) — selain tokens + declaredFonts di atas.
+    input.paletteRoles = design.paletteRoles;
+    input.accent = design.accent;
   }
   if (opts.declaredFonts) input.declaredFonts = opts.declaredFonts;
   if (opts.allow) input.allow = opts.allow;

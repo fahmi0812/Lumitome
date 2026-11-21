@@ -11,6 +11,8 @@
  * deklarasi DESIGN.md — finding menyebut variabel CSS + saran ganti),
  * anti-slop (pola slop yang bisa dihitung dari DOM/computed styles),
  * perilaku (probe interaksi terskrip dari kontrak Maker — behavior gate).
+ * cek warna taste (v0.3.80): banned-palette (krim + terracotta bersamaan)
+ * dan accent-share (aksen maks 10% luas terukur, ideal <5% per layar app).
  * Yang TIDAK di gate: "terlihat bagus" / "terasa modern" — itu kerja kritikus.
  *
  * Fail-closed: warna yang tidak bisa diparse, lisensi yang tidak dikenal, dan
@@ -27,6 +29,11 @@ export const MIN_CONTRAST_LARGE = 3;
 export const MIN_CONTRAST_UI = 3;
 /** Ukuran minimum target sentuh (px, sisi terpendek). */
 export const MIN_TAP_TARGET = 44;
+/** Proporsi aksen (v0.3.80, taste warna): aksen >10% luas terukur = warn,
+ *  >25% = fail. Aksen di sini = satu warna aksen dari DESIGN.md (peran
+ *  Aksen / paletteRoles.accent), bukan semua warna non-netral. */
+export const MAX_ACCENT_SHARE_WARN = 0.10;
+export const MAX_ACCENT_SHARE_FAIL = 0.25;
 
 /** Lisensi aset yang dikenal — selain ini (atau kosong) = fail-closed. */
 export const KNOWN_LICENSES = new Set(
@@ -625,6 +632,96 @@ export function checkTokenFidelity(tokens = [], usedColors = [], opts = {}) {
   return out;
 }
 
+/** Saturasi HSV (0-1) dari [r,g,b] — (max-min)/max. Dipakai cek
+ * banned-palette: saturasi HSL saja tidak cukup membedakan krim pucat
+ * (#FFF8F0, HSV sat 0.059) dari krim jenuh (#F2D8A0, HSV sat 0.34). */
+function hsvSaturation([r, g, b]) {
+  const max = Math.max(r, g, b) / 255, min = Math.min(r, g, b) / 255;
+  return max === 0 ? 0 : (max - min) / max;
+}
+
+/** Ground krim jenuh (taste-skill colour.md §9): hue 22–62°, saturasi HSV
+ * >= 0.20, lightness HSL 0.75–0.95. Krim sangat pucat (mis. #FFF8F0)
+ * BUKAN krim di sini — sengaja, supaya fixture Kopi Senja tidak false-fail. */
+function isCreamColor(rgb) {
+  const { h, l } = rgbToHsl(rgb);
+  return h >= 22 && h <= 62 && hsvSaturation(rgb) >= 0.20 && l >= 0.75 && l <= 0.95;
+}
+
+/** Terracotta/rust (taste-skill colour.md §9): hue 5–35°, saturasi HSV
+ * >= 0.50, lightness HSL 0.30–0.60. Karamel Kopi Senja (#A0591E) memang
+ * masuk jendela ini — yang dicek adalah PASANGANNYA dengan krim, bukan
+ * warnanya sendiri. */
+function isTerracottaColor(rgb) {
+  const { h, l } = rgbToHsl(rgb);
+  return h >= 5 && h <= 35 && hsvSaturation(rgb) >= 0.50 && l >= 0.30 && l <= 0.60;
+}
+
+/**
+ * banned-palette (v0.3.80, taste-skill colour.md §9): ground krim jenuh +
+ * aksen terracotta/rust BERSAMAAN = kombinasi khas halaman generik AI.
+ * tokens dulu; bila tokens kosong, periksa warna dari usedColors (rgb array).
+ * Cream saja lolos, terracotta saja lolos. allow ["banned-palette"]
+ * mengecualikan (merek memang punya warna itu — catat di DESIGN.md).
+ * Tanpa tokens dan tanpa usedColors → [] (tidak dicek).
+ * → SATU finding check "banned-palette" severity "fail", menyebut kedua hex.
+ */
+export function checkBannedPalette(tokens = [], usedColors = [], opts = {}) {
+  const allow = new Set(Array.isArray(opts.allow) ? opts.allow : []);
+  if (allow.has("banned-palette")) return [];
+  const tokenRgbs = (Array.isArray(tokens) ? tokens : []).map((t) => parseColor(t)).filter(Boolean);
+  const source = tokenRgbs.length > 0
+    ? tokenRgbs
+    : (Array.isArray(usedColors) ? usedColors : []).map((u) => (Array.isArray(u.rgb) ? u.rgb : parseColor(u.color ?? u))).filter(Boolean);
+  if (source.length === 0) return [];
+  const cream = source.find(isCreamColor);
+  const terra = source.find(isTerracottaColor);
+  if (!cream || !terra) return [];
+  return [finding("banned-palette", "fail", `krim ${rgbToHex(cream)} + terracotta ${rgbToHex(terra)} bersamaan — kombinasi khas slop (taste-skill colour.md §9): ganti ground ke stone/bone low-chroma atau aksen ke deep green/brown/oxblood, atau catat pengecualian merek di DESIGN.md`)];
+}
+
+/**
+ * accent-share (v0.3.80, taste warna 60-30-10): seberapa besar luas aksen
+ * dari semua warna terukur. input: {accent?, paletteRoles?, usedColors?,
+ * allow?} — accent boleh dari `accent` langsung atau dari
+ * `paletteRoles.accent` / `paletteRoles` array [{role: "aksen"|"accent",
+ * color}]. usedColors HARUS membawa `area` numerik (luas elemen, dari
+ * measureInPage); tanpa area → return [] (tidak pernah dihitung dari count).
+ * Bila tidak ada aksen eksplisit ATAU tidak ada usedColors dengan area
+ * numerik ATAU total area 0 → [] (sengaja: fixture lama tanpa peran aksen
+ * tidak boleh kena cek ini).
+ * share = luas aksen / total luas semua warna terukur. share > 0.25 →
+ * SATU finding "accent-share" severity "fail"; 0.10 < share <= 0.25 →
+ * severity "warn"; else []. allow ["accent-share"] mengecualikan.
+ */
+export function checkAccentProportion(input = {}) {
+  const allow = new Set(Array.isArray(input.allow) ? input.allow : []);
+  if (allow.has("accent-share")) return [];
+  let accentRaw = input.accent ?? null;
+  if (!accentRaw && input.paletteRoles) {
+    if (Array.isArray(input.paletteRoles)) {
+      const row = input.paletteRoles.find((r) => r && /^(aksen|accent)$/i.test(String(r.role ?? "")));
+      accentRaw = row?.color ?? row?.hex ?? null;
+    } else if (typeof input.paletteRoles === "object") {
+      accentRaw = input.paletteRoles.accent ?? null;
+    }
+  }
+  const accentRgb = parseColor(accentRaw);
+  if (!accentRgb) return [];
+  const measured = (Array.isArray(input.usedColors) ? input.usedColors : []).filter((u) => u && typeof u.area === "number" && Number.isFinite(u.area));
+  const total = measured.reduce((s, u) => s + u.area, 0);
+  if (measured.length === 0 || total === 0) return [];
+  const rgbOf = (u) => (Array.isArray(u.rgb) ? u.rgb : parseColor(u.color ?? u));
+  const accentArea = measured
+    .filter((u) => { const r = rgbOf(u); return r && r[0] === accentRgb[0] && r[1] === accentRgb[1] && r[2] === accentRgb[2]; })
+    .reduce((s, u) => s + u.area, 0);
+  const share = accentArea / total;
+  if (share <= MAX_ACCENT_SHARE_WARN) return [];
+  const pct = Math.round(share * 100);
+  const severity = share > MAX_ACCENT_SHARE_FAIL ? "fail" : "warn";
+  return [finding("accent-share", severity, `aksen ${pct}% dari luas terukur — aksen maks 10% luas terukur (ideal <5% per layar app)`)];
+}
+
 // ---------- stress-test & loop ----------
 
 /**
@@ -686,7 +783,7 @@ export function stressCases() {
  * input: {screenshots?, contrast?, tapTargets?, viewports?, assets?,
  * textCases?, consistency?, licenses?, tokens?, usedColors?, cssVars?,
  * backgrounds?, gradientTexts?, declaredFonts?, headings?, easings?,
- * allow?, behavior?}.
+ * allow?, behavior?, accent?, paletteRoles?}.
  * Field yang tidak ada = tidak dicek.
  * pass = tidak ada finding severity 'fail'. Findings terurut deterministik
  * berdasarkan nama check, lalu detail.
@@ -701,6 +798,8 @@ export function evaluateDesign(input = {}) {
     ...checkConsistency(input.consistency),
     ...checkLicenses(input.licenses),
     ...checkTokenFidelity(input.tokens, input.usedColors, { cssVars: input.cssVars }),
+    ...checkBannedPalette(input.tokens, input.usedColors, { allow: input.allow }),
+    ...checkAccentProportion(input),
     ...checkAntiSlop(input),
     ...evaluateBehavior(input.behavior),
   ];
@@ -746,9 +845,13 @@ export function nextLoopAction({ iteration = 1, maxIterations = 3, gatePass = fa
  * nama arah + Karakter + Dunia + Momen + Signature) IKUT dikirim, supaya
  * kritikus bisa menilai kesetiaan iterasi pada arah yang dideklarasikan
  * Maker — tetap membuang code/klaim, seperti field lain.
+ * Yang berubah di v0.3.80 (taste warna): `direction` juga membawa `feel`
+ * (Rasa), `palette` (id palet) dan `paletteRoles` (peran Dominan/Sekunder/
+ * Aksen) dari design bila ada — null bila tidak ada. Kritikus jadi bisa
+ * menilai apakah palet yang dirender cocok dengan rasa yang dideklarasikan.
  */
 export function criticInput({ screenshots, gate, brief, behavior, golden, design } = {}) {
   const d = design && typeof design === "object" ? design : null;
-  const direction = d ? { name: d.direction ?? null, character: d.character ?? null, world: d.world ?? null, moments: d.moments ?? null, signature: d.signature ?? null } : null;
+  const direction = d ? { name: d.direction ?? null, character: d.character ?? null, world: d.world ?? null, moments: d.moments ?? null, signature: d.signature ?? null, feel: d.feel ?? null, palette: d.palette ?? null, paletteRoles: d.paletteRoles ?? null } : null;
   return { screenshots, findings: gate?.findings ?? [], pass: !!gate?.pass, brief: brief ?? null, behavior: behavior ?? null, golden: golden ?? null, direction };
 }

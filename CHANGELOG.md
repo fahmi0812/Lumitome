@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.3.80 — loopdesign: cara berpikir taste warna
+
+- Skill `loopdesign` kini memasang cara berpikir taste warna, bukan
+  sekadar daftar hex: Maker tulis `Rasa:` dulu di `DESIGN.md` sebelum
+  memilih hex, lalu `Palet:` (id dari
+  `design-taste-frontend/library/palettes.json` — 56 palet terkurasi —
+  atau "merek sendiri") dengan peran `Dominan 60% / Sekunder 30% /
+  Aksen 10%` + `Field:` opsional. Aturan deal palet: dilarang mengarang
+  4–6 token dari kepala tanpa rujukan. Rekonsiliasi angka ditulis
+  jujur di skill: 60-30-10 adalah rasio perencanaan brand/landing,
+  sedangkan di layar app aksen terukur <5% per layar (taste
+  `colour.md` §3) dan Ground 70–90% — keduanya dipakai, bukan dipaksa
+  satu angka.
+- File baru `.opencode/skills/loopdesign/references/color-feel.md`:
+  tabel rasa → palet dari reel winkhsin (Winson Kho, 11 Nov 2026 —
+  biru langit + putih = lega, krim + espresso = hangat, hitam + putih
+  = tegas/profesional, court blue + putih = sporty/clean, scarlet =
+  berani/cepat booking, oranye = energik) + contoh palet dari
+  `palettes.json` + contoh hitung 60-30-10. Ditegaskan sebagai panduan
+  persepsi, BUKAN hukum sains dan BUKAN aturan gate. Kritikus dapat
+  checklist warna 7 item (advisory, bukan gate) di loopdesign §3.
+- Gate deterministik baru di `harness/design-gate.mjs` (v0.3.80):
+  `banned-palette` (fail bila ground krim jenuh + aksen terracotta
+  bersamaan — definisi HSV supaya pasangan Kopi Senja `#FFF8F0 +
+  #A0591E` yang sudah disetujui tetap lolos) dan `accent-share`
+  (warn bila aksen >10% luas terukur, fail bila >25%). Luas warna
+  diukur di `harness/design-measure.mjs` (area rect per warna,
+  dijumlahkan per rgb) dan `parseDesignFile` kini membaca `Rasa`,
+  `Palet`, peran Dominan/Sekunder/Aksen, `Field`, yang ikut dikirim ke
+  kritikus lewat `criticInput` (direction). `allow` mengecualikan
+  kedua cek bila brief/merek memang meminta.
+- Validasi + tes: `validate` 19 PASS (warns 0), suite 1190/0/2
+  (baseline v0.3.79 di mesin ini 1184/0/2 → +6 tes baru), `lint` OK.
+  Tes baru: 6 `ok()` di `tests/suite-design.mjs` + fixture
+  `tests/fixtures/design/DESIGN-taste.md`.
+
 ## 0.3.79 — Startup tenang saat /subagent OFF
 
 - Peringatan startup `lumitome: PERINGATAN — model default sesi TUI
