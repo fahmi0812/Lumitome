@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.3.81 — loopdesign: cara berpikir space (negative space)
+
+- Skill `loopdesign` kini memasang cara berpikir space: Maker tulis
+  `Ruang:` di `DESIGN.md` (area kosong utama + apa yang sengaja
+  dikurangi) sebelum bangun, dengan aturan kurangi dulu, tambah
+  belakangan — ruang kosong itu keputusan, bukan sisa; kosong ≠ belum
+  selesai; satu layar, satu hal utama; kalau layout terasa padat
+  seperti poster AI, kurangi, jangan poles.
+- File baru `.opencode/skills/loopdesign/references/space.md`:
+  definisi negative space ("ruang untuk bernapas") dari reel attar.psd
+  ("tukang desain", 23 Agu 2026, 140,3 rb like — poster Chicken
+  D'Mai yang dikurangi brush/elemen/warnanya jadi lebih enak dilihat;
+  layout padat X vs lega centang). Ditegaskan jujur: reel tidak memberi
+  angka padding/margin/grid — angka jarak tetap di `unslop-tokens.md`
+  § "Skala spacing". Kritikus dapat checklist space 4 item (advisory,
+  bukan gate) di loopdesign §3.
+- Gate deterministik baru di `harness/design-gate.mjs` (v0.3.81):
+  `space-density` (warn saja, tidak pernah fail) bila ruang kosong
+  terukur <10% viewport. Ruang kosong diukur di
+  `harness/design-measure.mjs` (grid 24×14 `elementFromPoint`,
+  agregat minimum antar viewport) dan `parseDesignFile` kini membaca
+  `Ruang:`, yang ikut dikirim ke kritikus lewat `criticInput`
+  (direction). Probe fixture: ruang kosong terendah 0.714 (token-clean
+  di 390px) — jauh di atas ambang 0.10, jadi red-test lama aman
+  (fixed tetap 0 findings, bounce-easing tetap 2, unslop-signs tetap 9).
+- Validasi + tes: `validate` 19 PASS (warns 0), suite 1223/0/1
+  (baseline v0.3.80 di mesin ini, Chrome headless-shell yang sama,
+  1219/0/1 → +4 tes baru), `lint` OK.
+  Tes baru: 4 `ok()` di `tests/suite-design.mjs` + 1 baris `Ruang:` di
+  fixture `tests/fixtures/design/DESIGN-taste.md`.
+
 ## 0.3.80 — loopdesign: cara berpikir taste warna
 
 - Skill `loopdesign` kini memasang cara berpikir taste warna, bukan

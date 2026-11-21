@@ -54,6 +54,7 @@ Palet: <id palet dari design-taste-frontend/library/palettes.json, mis. white-li
 - Sekunder 30% — #RRGGBB — <peran, mis. surface / teks sekunder>
 - Aksen 10% — #RRGGBB — <peran: aksi primer + 1 hal lain saja>
 Field: <opsional — daftar field + ink-nya, mis. "hitam #111111 / putih">
+Ruang: <area kosong utama + apa yang sengaja dikurangi, mis. "hero lega; brush & badge dikurangi">
 Token:
 - #RRGGBB — <peran, mis. kopi (teks/heading)>
 - ... (4–6 hex)
@@ -151,6 +152,30 @@ contoh hitung 60-30-10) ada di `references/color-feel.md`.
 rujukan — token 4–6 di DESIGN.md diturunkan dari palet yang di-deal atau
 dari palet merek itu.
 
+**Cara berpikir space — kurangi dulu, tambah belakangan (v0.3.81)**
+
+Ini cara berpikirnya, bukan sistem spacing. Jarak antar elemen (angka)
+tetap di `references/unslop-tokens.md` § "Skala spacing"; yang di sini
+adalah keputusan soal ruang kosong. Panduan lengkap (contoh poster,
+perbandingan layout) ada di `references/space.md`.
+
+1. **Ruang kosong itu keputusan, bukan sisa.** Tulis `Ruang:` di
+   DESIGN.md sebelum bangun — area mana yang sengaja dibiarkan kosong,
+   dan apa yang sengaja dikurangi. Kosong yang tidak diputuskan akan
+   diisi orang lain dengan dekorasi.
+2. **Kurangi dulu.** Hapus dekorasi/brush/badge/elemen yang tidak
+   membantu Momen; jangan tambah elemen untuk mengisi kekosongan.
+   Kalau ragu apakah satu elemen perlu ada, hapus dulu — kalau Momen
+   hilang, baru kembalikan.
+3. **Satu layar, satu hal utama.** Elemen yang menonjol cuma 1–2 Momen,
+   sisanya diam. Dua hal utama dalam satu layar saling berebut mata.
+4. **Kosong ≠ belum selesai.** Jangan isi kekosongan hanya karena
+   takut kosong. "Dikit lagi biar rame" adalah jebakan yang sama
+   dengan yang dibuat AI.
+5. **Cek lawan AI.** Kalau layout terasa padat dan ramai seperti
+   poster AI, kurangi — jangan poles. Poster yang sesak tidak
+   diselamatkan oleh warna atau tipografi yang lebih bagus.
+
 Lalu, Maker wajib mendeklarasikan **kontrak interaksi** halaman — daftar
 interaksi + keadaan awal yang diharapkan + hasil klik yang diharapkan —
 sebagai blok fenced ```` ```behavior-contract ```` di `DESIGN.md` (atau
@@ -246,7 +271,7 @@ hasil dengan dan tanpa MWG bisa dibandingkan (findings per iterasi).
 |---|---|
 | 1. Maker bangun | Sektor agent pemilik skill desain itu: desain UI = coding (`design-taste-frontend`, `impeccable`, `hallmark`, `ui-ux-pro-max`, `stitch-ui`); motion/video = media (`motion-design`, `review-loop`, `web-sims`). Per iterasi router pilih **≤5 skill** yang relevan buat iterasi itu; set-nya boleh ganti antar iterasi. Tidak pernah >5 dalam satu konteks. |
 | 2. Render | Figcraft export (desain Figcraft, `figcraft-cli export`) atau screenshot browser (web, via `.opencode/skills/design-taste-frontend/scripts/inspect.mjs` / playwright / chromedev). Dua renderer, satu gate: desain yang sama harus dapat vonis yang sama dari renderer mana pun. **Mode input situs live (v0.3.36 §5):** untuk mendesain ulang situs yang sudah tayang, simpan dulu salinannya dengan `node harness/design-snapshot.mjs <url\|file> <out.html> [--dark\|--light] [--width 1440]` — menyimpan HTML halaman + screenshot `<out>.live.png`, scroll dulu agar lazy-load ketangkap. **Caveat:** background animasi dari script tidak selamat — hasil snapshot adalah salinan statis; perilaku dibangun ulang dari kontrak. **File sementara/scratch SELALU di dalam workspace (`<workspace>/.tmp/` atau subdir tugas), JANGAN `/tmp`** — guard menolak `rm` di luar workspace. |
-| 3. Gate ukur | `harness/design-gate.mjs` + Design Stress-Test: viewport ekstrem 1440/768/390 (overflow, elemen bertumpuk, teks terpotong), edge-case data & teks (teks sangat panjang, empty state, loading, error, data tidak konsisten = finding), aksesibilitas (rasio kontras dihitung dari piksel, minimal 4,5:1 WCAG AA; tombol sentuh <44px langsung gagal; font/gambar gagal muat — gambar yang gagal di browser dicek HTTP-nya dulu: 200 + byte gambar valid = warn artefak lingkungan, bukan fail), kesetiaan token (warna render vs token DESIGN.md — solid di luar token = finding bernama + bersaran), anti-slop `purple-gradient`: gagal hanya bila SATU gradien mengandung stop ungu DAN stop cyan/biru (AND, v0.3.33 — gradien ungu murni kini lolos; dulu OR), proporsi aksen (warn bila aksen >10% luas terukur, fail bila >25%) dan banned-palette krim + terracotta (fail, kecuali pengecualian merek yang dicatat di DESIGN.md) — keduanya diimplementasi di `harness/design-gate.mjs`, bukan di skill ini — due diligence (aksesibilitas, lisensi aset, konsistensi data). **Tiap iterasi juga menjalankan behavior gate — SELALU, tidak bisa dilewati**: `probeBehavior` menjalankan kontrak interaksi dari `DESIGN.md` (keadaan awal + hasil klik); bila tidak ada kontrak, gate menurunkan kontrak default otomatis dari DOM (`deriveDefaultContract`) dan probe tetap jalan; bila tidak ada check yang bisa diturunkan, hasilnya finding warn "tidak ada interaksi yang bisa diprobe" — bukan skip diam-diam. Hasilnya findings `behavior`/`probe-gagal` yang ikut menentukan vonis gate. Jumlah findings tiap iterasi dicatat ke `<workspace>/.tmp/loopdesign/loop-history.jsonl` (`recordLoopIteration`, beserta penanda MWG `mwg: { consulted, guides, source }` — lihat §1) untuk aturan mentok (§4). |
+| 3. Gate ukur | `harness/design-gate.mjs` + Design Stress-Test: viewport ekstrem 1440/768/390 (overflow, elemen bertumpuk, teks terpotong), edge-case data & teks (teks sangat panjang, empty state, loading, error, data tidak konsisten = finding), aksesibilitas (rasio kontras dihitung dari piksel, minimal 4,5:1 WCAG AA; tombol sentuh <44px langsung gagal; font/gambar gagal muat — gambar yang gagal di browser dicek HTTP-nya dulu: 200 + byte gambar valid = warn artefak lingkungan, bukan fail), kesetiaan token (warna render vs token DESIGN.md — solid di luar token = finding bernama + bersaran), anti-slop `purple-gradient`: gagal hanya bila SATU gradien mengandung stop ungu DAN stop cyan/biru (AND, v0.3.33 — gradien ungu murni kini lolos; dulu OR), proporsi aksen (warn bila aksen >10% luas terukur, fail bila >25%) dan banned-palette krim + terracotta (fail, kecuali pengecualian merek yang dicatat di DESIGN.md) — keduanya diimplementasi di `harness/design-gate.mjs`, bukan di skill ini — ditambah kepadatan ruang (space-density): warn bila ruang kosong terukur <10% viewport, advisory saja dan tidak pernah menggagalkan gate (juga diimplementasi di `harness/design-gate.mjs`, bukan di skill ini) — due diligence (aksesibilitas, lisensi aset, konsistensi data). **Tiap iterasi juga menjalankan behavior gate — SELALU, tidak bisa dilewati**: `probeBehavior` menjalankan kontrak interaksi dari `DESIGN.md` (keadaan awal + hasil klik); bila tidak ada kontrak, gate menurunkan kontrak default otomatis dari DOM (`deriveDefaultContract`) dan probe tetap jalan; bila tidak ada check yang bisa diturunkan, hasilnya finding warn "tidak ada interaksi yang bisa diprobe" — bukan skip diam-diam. Hasilnya findings `behavior`/`probe-gagal` yang ikut menentukan vonis gate. Jumlah findings tiap iterasi dicatat ke `<workspace>/.tmp/loopdesign/loop-history.jsonl` (`recordLoopIteration`, beserta penanda MWG `mwg: { consulted, guides, source }` — lihat §1) untuk aturan mentok (§4). |
 | 4. Kritikus menyerang | §3 — red team + pairwise (iterasi sekarang vs sebelumnya, dua urutan presentasi). Pairwise MENGINFORMASIKAN, never-gate. |
 | 5. Maker perbaiki | Dari findings gate + kritik. Perbaiki dalam **9 pass
 berurutan** (v0.3.36, diadaptasi dari unslop — instruksi Maker, BUKAN
@@ -268,8 +293,9 @@ Input kritikus: screenshot + hasil ukur gate + brief/token (arah + token +
 ringkasan brief/data dari DESIGN.md) + hasil probe perilaku (`behavior` di
 `criticInput`) + arah yang dideklarasikan Maker (`direction` di
 `criticInput`: nama arah + Karakter + Dunia + Momen + Signature + Rasa +
-Palet dari `parseDesignFile` — v0.3.36 §1, Rasa + Palet ditambah v0.3.80
-(diimplementasi di `criticInput`) — supaya kritikus menilai kesetiaan iterasi
+Palet + Ruang dari `parseDesignFile` — v0.3.36 §1, Rasa + Palet ditambah
+v0.3.80, Ruang ditambah v0.3.81 (diimplementasi di `criticInput`) —
+supaya kritikus menilai kesetiaan iterasi
 pada arah, bukan sekadar "terlihat bagus"). Urutan kerjanya:
 
 1. **Steelmanning — duluan, sebelum menyerang.** Nyatakan dulu versi terkuat
@@ -312,6 +338,12 @@ pada arah, bukan sekadar "terlihat bagus"). Urutan kerjanya:
    tempelan? (5) satu elemen terang + chrome diam? (6) foto membawa
    warna atau interface netral? (7) tiap field punya ink sendiri, bukan
    `--muted` di atas field berwarna?
+8. **Checklist space (advisory, bukan gate).** Kritikus memakai
+   `references/space.md` + Ruang di DESIGN.md, dan menjawab empat ini —
+   semuanya advisory, tidak pernah mengubah vonis gate:
+   (1) ada area kosong yang disengaja? (2) ada elemen yang bisa
+   dikurangi tanpa kehilangan Momen? (3) satu hal utama per layar?
+   (4) layout terasa sesak seperti poster AI?
 
 ### Golden — kritik berjangkar referensi (v0.3.32 §2)
 
@@ -374,6 +406,7 @@ default N = 3.
 | Screenshot + inspeksi browser | `design-taste-frontend/scripts/inspect.mjs` |
 | Panduan web modern (Baseline + fallback) | `modern-web-guidance` — konsultasi runtime via `harness/mwg-consult.mjs`, BUKAN skill impor |
 | Cara berpikir warna (rasa → palet, 60-30-10, keluarga terlarang) | `references/color-feel.md` di loopdesign |
+| Cara berpikir space (negative space, kurangi dulu) | `references/space.md` di loopdesign |
 
 ## Guardrails
 

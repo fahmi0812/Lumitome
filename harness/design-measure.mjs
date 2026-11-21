@@ -218,9 +218,28 @@ export function measureInPage() {
     const rendered = !!el && visible(el) && (el.innerText || "").trim().length > 0;
     states[name] = { rendered, where: `data-state="${name}"` };
   }
+  // Ruang kosong (v0.3.81, space): grid 24 kolom x 14 baris titik sampel
+  // di viewport, document.elementFromPoint; titik dihitung kosong bila
+  // hasilnya null atau body / documentElement. Titik di atas elemen apa
+  // pun — termasuk wrapper full-bleed — dihitung terisi, bukan sekadar
+  // background kosong. Dipakai cek space-density (warn bila <10%).
+  let emptyShare = 0;
+  {
+    const COLS = 24, ROWS = 14;
+    let empty = 0, total = 0;
+    const W = innerWidth, H = innerHeight;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const el = document.elementFromPoint(Math.round(((c + 0.5) * W) / COLS), Math.round(((r + 0.5) * H) / ROWS));
+        total++;
+        if (!el || el === document.body || el === document.documentElement) empty++;
+      }
+    }
+    emptyShare = total ? empty / total : 0;
+  }
   return {
     overflow: { scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth },
-    texts, taps, images, fonts, longText, states, usedColors, backgrounds, gradientTexts, headings, easings, cssVars, motionClasses,
+    texts, taps, images, fonts, longText, states, usedColors, backgrounds, gradientTexts, headings, easings, cssVars, motionClasses, emptyShare,
   };
 }
 /* eslint-enable no-undef */
@@ -308,7 +327,10 @@ export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } 
     // VM ini jalan sebagai root — Chrome menolak start tanpa --no-sandbox.
     extraArgs: typeof process.getuid === "function" && process.getuid() === 0 ? ["--no-sandbox"] : [],
   });
-  const input = { screenshots: [], contrast: [], tapTargets: [], viewports: [], assets: { fonts: [], images: [] }, textCases: {}, usedColors: [], backgrounds: [], gradientTexts: [], texts: [], headings: [], easings: [], cssVars: [], motionClasses: [] };
+  const input = { screenshots: [], contrast: [], tapTargets: [], viewports: [], assets: { fonts: [], images: [] }, textCases: {}, usedColors: [], backgrounds: [], gradientTexts: [], texts: [], headings: [], easings: [], cssVars: [], motionClasses: [], emptyShare: null };
+  // emptyShare per viewport (v0.3.81): agregasi = MINIMUM — viewport
+  // terpadat yang menentukan, bukan rata-rata.
+  const emptyShares = [];
   try {
     for (const w of widths) {
       const h = HEIGHT[w] || Math.round(w * 0.625);
@@ -320,6 +342,8 @@ export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } 
         await page.screenshot({ path: shot, quality: 82 });
         input.screenshots.push({ width: w, path: shot });
         const m = await page.eval(measureInPage);
+        // Ruang kosong (v0.3.81): kumpulkan per viewport, agregasi di bawah.
+        if (typeof m.emptyShare === "number" && Number.isFinite(m.emptyShare)) emptyShares.push(m.emptyShare);
         // probe() skill dipakai sebagai cross-check overflow + gambar rusak
         const p = await page.eval(probe).catch(() => null);
         const culprits = p?.page?.overflowCulprits ?? [];
@@ -360,6 +384,10 @@ export async function measurePage(target, { widths = STRESS_VIEWPORTS, outDir } 
         await page.close();
       }
     }
+    // Ruang kosong (v0.3.81): MINIMUM di semua viewport — viewport
+    // terpadat yang menentukan. Bila tidak ada viewport terukur → null
+    // (cek space-density tidak jalan, return []).
+    input.emptyShare = emptyShares.length > 0 ? Math.min(...emptyShares) : null;
   } finally {
     await browser.close();
     if (server) server.close();
@@ -551,6 +579,9 @@ export function parseDesignFile(path) {
   // Toleran: bila tidak ada → null / [] — fixture lama tanpa baris ini
   // (DESIGN.md, DESIGN-neutral.md) harus tetap parse dengan aman.
   const feel = line(/^Rasa\s*:\s*(.+)$/m);
+  // Ruang (v0.3.81, space): deskripsi ruang yang direncanakan Maker —
+  // mis. "hero lega; brush & badge dikurangi". Null bila tidak ada.
+  const space = line(/^Ruang\s*:\s*(.+)$/m);
   const paletteRaw = line(/^Palet\s*:\s*(.+)$/m);
   const palette = paletteRaw ? paletteRaw.split("—")[0].trim().split(/\s+/)[0] || null : null;
   const roleHex = (id, en) => {
@@ -581,6 +612,7 @@ export function parseDesignFile(path) {
     tokenVars,
     neutrals,
     feel,
+    space,
     palette,
     paletteRoles,
     accent: paletteRoles.accent,

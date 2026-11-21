@@ -13,6 +13,8 @@
  * perilaku (probe interaksi terskrip dari kontrak Maker — behavior gate).
  * cek warna taste (v0.3.80): banned-palette (krim + terracotta bersamaan)
  * dan accent-share (aksen maks 10% luas terukur, ideal <5% per layar app).
+ * cek space-density (v0.3.81, space): ruang kosong <10% viewport = warn
+ * (desain terlalu padat — kurangi elemen, bukan tambah).
  * Yang TIDAK di gate: "terlihat bagus" / "terasa modern" — itu kerja kritikus.
  *
  * Fail-closed: warna yang tidak bisa diparse, lisensi yang tidak dikenal, dan
@@ -34,6 +36,11 @@ export const MIN_TAP_TARGET = 44;
  *  Aksen / paletteRoles.accent), bukan semua warna non-netral. */
 export const MAX_ACCENT_SHARE_WARN = 0.10;
 export const MAX_ACCENT_SHARE_FAIL = 0.25;
+/** Ruang kosong (v0.3.81, space — reel attar.psd 23 Agu 2026): emptyShare
+ *  <10% viewport = warn (desain terlalu padat, kurangi elemen). TIDAK
+ *  PERNAH fail — desain minimal yang sangat kosong tidak kena warn, dan
+ *  tidak ada ambang atas. emptyShare diukur measureInPage (grid 24x14). */
+export const EMPTY_SHARE_WARN = 0.10;
 
 /** Lisensi aset yang dikenal — selain ini (atau kosong) = fail-closed. */
 export const KNOWN_LICENSES = new Set(
@@ -722,6 +729,26 @@ export function checkAccentProportion(input = {}) {
   return [finding("accent-share", severity, `aksen ${pct}% dari luas terukur — aksen maks 10% luas terukur (ideal <5% per layar app)`)];
 }
 
+/**
+ * space-density (v0.3.81, space — reel attar.psd 23 Agu 2026: desain butuh
+ * ruang untuk bernapas, kadang cukup ngurangin aja). input: {emptyShare?,
+ * allow?} — emptyShare = proporsi titik sampel viewport yang kosong
+ * (0..1, dari measureInPage). Bukan angka finite → [] (tidak dicek).
+ * emptyShare < EMPTY_SHARE_WARN (0.10) → SATU finding "space-density"
+ * severity "warn" — TIDAK PERNAH fail, jadi tidak pernah mengubah vonis
+ * lolos/gagal. Tidak ada ambang atas: desain minimal yang sangat kosong
+ * tidak kena warn. allow ["space-density"] mengecualikan.
+ */
+export function checkSpaceDensity(input = {}) {
+  const allow = new Set(Array.isArray(input.allow) ? input.allow : []);
+  if (allow.has("space-density")) return [];
+  const share = input.emptyShare;
+  if (typeof share !== "number" || !Number.isFinite(share)) return [];
+  if (share >= EMPTY_SHARE_WARN) return [];
+  const pct = Math.round(share * 100);
+  return [finding("space-density", "warn", `ruang kosong hanya ${pct}% dari viewport — desain terlalu padat, kurangi elemen (brush/dekorasi/teks yang tidak membantu Momen)`)];
+}
+
 // ---------- stress-test & loop ----------
 
 /**
@@ -783,7 +810,7 @@ export function stressCases() {
  * input: {screenshots?, contrast?, tapTargets?, viewports?, assets?,
  * textCases?, consistency?, licenses?, tokens?, usedColors?, cssVars?,
  * backgrounds?, gradientTexts?, declaredFonts?, headings?, easings?,
- * allow?, behavior?, accent?, paletteRoles?}.
+ * allow?, behavior?, accent?, paletteRoles?, emptyShare?}.
  * Field yang tidak ada = tidak dicek.
  * pass = tidak ada finding severity 'fail'. Findings terurut deterministik
  * berdasarkan nama check, lalu detail.
@@ -800,6 +827,7 @@ export function evaluateDesign(input = {}) {
     ...checkTokenFidelity(input.tokens, input.usedColors, { cssVars: input.cssVars }),
     ...checkBannedPalette(input.tokens, input.usedColors, { allow: input.allow }),
     ...checkAccentProportion(input),
+    ...checkSpaceDensity(input),
     ...checkAntiSlop(input),
     ...evaluateBehavior(input.behavior),
   ];
@@ -849,9 +877,11 @@ export function nextLoopAction({ iteration = 1, maxIterations = 3, gatePass = fa
  * (Rasa), `palette` (id palet) dan `paletteRoles` (peran Dominan/Sekunder/
  * Aksen) dari design bila ada — null bila tidak ada. Kritikus jadi bisa
  * menilai apakah palet yang dirender cocok dengan rasa yang dideklarasikan.
+ * Yang berubah di v0.3.81 (space): `direction` juga membawa `space`
+ * (Ruang) dari design bila ada — null bila tidak ada.
  */
 export function criticInput({ screenshots, gate, brief, behavior, golden, design } = {}) {
   const d = design && typeof design === "object" ? design : null;
-  const direction = d ? { name: d.direction ?? null, character: d.character ?? null, world: d.world ?? null, moments: d.moments ?? null, signature: d.signature ?? null, feel: d.feel ?? null, palette: d.palette ?? null, paletteRoles: d.paletteRoles ?? null } : null;
+  const direction = d ? { name: d.direction ?? null, character: d.character ?? null, world: d.world ?? null, moments: d.moments ?? null, signature: d.signature ?? null, feel: d.feel ?? null, palette: d.palette ?? null, paletteRoles: d.paletteRoles ?? null, space: d.space ?? null } : null;
   return { screenshots, findings: gate?.findings ?? [], pass: !!gate?.pass, brief: brief ?? null, behavior: behavior ?? null, golden: golden ?? null, direction };
 }

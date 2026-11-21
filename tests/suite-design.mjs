@@ -268,6 +268,40 @@ import { ok, skip, finish } from "./harness.mjs";
       return ci.direction && ci.direction.feel === "lega dan menenangkan" && ci.direction.palette === "white-link-blue" &&
         ci.direction.paletteRoles && ci.direction.paletteRoles.accent === "#1A4BE0" && ci.direction.name === "Lega editorial"; })() &&
     DG.criticInput({ screenshots: [], gate: { pass: true, findings: [] } }).direction === null);
+  // ---- space-density (v0.3.81, space — reel attar.psd): ruang kosong
+  // <10% viewport = warn, TIDAK PERNAH fail; tanpa angka / allow → [].
+  // Ambang 0.10 dari probe: fixture lama terendah token-clean min 0.714,
+  // fixed 0.771, slop 0.872 — semua jauh di atas ambang, jadi red-test
+  // (fixed 0, bounce 2, unslop-signs 9 findings) aman tanpa penurunan.
+  // Halaman padat full-bleed (/tmp/dense.html) terukur emptyShare 0.
+  ok("design-gate: space-density — konstanta 0.10; 5% warn, 20% lolos; undefined/NaN tidak dicek; allow mengecualikan",
+    DG.EMPTY_SHARE_WARN === 0.10 &&
+    (() => { const f = DG.checkSpaceDensity({ emptyShare: 0.05 });
+      return f.length === 1 && f[0].check === "space-density" && f[0].severity === "warn" && f[0].detail.includes("5%") && f[0].detail.includes("kurangi elemen"); })() &&
+    DG.checkSpaceDensity({ emptyShare: 0.20 }).length === 0 &&
+    DG.checkSpaceDensity({}).length === 0 &&
+    DG.checkSpaceDensity({ emptyShare: undefined }).length === 0 &&
+    DG.checkSpaceDensity({ emptyShare: NaN }).length === 0 &&
+    DG.checkSpaceDensity({ emptyShare: 0.05, allow: ["space-density"] }).length === 0);
+  // evaluateDesign wiring: 5% → warn space-density tapi pass TETAP true
+  // (warn tidak pernah fail); 20% → tidak ada finding space-density.
+  ok("design-gate: evaluateDesign wiring — emptyShare 0.05 → warn space-density, pass tetap true; 0.20 → tidak ada finding",
+    (() => { const g = DG.evaluateDesign({ emptyShare: 0.05 });
+      return g.pass === true && g.findings.some((f) => f.check === "space-density" && f.severity === "warn"); })() &&
+    DG.evaluateDesign({ emptyShare: 0.20 }).findings.some((f) => f.check === "space-density") === false &&
+    DG.evaluateDesign({ emptyShare: 0.05, allow: ["space-density"] }).findings.some((f) => f.check === "space-density") === false);
+  // parseDesignFile (v0.3.81): Ruang dari DESIGN-taste.md; fixture lama
+  // tanpa baris Ruang → null (toleran, seperti feel/palette v0.3.80).
+  ok("design-gate: parseDesignFile baca Ruang; tanpa baris Ruang → null",
+    DM.parseDesignFile("tests/fixtures/design/DESIGN-taste.md").space === "hero lega; brush & badge dikurangi" &&
+    DM.parseDesignFile("tests/fixtures/design/DESIGN.md").space === null &&
+    DM.parseDesignFile("tests/fixtures/design/DESIGN-neutral.md").space === null);
+  // criticInput (v0.3.81): direction membawa space dari design fixture.
+  ok("design-gate: criticInput direction membawa space dari design; tanpa design → null",
+    (() => { const d = DM.parseDesignFile("tests/fixtures/design/DESIGN-taste.md");
+      const ci = DG.criticInput({ screenshots: [], gate: { pass: true, findings: [] }, design: d });
+      return ci.direction && ci.direction.space === "hero lega; brush & badge dikurangi" && ci.direction.feel === "lega dan menenangkan"; })() &&
+    DG.criticInput({ screenshots: [], gate: { pass: true, findings: [] } }).direction === null);
   // anti-slop (v0.3.28 §3.2, dikoreksi v0.3.29): subset kurasi native dari
   // Impeccable (Apache-2.0, 62 aturan = 31 slop + 31 quality) dan ui-craft
   // (MIT, registry 43 aturan di scripts/detect/rules.mjs — terverifikasi;

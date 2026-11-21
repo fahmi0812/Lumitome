@@ -28,6 +28,16 @@ pemakaiannya saja.
 - Tinggi baris: 32 compact, 36 default, 40–44 touch
 - Hero: 96–128 dari navigasi ke headline di desktop, 48–64 di mobile
 
+## Ruang kosong (negative space)
+
+- **Spacing mengatur jarak antar elemen; ruang kosong mengatur area
+  yang sengaja dibiarkan kosong.** Jarak yang benar di atas halaman
+  yang sesak tetap terasa sesak — kurangi elemennya dulu, baru atur
+  jaraknya.
+- Area kosong itu keputusan, bukan sisa: tulis `Ruang:` di DESIGN.md
+  sebelum bangun. Cara berpikir lengkap (contoh poster, 5 aturan)
+  ada di `references/space.md`.
+
 ## Layout aplikasi
 
 - Sidebar 240–280 lebar, konten fluid dengan padding halaman 24–32, dibatasi sekitar 1440–1600.

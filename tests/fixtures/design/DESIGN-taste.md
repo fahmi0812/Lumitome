@@ -9,6 +9,7 @@ Palet: white-link-blue — Sheet and biro
 - Sekunder 30% #F4F4F4 — abu pucat (surface)
 - Aksen 10% #1A4BE0 — biru (aksi primer)
 Field: #111111 — tinta (footer invert)
+Ruang: hero lega; brush & badge dikurangi
 Token:
 - #FFFFFF — putih (ground)
 - #F4F4F4 — abu pucat (surface)
