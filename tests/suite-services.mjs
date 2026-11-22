@@ -4,7 +4,7 @@
 import path from "node:path";
 import fs from "fs";
 import cp from "node:child_process";
-import { ok, skip, finish } from "./harness.mjs";
+import { ok, okEach, skip, finish } from "./harness.mjs";
 import { frontmatter } from "../router/parse.mjs";
 
 {
@@ -104,7 +104,17 @@ import { frontmatter } from "../router/parse.mjs";
       if (!(orig && m && m[1] === orig && known.has(orig))) expectedIds.push(d); } }
   ok("registry == folder aktif+pack non-cermin; gen-registry --check bersih", gr.status === 0 && JSON.stringify(regIds) === JSON.stringify(expectedIds.sort()));
   const SDB = await import("../router/skill-db.mjs");
-  ok("salinan cermin pack (impeccable-2.., design-2) tidak diindeks; foldernya tetap ada", !SDB.collectSkills(".").some((x) => /^impeccable-\d+$|^design-2$/.test(x.name)) && fs.existsSync("packs/design-extra/skills/impeccable-2/SKILL.md"));
+  // v0.3.82: 61 salinan duplikat (upstream sama dengan folder dasarnya, mis. impeccable-2..25, design-2)
+  // dihapus. Cermin yang tersisa (upstream berbeda, mis. tdd-2 dari mattpocock vs tdd dari cursor) tetap
+  // disimpan sebagai provenance, tetap tidak diindeks.
+  const mirrorsLeft = fs.readdirSync("packs").flatMap((p) => { const f = `packs/${p}/registry.json`; return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, "utf8")).skills.filter((s) => s.mirror_of).map((s) => `${p}/${s.id}`) : []; });
+  const indexed = new Set(SDB.collectSkills(".").map((x) => x.name));
+  okEach("salinan cermin pack: duplikat dihapus; cermin tersisa tidak diindeks tapi foldernya ada", {
+    "impeccable-N / design-2 sudah tidak ada": !fs.existsSync("packs/design-extra/skills/impeccable-2") && !fs.existsSync("packs/design-extra/skills/design-2"),
+    "masih ada cermin yang tercatat": mirrorsLeft.length > 0,
+    "cermin tersisa punya folder": mirrorsLeft.every((m) => fs.existsSync(`packs/${m.split("/")[0]}/skills/${m.split("/")[1]}/SKILL.md`)),
+    "cermin tersisa tidak diindeks": mirrorsLeft.every((m) => !indexed.has(m.split("/")[1])),
+  }, mirrorsLeft);
   const Wd = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8"), oc = fs.readFileSync("opencode.jsonc", "utf8");
   ok("drawio: skill aktif terpin SHA + MCP opsional (mati default, versi npx terpin, tidak ikut 'all')", fs.existsSync(".opencode/skills/drawio-diagram/SKILL.md") && /c9dc5f5cc62e7e5a327a62b39027d80033e1548c/.test(fs.readFileSync(".opencode/skills/drawio-diagram/SKILL.md", "utf8")) && /if \(wantMcp\.includes\("drawio"\)\)/.test(fs.readFileSync("lumitome/lib/build-config.mjs", "utf8")) && /"@next-ai-drawio\/mcp-server@0\.4\.15"\s*\],\s*"disabled": true/.test(oc));
   const BR = await import("../lumitome/lib/brand.mjs");
@@ -122,7 +132,21 @@ import { frontmatter } from "../router/parse.mjs";
   const thKeys = ["primary", "text", "textMuted", "background", "border", "syntaxKeyword", "markdownHeading", "diffAdded"];
   ok("theme lumitome: varian dark+light, refs valid, emas brand", thKeys.every((k) => TH.theme[k]?.dark && TH.theme[k]?.light) && Object.values(TH.theme).every((v) => [v.dark, v.light].every((c) => /^#[0-9A-Fa-f]{6}$/.test(c) || c in TH.defs)) && TH.defs.champagne === "#F3D27A" && TH.defs.cornsilk === "#FFF8DC");
   ok("wrapper: themes ditautkan ke OPENCODE_CONFIG_DIR, cli.json di CFG_DIR (bukan ~/.config user), binary engine tidak disentuh", /themes: path\.join\(ROOT, "config", "themes"\)/.test(W) && /cliFile = path\.join\(CFG_DIR, "cli\.json"\)/.test(W) && !/writeFileSync\([^)]*ocBin/.test(W));
-  ok("versi konsisten (single-source: VERSION)", (() => { const v = fs.readFileSync("VERSION", "utf8").trim(); const RM = fs.readFileSync("README.md", "utf8"); const vv = cp.execFileSync(process.execPath, ["lumitome/bin/lumitome.mjs", "--version"], { encoding: "utf8" }); return /^\d+\.\d+\.\d+$/.test(v) && JSON.parse(fs.readFileSync("package.json", "utf8")).version === v && vv.includes(`lumitome ${v} `) && W.includes('readFileSync(path.join(REPO, "VERSION")') && !/const VERSION = "\d+\.\d+\.\d+"/.test(W) && inst.includes('cat "$PROJECT/VERSION"') && !/SW_VERSION=\d+\.\d+\.\d+/.test(inst) && RM.includes(`version-${v}`) && RM.includes(`refs/tags/v${v}.tar.gz`); })());
+  {
+    const v = fs.readFileSync("VERSION", "utf8").trim(); const RM = fs.readFileSync("README.md", "utf8");
+    const vv = cp.execFileSync(process.execPath, ["lumitome/bin/lumitome.mjs", "--version"], { encoding: "utf8" });
+    okEach("versi konsisten (single-source: VERSION)", {
+      "VERSION x.y.z": /^\d+\.\d+\.\d+$/.test(v),
+      "package.json == VERSION": JSON.parse(fs.readFileSync("package.json", "utf8")).version === v,
+      "lumitome --version == VERSION": vv.includes(`lumitome ${v} `),
+      "wrapper membaca file VERSION": W.includes('readFileSync(path.join(REPO, "VERSION")'),
+      "wrapper tanpa VERSION hardcode": !/const VERSION = "\d+\.\d+\.\d+"/.test(W),
+      "install.sh membaca VERSION": inst.includes('cat "$PROJECT/VERSION"'),
+      "install.sh tanpa SW_VERSION hardcode": !/SW_VERSION=\d+\.\d+\.\d+/.test(inst),
+      "README badge": RM.includes(`version-${v}`),
+      "README tarball tag": RM.includes(`refs/tags/v${v}.tar.gz`),
+    }, { VERSION: v, version_output: vv.trim() });
+  }
   ok("README: Windows npm.ps1 blocked — troubleshooting (Set-ExecutionPolicy + npm.cmd + do-not-paste)", (() => { const RM = fs.readFileSync("README.md", "utf8"); return RM.includes("cannot be loaded because running scripts is disabled") && RM.includes("Set-ExecutionPolicy") && RM.includes("RemoteSigned") && RM.includes("CurrentUser") && RM.includes("npm.cmd install -g") && /do not paste the terminal's output/i.test(RM); })());
 }
 

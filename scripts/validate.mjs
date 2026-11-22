@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 import { checkSkillsDir, checkConfig, checkAgents, checkPlugins, checkV2Config, checkMcpPolicy } from "./check-opencode.mjs";
 import { frontmatter } from "../router/parse.mjs";
 import { checkVersionConsistency } from "./version-check.mjs";
+import { checkCatalog, CATALOG } from "./gen-catalog.mjs";
 import { INDEX_SECTION_BUDGETS, INDEX_DEFAULT_SECTION_BUDGET, INDEX_TOTAL_BUDGET, indexSectionTokens } from "../router/index-budgets.mjs";
 
 // --- P2-3: mode offline + precheck dependensi ---
@@ -121,6 +122,7 @@ const mcpErr = checkMcpPolicy(); mcpErr.forEach(fail); if (!mcpErr.length) pass(
 // --- Konsistensi versi single-source (P2-2): VERSION vs package.json vs README vs CHANGELOG ---
 // Sebagian sudah dicek bump-version saat menaikkan versi; di sini ditegakkan
 // tiap validate agar drift (mis. README/CHANGELOG lupa ikut) gagal cepat.
+if (checkCatalog(".").ok) pass(`${CATALOG} == hasil gen-catalog dari registry`); else fail(`${CATALOG} basi — jalankan npm run skills:catalog`);
 const verErrs = checkVersionConsistency(".");
 for (const e of verErrs) fail(`versi tidak konsisten: ${e}`);
 if (verErrs.length === 0) pass(`versi konsisten (VERSION = package.json = package-lock.json = README = CHANGELOG: ${fs.readFileSync("VERSION", "utf8").trim()})`);
