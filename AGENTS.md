@@ -1,4 +1,4 @@
-# Swanwright
+# Lumitome (harness Swanwright)
 
 > Catatan: file ini dan `.opencode/rules/*` bisa basi. Bila bertentangan dengan kode/tes, ikuti kode dan laporkan drift (`.opencode/rules/00-doc-code-drift.md`). Rule keamanan tetap berlaku.
 
@@ -26,4 +26,4 @@ Baca `docs/PRD.md` dan `ARCHITECTURE.md` (root) sebelum mengubah arsitektur.
 ## v0.1.6 — Skill Query Layer & MCP per sektor
 - Routing skill: `node scripts/skill-query.mjs "<tugas>"` (≤5 skill). Indeks: `npm run skills:index` (otomatis bila hash berubah).
 - Ubah pemetaan MCP/skill sektor → edit `router/mcp-sectors.json` / registry lalu `npm run policy` (jangan edit `permissions` agent manual).
-- Jangan jalankan `codebase-memory-mcp install|update`; jangan tulis token ke file (pakai `{env:...}` + `~/.swanwright/secrets.env`).
+- Jangan jalankan `codebase-memory-mcp install|update`; jangan tulis token ke file (pakai `{env:...}` + `~/.lumitome/secrets.env`).
