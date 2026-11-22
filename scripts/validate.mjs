@@ -123,7 +123,7 @@ const mcpErr = checkMcpPolicy(); mcpErr.forEach(fail); if (!mcpErr.length) pass(
 // tiap validate agar drift (mis. README/CHANGELOG lupa ikut) gagal cepat.
 const verErrs = checkVersionConsistency(".");
 for (const e of verErrs) fail(`versi tidak konsisten: ${e}`);
-if (verErrs.length === 0) pass(`versi konsisten (VERSION = package.json = README = CHANGELOG: ${fs.readFileSync("VERSION", "utf8").trim()})`);
+if (verErrs.length === 0) pass(`versi konsisten (VERSION = package.json = package-lock.json = README = CHANGELOG: ${fs.readFileSync("VERSION", "utf8").trim()})`);
 const g = JSON.parse(fs.readFileSync("tests/golden-routing.json", "utf8"));
 if (g.length < 120) fail(`golden ${g.length} < 120`); else pass(`golden ${g.length}`);
 const orch = fs.readFileSync(".opencode/agents/orchestrator.md", "utf8");
