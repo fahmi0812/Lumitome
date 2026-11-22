@@ -1,4 +1,4 @@
-# MCP Swanwright v0.1.6 — per sektor, deny-by-default
+# MCP Lumitome — per sektor (sejak Swanwright v0.1.6), deny-by-default
 
 Sumber pemetaan: `router/mcp-sectors.json` → `scripts/gen-policy.mjs` → frontmatter `permissions` agent.
 Aturan OpenCode v2 (https://opencode.ai/v2/docs/permissions/ , /v2/docs/mcp-servers/): aksi MCP = nama tool ternormalisasi `<server>_<tool>`, aturan **terakhir yang cocok menang**, agent rules ditambahkan setelah global.

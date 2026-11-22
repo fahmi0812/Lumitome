@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Swanwright doctor — cek pemasangan nyata terhadap OpenCode v2 (via opencode serve + HTTP API proyek).
+# Lumitome doctor — cek pemasangan nyata terhadap OpenCode v2 (via opencode serve + HTTP API proyek).
 # Wajib (FAIL→exit 1): opencode v2.3.0, node>=22.6, indeks skill FRESH, policy, skill proyek = jumlah folder .opencode/skills/*/SKILL.md (dinamis),
-#   MCP context7 + codemem + skills connected, plugin swanwright active, agents, skill_search waras.
+#   MCP context7 + codemem + skills connected, plugin lumitome-harness active, agents, skill_search waras.
 # Info/WARN: playwright, chromedev, markitdown, 9router.  Pakai: bash scripts/doctor.sh [dir-proyek]
 set -uo pipefail
 DIR="$(cd "${1:-.}" && pwd)"; cd "$DIR"
@@ -44,9 +44,9 @@ const req=["context7","codemem","skills"];
 for(const n of req){const ok=st[n]==="connected"; if(!ok)f++; out("FAIL",ok,`MCP ${n}: ${st[n]||"tidak ada"}`);}
 for(const n of ["playwright","chromedev","markitdown"]){const ok=st[n]==="connected"; if(!ok)w++; out("WARN",ok,`MCP ${n}: ${st[n]||"tidak ada"} (opsional)`);}
 const dis=Object.entries(st).filter(([,v])=>v==="disabled").map(([k])=>k); console.log(`[INFO] MCP disabled (default): ${dis.join(", ")}`);
-const sw=pl.find(p=>p.id==="swanwright"); const pok=sw?.state?.status==="active"; if(!pok)f++; out("FAIL",pok,`plugin swanwright: ${sw?.state?.status||"tidak ada"}`);
+const sw=pl.find(p=>p.id==="lumitome-harness"); const pok=sw?.state?.status==="active"; if(!pok)f++; out("FAIL",pok,`plugin lumitome-harness: ${sw?.state?.status||"tidak ada"}`);
 const miss=["orchestrator","sectors/coding","sectors/finance","sectors/media","sectors/penulisan","sectors/riset","sectors/security","elephant","goldfish","synthesizer"].filter(a=>!ag.includes(`"id": "${a}"`));
-if(miss.length)f++; out("FAIL",!miss.length,`agents Swanwright ${10-miss.length}/10${miss.length?" hilang: "+miss:""}`);
+if(miss.length)f++; out("FAIL",!miss.length,`agents Lumitome ${10-miss.length}/10${miss.length?" hilang: "+miss:""}`);
 fs.writeFileSync(AF+".res",`${f} ${w}`);
 JS
 F2=1; W2=0; [ -f "$LOG.agents.res" ] && read F2 W2 < "$LOG.agents.res"; FAILS=$((FAILS+F2)); WARNS=$((WARNS+W2)); [ "${SW_DOCTOR_KEEP:-}" ] && cp "$S" "$M" "$P" "$SW_DOCTOR_KEEP"/ 2>/dev/null; rm -f "$LOG.agents" "$LOG.agents.res"

@@ -1,5 +1,5 @@
 /**
- * Swanwright v0.1.6 — Skill Query Layer (desain v0.2, fase 1).
+ * Lumitome — Skill Query Layer (sejak Swanwright v0.1.6) (desain v0.2, fase 1).
  * SQLite (node:sqlite bawaan Node >= 22.5) : FTS5 BM25 + sqlite-vec opsional, RRF, dedup.
  * Sumber kebenaran: router/skills-registry.json (satu katalog: aktif + pack) + .opencode/skills/* + packs/*.
  * TRIAL lepas-dorman: skill pack di registry utama berstatus "active" (kecuali
@@ -432,7 +432,7 @@ export async function selectL1(prompt, candidates, { root = ".", timeoutMs, sign
     const sig = signal ? AbortSignal.any([timeoutSignal, signal]) : timeoutSignal;
     const r = await fetch(`${base}/chat/completions`, {
       method: "POST", signal: sig,
-      headers: { "content-type": "application/json", accept: "application/json", "user-agent": "swanwright-router/0.2", authorization: `Bearer ${key || "9router"}` },
+      headers: { "content-type": "application/json", accept: "application/json", "user-agent": "lumitome-router/0.2", authorization: `Bearer ${key || "9router"}` },
       body: JSON.stringify({ model, stream: false, temperature: 0, max_tokens: 400, response_format: { type: "json_object" }, messages: [{ role: "system", content: sys }, { role: "user", content: user }] }),
     });
     const ms = Math.round(performance.now() - t0);

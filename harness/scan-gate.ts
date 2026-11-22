@@ -1,5 +1,5 @@
 /**
- * Swanwright - Scan Gate (CVE + secret) dan Diff-Scope.
+ * Lumitome harness - Scan Gate (CVE + secret) dan Diff-Scope.
  * osv-scanner (lockfile/manifest) + gitleaks (diff/staging).
  * Biner tidak ada → UNRUN (bukan PASS) + instruksi instalasi.
  * FAIL: CVE CRITICAL/HIGH yang punya fix, CVE CRITICAL/HIGH tanpa fix dan

@@ -13,7 +13,7 @@ Diagram: `docs/diagrams/arsitektur-final.png` (sistem) · `docs/diagrams/orchest
 | ② | OpenCode + `.opencode/` | `opencode.jsonc`, `.opencode/agents`, `rules`, `plugins`, `skills` | Orchestrator (primary) → sub-agen sektor (depth=1) → Elephant/Goldfish/Synthesizer; + 4 agen peran /subagent (Thinking/Search/Build/Review, §7). Code Mode v2 tetap aktif |
 | ③ | Skill Query Layer | `router/skill-db.mjs`, `scripts/skill-index.mjs`, `scripts/skill-query.mjs`, `router/skill-search-mcp.mjs`, `runtime/skills.db` | SQLite FTS5 BM25 (+sqlite-vec opsional), filter SQL sebelum ranking, RRF, dedup, top-24, 1 panggilan 9router pilih-saja ≤5, `route_log` |
 | ④ | MCP per sektor | `router/mcp-sectors.json`, `scripts/gen-policy.mjs`, `docs/MCP.md`, `docs/MCP-GATEWAY.md`, `config/mcp-gateway/` | deny-by-default `*_*` → allow server sektor sendiri; gateway opsional (mati) |
-| ⑤ | Pagar & bukti | `harness/done-gate.ts`, `harness/scan-gate.ts`, `harness/sandbox/`, `.opencode/plugins/swanwright.ts`, `lumitome/config/plugins/lumitome-guard.ts` | FACT/JUDGMENT, osv-scanner v2.7.0 + gitleaks v8.30.1, sandbox mati default (bwrap hanya bila `LUMI_SANDBOX=bwrap`, §6), blok push main/master + blok `codebase-memory-mcp install/update` |
+| ⑤ | Pagar & bukti | `harness/done-gate.ts`, `harness/scan-gate.ts`, `harness/sandbox/`, `.opencode/plugins/lumitome-harness.ts`, `lumitome/config/plugins/lumitome-guard.ts` | FACT/JUDGMENT, osv-scanner v2.7.0 + gitleaks v8.30.1, sandbox mati default (bwrap hanya bila `LUMI_SANDBOX=bwrap`, §6), blok push main/master + blok `codebase-memory-mcp install/update` |
 
 ## 2. Skill Query Layer (desain v0.2, fase 1)
 Alur (`route()` di `router/skill-db.mjs`):

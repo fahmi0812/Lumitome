@@ -1,3 +1,5 @@
+> **Dokumen historis (Swanwright v0.1.6, OpenCode v2.2.4).** Log di bawah dicatat sebelum produk bernama Lumitome. Path `~/.swanwright` dan nama `[swanwright]` di sini sudah tidak berlaku: instalasi sekarang di `~/.lumitome` (`LUMI_HOME`), dan cek pemasangan memakai `bash ~/.lumitome/src/install.sh --doctor` atau `npm run doctor`.
+
 # Verifikasi E2E — Swanwright v0.1.6 (OpenCode v2.2.4)
 
 Dijalankan 2026-10-31 ~04:40 WIB di box Linux x64: ZIP final diekstrak ke folder kosong `/tmp/e2efinal`, `HOME=/tmp/swhomeF` baru, `PATH=/usr/bin:/bin` (node sistem v20 → installer memasang Node 22.23.4). Semua alat diunduh nyata oleh `install.sh` dan diverifikasi SHA256.
