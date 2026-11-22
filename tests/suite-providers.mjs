@@ -409,22 +409,51 @@ import { ok, finish } from "./harness.mjs";
   const mkBin14 = (exclude = []) => { const d = fs.mkdtempSync(path.join(os.tmpdir(), "lumibin14-")); bins14.push(d);
     for (const dir of ["/usr/bin", "/bin"]) { try { for (const f of fs.readdirSync(dir)) { if (exclude.includes(f)) continue; try { fs.symlinkSync(path.join(dir, f), path.join(d, f)); } catch {} } } catch {} } return d; };
   const remoteCopy14 = (name) => { const d = path.join(sb14, name); fs.mkdirSync(d, { recursive: true }); fs.copyFileSync("install.sh", path.join(d, "install.sh")); return d; };
-  ok("P1-4 (4) install.sh: fallback tarball (archive/refs/heads/main.tar.gz) + peringatan pull gagal di sumber",
-    fs.readFileSync("install.sh", "utf8").includes("archive/refs/heads/main.tar.gz")
-    && /git pull gagal/.test(fs.readFileSync("install.sh", "utf8")));
-  // (4a) tanpa git + curl stub → tarball diunduh, diekstrak, install.sh hasil ekstrak dieksekusi
+  const INST = fs.readFileSync("install.sh", "utf8");
+  ok("P1-4 (4) install.sh: fallback tarball tag rilis (archive/refs/tags/<tag>) + peringatan pull gagal di sumber",
+    INST.includes("archive/refs/tags/$SW_REF.tar.gz") && /git pull gagal/.test(INST));
+  ok("v0.3.82 install.sh: remote memasang rilis (tag), bukan ujung main; LUMI_REF menimpa",
+    INST.includes('SW_REF="${LUMI_REF:-$(latest_tag)}"') && INST.includes('git clone --depth 1 --branch "$SW_REF"')
+    && !/git clone --depth 1 "\$SW_REPO_URL"/.test(INST) && INST.includes("releases/latest"));
+  // Stub curl: API releases/latest → JSON tag; selain itu → tarball tiruan ke -o.
+  const curlStub14 = (curlLog) => `#!/bin/bash\nout=""; url=""; prev="";\nfor a in "$@"; do if [ "$prev" = "-o" ]; then out="$a"; fi; prev="$a"; url="$a"; done\necho "$url" >> "${curlLog}"\ncase "$url" in *api.github.com*releases/latest*) printf '{\\n  "tag_name": "v0.3.45",\\n  "name": "x"\\n}\\n'; exit 0;; esac\nstage="$(mktemp -d)"; mkdir -p "$stage/Lumitome-x/scripts"\nprintf '#!/usr/bin/env bash\\necho "TARBALL-INSTALL-OK"\\nexit 0\\n' > "$stage/Lumitome-x/install.sh"\nprintf 'x' > "$stage/Lumitome-x/opencode.jsonc"\nprintf '#!/usr/bin/env bash\\nexit 0\\n' > "$stage/Lumitome-x/scripts/doctor.sh"\nprintf '0.3.45\\n' > "$stage/Lumitome-x/VERSION"\ntar -czf "$out" -C "$stage" Lumitome-x\n`;
+  // (4a) tanpa git + curl stub → tag rilis dari API, tarball tag diunduh, diekstrak, install.sh hasil ekstrak dieksekusi
   {
     const d = remoteCopy14("remote-tarball");
     const bin = mkBin14(["git", "curl"]);
     const curlLog = path.join(sb14, "curl.log");
-    const stub = `#!/bin/bash\nout=""; url=""; prev="";\nfor a in "$@"; do if [ "$prev" = "-o" ]; then out="$a"; fi; prev="$a"; url="$a"; done\necho "$url" >> "${curlLog}"\nstage="$(mktemp -d)"; mkdir -p "$stage/Lumitome-main/scripts"\nprintf '#!/usr/bin/env bash\\necho "TARBALL-INSTALL-OK"\\nexit 0\\n' > "$stage/Lumitome-main/install.sh"\nprintf 'x' > "$stage/Lumitome-main/opencode.jsonc"\nprintf '#!/usr/bin/env bash\\nexit 0\\n' > "$stage/Lumitome-main/scripts/doctor.sh"\nprintf '0.3.45\\n' > "$stage/Lumitome-main/VERSION"\ntar -czf "$out" -C "$stage" Lumitome-main\n`;
-    fs.writeFileSync(path.join(bin, "curl"), stub); fs.chmodSync(path.join(bin, "curl"), 0o755);
+    fs.writeFileSync(path.join(bin, "curl"), curlStub14(curlLog)); fs.chmodSync(path.join(bin, "curl"), 0o755);
     const h = path.join(sb14, "h-tarball"); fs.mkdirSync(h, { recursive: true });
-    const r = cp.spawnSync(BASH14, [path.join(d, "install.sh")], { encoding: "utf8", timeout: 60000, env: { ...process.env, HOME: h, LUMI_HOME: path.join(h, ".lumitome"), TMPDIR: path.join(sb14, "tmp"), PATH: bin } });
+    const env = { ...process.env, HOME: h, LUMI_HOME: path.join(h, ".lumitome"), TMPDIR: path.join(sb14, "tmp"), PATH: bin }; delete env.LUMI_REF;
+    const r = cp.spawnSync(BASH14, [path.join(d, "install.sh")], { encoding: "utf8", timeout: 60000, env });
+    const out = r.stdout + r.stderr; const urls = fs.existsSync(curlLog) ? fs.readFileSync(curlLog, "utf8") : "";
+    ok("P1-4 (4a) install tanpa git: tag rilis via API → tarball tag via curl → ekstrak + exec install.sh hasil unduhan",
+      r.status === 0 && /TARBALL-INSTALL-OK/.test(out) && /releases\/latest/.test(urls)
+      && urls.includes("archive/refs/tags/v0.3.45.tar.gz") && !urls.includes("refs/heads/main") && !/butuh 'git'/.test(out));
+  }
+  // (4a2) LUMI_REF=main → versi pengembangan: tarball branch main, tanpa tanya API
+  {
+    const d = remoteCopy14("remote-tarball-main");
+    const bin = mkBin14(["git", "curl"]);
+    const curlLog = path.join(sb14, "curl-main.log");
+    fs.writeFileSync(path.join(bin, "curl"), curlStub14(curlLog)); fs.chmodSync(path.join(bin, "curl"), 0o755);
+    const h = path.join(sb14, "h-tarball-main"); fs.mkdirSync(h, { recursive: true });
+    const r = cp.spawnSync(BASH14, [path.join(d, "install.sh")], { encoding: "utf8", timeout: 60000, env: { ...process.env, HOME: h, LUMI_HOME: path.join(h, ".lumitome"), TMPDIR: path.join(sb14, "tmp"), PATH: bin, LUMI_REF: "main" } });
+    const out = r.stdout + r.stderr; const urls = fs.existsSync(curlLog) ? fs.readFileSync(curlLog, "utf8") : "";
+    ok("v0.3.82 install LUMI_REF=main: tarball archive/refs/heads/main.tar.gz, API tidak ditanya",
+      r.status === 0 && /TARBALL-INSTALL-OK/.test(out) && urls.includes("archive/refs/heads/main.tar.gz") && !/releases\/latest/.test(urls));
+  }
+  // (4a3) tag tidak bisa ditentukan (API gagal) dan sumber belum ada → gagal jelas + saran LUMI_REF
+  {
+    const d = remoteCopy14("remote-noref");
+    const bin = mkBin14(["git", "curl"]);
+    fs.writeFileSync(path.join(bin, "curl"), "#!/bin/bash\nexit 22\n"); fs.chmodSync(path.join(bin, "curl"), 0o755);
+    const h = path.join(sb14, "h-noref"); fs.mkdirSync(h, { recursive: true });
+    const env = { ...process.env, HOME: h, LUMI_HOME: path.join(h, ".lumitome"), TMPDIR: path.join(sb14, "tmp"), PATH: bin }; delete env.LUMI_REF;
+    const r = cp.spawnSync(BASH14, [path.join(d, "install.sh")], { encoding: "utf8", timeout: 60000, env });
     const out = r.stdout + r.stderr;
-    ok("P1-4 (4a) install tanpa git: fallback tarball via curl → ekstrak + exec install.sh hasil unduhan",
-      r.status === 0 && /TARBALL-INSTALL-OK/.test(out) && fs.existsSync(curlLog)
-      && fs.readFileSync(curlLog, "utf8").includes("archive/refs/heads/main.tar.gz") && !/butuh 'git'/.test(out));
+    ok("v0.3.82 install: rilis terbaru tak bisa ditentukan → gagal jelas, menyebut LUMI_REF (bukan diam-diam pasang main)",
+      r.status !== 0 && /tidak bisa menentukan rilis terbaru/.test(out) && /LUMI_REF/.test(out));
   }
   // (4b) tanpa git + tanpa curl → gagal jelas, menyebut keduanya
   {
@@ -448,10 +477,21 @@ import { ok, finish } from "./harness.mjs";
     cp.execFileSync("git", ["-C", src, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "c1"]);
     cp.execFileSync("git", ["-C", src, "remote", "add", "origin", path.join(sb14, "tidak-ada.git")]);
     fs.writeFileSync(path.join(src, "install.sh"), "#!/usr/bin/env bash\necho \"PULL-OLD-SRC-OK\"\nexit 0\n");
-    const r = cp.spawnSync(BASH14, [path.join(d, "install.sh")], { encoding: "utf8", timeout: 60000, env: { ...process.env, HOME: h, LUMI_HOME: lumiHome, TMPDIR: path.join(sb14, "tmp") } });
+    const dead = path.join(sb14, "tidak-ada.git");
+    // LUMI_REF=main: jalur pull lama. LUMI_REPO_URL mati: tanpa ref, resolusi tag gagal offline.
+    const r = cp.spawnSync(BASH14, [path.join(d, "install.sh")], { encoding: "utf8", timeout: 60000, env: { ...process.env, HOME: h, LUMI_HOME: lumiHome, TMPDIR: path.join(sb14, "tmp"), LUMI_REF: "main", LUMI_REPO_URL: dead } });
     const out = r.stdout + r.stderr;
     ok("P1-4 (4c) install: git pull gagal -> WARN ke layar + lanjut dengan sumber lama (bukan diam-diam)",
       r.status === 0 && /WARN/.test(out) && /git pull gagal/.test(out) && /PULL-OLD-SRC-OK/.test(out));
+    const env2 = { ...process.env, HOME: h, LUMI_HOME: lumiHome, TMPDIR: path.join(sb14, "tmp"), LUMI_REPO_URL: dead }; delete env2.LUMI_REF;
+    const r2 = cp.spawnSync(BASH14, [path.join(d, "install.sh")], { encoding: "utf8", timeout: 60000, env: env2 });
+    const out2 = r2.stdout + r2.stderr;
+    ok("v0.3.82 install: sumber sudah ada + rilis tak bisa ditentukan (offline) -> WARN + lanjut dengan sumber lama",
+      r2.status === 0 && /WARN/.test(out2) && /PULL-OLD-SRC-OK/.test(out2));
+    const r3 = cp.spawnSync(BASH14, [path.join(d, "install.sh")], { encoding: "utf8", timeout: 60000, env: { ...process.env, HOME: h, LUMI_HOME: lumiHome, TMPDIR: path.join(sb14, "tmp"), LUMI_REF: "v9.9.9", LUMI_REPO_URL: dead } });
+    const out3 = r3.stdout + r3.stderr;
+    ok("v0.3.82 install: fetch tag gagal -> WARN + lanjut dengan sumber lama",
+      r3.status === 0 && /WARN/.test(out3) && /v9\.9\.9/.test(out3) && /PULL-OLD-SRC-OK/.test(out3));
   }
   srv.close(); fs.rmSync(home, { recursive: true, force: true });
   fs.rmSync(sb14, { recursive: true, force: true });
