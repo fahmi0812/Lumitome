@@ -1465,10 +1465,6 @@
       "original_name": "seo-dataforseo"
     },
     {
-      "id": "seo-dataforseo-2",
-      "mirror_of": "seo-dataforseo"
-    },
-    {
       "id": "seo-drift",
       "name": "seo-drift",
       "sektor": "penulisan",
@@ -1603,10 +1599,6 @@
       "license": "MIT",
       "original_id": "agricidaniel-claude-seo__seo-image-gen",
       "original_name": "seo-image-gen"
-    },
-    {
-      "id": "seo-image-gen-2",
-      "mirror_of": "seo-image-gen"
     },
     {
       "id": "seo-images",

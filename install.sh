@@ -115,33 +115,62 @@ if [ "$_UN" = 0 ] && { [ -z "$PROJECT" ] || [ ! -f "$PROJECT/opencode.jsonc" ] |
   log "mode remote: menyiapkan sumber di $SW_SRC"
   case " $* " in *" -h "*|*" --help "*) ;; *) ui_step "Menyiapkan sumber";; esac
   PULL_FAILED=0
-  if command -v git >/dev/null 2>&1; then
-    if [ -d "$SW_SRC/.git" ]; then
-      # v0.3.45 (P1-4, d): pull gagal TIDAK lagi diam-diam (dulu `|| true`) —
-      # instalasi lanjut dengan sumber lama + peringatan ke layar di bawah.
-      git -C "$SW_SRC" pull --ff-only origin main >>"$LOG_FILE" 2>&1 || PULL_FAILED=1
-      [ "$PULL_FAILED" = 1 ] && log "WARN: git pull gagal di $SW_SRC — lanjut dengan sumber lama"
-    else mkdir -p "$(dirname "$SW_SRC")"; git clone --depth 1 "$SW_REPO_URL" "$SW_SRC" >>"$LOG_FILE" 2>&1 || die "unduh sumber gagal" "Cek koneksi internet, lalu coba lagi."; fi
-  else
-    # v0.3.45 (P1-4, c): tanpa git, mode remote TIDAK lagi mati di "butuh 'git'" —
-    # fallback tarball via curl (unduh main.tar.gz GitHub, ekstrak ke $SW_SRC).
-    # Key/URL default tidak berubah; tarball hanya sumber kode, bukan kredensial.
+  # v0.3.82: yang dipasang adalah RILIS (tag vX.Y.Z tertinggi), bukan ujung `main`.
+  # `curl | bash` dari main dulu memasang commit apa pun yang kebetulan ada di main,
+  # termasuk yang belum dirilis. LUMI_REF menimpa: tag lain, atau `main` untuk
+  # versi pengembangan. Tag diselesaikan lewat git ls-remote (mode git) atau
+  # GitHub API releases/latest (mode tanpa git).
+  _repo="${SW_REPO_URL%.git}"
+  # Selalu exit 0 (set -euo pipefail): gagal = output kosong, ditangani pemanggil.
+  latest_tag() {
+    local raw=""
+    if command -v git >/dev/null 2>&1; then
+      raw="$(git ls-remote --tags --refs "$SW_REPO_URL" 2>>"$LOG_FILE" || true)"
+      printf '%s\n' "$raw" | sed -n 's|.*refs/tags/v\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)$|\1|p' \
+        | sort -t. -k1,1n -k2,2n -k3,3n | tail -n 1 | sed 's/^./v&/' || true
+    else
+      case "$_repo" in https://github.com/*) ;; *) return 0;; esac
+      raw="$(curl -fsSL --retry 3 "https://api.github.com/repos/${_repo#https://github.com/}/releases/latest" 2>>"$LOG_FILE" || true)"
+      printf '%s\n' "$raw" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\(v[0-9][^"]*\)".*/\1/p' | head -n 1 || true
+    fi
+  }
+  HAVE_GIT=0; command -v git >/dev/null 2>&1 && HAVE_GIT=1
+  if [ "$HAVE_GIT" = 0 ]; then
     command -v curl >/dev/null 2>&1 || die "butuh 'git' atau 'curl' untuk mode remote" "Pasang git atau curl lewat package manager: apt/brew install git curl"
     command -v tar >/dev/null 2>&1 || die "butuh 'tar' untuk mode remote tanpa git" "Pasang tar lewat package manager."
-    _repo="${SW_REPO_URL%.git}"
+  fi
+  SW_REF="${LUMI_REF:-$(latest_tag)}"
+  log "ref yang dipasang: ${SW_REF:-<tidak diketahui>} (LUMI_REF=${LUMI_REF:-})"
+  if [ "$HAVE_GIT" = 1 ]; then
+    if [ -d "$SW_SRC/.git" ]; then
+      # v0.3.45 (P1-4, d): pembaruan gagal TIDAK lagi diam-diam (dulu `|| true`) —
+      # instalasi lanjut dengan sumber lama + peringatan ke layar di bawah.
+      if [ -z "$SW_REF" ]; then PULL_FAILED=1
+      elif [ "$SW_REF" = main ]; then git -C "$SW_SRC" pull --ff-only origin main >>"$LOG_FILE" 2>&1 || PULL_FAILED=1
+      else { git -C "$SW_SRC" fetch --depth 1 origin "refs/tags/$SW_REF:refs/tags/$SW_REF" && git -C "$SW_SRC" checkout -q --detach "$SW_REF"; } >>"$LOG_FILE" 2>&1 || PULL_FAILED=1; fi
+      [ "$PULL_FAILED" = 1 ] && log "WARN: git pull gagal di $SW_SRC (ref ${SW_REF:-?}) — lanjut dengan sumber lama"
+    else
+      [ -n "$SW_REF" ] || die "tidak bisa menentukan rilis terbaru dari $SW_REPO_URL" "Cek koneksi internet, atau pilih versi sendiri: LUMI_REF=v0.3.79 (atau LUMI_REF=main untuk versi pengembangan)."
+      mkdir -p "$(dirname "$SW_SRC")"; git clone --depth 1 --branch "$SW_REF" "$SW_REPO_URL" "$SW_SRC" >>"$LOG_FILE" 2>&1 || die "unduh sumber gagal ($SW_REF)" "Cek koneksi internet, lalu coba lagi."
+    fi
+  else
+    # v0.3.45 (P1-4, c): tanpa git, mode remote TIDAK lagi mati di "butuh 'git'" —
+    # fallback tarball via curl (tarball tag rilis GitHub, ekstrak ke $SW_SRC).
+    # Key/URL default tidak berubah; tarball hanya sumber kode, bukan kredensial.
     case "$_repo" in https://github.com/*) ;; *) die "fallback tarball hanya untuk repo GitHub (LUMI_REPO_URL bukan GitHub)" "Pasang git, lalu coba lagi.";; esac
-    _tb="$_repo/archive/refs/heads/main.tar.gz"
+    [ -n "$SW_REF" ] || die "tidak bisa menentukan rilis terbaru dari $_repo" "Cek koneksi internet, atau pilih versi sendiri: LUMI_REF=v0.3.79 (atau LUMI_REF=main untuk versi pengembangan)."
+    case "$SW_REF" in v[0-9]*) _tb="$_repo/archive/refs/tags/$SW_REF.tar.gz";; *) _tb="$_repo/archive/refs/heads/$SW_REF.tar.gz";; esac
     if [ -d "$SW_SRC" ] && [ -n "$(ls -A "$SW_SRC" 2>/dev/null)" ]; then die "sumber sudah ada di $SW_SRC tapi git tidak ada untuk memperbaruinya" "Hapus $SW_SRC, atau pasang git, lalu coba lagi."; fi
     _td="$(mktemp -d "${TMPDIR:-/tmp}/lumi-tarball.XXXXXX")"
     log "mode remote tanpa git: unduh tarball $_tb"
-    curl -fsSL --retry 3 -o "$_td/main.tar.gz" "$_tb" >>"$LOG_FILE" 2>&1 || die "unduh tarball gagal: $_tb" "Cek koneksi internet, lalu coba lagi."
+    curl -fsSL --retry 3 -o "$_td/src.tar.gz" "$_tb" >>"$LOG_FILE" 2>&1 || die "unduh tarball gagal: $_tb" "Cek koneksi internet, lalu coba lagi."
     mkdir -p "$SW_SRC"
-    tar --no-same-owner -xzf "$_td/main.tar.gz" -C "$SW_SRC" --strip-components=1 >>"$LOG_FILE" 2>&1 || die "ekstrak tarball gagal" "Coba lagi; bila terus gagal, pasang git."
+    tar --no-same-owner -xzf "$_td/src.tar.gz" -C "$SW_SRC" --strip-components=1 >>"$LOG_FILE" 2>&1 || die "ekstrak tarball gagal" "Coba lagi; bila terus gagal, pasang git."
     rm -rf "$_td"
     [ -f "$SW_SRC/install.sh" ] || die "tarball tidak berisi install.sh" "Coba lagi; bila terus gagal, pasang git."
   fi
   _spin_stop
-  if [ "$PULL_FAILED" = 1 ]; then printf '  WARN git pull gagal — memakai sumber lama di %s (detail: %s)\n' "$SW_SRC" "$LOG_FILE" >&2; fi
+  if [ "$PULL_FAILED" = 1 ]; then printf '  WARN git pull gagal (ref %s) — memakai sumber lama di %s (detail: %s)\n' "${SW_REF:-tidak diketahui}" "$SW_SRC" "$LOG_FILE" >&2; fi
   exec bash "$SW_SRC/install.sh" "$@"
 fi
 UNINSTALL=0 DRY=0 DO_NODE=1 DO_CBM=1 DO_UV=1 DO_NPM=1 DOCTOR=0 BROWSERS=0

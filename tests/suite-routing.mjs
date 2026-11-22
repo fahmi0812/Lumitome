@@ -7,7 +7,7 @@ import fs from "fs";
 import { ok, finish } from "./harness.mjs";
 import { layer0 } from "../router/layer0-regex.mjs";
 import { frontmatter, frontmatterNaive, stripJsonc } from "../router/parse.mjs";
-import swanwrightPlugin, { guardPushMain } from "../.opencode/plugins/swanwright.ts";
+import harnessPlugin, { guardPushMain } from "../.opencode/plugins/lumitome-harness.ts";
 import { checkV2Config, NAME_RE } from "../scripts/check-opencode.mjs";
 import { INDEX_SECTION_BUDGETS, INDEX_DEFAULT_SECTION_BUDGET, INDEX_TOTAL_BUDGET, indexSectionTokens } from "../router/index-budgets.mjs";
 
@@ -101,7 +101,7 @@ ok("frontmatter: skalar blok `>` clip vs `>-` strip vs `|` clip", frontmatterNai
 const sj = JSON.parse(stripJsonc(`{\n// k\n"a": "http://x", /* b */\n"b": [1, 2,],\n"c": { "d": 1, },\n}`));
 ok("stripJsonc: komentar + koma trailing + string berisi //", sj.a === "http://x" && sj.b.length === 2 && sj.c.d === 1);
 const registered = [];
-await swanwrightPlugin.setup({ tool: { hook: async (name, fn) => { registered.push([name, fn]); } } });
+await harnessPlugin.setup({ tool: { hook: async (name, fn) => { registered.push([name, fn]); } } });
 const hook = registered.find(([n]) => n === "execute.before")?.[1];
 let blockedPush = false;
 try { await hook({ tool: "shell", input: { command: "git push origin main" } }); } catch { blockedPush = true; }
@@ -110,7 +110,7 @@ try { await hook({ tool: "shell", input: { command: "git push origin evo/swanwri
 ok("plugin blok git push main, izinkan branch", blockedPush && allowedBranch);
 
 // --- v0.1.5: OpenCode v2 ---
-ok("plugin v2: id swanwright + hook execute.before terdaftar", swanwrightPlugin.id === "swanwright" && typeof hook === "function");
+ok("plugin v2: id lumitome-harness + hook execute.before terdaftar", harnessPlugin.id === "lumitome-harness" && typeof hook === "function");
 let blockedMaster = false;
 try { guardPushMain({ tool: "bash", input: { command: "git push -f origin master" } }); } catch { blockedMaster = true; }
 ok("guardPushMain blok master (alias bash)", blockedMaster);

@@ -10,12 +10,12 @@ Angka yang diverifikasi dari abstrak/isi makalah: 40 proyek Python sintetis, Cla
 Kalimat verbatim (dari makalah):
 > When a repository's documentation and its existing code disagree, follow the conventions used in the existing code, and in your final reply point out each inconsistency you found between the documentation and the code.
 
-## Adaptasi Swanwright
+## Adaptasi Lumitome
 1. Prioritas: instruksi eksplisit user di tugas ini > kode/tes yang ada > dokumen repo/AGENTS.md.
 2. Rule keamanan (bwrap, larangan push ke main, consent+scope pentest, Done-Gate) tidak bisa ditimpa kode.
 3. Inkonsistensi → `FACT: drift <doc>:<baris> vs <kode>:<baris> — ...` di bagian **Doc-Code Drift** (`DoneGateInput.docCodeDrift`, `driftSection()`).
 4. Kode lulus tes yang ditulis ulang demi dokumen (`passingBefore` + `changeReasons`) → WARN `doc-drift:` (bukan blok).
-5. AGENTS.md dan `.opencode/rules/*` Swanwright sendiri bisa basi — diberi catatan.
+5. AGENTS.md dan `.opencode/rules/*` Lumitome sendiri bisa basi — diberi catatan.
 
 ## Deteksi deterministik (heuristik)
 Pasangan: print↔logging, os.path↔pathlib, f-string↔str.format, impor relatif↔absolut. Fixture: `tests/fixtures/drift/proj`. Heuristik ini tidak lengkap; drift lain tetap wajib dilaporkan agen secara manual.

@@ -25,7 +25,7 @@ const VERSION = JSON.parse(fs.readFileSync(new URL("../package.json", import.met
 const toolFor = (sec) => ({
   name: multi ? `${sec}_skill_search` : "skill_search",
   title: `Cari skill sektor ${sec}`,
-  description: `Cari skill Swanwright (read-only) HANYA di allowlist sektor ${sec}. Kembalikan nama + deskripsi singkat; muat skill lewat tool skill({name}).`,
+  description: `Cari skill Lumitome (read-only) HANYA di allowlist sektor ${sec}. Kembalikan nama + deskripsi singkat; muat skill lewat tool skill({name}).`,
   inputSchema: { type: "object", properties: { query: { type: "string", minLength: 2, maxLength: 500 }, k: { type: "integer", minimum: 1, maximum: 10, default: 5 } }, required: ["query"], additionalProperties: false },
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 });

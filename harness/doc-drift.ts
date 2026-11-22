@@ -1,5 +1,5 @@
 /**
- * Swanwright - Doc-Code Drift (arXiv:2610.30571).
+ * Lumitome harness - Doc-Code Drift (arXiv:2610.30571).
  * Deteksi deterministik konvensi dokumen vs kode yang ada → FACT ber-file:baris.
  * Kode/tes > dokumen basi. Menulis ulang kode yang lulus tes demi dokumen → WARN.
  */

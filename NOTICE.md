@@ -16,12 +16,12 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 ## AgriciDaniel/claude-seo
 - SHA: `6be93f45064ffbadced572b5d5c95f55fd263af0`
 - Lisensi: MIT
-- Jumlah skill: 35
+- Jumlah skill: 33 (v0.3.82: 2 salinan duplikat dihapus)
 
 ## FRCHN-GSTN/MenulisCep4t
 - SHA: `ba5389fc518668f79e1b358b742786607df80cd1`
 - Lisensi: MIT
-- Jumlah skill: 3
+- Jumlah skill: 1 (v0.3.82: 2 salinan duplikat dihapus)
 
 ## Leonxlnx/taste-skill
 - SHA: `12af471f627f866411b4bd785b19646d3672784c`
@@ -202,7 +202,7 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 ## nextlevelbuilder/ui-ux-pro-max-skill
 - SHA: `4f2dbb67e64969a9a30ab00742f2d55d66ddec2b`
 - Lisensi: MIT
-- Jumlah skill: 13
+- Jumlah skill: 7 (v0.3.82: 6 salinan duplikat dihapus)
 
 ## mutonby/openshorts
 - SHA: `8fa411fed239247713012069dd170a5431ebe911`
@@ -237,7 +237,7 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 ## pbakaus/impeccable
 - SHA: `500eeb7e655d1916c8d0880d05c8a80b5a8a86fb`
 - Lisensi: Apache-2.0
-- Jumlah skill: 26
+- Jumlah skill: 2 (v0.3.82: 24 salinan duplikat dihapus)
 
 ## plannotator/effective-html
 - SHA: `5ce160a3e76dc1c0f9301f8a1903704ec607636a`
@@ -247,7 +247,7 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 ## rehan-remade/universal-modder
 - SHA: `9811709d950979f1b5012dddf10b7ec122d7e95e`
 - Lisensi: MIT
-- Jumlah skill: 39
+- Jumlah skill: 13 (v0.3.82: 26 salinan duplikat dihapus)
 
 ## vercel-labs/json-render
 - SHA: `18194121c8f087afacd9a8ef65fbda18374ee039`
@@ -267,7 +267,7 @@ Skill di-vendor apa adanya dari repo sumber (SKILL.md tidak ditulis ulang). Pin 
 ## zhaoxuya520/reverse-skill
 - SHA: `cab634bd855fc287f6e420c1f36fd1a6b9245960`
 - Lisensi: MIT
-- Jumlah skill: 89
+- Jumlah skill: 88 (v0.3.82: 1 salinan duplikat dihapus)
 
 ## zzusec/apk-reverse
 - SHA: `1b94651b1e3c4479336406b8b5c06d4c1fd7082e`

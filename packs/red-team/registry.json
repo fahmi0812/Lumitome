@@ -2710,10 +2710,6 @@
       "original_name": "reverse-skill-router"
     },
     {
-      "id": "reverse-skill-router-2",
-      "mirror_of": "reverse-skill-router"
-    },
-    {
       "id": "src-hunter",
       "name": "src-hunter",
       "sektor": "security",

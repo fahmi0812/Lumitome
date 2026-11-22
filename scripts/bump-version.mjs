@@ -17,19 +17,22 @@ if (!/^\d+\.\d+\.\d+$/.test(next || "")) fail("pakai: node scripts/bump-version.
 const cur = fs.readFileSync("VERSION", "utf8").trim();
 const cmp = (a, b) => a.split(".").map(Number).reduce((r, x, i) => r || Math.sign(x - b.split(".").map(Number)[i]), 0);
 if (cmp(next, cur) <= 0) fail(`${next} bukan kenaikan dari ${cur}`);
-const rep = (file, from, to, expect) => {
-  const t = fs.readFileSync(file, "utf8");
-  const n = t.split(from).length - 1;
-  if (n !== expect) fail(`${file}: pola ${JSON.stringify(from)} ditemukan ${n}x, harus ${expect}x`);
-  fs.writeFileSync(file, t.split(from).join(to));
-};
-fs.writeFileSync("VERSION", next + "\n");
-rep("package.json", `"version": "${cur}"`, `"version": "${next}"`, 1);
-rep("package-lock.json", `"version": "${cur}"`, `"version": "${next}"`, 2);
-rep("README.md", `version-${cur}`, `version-${next}`, 1);
-rep("README.md", `refs/tags/v${cur}.tar.gz`, `refs/tags/v${next}.tar.gz`, 1);
+// Cek semua pola SEBELUM menulis apa pun: bump yang gagal di tengah dulu
+// meninggalkan VERSION sudah naik tapi file lain belum (drift setengah jadi).
+const count = (file, from) => fs.readFileSync(file, "utf8").split(from).length - 1;
+const plan = [
+  ["package.json", `"version": "${cur}"`, `"version": "${next}"`, (n) => n === 1, "1x"],
+  ["package-lock.json", `"version": "${cur}"`, `"version": "${next}"`, (n) => n === 2, "2x"],
+  ["README.md", `version-${cur}`, `version-${next}`, (n) => n === 1, "1x"],
+  // URL tarball tag muncul di beberapa tempat (install npm, PowerShell A/B, Bahasa Indonesia): semua diganti.
+  ["README.md", `refs/tags/v${cur}.tar.gz`, `refs/tags/v${next}.tar.gz`, (n) => n >= 1, ">=1x"],
+];
+for (const [file, from, , okN, want] of plan) { const n = count(file, from); if (!okN(n)) fail(`${file}: pola ${JSON.stringify(from)} ditemukan ${n}x, harus ${want}`); }
 const cl = fs.readFileSync("CHANGELOG.md", "utf8");
 if (cl.includes(`## ${next}`)) fail(`CHANGELOG.md sudah punya entri ${next}`);
+if (!cl.includes("# Changelog\n\n")) fail("CHANGELOG.md tanpa header '# Changelog'");
+fs.writeFileSync("VERSION", next + "\n");
+for (const [file, from, to] of plan) fs.writeFileSync(file, fs.readFileSync(file, "utf8").split(from).join(to));
 fs.writeFileSync("CHANGELOG.md", cl.replace("# Changelog\n\n", `# Changelog\n\n## ${next}${title ? ` — ${title}` : ""}\n\n- TODO: isi catatan rilis\n\n`));
 // verifikasi sendiri: VERSION == package.json == README
 const ok = fs.readFileSync("VERSION", "utf8").trim() === next

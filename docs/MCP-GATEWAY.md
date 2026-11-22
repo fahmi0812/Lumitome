@@ -15,6 +15,6 @@ Bila ingin satu titik auth/audit/isolasi (rekomendasi riset MCP-REPORT §3): jal
 - **Docker MCP Gateway** (https://github.com/docker/mcp-gateway): `config/mcp-gateway/docker-mcp-gateway.sh` — profil `sw-<sektor>`, allowlist tool `docker mcp profile tools`, `docker mcp gateway run --profile … --transport streaming --port …`.
 - **IBM ContextForge** (https://github.com/IBM/mcp-context-forge): `config/mcp-gateway/contextforge-virtual-servers.json` — satu virtual server per sektor (`associated_tools`). Ganti URL `gw-*` ke endpoint virtual server ContextForge Anda.
 
-Aktifkan: ubah `"disabled": true` → `false` hanya untuk `gw-<sektor>` yang jalan, isi token di `~/.swanwright/secrets.env`, lalu `bash install.sh --doctor`.
+Aktifkan: ubah `"disabled": true` → `false` hanya untuk `gw-<sektor>` yang jalan, isi token di `~/.lumitome/secrets.env`, lalu `bash install.sh --doctor`.
 Permission sektor sudah meng-allow `gw-<sektor>_*` saja (gen-policy), jadi sektor lain tak bisa memakai endpoint itu.
 [VERIFIKASI] path `/mcp` & mekanisme token bergantung versi gateway — cek `--help`/docs sebelum produksi. Belum diuji di box (tanpa Docker).

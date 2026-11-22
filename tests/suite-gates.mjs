@@ -234,6 +234,17 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
   const vd7 = mkVerDir(); fs.writeFileSync(path.join(vd7, "package-lock.json"), mkLock("0.3.46"));
   ok("versi drift: package-lock.json basi -> error menyebut package-lock.json", checkVersionConsistency(vd7).some((e) => /package-lock\.json/.test(e) && /0\.3\.46/.test(e)));
   fs.rmSync(vd7, { recursive: true, force: true });
+  // v0.3.82: katalog skill = turunan registry (dulu ditulis tangan, basi sejak v0.1.1)
+  const GC = await import("../scripts/gen-catalog.mjs");
+  const cat = GC.renderCatalog({ skills: [
+    { id: "a", src: "o/r", sha: "0123456789abcdef", license: "MIT", sektor: "coding", pack: "", original_id: "o-r__a" },
+    { id: "b|x", sektor: "security", pack: "red-team", original_id: "" },
+  ] });
+  ok("katalog: hitungan total/route/disabled + baris per skill + pipe di-escape",
+    /Total 2 skill di registry\. 1 bisa di-route; 1 \(pack red-team\) disabled\./.test(cat)
+    && cat.includes("| `a` | o/r | `0123456789ab` | MIT | coding | active | — | `o-r__a` |")
+    && cat.includes("| `b\\|x` | — | — | — | security | disabled | red-team | — |"), cat);
+  ok("katalog repo sinkron dengan registry (npm run skills:catalog)", GC.checkCatalog(".").ok);
 
   // (4) detectVersionDrift (harness/doc-drift.ts): pasangan in-memory untuk done-gate/pelaporan
   ok("doc-drift versi: satu sumber basi -> finding menyebut sumbernya", detectVersionDrift({ VERSION: "0.3.47", "package.json": "0.3.47", README: "0.3.46", CHANGELOG: "0.3.47" }).some((f) => f.source === "README" && /0\.3\.46/.test(f.fact) && /0\.3\.47/.test(f.fact)));
@@ -277,6 +288,11 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
       const idx = fs.readFileSync(idxPath, "utf8");
       fs.rmSync(idxPath);
       fs.writeFileSync(idxPath, idx.replace("## misc\n", `## misc\n- ${FIXTURE}: Fixture tes P2-2 — skill aktif ke-128 untuk uji hitungan dinamis validate.\n`));
+      // Katalog adalah turunan registry (v0.3.82): bangkitkan ulang di salinan.
+      // rm dulu — salinan bisa hardlink, menulis langsung akan menembus ke file repo asli.
+      const catPath = path.join(root, "docs/SKILLS-CATALOG.md");
+      fs.rmSync(catPath, { force: true });
+      cp.spawnSync(process.execPath, ["scripts/gen-catalog.mjs"], { cwd: root, stdio: "ignore" });
     }
   };
   const runValidateCopy = (withRegistry) => {
@@ -566,8 +582,8 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     /satu-satunya jalur/.test(fm(".opencode/rules/subagent.md")));
   ok("/subagent off: preset repo default enabled:true (fresh install = ON)",
     JSON.parse(fm(".opencode/lumitome-subagent.json")).enabled === true);
-  ok("/subagent off: README mendokumentasikan /subagent off|on + default on",
-    /\/subagent off/.test(fm("README.md")) && /\/subagent on/.test(fm("README.md")) && /Default is on/i.test(fm("README.md")));
+  ok("/subagent off: README + docs/SUBAGENT.md mendokumentasikan /subagent off|on + default on",
+    /\/subagent off/.test(fm("README.md")) && /\/subagent on/.test(fm("README.md")) && /Default is on/i.test(fm("README.md")) && /Default is on/i.test(fm("docs/SUBAGENT.md")));
   ok("/subagent off: orchestrator.md memuat pointer rules + baris mode, tapi kata 'enabled' tidak ada di sana (saklar hidup di preset, bukan file ini)",
     /rules\/subagent\.md/.test(fm(".opencode/agents/orchestrator.md")) && /Mode \/subagent saat ini/.test(fm(".opencode/agents/orchestrator.md"))
     && !/enabled/.test(fm(".opencode/agents/orchestrator.md")));
@@ -668,7 +684,7 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
   ok("/subagent paths: presetPath menunjuk .opencode/lumitome-subagent.json di root",
     PA.presetPath("/r").endsWith(path.join(".opencode", "lumitome-subagent.json")));
   ok("/subagent plugin: README mendokumentasikan /subagent plugin + /subagent tabel + off/on",
-    /\/subagent/.test(fm("README.md")) && /tabel/.test(fm("README.md")) && /plugin/.test(fm("README.md")));
+    /\/subagent/.test(fm("README.md")) && /tabel/.test(fm("README.md")) && /plugin/.test(fm("README.md")) && /docs\/SUBAGENT\.md/.test(fm("README.md")));
 }
 
 // (v0.3.64) /subagent — perbaiki gagal JSON saat buka popup.
@@ -808,7 +824,7 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
   ok("/subagent v0.3.65: note tanpa sesi jujur — sesi baru nanti otomatis pakai Thinking; tui + README menyebut hal yang sama (prompt raksasa sudah dihapus v0.3.67)",
     /sesi baru nanti otomatis pakai model Thinking/.test(tui)
     && /buildSubagentNotice/.test(fm(`${PLUG}/prompt.mjs`))
-    && /New sessions created afterwards start with the Thinking model too/.test(fm("README.md")));
+    && /New sessions created afterwards start with the Thinking model too/.test(fm("docs/SUBAGENT.md")));
   ok("/subagent v0.3.65: tabel close() — onAction DULU baru dialog.clear() (bug v0.3.63: clear() duluan memicu on-close 'cancel' sehingga Ctrl+S selalu Dibatalkan tanpa menyimpan)",
     (() => { const a = tui.search(/^\s*props\.onAction\(action\)$/m); const b = tui.search(/^\s*plugin\.ui\.dialog\.clear\(\)$/m); return a !== -1 && b !== -1 && a < b; })());
   ok("/subagent v0.3.65: on/off TIDAK mengubah model sesi (cabang off/on tanpa switchModel, toast tetap singkat)",
@@ -824,9 +840,9 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
   const note65 = PR.buildSubagentNotice(JSON.parse(fm(".opencode/lumitome-subagent.json")), "uji");
   ok("/subagent v0.3.65: pemberitahuan singkat menyebut model Thinking yang dipakai sesi (model PERAN berlaku sesi berikutnya — di toast + orchestrator.md)",
     /Thinking: 9router\//.test(note65) && /Model peran berlaku mulai sesi TUI berikutnya/.test(tui));
-  ok("/subagent v0.3.65: README — peran selalu aktif, model sesi ikut Thinking, tanpa Spasi toggle",
-    /always all active/.test(fm("README.md")) && /switches the current session's model to the Thinking role's model/.test(fm("README.md"))
-    && !/Space toggles a role/.test(fm("README.md")));
+  ok("/subagent v0.3.65: docs/SUBAGENT.md — peran selalu aktif, model sesi ikut Thinking, tanpa Spasi toggle",
+    /always all active/.test(fm("docs/SUBAGENT.md")) && /switches the current session's model to the Thinking role's model/.test(fm("docs/SUBAGENT.md"))
+    && !/Space toggles a role/.test(fm("README.md")) && !/Space toggles a role/.test(fm("docs/SUBAGENT.md")));
 }
 
 // (v0.3.66) /subagent — dua perbaikan atas laporan live Fahmi (15 Nov):
@@ -970,8 +986,8 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     ok("/subagent v0.3.67: tanpa orchestrator.md, applyPreset tetap menulis model (peringatan saja, bukan error)",
       r.errors.length === 0 && r.changed.length === 1 && r.modeChanged === false && r.warnings.length >= 1);
   } finally { fs.rmSync(tmp2, { recursive: true, force: true }); }
-  ok("/subagent v0.3.67: README mendokumentasikan pemberitahuan singkat + aturan di orchestrator.md (bukan prompt raksasa)",
-    /short confirmation/.test(fm("README.md")) && /orchestrator\.md/.test(fm("README.md")));
+  ok("/subagent v0.3.67: docs/SUBAGENT.md mendokumentasikan pemberitahuan singkat + aturan di orchestrator.md (bukan prompt raksasa)",
+    /short confirmation/.test(fm("docs/SUBAGENT.md")) && /orchestrator\.md/.test(fm("docs/SUBAGENT.md")));
 }
 
 // (v0.3.68) /subagent — notice hanya untuk sesi lama, sesi baru bersih.

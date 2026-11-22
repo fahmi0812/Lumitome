@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# Swanwright doctor — cek pemasangan nyata terhadap OpenCode v2 (via opencode serve + HTTP API proyek).
-# Wajib (FAIL→exit 1): opencode v2.3.0, node>=22.6, indeks skill FRESH, policy, skill proyek = 86,
-#   MCP context7 + codemem + skills connected, plugin swanwright active, agents, skill_search waras.
+# Lumitome doctor — cek pemasangan nyata terhadap OpenCode v2 (via opencode serve + HTTP API proyek).
+# Wajib (FAIL→exit 1): opencode v2.3.0, node>=22.6, indeks skill FRESH, policy, skill proyek = jumlah folder .opencode/skills/*/SKILL.md (dinamis),
+#   MCP context7 + codemem + skills connected, plugin lumitome-harness active, agents, skill_search waras.
 # Info/WARN: playwright, chromedev, markitdown, 9router.  Pakai: bash scripts/doctor.sh [dir-proyek]
 set -uo pipefail
 DIR="$(cd "${1:-.}" && pwd)"; cd "$DIR"
-[ -f "${SW_HOME:-$HOME/.swanwright}/env.sh" ] && . "${SW_HOME:-$HOME/.swanwright}/env.sh"
+# Home instalasi = LUMI_HOME (default ~/.lumitome), sama dengan install.sh. SW_HOME tetap dihormati bila diset.
+LH="${SW_HOME:-${LUMI_HOME:-$HOME/.lumitome}}"
+[ -f "$LH/env.sh" ] && . "$LH/env.sh"
 FAILS=0; WARNS=0
 pass(){ printf '[PASS] %s\n' "$*"; }; fail(){ printf '[FAIL] %s\n' "$*"; FAILS=$((FAILS+1)); }; warn(){ printf '[WARN] %s\n' "$*"; WARNS=$((WARNS+1)); }
 OCV="$(opencode --version 2>/dev/null)"; [ "$OCV" = "opencode v2.3.0" ] && pass "$OCV" || fail "opencode v2.3.0 dibutuhkan (dapat: ${OCV:-tidak ada})"
@@ -33,16 +35,18 @@ const fs=require("fs"),D=process.env.DIR,[S,M,P,AF]=process.argv.slice(2);
 const rd=(x)=>JSON.parse(fs.readFileSync(x,"utf8")).data; const sk=rd(S), mcp=rd(M), pl=rd(P), ag=fs.readFileSync(AF,"utf8");
 const out=(k,ok,msg)=>console.log(`[${ok?"PASS":k}] ${msg}`); let f=0,w=0;
 const proj=sk.filter(s=>s.path.startsWith(D+"/.opencode/skills/"));
-out("FAIL",proj.length===86,`skill proyek terlihat OpenCode = ${proj.length} (target 86; total ${sk.length} termasuk builtin)`)||0; if(proj.length!==86)f++;
+// Target dihitung dari disk, bukan angka keras (pelajaran LINT-001 v0.3.47: angka 86 basi → doctor selalu FAIL).
+const sd=D+"/.opencode/skills"; const want=fs.existsSync(sd)?fs.readdirSync(sd).filter(d=>fs.existsSync(`${sd}/${d}/SKILL.md`)).length:0;
+out("FAIL",proj.length===want,`skill proyek terlihat OpenCode = ${proj.length} (target ${want} dari disk; total ${sk.length} termasuk builtin)`)||0; if(proj.length!==want)f++;
 const bad=proj.filter(s=>/^(api-security|llm-security)$/.test(s.id)); if(bad.length){f++;out("FAIL",false,"api-security/llm-security aktif!");} else out("FAIL",true,"api-security/llm-security tidak aktif");
 const st=Object.fromEntries(mcp.map(m=>[m.name,m.status.status]));
 const req=["context7","codemem","skills"];
 for(const n of req){const ok=st[n]==="connected"; if(!ok)f++; out("FAIL",ok,`MCP ${n}: ${st[n]||"tidak ada"}`);}
 for(const n of ["playwright","chromedev","markitdown"]){const ok=st[n]==="connected"; if(!ok)w++; out("WARN",ok,`MCP ${n}: ${st[n]||"tidak ada"} (opsional)`);}
 const dis=Object.entries(st).filter(([,v])=>v==="disabled").map(([k])=>k); console.log(`[INFO] MCP disabled (default): ${dis.join(", ")}`);
-const sw=pl.find(p=>p.id==="swanwright"); const pok=sw?.state?.status==="active"; if(!pok)f++; out("FAIL",pok,`plugin swanwright: ${sw?.state?.status||"tidak ada"}`);
+const sw=pl.find(p=>p.id==="lumitome-harness"); const pok=sw?.state?.status==="active"; if(!pok)f++; out("FAIL",pok,`plugin lumitome-harness: ${sw?.state?.status||"tidak ada"}`);
 const miss=["orchestrator","sectors/coding","sectors/finance","sectors/media","sectors/penulisan","sectors/riset","sectors/security","elephant","goldfish","synthesizer"].filter(a=>!ag.includes(`"id": "${a}"`));
-if(miss.length)f++; out("FAIL",!miss.length,`agents Swanwright ${10-miss.length}/10${miss.length?" hilang: "+miss:""}`);
+if(miss.length)f++; out("FAIL",!miss.length,`agents Lumitome ${10-miss.length}/10${miss.length?" hilang: "+miss:""}`);
 fs.writeFileSync(AF+".res",`${f} ${w}`);
 JS
 F2=1; W2=0; [ -f "$LOG.agents.res" ] && read F2 W2 < "$LOG.agents.res"; FAILS=$((FAILS+F2)); WARNS=$((WARNS+W2)); [ "${SW_DOCTOR_KEEP:-}" ] && cp "$S" "$M" "$P" "$SW_DOCTOR_KEEP"/ 2>/dev/null; rm -f "$LOG.agents" "$LOG.agents.res"

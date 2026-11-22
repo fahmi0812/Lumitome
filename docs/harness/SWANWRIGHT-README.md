@@ -1,3 +1,5 @@
+> **Dokumen historis.** Ini README Swanwright, pendahulu Lumitome. Perintah dan path di bawah (`~/.swanwright/...`, `source ~/.swanwright/env.sh`) sudah tidak berlaku. Untuk Lumitome, baca [`README.md`](../../README.md).
+
 <p align="center">
   <img src="../../assets/brand/banner-1600x900.png" alt="Swanwright — The Elegant AI Coding Harness" width="100%"/>
 </p>

@@ -1,4 +1,4 @@
-# Swanwright
+# Lumitome (harness Swanwright)
 
 > Catatan: file ini dan `.opencode/rules/*` bisa basi. Bila bertentangan dengan kode/tes, ikuti kode dan laporkan drift (`.opencode/rules/00-doc-code-drift.md`). Rule keamanan tetap berlaku.
 
@@ -13,7 +13,7 @@ Lapisan non-invasif di atas OpenCode. Jangan patch core OpenCode. Model hanya vi
 - `npm run sync-upstream` — re-fetch skill dari SHA ter-pin
 
 ## Larangan keras
-1. `git push` ke `main` BOLEH untuk perubahan skill lokal yang sudah terverifikasi (registry + indeks + `validate` + test lolos); jangan buka PR otomatis. Perubahan arsitektur/harness tetap via PR (Fahmi yang buka PR).
+1. Jangan `git push` ke `main`/`master`, termasuk untuk perubahan skill. Kerja di branch lain, push branch itu, lalu Fahmi yang membuka dan me-merge PR; jangan buka PR otomatis. Guard menegakkan ini (`harness/lumi-guard.mjs`, aturan `push-main`), begitu juga `--force`, `--all`, dan refspec `+`. Sebelum push: registry + indeks + `npm run validate` + `npm test` lolos (CI menjalankan ulang di PR).
 2. Jangan LiteLLM / proxy selain 9router.
 3. `/pentest` wajib `--pentest` + file consent + scope.
 4. Klaim DONE tanpa FACT (perintah+exit/hash) ditolak Done-Gate.
@@ -26,4 +26,4 @@ Baca `docs/PRD.md` dan `ARCHITECTURE.md` (root) sebelum mengubah arsitektur.
 ## v0.1.6 — Skill Query Layer & MCP per sektor
 - Routing skill: `node scripts/skill-query.mjs "<tugas>"` (≤5 skill). Indeks: `npm run skills:index` (otomatis bila hash berubah).
 - Ubah pemetaan MCP/skill sektor → edit `router/mcp-sectors.json` / registry lalu `npm run policy` (jangan edit `permissions` agent manual).
-- Jangan jalankan `codebase-memory-mcp install|update`; jangan tulis token ke file (pakai `{env:...}` + `~/.swanwright/secrets.env`).
+- Jangan jalankan `codebase-memory-mcp install|update`; jangan tulis token ke file (pakai `{env:...}` + `~/.lumitome/secrets.env`).

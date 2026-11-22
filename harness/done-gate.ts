@@ -1,5 +1,5 @@
 /**
- * Swanwright - Unified Done-Gate
+ * Lumitome harness - Unified Done-Gate
  * Deterministic quality gate. A missing check is UNRUN, not PASS.
  * NOT_CONFIGURED counts only as a WAIVER, never as PASS: the FACT row must
  * name the gate, give a reason (`alasan:`) AND evidence (`bukti:` /

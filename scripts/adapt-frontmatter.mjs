@@ -15,7 +15,7 @@ for (const p of walk(root)) {
   const t = fs.readFileSync(p, "utf8");
   if (t.startsWith("---")) continue;
   const id = path.basename(path.dirname(p)).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 64);
-  const fm = `---\nname: ${id}\ndescription: Imported skill (adapter Swanwright). Lihat docs/ADAPTERS.md.\n---\n\n`;
+  const fm = `---\nname: ${id}\ndescription: Imported skill (adapter Lumitome). Lihat docs/ADAPTERS.md.\n---\n\n`;
   fs.writeFileSync(p, fm + t);
   n++;
 }

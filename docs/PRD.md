@@ -11,7 +11,7 @@
 ## Latar
 Lumitome: asisten coding terminal di atas OpenCode 2.3.0 (vanilla, tanpa patch
 core). Model hanya via 9router; tanpa LiteLLM / proxy lain. Satu registry
-900 skill (734 bisa ter-route; 166 pack red-team tetap disabled), routing
+930 skill (764 bisa ter-route; 166 pack red-team tetap disabled), routing
 2 lapis + lazy-load.
 
 ## Tujuan

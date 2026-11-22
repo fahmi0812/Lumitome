@@ -1,0 +1,39 @@
+# Gate yang sama dengan `npm run lint && npm run validate:offline && npm test`,
+# dijalankan di setiap push dan PR. Sebelumnya gate hanya jalan lokal, sehingga
+# drift (mis. package-lock.json tertinggal di 0.3.79 pada rilis 0.3.80/81)
+# bisa lolos ke main tanpa ketahuan.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # postinstall tidak mengunduh engine di checkout repo, tapi tegaskan saja.
+      LUMI_SKIP_ENGINE_DOWNLOAD: "1"
+      LUMI_SKIP_CBM_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: lint
+        run: npm run lint
+      - name: validate (offline, tanpa binary OpenCode)
+        run: npm run validate:offline
+      - name: test
+        run: npm test

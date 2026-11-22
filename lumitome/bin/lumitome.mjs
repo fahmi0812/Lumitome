@@ -19,7 +19,7 @@ import { DEFAULT_MODEL } from "../lib/default-model.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
-const REPO = path.resolve(ROOT, "..");                 // repo Swanwright
+const REPO = path.resolve(ROOT, "..");                 // repo Lumitome
 const VERSION = fs.readFileSync(path.join(REPO, "VERSION"), "utf8").trim(); // single-source: jangan hardcode (bump via scripts/bump-version.mjs)
 // DEFAULT_MODEL: satu sumber — lumitome/lib/default-model.mjs (v0.3.71, A3).
 const env = { ...process.env };

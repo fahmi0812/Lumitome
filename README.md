@@ -9,20 +9,32 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.81-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.3.82-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
 
-Lumitome is a coding assistant that runs in your terminal. It is built on OpenCode, locked to version 2.3.0, and it runs separately from any OpenCode you already have installed.
+Lumitome is a coding assistant that runs in your terminal. It is built on
+OpenCode, locked to version 2.3.0, and it runs separately from any OpenCode you
+already have installed.
 
-You give it a task, such as "fix the failing tests". It reads your code, edits files, and runs commands to get it done.
+You give it a task, such as "fix the failing tests". It reads your code, edits
+files, and runs commands to get it done.
 
-930 skills in one registry across coding, writing, research, security, finance, media and misc — 764 routable; the 166-skill red-team pack stays disabled (since v0.3.27: one corpus, no dormant packs). Run `/docs-pack` to scaffold a project's 12 living docs, `/stitch-ui` to build UI from a reference image, or `/external-tools` to install an external app and connect it to the agent.
+It ships 930 skills in one registry, covering coding, writing, research,
+security, finance, media, and misc. 764 of them can be routed to. The
+166-skill red-team pack stays disabled. Some built-in commands:
+
+- `/docs-pack` scaffolds a project's 12 living docs.
+- `/stitch-ui` builds UI from a reference image.
+- `/external-tools` installs an external app and connects it to the agent.
 
 ## Install
 
 You need Node.js 22.6 or newer. Get it from [nodejs.org](https://nodejs.org).
+
+All install methods below install a **tagged release**, not whatever happens to
+be on the `main` branch.
 
 **Linux or macOS:**
 
@@ -30,23 +42,36 @@ You need Node.js 22.6 or newer. Get it from [nodejs.org](https://nodejs.org).
 curl -fsSL https://raw.githubusercontent.com/fahmi0812/Lumitome/main/install.sh | bash
 ```
 
-This puts everything in `~/.lumitome` and adds a `lumitome` command in `~/.local/bin`.
+The script looks up the newest release tag (`vX.Y.Z`), downloads that tag, and
+installs it. Everything goes into `~/.lumitome`, and a `lumitome` command is
+added to `~/.local/bin`.
 
-While it installs (and uninstalls) you see one status line and one line when it is done. If something goes wrong you get a short message; the full details are in `~/.lumitome/logs/install.log`.
+- To install one specific version: `LUMI_REF=v0.3.79 bash` instead of `bash`.
+- To install the unreleased development version: `LUMI_REF=main bash`.
+
+While it installs (and uninstalls) you see one status line and one line when it
+is done. If something goes wrong you get a short message. The full details are
+in `~/.lumitome/logs/install.log`.
 
 **Windows, or any system with npm:**
 
 ```bash
-npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
+npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.82.tar.gz
 ```
 
-Run it in PowerShell or Command Prompt. You do not need Git for this. To install one exact version instead of the latest, use `https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.81.tar.gz`. Once Lumitome is on the npm registry, this shorter form will also work:
+Run it in PowerShell or Command Prompt. You do not need Git for this. The
+development version is `https://github.com/fahmi0812/Lumitome/tarball/main`.
+Once Lumitome is on the npm registry, this shorter form will also work:
 
 ```bash
 npm install -g lumitome
 ```
 
-**Windows: if PowerShell blocks `npm`**
+The npm install downloads OpenCode 2.3.0 for your system, checks its SHA256
+hash, and keeps it in `~/.lumitome` (on Windows: `%USERPROFILE%\.lumitome`). If
+that download fails, it tries again the first time you run `lumitome`.
+
+### Windows: if PowerShell blocks `npm`
 
 If you see this error:
 
@@ -54,28 +79,27 @@ If you see this error:
 npm : File C:\Program Files\nodejs\npm.ps1 cannot be loaded because running scripts is disabled on this system.
 ```
 
-PowerShell is blocking script files (its default execution policy). Fix it in one of these two ways — no administrator needed:
+PowerShell is blocking script files (its default execution policy). Fix it in
+one of these two ways. Neither needs administrator rights.
 
-Option A (recommended) — allow scripts for your user, then run the install again:
+Option A (recommended): allow scripts for your user, then run the install again.
 
 ```powershell
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
-npm install -g https://github.com/fahmi0812/Lumitome/tarball/main
+npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.82.tar.gz
 ```
 
-Option B (without changing anything) — use the `npm.cmd` shim instead, or run the same command in Command Prompt (`cmd.exe`):
+Option B (changes nothing): use the `npm.cmd` shim instead, or run the same
+command in Command Prompt (`cmd.exe`).
 
 ```powershell
-npm.cmd install -g https://github.com/fahmi0812/Lumitome/tarball/main
+npm.cmd install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.82.tar.gz
 ```
 
-One more thing: type the command yourself — do not paste the terminal's output back into the prompt. Lines like `Windows PowerShell`, `Copyright (C) ...`, or `Install the latest PowerShell ...` are not commands, and PowerShell will only show errors for them.
-
-The npm install downloads OpenCode 2.3.0 for your system, checks its SHA256 hash, and keeps it in `~/.lumitome` (on Windows: `%USERPROFILE%\.lumitome`). If that download fails, it tries again the first time you run `lumitome`.
-
-Commands are not run inside a sandbox by default (since v0.3.71 — like plain OpenCode; set `LUMI_SANDBOX=bwrap` on Linux to opt into the `bwrap` container). Lumitome's safety rules still apply: dangerous commands and secret files are still blocked.
-
-Lumitome uses its own background server port, so it works even when your own OpenCode (`opencode serve --service`) is running.
+Type the command yourself, and do not paste the terminal's output back into the
+prompt. Lines like `Windows PowerShell`, `Copyright (C) ...`, or
+`Install the latest PowerShell ...` are not commands, and PowerShell will only
+show errors for them.
 
 ## First run
 
@@ -85,32 +109,54 @@ Start it:
 lumitome
 ```
 
-Then connect an AI provider. The first time you run `lumitome` with no provider, a provider screen opens by itself. To open it again later, run:
+Then connect an AI provider. The first time you run `lumitome` with no
+provider, a provider screen opens by itself. To open it again later, run
+`lumitome connect` (or `lumitome provider`).
+
+Choose OpenAI or Anthropic (compatible), then fill in a name, the base URL, and
+your API key. The key shows as dots (•) while you type or paste it. Press Enter
+to save. Lumitome looks up the provider's models and tells you how many it
+found. Pick one with `/model`.
+
+- To remove a saved provider, move to it, press Del, then `y`.
+- Esc closes the screen.
+
+Any service that works like the OpenAI API or the Anthropic API will do. If the
+server answers but has no models yet (for example a 9router dashboard that is
+still empty), the provider is still saved with an empty list and Lumitome warns
+you instead of failing. The models show up once you add them in the dashboard.
+
+### 9router
+
+For a local 9router, pick the **9router preset** on the provider screen (Tab to
+it, then Enter). It fills in the name and the local address
+`http://127.0.0.1:20128/v1`, so you only type the API key. The same preset works
+without the screen:
 
 ```bash
-lumitome connect
+lumitome connect --preset 9router --key-env NINEROUTER_API_KEY
 ```
 
-(`lumitome provider` does the same.)
+If 9router answers **403**, or your account is **"not eligible"** for
+Antigravity / Gemini Code Assist (stale OAuth credentials, stuck phone
+verification), the external tool
+[antigravity-fixer](https://github.com/fulldiagnose/antigravity-fixer)
+(Python 3.10+, MIT) diagnoses and fixes those eligibility errors. Clone it, run
+`pip install -r requirements.txt`, and follow its README. 
+**Read the tool before running it.** It touches OAuth credentials, so never run
+it blind.
 
-Choose OpenAI or Anthropic (compatible), then fill in a name, the base URL, and your API key. The key shows as dots (•) while you type or paste it. Press Enter to save. Lumitome looks up the provider's models and tells you how many it found. Pick one with `/model`. To remove a saved provider, move to it and press Del, then `y`. Esc closes the screen.
-
-For a local 9router, pick the **9router preset** on that screen (Tab to it, Enter) — it fills in the name and the local address `http://127.0.0.1:20128/v1`; you only type the API key. The same preset works without the screen: `lumitome connect --preset 9router --key-env NINEROUTER_API_KEY`.
-
-If 9router answers **403** or your account is **"not eligible"** for Antigravity / Gemini Code Assist (stale OAuth credentials, phone verification stuck), the external tool [antigravity-fixer](https://github.com/fulldiagnose/antigravity-fixer) (Python 3.10+, MIT) diagnoses and fixes those eligibility errors: clone it, `pip install -r requirements.txt`, and follow its README. **Read the tool before running it — it touches OAuth credentials; never run it blind.**
-
-Any service that works like the OpenAI API or the Anthropic API will do. If the server answers but has no models yet (for example a 9router dashboard that is still empty), the provider is still saved with an empty list and Lumitome warns you instead of failing — the models show up on their own once you add them in the dashboard, thanks to the automatic refresh.
-
-Other provider commands:
+### Other provider commands
 
 - `lumitome connect --text` asks the same questions as plain text prompts.
-- If symbols look broken in an old Windows console, run with `LUMI_ASCII=1`.
-
 - `lumitome connect --list` shows your providers.
 - `lumitome connect --remove <name>` removes one.
-- `lumitome models --refresh` looks up the model list again. Since v0.3.38 the list is also refreshed automatically every time you start `lumitome` (or `lumitome run`), so a provider you add in your 9router dashboard shows up without a manual refresh. If the refresh fails (for example 9router is down), the last known list is kept and startup continues. To turn the automatic refresh off: `LUMI_AUTO_REFRESH=0`.
+- `lumitome models --refresh` looks up the model list again (see
+  [Model list](#model-list)).
+- If symbols look broken in an old Windows console, run with `LUMI_ASCII=1`.
 
-Your keys are saved in `~/.lumitome/credentials.json`. Only your user can read that file, and Lumitome never prints the keys.
+Your keys are saved in `~/.lumitome/credentials.json`. Only your user can read
+that file, and Lumitome never prints the keys.
 
 To run one task without the interactive screen:
 
@@ -120,58 +166,169 @@ lumitome run "fix the failing tests"
 
 ### What is turned on for you
 
-- **A main helper that hands work to specialists.** When you open `lumitome`, you talk to a coordinator. It passes each job to the right specialist (coding, research, writing, or security) and checks the result. `lumitome run` uses the plain worker, which is the safest choice when nobody is watching. To pick a different one, set `LUMI_AGENT`, for example `LUMI_AGENT=build lumitome`.
-- **Auto mode is on by default.** When you open `lumitome` (or run `lumitome run`), the agent works on its own without asking you to approve every step — you can leave it running overnight, just like plain `opencode --auto`. Things that are blocked stay blocked (secrets, destructive commands, pushing to main). To turn it off for one run: `LUMI_AUTO_MODE=0 lumitome` or `lumitome --no-auto`.
-- **Two tool servers.** Code memory (`codemem`, only inside a git repo) and one `skills` server that covers every sector: coding, research, writing, security, finance, and media. Each sector agent can only search its own sector. Pick servers with `LUMI_MCP`, for example `LUMI_MCP=skills`.
-- **Code memory.** Lumitome remembers how your project fits together, so it finds the right files faster. The first time you open Lumitome in a project folder, it reads the project quietly in the background. You can keep working while it does. It skips your home folder, system folders, and folders that do not look like a project. To turn this off: `LUMI_AUTO_INDEX=0`. The index is refreshed automatically when the project changes (new commit or edited files); to force a re-index by hand: `lumitome index --refresh`.
+- **A coordinator that hands work to specialists.** When you open `lumitome`,
+  you talk to a coordinator (the orchestrator agent). It passes each job to the
+  right specialist (coding, research, writing, or security) and checks the
+  result. `lumitome run` uses the plain worker instead, which is the safer
+  choice when nobody is watching. To pick a different agent, set `LUMI_AGENT`,
+  for example `LUMI_AGENT=build lumitome`.
+- **Auto mode.** The agent works on its own without asking you to approve every
+  step, like plain `opencode --auto`. Blocked actions stay blocked (see
+  [Safety model](#safety-model)). To turn it off for one run:
+  `LUMI_AUTO_MODE=0 lumitome` or `lumitome --no-auto`.
+- **Two tool servers.** Code memory (`codemem`, only inside a git repo) and one
+  `skills` server that covers every sector. Each sector agent can only search
+  its own sector. Pick servers with `LUMI_MCP`, for example `LUMI_MCP=skills`.
+- **Code memory.** Lumitome remembers how your project fits together, so it
+  finds the right files faster. The first time you open Lumitome in a project
+  folder, it reads the project in the background while you keep working. It
+  skips your home folder, system folders, and folders that do not look like a
+  project. The index refreshes when the project changes (a new commit or edited
+  files). Force a re-index with `lumitome index --refresh`; turn it off with
+  `LUMI_AUTO_INDEX=0`.
+
+## Safety model
+
+Lumitome's defaults favor getting work done without interruptions. Know what
+that means before you leave it running unattended.
+
+**What is on by default:**
+
+- **Auto mode.** The agent runs commands and edits files without asking first.
+- **No sandbox.** Since v0.3.71 commands can read and write anywhere your user
+  can, like plain OpenCode. On Linux you can opt into the `bwrap` container with
+  `LUMI_SANDBOX=bwrap`.
+
+Together, these mean a wrong command runs without a prompt. The guard rules
+below are the protection that remains.
+
+**What is always blocked**, in every mode:
+
+- **Secrets stay hidden.** The agent cannot read `.env` files, `~/.ssh`,
+  `~/.gnupg`, `~/.aws`, `~/.azure`, `~/.kube`, `~/.config/gcloud`, keyrings,
+  browser profiles and cookies, or `~/.lumitome/credentials.json`, and it will
+  not send them anywhere.
+- **Risky actions are stopped.** Examples: deleting files outside your project,
+  pushing to the `main` branch, and running local `sudo`.
+- **SSH only with a deploy key.** SSH to your own server works with a dedicated
+  deploy key (`lumitome trust --deploy-key`).
+
+**Other safeguards:**
+
+- **It checks its work before saying "done".** It looks at the real result of
+  the last test run. If the tests failed, the task is not done.
+- **It does not trust a project's own settings.** Plugins and settings that come
+  with a cloned project are ignored unless you set `LUMI_TRUST_PROJECT=1`. In a
+  terminal you must then type `ya` every session. That approval is logged to the
+  journal and is never permanent. A non-interactive run logs a hard warning
+  instead.
+- **It leaves your own OpenCode alone.** Lumitome keeps its own copy of OpenCode
+  in `~/.lumitome`. It does not read or change your OpenCode settings, sessions,
+  or saved logins. It also uses its own background server port, so it works
+  even while your own `opencode serve --service` is running.
+
+**Safer setup for unattended runs:** `LUMI_AUTO_MODE=0` (or `--no-auto`), plus
+`LUMI_SANDBOX=bwrap` on Linux.
 
 ## Updating
 
 ```bash
 lumitome update --check     # is there a newer version?
 lumitome update             # install it
-lumitome update --rollback  # go back to the version you had before
+lumitome update --rollback  # go back to the version you had before (git installs only)
 ```
 
-This works the same for npm installs: `lumitome update` runs npm for you. You see one status line while it works and one line when it is done. If something goes wrong you get a short message; the full details are in `~/.lumitome/logs/update.log` (Windows: `%USERPROFILE%\.lumitome\logs\update.log`), or add `--verbose` to see them on screen. After updating, Lumitome stops its old background service so the next start uses the new version. `--rollback` is only for git installs. On npm installs, the version check no longer needs Git: if `git` is missing, Lumitome falls back to the GitHub API to find the latest release (if that fails too, the message says Git is missing and shows the manual install command).
+Updates always move to a release tag. This works the same for npm installs:
+`lumitome update` runs npm for you. You see one status line while it works and
+one line when it is done. If something goes wrong you get a short message. The
+full details are in `~/.lumitome/logs/update.log`
+(Windows: `%USERPROFILE%\.lumitome\logs\update.log`), or add `--verbose` to see
+them on screen.
 
-Lumitome does not update itself. It only updates when you run `lumitome update`. That command does not change the OpenCode version. To upgrade the OpenCode engine itself, run `lumitome upgrade` — no arguments, it installs the pinned version (2.3.0) and verifies its checksum for you. (`lumitome upgrade-engine <version> --sha256 <hash>` is still there for manual/advanced use.) Restart the TUI after an engine upgrade so the new engine takes effect. On v0.3.1, which has no `update` command, run the install line again once.
+After updating, Lumitome stops its old background service so the next start
+uses the new version. On npm installs the version check does not need Git: if
+`git` is missing, Lumitome asks the GitHub API for the latest release. If that
+fails too, the message says Git is missing and shows the manual install command.
+
+Lumitome never updates itself; it only updates when you run `lumitome update`.
+On v0.3.1, which has no `update` command, run the install line again once.
+
+### Upgrading the OpenCode engine
+
+`lumitome update` does not change the OpenCode version. To upgrade the engine,
+run `lumitome upgrade` with no arguments. It installs the pinned version (2.3.0)
+and verifies its checksum. Restart the TUI afterwards so the new engine takes
+effect. For manual or advanced use,
+`lumitome upgrade-engine <version> --sha256 <hash>` is still available.
 
 ### About the OpenCode copy
 
-Lumitome runs OpenCode 2.3.0. The only change we make to it is the logo on the start screen: it says LUMITOME in gold instead of "opencode". Everything else, including the colors, is plain OpenCode 2.3.0.
+The only change Lumitome makes to OpenCode 2.3.0 is the start-screen logo: it
+says LUMITOME in gold instead of "opencode". Everything else, including the
+colors, is plain OpenCode 2.3.0.
 
-We build it from the official 2.3.0 source with OpenCode's own build script. The change is in [`engine/patches/logo.patch`](engine/patches/logo.patch), and the files are on the [engine-2.3.0-lumi.1](https://github.com/fahmi0812/Lumitome/releases/tag/engine-2.3.0-lumi.1) release page with their SHA256 hashes. If you want the unchanged official OpenCode instead, set `LUMI_ENGINE=upstream` before you install or run Lumitome.
+It is built from the official 2.3.0 source with OpenCode's own build script.
+The change is in [`engine/patches/logo.patch`](engine/patches/logo.patch), and
+the files are on the
+[engine-2.3.0-lumi.1](https://github.com/fahmi0812/Lumitome/releases/tag/engine-2.3.0-lumi.1)
+release page with their SHA256 hashes. To use the unchanged official OpenCode
+instead, set `LUMI_ENGINE=upstream` before you install or run Lumitome.
 
 ### Background service
 
-The first time you open `lumitome`, it starts a background service. Later windows and other folders reuse it, so they open faster. It restarts by itself when your config, provider keys, or Lumitome version change.
+The first time you open `lumitome`, it starts a background service. Later
+windows and other folders reuse it, so they open faster. It restarts by itself
+when your config, provider keys, or Lumitome version change.
 
 ```bash
 lumitome service status   # is it running?
 lumitome service stop     # stop it (it starts again next time you open lumitome)
 ```
 
-This only touches Lumitome's own service. An OpenCode service you run yourself is left alone.
+This only touches Lumitome's own service. An OpenCode service you run yourself
+is left alone.
 
 ### Model list
 
-Models from a provider are saved when you add it with `lumitome connect`. Since v0.3.38 the list is refreshed automatically every time you start `lumitome` (or `lumitome run`), so a model your provider adds later — for example a new upstream connection in your 9router dashboard — shows up on its own. If the automatic refresh fails, the last known list is kept. If a refresh finds no models at all, the last known list is kept too (an empty answer never wipes the models you already had). To refresh by hand, or turn the automatic refresh off:
+Models are saved when you add a provider with `lumitome connect`. Since v0.3.38
+the list is also refreshed every time you start `lumitome` (or `lumitome run`),
+so a model your provider adds later shows up on its own. For example, a new
+upstream connection in your 9router dashboard.
+
+If the refresh fails (for example 9router is down), or finds no models at all,
+the last known list is kept and startup continues. An empty answer never wipes
+the models you already had.
 
 ```bash
-lumitome models --refresh
-LUMI_AUTO_REFRESH=0 lumitome
+lumitome models --refresh     # refresh by hand
+lumitome models --lumitome    # show the saved list (refreshes first)
+LUMI_AUTO_REFRESH=0 lumitome  # turn the automatic refresh off
 ```
 
-A running TUI session does not pick up new models until you restart it — the model list is loaded when the TUI starts. Inside the TUI, `/refresh-models` refreshes the list and reminds you to restart. To see the saved list, `lumitome models --lumitome` (it refreshes first, like startup does).
+A running TUI session does not pick up new models until you restart it, because
+the model list is loaded when the TUI starts. Inside the TUI,
+`/refresh-models` refreshes the list and reminds you to restart.
 
-In the TUI (orchestrator agent), `/subagent` opens a popup to configure role delegation for the task: which 9router model each of the four roles uses (Thinking, Search, Build, Review — always all active, no per-role on/off), and serial/parallel mode. The popup is a real TUI plugin dialog (`lumitome/config/plugins/subagent/`, Stage A sequential selects by default; `/subagent tabel` opens the one-screen roles × model table, Stage B — arrow keys + Enter, Ctrl+S saves, Esc cancels; the [✓] on each row is just a visual marker that the role is active). Saving also switches the current session's model to the Thinking role's model, so the status line shows the model you picked as Thinking. New sessions created afterwards start with the Thinking model too (the wrapper's TUI default follows the preset, and the server plugin also switches them on `session.created`, unless the session was created with an explicit model (subagent children are switched to their role's preset model instead — v0.3.76)). After saving, one final choice asks whether to enter subagent mode now: "Ya, mulai" opens a new subagent session with the Thinking model (or switches the active session to it in place, no TUI restart) while "Simpan saja" only saves the configuration. A short confirmation (mode + role order + Thinking model + task, at most two lines) is sent to the session only if it was already running before the save; a newly created session gets no injected message at all — it reads the configuration from the "Konfigurasi aktif" block in `.opencode/rules/subagent.md` instead. The full delegation rules (role order, BLOCKED protocol, two-axis review) live in `.opencode/rules/subagent.md` — not in an injected prompt — gated by the "Mode /subagent saat ini" line in `.opencode/agents/orchestrator.md`, which is kept in sync by `lumitome subagent-preset` (serial/parallel when on, OFF when off); the same command also keeps the "Konfigurasi aktif" block (role→model mapping + order + mode) in sync. The choice is saved to `~/.lumitome/lumitome-subagent.json` (the repo file `.opencode/lumitome-subagent.json` is only the default seed — it is copied there once on first use and never overwritten by updates) and applied with `lumitome subagent-preset`; mode choices apply immediately; role model choices apply immediately to subagent children created afterwards (the server plugin switches them on `session.created`, v0.3.76), and to new main sessions from the next TUI session (same restart rule as above). Workers never ask you questions directly — if one gets stuck it reports BLOCKED to the orchestrator instead. `/subagent off` disables the role system entirely (no popup, the orchestrator works as before without role delegation); `/subagent on` re-enables it. Default is on — a fresh install behaves exactly as before /subagent existed (dormant until called). Headless (`lumitome run`) has no popup: manage roles with `lumitome subagent-preset status|on|off`.
+### Role delegation (`/subagent`)
 
-Delegation is enforced in plugin code, not just requested in a rules file (v0.3.70, after the Claude Code deep-dive): while subagent mode is on, the server plugin removes the orchestrator's direct tools (edit/write/shell/execute and friends) from every model request and denies them in the orchestrator's permissions, so the only executable path is the built-in `subagent` tool; a short delegation protocol (role table by task verb) is injected into every model call, and a guard rejects any direct mutating call that still slips through. Role descriptions are trigger-first ("Pemicu: …") and mutually exclusive. Delegation is measured: the plugin appends per-call and per-turn records to `$LUMI_HOME/subagent-metrics.jsonl`; `node scripts/subagent-metrics.mjs` summarizes delegation rate per session. There is deliberately no automatic re-drive when a turn ends without delegating — OpenCode 2.3.0 has no blocking Stop hook, and an event-driven re-prompt would race user input. Set `LUMI_SUBAGENT_DEBUG=1` to log hook event shapes into the same metrics file.
+In the TUI (orchestrator agent), `/subagent` opens a plugin popup where you
+choose which 9router model each of the four roles uses (Thinking, Search,
+Build, Review) and whether they run serial or parallel. `/subagent tabel` shows
+the same choices as one table. `/subagent off` disables the role system, and
+`/subagent on` turns it back on. Default is on, but it stays dormant until you
+call it.
+
+While it is on, delegation is enforced in plugin code: the orchestrator loses
+its direct edit and shell tools and can only work through the roles.
+
+Full details (saving, when changes apply, where settings live, enforcement,
+metrics): [`docs/SUBAGENT.md`](docs/SUBAGENT.md).
 
 ### Windows: optional Defender exclusion
 
-Windows Defender scans programs each time they start, which can add a few seconds when Lumitome opens. If you trust this install, you can exclude its folder (run PowerShell as administrator):
+Windows Defender scans programs each time they start, which can add a few
+seconds when Lumitome opens. If you trust this install, you can exclude its
+folder (run PowerShell as administrator):
 
 ```powershell
 Add-MpPreference -ExclusionPath "$env:USERPROFILE\.lumitome\bin"
@@ -179,24 +336,17 @@ Add-MpPreference -ExclusionPath "$env:USERPROFILE\.lumitome\bin"
 
 This is optional. Skip it if you are not sure.
 
-## What it does differently
-
-- **It asks before risky actions, not before every step.** For example, deleting files outside your project, or pushing to the `main` branch, is stopped.
-- **It keeps your secrets in.** It will not read `.env` files or other secret files, and it will not send them anywhere.
-- **It checks its work before saying "done".** It looks at the real result of the last test run. If the tests failed, the task is not done.
-- **It leaves your own OpenCode alone.** Lumitome keeps its own copy of OpenCode in `~/.lumitome`. It does not read or change your OpenCode settings, sessions, or saved logins.
-- **It does not trust a project's own settings by default.** Plugins and settings that come with a cloned project are ignored unless you turn them on with `LUMI_TRUST_PROJECT=1` — in a terminal you must type `ya` every session (logged to the journal, never a permanent approval); a non-TTY run logs a hard warning instead.
-- **Commands can read and write anywhere, like plain OpenCode.** Since v0.3.71 there is no sandbox and no read/write directory limit by default (opt in with `LUMI_SANDBOX=bwrap` on Linux). Trade-off, stated honestly: more freedom, less protection against destructive commands. Secret folders stay hidden: `~/.ssh`, `~/.gnupg`, `~/.aws`, `~/.azure`, `~/.kube`, `~/.config/gcloud`, keyrings, browser profiles and cookies, `~/.lumitome/credentials.json`, and `.env` files. SSH to your own server works with a dedicated deploy key (`lumitome trust --deploy-key`); local `sudo` is always blocked.
-
 ## Uninstall
 
 ```bash
 bash ~/.lumitome/src/install.sh --uninstall
 ```
 
-This removes `~/.lumitome` and the `lumitome` command. Nothing else is touched. Like installing, it shows one status line and one line when it is done.
+This removes `~/.lumitome` and the `lumitome` command. Nothing else is touched.
+Like installing, it shows one status line and one line when it is done.
 
-If you installed with npm: `npm uninstall -g lumitome`, then delete the `.lumitome` folder in your home folder.
+If you installed with npm: run `npm uninstall -g lumitome`, then delete the
+`.lumitome` folder in your home folder.
 
 ## For contributors
 
@@ -207,28 +357,75 @@ npm run validate
 npm run lint
 ```
 
-Lint gate (`scripts/lint.mjs`, zero-dependency, non-interactive — it never reads stdin or asks anything): LINT-001 no hardcoded catalog counts (`.length ===/!==` a literal ≥ 10 — count dynamically, lesson of v0.3.47); LINT-002 no `process.exit` in `lumitome/lib/` (allowlist with reasons: `codemem-mcp-shim.mjs`, `provider-ui.mjs`); LINT-003 no `console.*(` calls in `lumitome/lib/`; LINT-004 layer boundaries (router/ imports nothing outside itself; `harness/lumi-guard.mjs` imports only `node:*`). `npm run validate` runs lint fail-closed. Principle: a new correction becomes a lint rule, not a new skill or prompt addition.
+CI (`.github/workflows/ci.yml`) runs lint, `validate:offline`, and the tests on
+every push to `main` and every pull request.
 
-Releasing a new version: bump with `node scripts/bump-version.mjs <x.y.z> "<title>"`, fill in the CHANGELOG entry (never leave the `- TODO: isi catatan rilis` placeholder), then run the release gate: `node scripts/release.mjs <x.y.z> [--include <file> ...]`. It checks the changelog, git status, `npm run validate`, `npm test` (refusing to release when tests are skipped unless `--allow-skipped "reason"` is given), and a pre-tag updater check in a staging copy. It never commits, tags, or pushes — those steps are printed at the end for a human. The full updater simulation can only run after the tag exists; its command is printed by the gate.
+**Lint gate.** `scripts/lint.mjs` has no dependencies and never asks anything.
+Its rules:
 
-More detail: [`lumitome/README.md`](lumitome/README.md) (all commands and settings), [`ARCHITECTURE.md`](ARCHITECTURE.md), [`CHANGELOG.md`](CHANGELOG.md).
+- LINT-001: no hardcoded catalog counts (`.length ===/!==` a literal ≥ 10).
+  Count dynamically (lesson of v0.3.47).
+- LINT-002: no `process.exit` in `lumitome/lib/`, except an allowlist with
+  reasons (`codemem-mcp-shim.mjs`, `provider-ui.mjs`).
+- LINT-003: no `console.*(` calls in `lumitome/lib/`.
+- LINT-004: layer boundaries. `router/` imports nothing outside itself, and
+  `harness/lumi-guard.mjs` imports only `node:*`.
+
+`npm run validate` runs lint and fails if lint fails. Principle: a new
+correction becomes a lint rule, not a new skill or prompt addition.
+
+**Releasing a new version.**
+
+1. Bump with `node scripts/bump-version.mjs <x.y.z> "<title>"`.
+2. Fill in the CHANGELOG entry. Never leave the `- TODO: isi catatan rilis`
+   placeholder.
+3. Run the release gate: `node scripts/release.mjs <x.y.z> [--include <file> ...]`.
+   It checks the changelog, git status, `npm run validate`, and `npm test`
+   (it refuses to release when tests are skipped unless you pass
+   `--allow-skipped "reason"`), and runs a pre-tag updater check in a staging
+   copy.
+4. Commit, then **push the `v<x.y.z>` tag.** The gate never commits, tags, or
+   pushes; it prints those steps for you. The installer and `lumitome update`
+   only see versions that have a tag, so an untagged version never reaches
+   users.
+
+The full updater simulation can only run after the tag exists; the gate prints
+its command.
+
+More detail: [`lumitome/README.md`](lumitome/README.md) (all commands and
+settings), [`ARCHITECTURE.md`](ARCHITECTURE.md), [`CHANGELOG.md`](CHANGELOG.md)
+(older versions in [`docs/changelog/`](docs/changelog/)).
 
 ## Bahasa Indonesia
 
-Lumitome adalah asisten coding yang berjalan di terminal. Dibangun di atas OpenCode versi 2.3.0 yang dikunci, dan terpisah dari OpenCode yang sudah Anda pasang.
+Lumitome adalah asisten coding yang berjalan di terminal. Dibangun di atas
+OpenCode versi 2.3.0 yang dikunci, dan terpisah dari OpenCode yang sudah Anda
+pasang.
 
-**Pasang:** Linux/macOS: jalankan baris `curl ... install.sh | bash` di atas. Windows (atau OS apa pun yang punya npm): `npm install -g https://github.com/fahmi0812/Lumitome/tarball/main` (butuh Node.js 22.6+). Setelah terbit di npm: `npm install -g lumitome`.
+**Pasang** (selalu memasang rilis bertag, bukan isi `main`):
 
-**Mulai:** ketik `lumitome`. Kalau belum ada provider, layar provider muncul sendiri (buka lagi dengan `lumitome provider`). Isi nama, alamat (base URL), dan API key; key tampil sebagai titik (•). Layanan apa pun yang mirip API OpenAI atau Anthropic bisa dipakai. Daftar model diambil otomatis. Pilih model dengan `/model`.
+- Linux/macOS: jalankan baris `curl ... install.sh | bash` di atas. Versi
+  tertentu: `LUMI_REF=v0.3.79 bash`; versi pengembangan: `LUMI_REF=main bash`.
+- Windows (atau OS apa pun yang punya npm, butuh Node.js 22.6+):
+  `npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.82.tar.gz`.
+  Setelah terbit di npm: `npm install -g lumitome`.
 
-**Update:** `lumitome update` (instalasi npm: jalankan lagi `npm install -g https://github.com/fahmi0812/Lumitome/tarball/main`). Cek dulu dengan `lumitome update --check`. Batalkan dengan `lumitome update --rollback`. **Upgrade engine:** `lumitome upgrade` (tanpa argumen — naikkan engine OpenCode ke versi terpin, checksum terverifikasi otomatis; restart TUI sesudahnya).
+**Mulai:** ketik `lumitome`. Kalau belum ada provider, layar provider muncul
+sendiri (buka lagi dengan `lumitome provider`). Isi nama, alamat (base URL), dan
+API key; key tampil sebagai titik (•). Layanan apa pun yang mirip API OpenAI
+atau Anthropic bisa dipakai. Daftar model diambil otomatis. Pilih model dengan
+`/model`.
 
-**Bedanya:**
+**Update:** `lumitome update`. Cek dulu dengan `lumitome update --check`, batalkan
+dengan `lumitome update --rollback`. **Upgrade engine:** `lumitome upgrade` (tanpa
+argumen; menaikkan engine OpenCode ke versi terpin dengan checksum terverifikasi;
+restart TUI sesudahnya).
 
-- Hanya bertanya atau berhenti sebelum tindakan berbahaya.
-- Tidak membaca atau membocorkan file `.env` dan file rahasia lain.
-- Memeriksa hasil tes sebelum bilang "selesai".
-- Tidak menyentuh pengaturan dan data OpenCode milik Anda.
+**Keamanan:** secara default mode auto menyala dan sandbox mati, jadi agen
+menjalankan perintah tanpa bertanya. Yang selalu diblokir: membaca `.env` dan
+file rahasia lain, menghapus file di luar proyek, push ke `main`, dan `sudo`
+lokal. Untuk dijalankan tanpa diawasi, pakai `LUMI_AUTO_MODE=0` dan (di Linux)
+`LUMI_SANDBOX=bwrap`.
 
 **Hapus:** `bash ~/.lumitome/src/install.sh --uninstall`.
 
@@ -237,6 +434,14 @@ Lumitome adalah asisten coding yang berjalan di terminal. Dibangun di atas OpenC
 MIT. See [`LICENSE`](LICENSE).
 
 - Based on [fahmi0812/Swanwright](https://github.com/fahmi0812/Swanwright) (MIT).
-- Uses [OpenCode](https://github.com/anomalyco/opencode) (MIT). It is downloaded during install, not copied into this repo. Our build changes only the start-screen logo ([`engine/patches/logo.patch`](engine/patches/logo.patch)).
-- The built-in rules are written in our own words, based on: multica-ai/andrej-karpathy-skills, obra/superpowers, poteto/noodle, unicodef1wn/grokbot-field-notes, qkal/Canny, affaan-m/ECC, alvinunreal/oh-my-opencode-slim (all MIT), and google/elephant-goldfish-model (Apache-2.0). Full list with versions: [`docs/RULES.md`](docs/RULES.md).
+  Some internal names (the `swanwright` plugin id, `SW_*` variables, and the
+  `swanwright_*` skill metadata keys) still come from it.
+- Uses [OpenCode](https://github.com/anomalyco/opencode) (MIT). It is downloaded
+  during install, not copied into this repo. Our build changes only the
+  start-screen logo ([`engine/patches/logo.patch`](engine/patches/logo.patch)).
+- The built-in rules are written in our own words, based on:
+  multica-ai/andrej-karpathy-skills, obra/superpowers, poteto/noodle,
+  unicodef1wn/grokbot-field-notes, qkal/Canny, affaan-m/ECC,
+  alvinunreal/oh-my-opencode-slim (all MIT), and google/elephant-goldfish-model
+  (Apache-2.0). Full list with versions: [`docs/RULES.md`](docs/RULES.md).
 - Third-party skills and their licenses: [`NOTICE.md`](NOTICE.md).

@@ -122,14 +122,6 @@
       "original_name": "ask-sonner"
     },
     {
-      "id": "banner-design-2",
-      "mirror_of": "banner-design"
-    },
-    {
-      "id": "brand-2",
-      "mirror_of": "brand"
-    },
-    {
       "id": "break-ui",
       "name": "break-ui",
       "sektor": "coding",
@@ -145,14 +137,6 @@
       "license": "",
       "original_id": "emilkowalski-skills__break-ui",
       "original_name": "break-ui"
-    },
-    {
-      "id": "design-2",
-      "mirror_of": "design"
-    },
-    {
-      "id": "design-system-2",
-      "mirror_of": "design-system"
     },
     {
       "id": "diagram-skill",
@@ -325,102 +309,6 @@
       "original_name": "gsap-utils"
     },
     {
-      "id": "impeccable-10",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-11",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-12",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-13",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-14",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-15",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-16",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-17",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-18",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-19",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-2",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-20",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-21",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-22",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-23",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-24",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-25",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-3",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-4",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-5",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-6",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-7",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-8",
-      "mirror_of": "impeccable"
-    },
-    {
-      "id": "impeccable-9",
-      "mirror_of": "impeccable"
-    },
-    {
       "id": "improve-animations",
       "name": "improve-animations",
       "sektor": "coding",
@@ -557,10 +445,6 @@
       "original_name": "scroll-world"
     },
     {
-      "id": "slides-2",
-      "mirror_of": "slides"
-    },
-    {
       "id": "teardown",
       "name": "teardown",
       "sektor": "coding",
@@ -576,10 +460,6 @@
       "license": "MIT",
       "original_id": "elvarofficial-teardown__teardown",
       "original_name": "teardown"
-    },
-    {
-      "id": "ui-styling-2",
-      "mirror_of": "ui-styling"
     },
     {
       "id": "write-swift",
