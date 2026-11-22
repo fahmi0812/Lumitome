@@ -13,6 +13,27 @@ import { checkVersionConsistency } from "../scripts/version-check.mjs";
 import { checkSkillsDir, checkConfig, checkAgents, checkPlugins, NAME_RE } from "../scripts/check-opencode.mjs";
 import { evaluateOsv, evaluateGitleaks, runScanGate, runSecretScanGate, checkDiffScope, PINNED } from "../harness/scan-gate.ts";
 
+// Salinan kerja repo untuk gate e2e. Jalur utama: hardlink (cp -al) — murah,
+// tidak menggandakan byte. Tapi hardlink tidak bisa melintasi batas
+// mount/filesystem (EXDEV): saat repo ter-mount terpisah dari induknya
+// (sandbox/CI), `cp -al` ke `../tmp` gagal dan membanjiri stderr dengan
+// "Invalid cross-device link" sampai execFileSync pecah ENOBUFS. Karena itu:
+// spawnSync + stdio "ignore" (tanpa pipe → tak ada ENOBUFS); bila hardlink
+// gagal, fallback salin biasa (cp -a) tanpa .git agar tetap cepat (validate
+// hanya butuh file repo + node_modules, bukan direktori .git). Keduanya
+// --no-preserve=ownership karena chown bisa EPERM di FS yang menolak
+// preservasi ownership (badai EPERM 15 Nov 2026).
+function stageRepoCopy(tmp) {
+  const hard = cp.spawnSync("cp", ["-al", "--no-preserve=ownership", ".", tmp + "/"], { stdio: "ignore", timeout: 120000 });
+  if (hard.status === 0) return;
+  // Bersihkan sisa hardlink parsial lalu salin penuh (aman lintas-mount).
+  fs.rmSync(tmp, { recursive: true, force: true });
+  fs.mkdirSync(tmp, { recursive: true });
+  const entries = fs.readdirSync(".").filter((e) => e !== ".git");
+  const soft = cp.spawnSync("cp", ["-a", "--no-preserve=ownership", ...entries, tmp + "/"], { stdio: "ignore", timeout: 120000 });
+  if (soft.status !== 0) throw new Error(`stageRepoCopy gagal: cp -al status ${hard.status}, cp -a status ${soft.status}${soft.error ? " (" + soft.error.message + ")" : ""}`);
+}
+
 const blocked = evaluateDoneGate({
   commandExitCode: 0,
   expectedArtifacts: [],
@@ -204,6 +225,15 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
   const vd5 = mkVerDir({ changelog: "# Changelog\n\n## 0.3.47 — tes\n\n- TODO: isi catatan rilis\n" });
   ok("versi drift: CHANGELOG entri masih placeholder TODO -> error", checkVersionConsistency(vd5).some((e) => /TODO/.test(e)));
   fs.rmSync(vd5, { recursive: true, force: true });
+  // package-lock.json: cocok -> tanpa error; basi -> error (regresi v0.3.80/81:
+  // rilis manual meninggalkan lockfile di 0.3.79 dan tak ada gate yang menangkap).
+  const mkLock = (ver) => JSON.stringify({ name: "lumitome", version: ver, lockfileVersion: 3, packages: { "": { name: "lumitome", version: ver } } }, null, 1);
+  const vd6 = mkVerDir(); fs.writeFileSync(path.join(vd6, "package-lock.json"), mkLock("0.3.47"));
+  ok("versi konsisten: package-lock.json root cocok -> tanpa error", checkVersionConsistency(vd6).length === 0);
+  fs.rmSync(vd6, { recursive: true, force: true });
+  const vd7 = mkVerDir(); fs.writeFileSync(path.join(vd7, "package-lock.json"), mkLock("0.3.46"));
+  ok("versi drift: package-lock.json basi -> error menyebut package-lock.json", checkVersionConsistency(vd7).some((e) => /package-lock\.json/.test(e) && /0\.3\.46/.test(e)));
+  fs.rmSync(vd7, { recursive: true, force: true });
 
   // (4) detectVersionDrift (harness/doc-drift.ts): pasangan in-memory untuk done-gate/pelaporan
   ok("doc-drift versi: satu sumber basi -> finding menyebut sumbernya", detectVersionDrift({ VERSION: "0.3.47", "package.json": "0.3.47", README: "0.3.46", CHANGELOG: "0.3.47" }).some((f) => f.source === "README" && /0\.3\.46/.test(f.fact) && /0\.3\.47/.test(f.fact)));
@@ -252,9 +282,7 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
   const runValidateCopy = (withRegistry) => {
     const tmp = fs.mkdtempSync(path.join("..", "p22-e2e-"));
     try {
-      // --no-preserve=ownership: chown gagal (EPERM) di FS yang menolak preservasi ownership
-      // (badai EPERM 15 Nov 2026); kepemilikan salinan tidak relevan untuk validate.
-      cp.execFileSync("cp", ["-al", "--no-preserve=ownership", ".", tmp + "/"], { timeout: 120000 });
+      stageRepoCopy(tmp);
       addFixture(tmp, withRegistry);
       const r = cp.spawnSync(process.execPath, ["scripts/validate.mjs"], { cwd: tmp, encoding: "utf8", timeout: 120000 });
       return { status: r.status, out: (r.stdout || "") + (r.stderr || "") };
@@ -277,9 +305,7 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
   const runValidateCopy = ({ offline = false, withDeps = true, scrubPath = false, offlineEnv = false } = {}) => {
     const tmp = fs.mkdtempSync(path.join("..", "p23-val-"));
     try {
-      // --no-preserve=ownership: chown gagal (EPERM) di FS yang menolak preservasi ownership
-      // (badai EPERM 15 Nov 2026); kepemilikan salinan tidak relevan untuk validate.
-      cp.execFileSync("cp", ["-al", "--no-preserve=ownership", ".", tmp + "/"], { timeout: 120000 });
+      stageRepoCopy(tmp);
       if (!withDeps) fs.rmSync(path.join(tmp, "node_modules"), { recursive: true, force: true });
       const env = { ...process.env };
       if (scrubPath) { const empty = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-nobin-")); env.PATH = empty; }
