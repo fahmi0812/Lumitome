@@ -112,4 +112,30 @@ ok("ringkasan: skipped terhitung dari skip() (maks. 2 situs di seluruh file suit
     return sites === 2 && defs === 1;
   })());
 
+// --- v0.3.82: [FAIL] menunjukkan lokasi + sumber + detail; okEach menyebut bagian yang gagal ---
+{
+  const cp = await import("node:child_process");
+  const dir = fs.mkdtempSync(path.join(path.dirname(new URL(import.meta.url).pathname), "fixtures", "tmp-diag-"));
+  const f = path.join(dir, "suite-diag.mjs");
+  const rel = path.relative(dir, path.join(path.dirname(new URL(import.meta.url).pathname), "harness.mjs")).split(path.sep).join("/");
+  fs.writeFileSync(f, [
+    `import { ok, okEach, finish } from "${rel.startsWith(".") ? rel : "./" + rel}";`,
+    `const actual = { port: 49374 };`,
+    `ok("lolos", true);`,
+    `ok("gagal dengan detail",`,
+    `  actual.port === 1234 && true, () => actual);`,
+    `okEach("gagal bertahap", { "port benar": actual.port === 49374, "nama cocok": () => "a" === "b", "tidak melempar": () => { throw new Error("boom"); } });`,
+    `okEach("bertahap lolos", { a: true, b: () => 1 === 1 });`,
+    `finish();`,
+  ].join("\n"));
+  const r = cp.spawnSync(process.execPath, [f], { encoding: "utf8" });
+  fs.rmSync(dir, { recursive: true, force: true });
+  const err = r.stderr || "", outp = r.stdout || "";
+  ok("diag: [FAIL] mencetak file:baris panggilan ok() (bukan baris harness)", /\[FAIL\] gagal dengan detail\n    at \S*suite-diag\.mjs:4\n/.test(err), err);
+  ok("diag: [FAIL] mencetak potongan sumber asersi multi-baris", /ok\("gagal dengan detail", actual\.port === 1234 && true, \(\) => actual\);/.test(err), err);
+  ok("diag: detail fungsi dievaluasi hanya saat gagal dan dicetak", /detail: \{"port":49374\}/.test(err), err);
+  ok("diag: okEach menyebut label yang false + yang melempar, bukan yang benar", /gagal: nama cocok, tidak melempar \(melempar: boom\)/.test(err) && !/gagal: .*port benar/.test(err), err);
+  ok("diag: format [PASS]/ringkasan tetap + exit 1 bila ada gagal", /\[PASS\] lolos/.test(outp) && /\[PASS\] bertahap lolos/.test(outp) && /2 passed, 2 failed, 0 skipped/.test(outp) && r.status === 1, { status: r.status, outp });
+}
+
 finish();
