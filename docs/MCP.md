@@ -25,5 +25,5 @@ Pola tiap agent: `{"action":"*_*","effect":"deny"}` → `allow <server>_*` untuk
 | gw-&lt;sektor&gt; (6) | remote | **OFF** | `http://127.0.0.1:8811..8816/mcp` | sektornya saja | gateway opsional, lihat `docs/MCP-GATEWAY.md` |
 
 Tidak dipasang: Kali/offensive MCP, MCP trading (alpaca/ccxt/freqtrade) — `checkMcpPolicy` menolak.
-Rahasia: hanya `{env:NAME}` di config; nilai di `~/.swanwright/secrets.env` (chmod 600, di luar repo). `npm run validate` gagal bila ada token literal, `@latest`, paket tak dipin, figma/github/gateway enabled, atau Code Mode dimatikan.
+Rahasia: hanya `{env:NAME}` di config; nilai di `~/.lumitome/secrets.env` (chmod 600, di luar repo). `npm run validate` gagal bila ada token literal, `@latest`, paket tak dipin, figma/github/gateway enabled, atau Code Mode dimatikan.
 Code Mode (default v2) tetap aktif: tool diakses `tools.<server>.<tool>`; deny per tool tetap berlaku.
