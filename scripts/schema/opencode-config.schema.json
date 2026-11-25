@@ -331,9 +331,11 @@
           "additionalProperties": false
         },
         "buffer": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 9007199254740991
+          "description": "Share of the model's context window kept free (percent string, e.g. \"10%\" = compact at 90%), or a token count. Automatic compaction starts once the conversation reaches the rest.",
+          "anyOf": [
+            { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+            { "type": "string", "pattern": "^\\s*\\d+(\\.\\d+)?\\s*%\\s*$" }
+          ]
         },
         "prune": {
           "type": "boolean",

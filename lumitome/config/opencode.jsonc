@@ -13,7 +13,7 @@
       "models": { "ag/gemini-3.8-flash-high": { "name": "gemini-3.8-flash-high (9router)" } }
     }
   },
-  "compaction": { "auto": true, "keep": { "tokens": 24000 }, "buffer": 20000 },
+  "compaction": { "auto": true, "keep": { "tokens": 24000 }, "buffer": "10%" },
   "tool_output": { "max_lines": 400, "max_bytes": 16384 },
   "permissions": [
     { "action": "*", "resource": "*", "effect": "allow" },
