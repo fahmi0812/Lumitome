@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.83 — compaction: auto-compact di 90% jendela konteks
+
+- **Default auto-compact kini 90%.** `compaction.buffer` di config dasar berubah dari `20000` (token) menjadi `"10%"` — bagian jendela konteks yang disisakan kosong, jadi auto-compact mulai begitu percakapan mencapai 90% jendela (di 256K = 230.400 token). Sebelumnya buffer token tetap berarti ambang persennya berubah-ubah tiap model (di 256K baru mulai di 92,2%). `keep.tokens` tetap 24000.
+- **Skema + migrasi ikut.** `scripts/schema/opencode-config.schema.json` kini menerima buffer integer ATAU string persen (`"10%"`); migrasi config lama (`lumitome/lib/config-migrate.mjs`) mengubah nilai default lama (`"20%"` dan `20000`) menjadi `"10%"`, nilai pilihan user tidak disentuh. Tes diperbarui (+2 `ok()` di `tests/suite-providers.mjs`: migrasi 20000 → `"10%"` dan buffer user tidak disentuh).
+
 ## 0.3.82 — Audit: paket lebih kecil, instal ke rilis bertag, CI, dokumen rapi
 
 - **Instal memasang rilis, bukan ujung `main`.** `install.sh` mode remote (`curl | bash`) kini mencari tag `vX.Y.Z` tertinggi (git `ls-remote`, atau GitHub API `releases/latest` tanpa git) lalu `git clone --branch <tag>` / tarball `archive/refs/tags/<tag>.tar.gz`. `LUMI_REF` menimpa (tag lain, atau `main` untuk versi pengembangan). Gagal menentukan rilis: instalasi baru berhenti jelas dengan saran `LUMI_REF`; instalasi lama lanjut dengan sumber lama + WARN. README: semua baris `npm install -g` memakai URL tag. +6 tes installer.
