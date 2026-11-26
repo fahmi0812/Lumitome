@@ -196,6 +196,7 @@ permissions:
   - { action: "skill", resource: "mcp-builder", effect: allow }
   - { action: "skill", resource: "mobile-native", effect: allow }
   - { action: "skill", resource: "mod-any-game", effect: allow }
+  - { action: "skill", resource: "modern-web-guidance", effect: allow }
   - { action: "skill", resource: "mongodb-ops", effect: allow }
   - { action: "skill", resource: "naming-refactor", effect: allow }
   - { action: "skill", resource: "next", effect: allow }

@@ -2,7 +2,7 @@
 
 <!-- File ini dibangkitkan oleh scripts/gen-catalog.mjs dari router/skills-registry.json. Jangan edit manual: jalankan `npm run skills:catalog`. -->
 
-Total 930 skill di registry. 764 bisa di-route; 166 (pack red-team) disabled.
+Total 931 skill di registry. 765 bisa di-route; 166 (pack red-team) disabled.
 
 Folder skill aktif ada di `.opencode/skills/`, skill pack di `packs/<pack>/skills/`. Keduanya satu korpus yang di-route lewat `skill_search` (lihat [`ROUTING.md`](ROUTING.md)). Lisensi dan atribusi per sumber: [`NOTICE.md`](../NOTICE.md).
 
@@ -10,7 +10,7 @@ Folder skill aktif ada di `.opencode/skills/`, skill pack di `packs/<pack>/skill
 
 | pack | skill | sektor |
 |---|---|---|
-| (folder aktif) | 156 | coding 94, finance 4, media 5, penulisan 14, riset 5, security 34 |
+| (folder aktif) | 157 | coding 95, finance 4, media 5, penulisan 14, riset 5, security 34 |
 | `3d` | 96 | media 96 |
 | `cad` | 30 | coding 30 |
 | `career-extra` | 2 | penulisan 2 |
@@ -134,6 +134,7 @@ Kolom sumber, SHA, dan lisensi kosong (—) bila frontmatter skill pack tidak me
 | `loopdesign` | fahmi0812/Lumitome | `bcfe239b105e` | MIT | coding | active | — | `lumitome__loopdesign` |
 | `magic-ui` | magicuidesign/magicui | `2712647e1932` | MIT | coding | active | — | `magicuidesign-magicui__magic-ui` |
 | `mcp-builder` | anthropics/skills | `2c5958ecac7c` | PER-SKILL | coding | active | — | `anthropics-skills__mcp-builder` |
+| `modern-web-guidance` | GoogleChrome/modern-web-guidance | `2b4aa13a72dd` | Apache-2.0 | coding | active | — | `googlechrome-modern-web-guidance__modern-web-guidance` |
 | `mongodb-ops` | fahmi0812/SuperQuantumAGI | `2b97a157f488` | MIT | coding | active | — | `swanwright__mongodb-ops` |
 | `motion-design` | whaleyxbt/claude-motion | `e627941543d9` | MIT | media | active | — | `whaleyxbt-claude-motion__motion-design` |
 | `naming-refactor` | PaulRBerg/agent-skills | `d9d87d04cd9b` | MIT | coding | active | — | `PaulRBerg-agent-skills__naming-refactor` |
