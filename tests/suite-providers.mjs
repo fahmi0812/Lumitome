@@ -48,6 +48,66 @@ import { ok, finish } from "./harness.mjs";
 }
 
 {
+  // v0.3.85: limit model dari 9router diteruskan ke engine — tanpa limit.context,
+  // engine default context 0 → ceiling auto-compact = Infinity → auto-compact
+  // proaktif tidak pernah terpicu (hanya /compact manual / overflow). Bentuk
+  // /v1/models 9router (terverifikasi: decolua/9router capabilities.js + desain
+  // live natively-cluely): capabilities.contextWindow/maxOutput + top-level
+  // context_length/max_completion_tokens.
+  const os = await import("node:os"), http = await import("node:http");
+  let mode = "full";
+  const srv = http.createServer((q, r) => { r.setHeader("content-type", "application/json");
+    if (q.url === "/v1/models" && q.headers.authorization === "Bearer k9") {
+      if (mode === "nolimit") return r.end(JSON.stringify({ data: [{ id: "ag/gemini-3.8-flash-high" }, { id: "plain-model" }] }));
+      return r.end(JSON.stringify({ data: [
+        { id: "ag/gemini-3.8-flash-high", context_length: 1048576, max_completion_tokens: 65536, capabilities: { contextWindow: 1048576, maxOutput: 65536 } },
+        { id: "ag/gemini-4-neon-high", context_length: 1048576, max_completion_tokens: 65536 },
+        { id: "kr/claude-opus-5.5-thinking-agentic", context_length: 200000, max_completion_tokens: 64000, capabilities: { contextWindow: 1000000, maxOutput: 128000 } },
+        { id: "plain-model" },
+        { id: "bad-model", context_length: 0, max_completion_tokens: -5, capabilities: { contextWindow: "besar", maxOutput: 99999999 } },
+      ] }));
+    }
+    r.statusCode = 401; r.end("{}"); });
+  await new Promise((r) => srv.listen(0, "127.0.0.1", r)); const base = `http://127.0.0.1:${srv.address().port}`;
+  const PV = await import("../lumitome/lib/providers.mjs"); const home = fs.mkdtempSync(path.join(os.tmpdir(), "lumilimit-"));
+  const det = await PV.detectModels("openai", `${base}/v1`, "k9");
+  ok("limit: detectModels menangkap context+output (capabilities didahulukan; tanpa/invalid → tidak ada)",
+    det.ids.join() === "ag/gemini-3.8-flash-high,ag/gemini-4-neon-high,bad-model,kr/claude-opus-5.5-thinking-agentic,plain-model"
+    && det.limits["ag/gemini-3.8-flash-high"].context === 1048576 && det.limits["ag/gemini-3.8-flash-high"].output === 65536
+    && det.limits["ag/gemini-4-neon-high"].context === 1048576 && det.limits["ag/gemini-4-neon-high"].output === 65536
+    && det.limits["kr/claude-opus-5.5-thinking-agentic"].context === 1000000 && det.limits["kr/claude-opus-5.5-thinking-agentic"].output === 128000
+    && !("plain-model" in det.limits) && !("bad-model" in det.limits)
+    && PV.modelLimit({ context_length: 100 })?.context === 100 && PV.modelLimit({}) === undefined && PV.modelLimit(null) === undefined);
+  const added = await PV.add(home, { name: "9router", type: "openai", baseURL: `${base}/v1`, key: "k9" });
+  const stored = JSON.parse(fs.readFileSync(PV.files(home).prov, "utf8")).providers["9router"];
+  const frag = PV.opencodeFragment(home, {});
+  const fm = frag.providers["9router"].models;
+  ok("limit: tersimpan di providers.json + diteruskan sebagai limit di fragment; model tanpa limit tetap { name } saja",
+    added.models.join() === det.ids.join() && stored.limits["ag/gemini-4-neon-high"].output === 65536
+    && fm["ag/gemini-3.8-flash-high"].limit.context === 1048576 && fm["ag/gemini-3.8-flash-high"].limit.output === 65536
+    && fm["kr/claude-opus-5.5-thinking-agentic"].limit.context === 1000000
+    && !("limit" in fm["plain-model"]) && !("limit" in fm["bad-model"]));
+  // backward compat: providers.json lama (string[] tanpa limits) → fragment tanpa limit
+  const home2 = fs.mkdtempSync(path.join(os.tmpdir(), "lumilimit-old-"));
+  fs.writeFileSync(path.join(home2, "providers.json"), JSON.stringify({ providers: { "9router": { type: "openai", baseURL: `${base}/v1`, models: ["ag/gemini-3.8-flash-high"] } } }));
+  fs.writeFileSync(path.join(home2, "credentials.json"), JSON.stringify({ "9router": "k9" }));
+  ok("limit: providers.json lama tanpa limits → fragment tetap jalan, tanpa limit",
+    !("limit" in PV.opencodeFragment(home2, {}).providers["9router"].models["ag/gemini-3.8-flash-high"]));
+  // refresh: server berhenti melapor limit → map basi dihapus, model tetap ada
+  mode = "nolimit";
+  await PV.refresh(home, "9router", { env: {} });
+  const stored2 = JSON.parse(fs.readFileSync(PV.files(home).prov, "utf8")).providers["9router"];
+  const frag2 = PV.opencodeFragment(home, {}).providers["9router"].models;
+  ok("limit: refresh tanpa limit menghapus map basi; model tetap ada tanpa limit",
+    !("limits" in stored2) && !!frag2["ag/gemini-3.8-flash-high"] && !("limit" in frag2["ag/gemini-3.8-flash-high"]));
+  // config dasar: default model membawa limit terverifikasi 9router (*gemini-3.8* → 1048576/65536)
+  const baseCfg = fs.readFileSync("lumitome/config/opencode.jsonc", "utf8");
+  ok("limit: config dasar default model ag/gemini-3.8-flash-high membawa limit 1048576/65536",
+    /"ag\/gemini-3\.8-flash-high":\s*\{\s*"name":[^}]*"limit":\s*\{\s*"context":\s*1048576,\s*"output":\s*65536\s*\}/.test(baseCfg));
+  srv.close(); fs.rmSync(home, { recursive: true, force: true }); fs.rmSync(home2, { recursive: true, force: true });
+}
+
+{
   // v0.3.38: 9router auto-refresh — model baru yang ditambah di dashboard 9router
   // harus muncul tanpa `lumitome models --refresh` manual. Seam: PV.autoRefresh +
   // wiring startup di lumitome.mjs (sebelum opencodeFragment) + sidik service.
