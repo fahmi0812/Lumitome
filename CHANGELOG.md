@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.84 — skill: modern-web-guidance dari GoogleChrome
+
+- **Skill `modern-web-guidance` terpasang.** Dari repo GoogleChrome/modern-web-guidance: hanya `SKILL.md` yang disalin ke `.opencode/skills/modern-web-guidance/` (SHA pin `2b4aa13a`), didaftarkan di registry (930 → **931**). Skill ini wajib jalan duluan untuk tugas HTML/CSS/JS sisi klien, karena API web berubah cepat dan bobot latih model bisa berisi pola usang.
+- **210 panduan `guides/` tidak disalin.** Tetap diakses saat dibutuhkan lewat CLI `npx -y modern-web-guidance@latest` (`harness/mwg-consult.mjs`), seperti yang sudah dirujuk skill `loopdesign` dan `stitch-ui` selama ini — repo tetap ringan.
+- **Catatan:** pemasangan ini atas perintah Fahmi yang membatalkan larangan "jangan salin file MWG ke repo" di SKILL.md `loopdesign` untuk tugas ini; teks larangan itu sendiri tidak diubah.
+
 ## 0.3.83 — compaction: auto-compact di 90% jendela konteks
 
 - **Default auto-compact kini 90%.** `compaction.buffer` di config dasar berubah dari `20000` (token) menjadi `"10%"` — bagian jendela konteks yang disisakan kosong, jadi auto-compact mulai begitu percakapan mencapai 90% jendela (di 256K = 230.400 token). Sebelumnya buffer token tetap berarti ambang persennya berubah-ubah tiap model (di 256K baru mulai di 92,2%). `keep.tokens` tetap 24000.
