@@ -10,7 +10,13 @@
       "name": "9router",
       "package": "aisdk:@ai-sdk/openai-compatible",
       "settings": { "baseURL": "{env:LUMI_9ROUTER_URL}", "apiKey": "{env:LUMI_KEY_9ROUTER}" },
-      "models": { "ag/gemini-3.8-flash-high": { "name": "gemini-3.8-flash-high (9router)" } }
+      // limit default model (fallback bila fragment provider belum ada limit):
+      // 9router capabilities.js pola *gemini-3.8* → contextWindow 1048576, maxOutput 65536.
+      // Nilai hidup per model diteruskan detectModels() (lumitome/lib/providers.mjs) dari
+      // GET /v1/models 9router — JANGAN ubah angka ini tanpa cek capabilities 9router.
+      // Tanpa limit.context, engine default context 0 → ceiling auto-compact = Infinity
+      // dan auto-compact proaktif tidak terpicu sebelum overflow.
+      "models": { "ag/gemini-3.8-flash-high": { "name": "gemini-3.8-flash-high (9router)", "limit": { "context": 1048576, "output": 65536 } } }
     }
   },
   "compaction": { "auto": true, "keep": { "tokens": 24000 }, "buffer": "10%" },

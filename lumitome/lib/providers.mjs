@@ -25,7 +25,29 @@ function keyFor(home, name, env = process.env) {
   return env[envName(name)] || (name === "9router" ? env.NINEROUTER_API_KEY : undefined) || readJ(files(home).cred)[name];
 }
 
-/** GET daftar model; mengembalikan id terurut. Error → throw (pesan tanpa key).
+/** Limit satu model dari entri /v1/models (v0.3.85).
+ * Bentuk yang dikenali (prioritas per kolom, pertama yang valid menang):
+ *   context: capabilities.contextWindow → context_length → context_window → max_model_len (vLLM)
+ *   output:  capabilities.maxOutput → max_completion_tokens → max_output_tokens → max_tokens
+ * 9router mengirim keduanya: capabilities.* + field top-level snake_case (context_length,
+ * max_completion_tokens) — keduanya bernilai sama; capabilities didahulukan mengikuti
+ * enricher opencode-9router. Nilai tidak valid (0, negatif, bukan integer, string, atau
+ * di atas batas wajar 10 jt konteks / 1 jt output) diabaikan per field. Tanpa satu pun
+ * field valid → undefined (model tanpa limit = perilaku lama: engine default context 0).
+ * Kenapa ini ada: tanpa limit.context, engine menghitung ceiling auto-compact = Infinity
+ * sehingga auto-compact proaktif tidak pernah terpicu sebelum overflow (lihat opencode.jsonc). */
+const _int = (v, max) => Number.isSafeInteger(v) && v > 0 && v <= max ? v : undefined;
+export function modelLimit(m) {
+  if (!m || typeof m !== "object") return undefined;
+  const c = m.capabilities && typeof m.capabilities === "object" ? m.capabilities : {};
+  const context = _int(c.contextWindow, 10_000_000) ?? _int(m.context_length, 10_000_000) ?? _int(m.context_window, 10_000_000) ?? _int(m.max_model_len, 10_000_000);
+  const output = _int(c.maxOutput, 1_000_000) ?? _int(m.max_completion_tokens, 1_000_000) ?? _int(m.max_output_tokens, 1_000_000) ?? _int(m.max_tokens, 1_000_000);
+  if (context === undefined && output === undefined) return undefined;
+  return { ...(context !== undefined ? { context } : {}), ...(output !== undefined ? { output } : {}) };
+}
+
+/** GET daftar model; mengembalikan { ids, limits } (v0.3.85: limits = { [id]: { context?, output? } }).
+ * ids terurut, unik. Error → throw (pesan tanpa key).
  * v0.3.44: `timeoutMs` adalah anggaran TOTAL per provider (bukan per halaman) —
  * paginasi Anthropic yang tadinya bisa 20 halaman x 3 dtk = 60 dtk kini berhenti
  * saat anggaran habis dan MELEMPAR (bukan mengembalikan daftar parsial — daftar
@@ -38,7 +60,7 @@ export async function detectModels(type, base, key, { timeoutMs = 15000 } = {}) 
   // bila tipe tertukar (header/URL /models berbeda per tipe).
   const other = type === "anthropic" ? "openai" : "anthropic";
   const deadline = Date.now() + timeoutMs;
-  const ids = []; let url = url0;
+  const ids = [], limits = {}; let url = url0;
   for (let page = 0; page < 20 && url; page++) {
     const left = deadline - Date.now();
     // v0.3.45: timeout menyebut server tidak merespons + apa yang diperiksa.
@@ -57,10 +79,16 @@ export async function detectModels(type, base, key, { timeoutMs = 15000 } = {}) 
       throw new Error(`GET ${url0} → HTTP ${r.status}`);
     }
     const j = await r.json();
-    for (const m of j.data || j.models || []) if (m && (m.id || m.name)) ids.push(String(m.id || m.name));
+    for (const m of j.data || j.models || []) {
+      if (!m || !(m.id || m.name)) continue;
+      const id = String(m.id || m.name);
+      if (!ids.includes(id)) ids.push(id);
+      const lim = modelLimit(m);
+      if (lim) limits[id] = lim;
+    }
     url = type === "anthropic" && j.has_more && j.last_id ? `${url0}?after_id=${encodeURIComponent(j.last_id)}` : null;
   }
-  return [...new Set(ids)].sort();
+  return { ids: [...new Set(ids)].sort(), limits };
 }
 
 export async function add(home, { name, type, baseURL, key }) {
@@ -68,18 +96,20 @@ export async function add(home, { name, type, baseURL, key }) {
   if (!["openai", "anthropic"].includes(type)) throw new Error("tipe: openai | anthropic");
   if (!/^https?:\/\//.test(baseURL || "")) throw new Error("base URL harus http(s)://");
   if (!key) throw new Error("API key kosong");
-  const models = await detectModels(type, baseURL, key);
+  const { ids: models, limits } = await detectModels(type, baseURL, key);
   // v0.3.45 (P1-4): PERUBAHAN INVARIAN — 0 model BUKAN lagi gagal. Dulu baris ini
   // melempar "server tidak mengembalikan model", jadi 9router yang hidup tapi
   // dashboard-nya masih kosong tidak bisa disimpan sama sekali. Kini provider
   // TERSIMPAN dengan models: [] + peringatan; model masuk lewat auto-refresh
-  // begitu dashboard diisi. Mengembalikan { models, warning } (warning null bila ada model).
+  // begitu dashboard diisi. Mengembalikan { models, limits, warning } (warning null bila ada model).
   const warning = models.length ? null
     : "server tidak mengembalikan model (0 model) — provider tersimpan tanpa model; isi model di dashboard server lalu `lumitome models --refresh` (atau mulai ulang lumitome — auto-refresh akan mengisi daftar)";
   const F = files(home), all = readJ(F.prov); all.providers ||= {};
-  all.providers[name] = { type, baseURL: baseURL.replace(/\/+$/, ""), models, updated: new Date().toISOString() };
+  // v0.3.85: limits disimpan berdampingan (map id → { context?, output? }); hanya bila ada.
+  // models tetap string[] — semua pembaca lama (fragment, preset, fingerprint) tidak berubah.
+  all.providers[name] = { type, baseURL: baseURL.replace(/\/+$/, ""), models, ...(Object.keys(limits).length ? { limits } : {}), updated: new Date().toISOString() };
   const cred = readJ(F.cred); cred[name] = key; writeJ(F.cred, cred); writeJ(F.prov, all);
-  return { models, warning };
+  return { models, limits, warning };
 }
 export function remove(home, name) {
   const F = files(home), all = readJ(F.prov); if (!all.providers?.[name]) return false;
@@ -100,7 +130,9 @@ export async function refresh(home, only, { timeoutMs, env = process.env } = {})
       // tidak boleh menghilangkan model tersimpan; lihat juga timeout total
       // di detectModels yang melempar demi cache). Provider yang memang masih
       // kosong tetap kosong sampai dashboard diisi.
-      if (fresh.length) { p.models = fresh; p.updated = new Date().toISOString(); out[n] = fresh.length; }
+      // v0.3.85: limits ikut segar — server yang berhenti melapor limit menghapus
+      // map lama (jangan pertahankan angka basi).
+      if (fresh.ids.length) { p.models = fresh.ids; if (Object.keys(fresh.limits).length) p.limits = fresh.limits; else delete p.limits; p.updated = new Date().toISOString(); out[n] = fresh.ids.length; }
       else if ((p.models || []).length) out[n] = `gagal: server tidak mengembalikan model (cache lama dipertahankan: ${p.models.length} model)`;
       else out[n] = "gagal: server tidak mengembalikan model (belum ada model tersimpan)";
     }
@@ -139,7 +171,11 @@ export function opencodeFragment(home, env = process.env) {
     const ev = envName(n); penv[ev] = key;
     providers[n] = { name: n, package: p.type === "anthropic" ? "aisdk:@ai-sdk/anthropic" : "aisdk:@ai-sdk/openai-compatible",
       settings: { baseURL: p.type === "anthropic" && !/\/v1$/.test(p.baseURL) ? `${p.baseURL}/v1` : p.baseURL, apiKey: `{env:${ev}}` },
-      models: Object.fromEntries(p.models.map((m) => [m, { name: `${m} (${n})` }])) };
+      models: Object.fromEntries(p.models.map((m) => [m, { name: `${m} (${n})`,
+        // v0.3.85: teruskan limit dari server (9router) ke engine — tanpanya
+        // limit.context default 0 dan auto-compact proaktif tidak terpicu.
+        // Model tanpa limit tercatat → entri { name } seperti dulu.
+        ...(p.limits?.[m] ? { limit: p.limits[m] } : {}) }])) };
   }
   // 9router: wrapper selalu men-set KEDUA nama (config dasar memakai LUMI_KEY_9ROUTER; skrip lama memakai NINEROUTER_API_KEY)
   const k9 = penv.LUMI_KEY_9ROUTER || env.LUMI_KEY_9ROUTER || env.NINEROUTER_API_KEY || readJ(files(home).cred)["9router"];

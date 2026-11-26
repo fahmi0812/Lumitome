@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.85 — fix: limit.context model diteruskan dari 9router — auto-compact 90% kini jalan di jendela asli
+
+- **Bug: auto-compact proaktif tidak pernah terpicu.** `detectModels()` hanya mengambil id model dari `GET /v1/models` 9router dan `opencodeFragment()` mendaftarkan model tanpa `limit` — engine lalu default `limit.context` 0, rumus ceiling `lm(limit, buffer)` jadi Infinity, jadi auto-compact (alasan "auto") tidak jalan sebelum overflow. Yang 90% di v0.3.83 itu benar sebagai setting, tapi tidak pernah mencapai angka jendela model yang sebenarnya.
+- **Fix: limit diteruskan dari server.** `detectModels()` kini menangkap `context`/`output` per model (`capabilities.contextWindow`/`maxOutput` didahulukan, lalu `context_length`/`max_completion_tokens`, lalu `context_window`/`max_model_len`; nilai tidak valid diabaikan), disimpan di `providers.json` berdampingan dengan daftar id, dan `opencodeFragment()` mengirimnya sebagai `limit: { context, output }` ke engine. `refresh()` ikut menyegarkan limit; server yang berhenti melapor limit menghapus map basi. `models` tetap string[] — tidak ada pembaca lama yang berubah, dan providers.json lama tanpa `limits` tetap jalan (tanpa limit, seperti dulu).
+- **Fallback di config dasar.** Model default `ag/gemini-3.8-flash-high` kini membawa `limit: { context: 1048576, output: 65536 }` di `lumitome/config/opencode.jsonc` (terverifikasi dari 9router `capabilities.js` pola `*gemini-3.8*`; pola `*gemini-4*` sama: 1048576/65536). Nilai hidup tetap dari server saat runtime — angka statis ini hanya fallback bila fragment belum ada limit.
+- **Hasil:** dengan `buffer: "10%"`, auto-compact kini terpicu di 90% jendela asli model — 943.718 token untuk model 1M (sebelumnya: tidak terpicu, atau fallback cap internal engine 200K → 180K). Tes baru +5 `ok()` di `tests/suite-providers.mjs` (deteksi, simpan + fragment, kompatibel mundur, refresh, config dasar).
+
 ## 0.3.84 — skill: modern-web-guidance dari GoogleChrome
 
 - **Skill `modern-web-guidance` terpasang.** Dari repo GoogleChrome/modern-web-guidance: hanya `SKILL.md` yang disalin ke `.opencode/skills/modern-web-guidance/` (SHA pin `2b4aa13a`), didaftarkan di registry (930 → **931**). Skill ini wajib jalan duluan untuk tugas HTML/CSS/JS sisi klien, karena API web berubah cepat dan bobot latih model bisa berisi pola usang.
