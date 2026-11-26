@@ -145,13 +145,22 @@ function makeStub(dir, mode) {
     /fallback/i.test(su) && /npx -y modern-web-guidance@latest/.test(su));
 }
 
-// (9) Tanpa vendoring: tidak ada skill MWG di repo.
+// (9) Vendoring SKILL.md saja — override Fahmi 26 Nov 2026 atas larangan impor
+// MWG di loopdesign (teks larangan di loopdesign SKILL.md dibiarkan apa adanya;
+// override tercatat di PR skill/mwg-modern-web-guidance). Cermin = SKILL.md +
+// pin SHA; 210 panduan guides/ TIDAK disalin — tetap diakses via CLI npx.
 {
-  ok("mwg: tanpa vendoring — tidak ada folder .opencode/skills/modern-web-guidance",
-    !fs.existsSync(".opencode/skills/modern-web-guidance"));
+  ok("mwg: terpasang — folder .opencode/skills/modern-web-guidance ada",
+    fs.existsSync(".opencode/skills/modern-web-guidance/SKILL.md"));
+  ok("mwg: terpasang — guides/ TIDAK ikut disalin (akses via CLI npx)",
+    !fs.existsSync(".opencode/skills/modern-web-guidance/guides"));
   const reg = JSON.parse(fs.readFileSync("router/skills-registry.json", "utf8"));
-  ok("mwg: tanpa vendoring — registry tidak punya entri modern-web-guidance",
-    !reg.skills.some((s) => s.id === "modern-web-guidance"));
+  const e = reg.skills.find((s) => s.id === "modern-web-guidance");
+  ok("mwg: terpasang — registry punya entri modern-web-guidance (src+sha+lisensi+sektor)",
+    !!e && e.src === "GoogleChrome/modern-web-guidance" && e.sha === "2b4aa13a72dd47cd135b06ce5abfccd92e19b24f" && e.license === "Apache-2.0" && e.sektor === "coding");
+  const fm = fs.readFileSync(".opencode/skills/modern-web-guidance/SKILL.md", "utf8");
+  ok("mwg: terpasang — frontmatter distempel swanwright_src/sha + sektor coding",
+    /swanwright_src: GoogleChrome\/modern-web-guidance/.test(fm) && /swanwright_sha: 2b4aa13a72dd47cd135b06ce5abfccd92e19b24f/.test(fm) && /swanwright_sector: coding/.test(fm));
 }
 
 finish();
