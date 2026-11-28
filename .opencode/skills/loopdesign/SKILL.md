@@ -29,9 +29,8 @@ perbaikan — atau begitu budget iterasi habis. Tidak pernah spin.
   probe interaksi terskrip dari kontrak Maker, findings `behavior` /
   `probe-gagal`). Kritikus memberi pendapat; gate memberi vonis. Kritikus
   pairwise (§3) hanya menginformasikan — tidak pernah mengubah vonis.
-- **Maker ≠ kritikus.** Kritikus adalah sub-agent terpisah (depth 1, konteks
-  sendiri). Ia menerima screenshot + hasil ukur gate + brief/token — tidak pernah
-  melihat kode atau klaim Maker. Maker yang menilai dirinya sendiri batal.
+- **Maker ≠ kritikus.** Kritikus adalah sub-agent terpisah `design-critic` (`.opencode/agents/design-critic.md`, depth 1, konteks sendiri, read-only). Ia menerima paket bersih hasil `criticInput()` (`harness/design-gate.mjs`: screenshot + hasil ukur gate + brief/token + hasil probe perilaku + arah) — tidak pernah melihat kode atau klaim Maker. Maker yang menilai dirinya sendiri batal; `reviewer` khusus meninjau kode, bukan kritik visual `/loopdesign`.
+- **State machine deterministik (`harness/design-loop.mjs`):** siklus eksplisit `DRAFT → MEASURE → GATE → CRITIC → PATCH → DONE | HALT` (state tersimpan di `<workspace>/.tmp/loopdesign/loop-history.jsonl`), mengorkestrasi `measureAndGateWithBehavior()`, `collectDomSummary()`, `comparePairwise()`, `criticInput()`, dan `evaluateDoneGate()`. Tidak ada `DONE` tanpa lolos Design-Gate + Behavior Probe + Done-Gate.
 - **Gate menilai kesetiaan token + aksesibilitas (deterministik).**
   "Terlihat bagus", "terasa modern", "cocok untuk sidang" bukan kerja gate —
   itu kerja kritikus (§3).

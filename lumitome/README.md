@@ -54,7 +54,10 @@ Skill: harness memakai skill & DB router miliknya sendiri (`config/skills` → `
 | `LUMI_SPIN_MAX_FAIL` / `LUMI_SPIN_MAX_REPEAT` | `3` / `4` | ambang anti-spin |
 | `LUMI_SERVE_PASSWORD_FILE` | `$LUMI_HOME/serve.password` | file password `serve`/`web` (0600) |
 | `LUMI_HOME` | `~/.lumitome` | jurnal `runs/`, XDG data/state/cache, `sbx/` |
-| `LUMI_OPENCODE` | `opencode` | path binary OpenCode |
+| `LUMI_OPENCODE` / `LUMI_ENGINE_BIN` | `opencode` | path binary OpenCode (`LUMI_ENGINE_BIN` menang atas `LUMI_OPENCODE`) |
+| `LUMI_ENGINE_VERSION` | `OC_VERSION` | override versi target engine (mis. uji lokal `2.4.2`) |
+| `LUMI_PROVIDER_STRICT` | `1` | `1` = strict `9router`-only via top-level `policies`; `0` = izinkan custom provider di `$LUMI_HOME/providers.json` |
+| `LUMI_COMPACTION_BACKGROUND` | `0` | `1` = aktifkan `compaction.background` khusus di TUI interaktif (headless `run` selalu `false`) |
 | `LUMI_DEBUG` | — | log jurnal, skill terpilih, cleanup |
 | `SW_L1_TIMEOUT_MS` / `SW_L1_TOPK` / `SW_L1_CACHE` | `12000` / `12` / `runtime/l1-cache.json` | router L1 (`SW_L1_CACHE=0` matikan cache) |
 | `SW_FALLBACK_MAX` / `SW_FALLBACK_RATIO` | `3` / `0` | fallback deterministik router |
@@ -76,3 +79,13 @@ lumitome serve --service
 ```
 
 Server OpenCode milik Anda sendiri (di luar `.lumitome`) tidak disentuh.
+
+## Tema TUI klasik (fallback)
+
+Untuk menggunakan tampilan klasik OpenCode pada `$LUMI_HOME/config/cli.json`:
+
+```json
+{
+  "theme": { "name": "opencode-classic" }
+}
+```

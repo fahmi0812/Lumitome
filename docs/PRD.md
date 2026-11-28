@@ -1,17 +1,10 @@
-# PRD — Lumitome 0.3.47
+# PRD — Lumitome 0.3.85
 
-> Dokumen ini ditulis ulang di v0.3.47 (P2-2) karena PRD lama ("Swanwright
-> 0.1.0", 54 baris) sudah tidak cocok dengan repo: maks 3 skill, target indeks
-> 3k token, roadmap era v0.1.0, dan fiksi branch+PR. Setiap angka di bawah ini
-> bisa ditelusur ke pengukuran (`npm run skills:metrics`,
-> `runtime/metrics.json`) atau file sumber yang disebut. Nama lama
-> Swanwright masih muncul di path internal (`.swanwright/`, plugin
-> `swanwright.ts`) — itu peninggalan, bukan nama produk.
+> Dokumen ini ditulis ulang di v0.3.47 (P2-2) dan disinkronkan ulang pada Wave 0 (`v0.3.85+`): PRD lama ("Swanwright 0.1.0") sudah tidak cocok dengan repo. Setiap angka di bawah ini bisa ditelusur ke pengukuran (`npm run skills:metrics`, `runtime/metrics.json`) atau file sumber yang disebut. Plugin runtime aktif adalah `.opencode/plugins/lumitome-harness.ts` (`lumitome-harness`) dan `lumitome/config/plugins/lumitome-guard.ts` (`lumitome-guard`); sisa path `.swanwright/` / `swanwright.ts` sudah digantikan sejak v0.3.82.
 
 ## Latar
-Lumitome: asisten coding terminal di atas OpenCode 2.3.0 (vanilla, tanpa patch
-core). Model hanya via 9router; tanpa LiteLLM / proxy lain. Satu registry
-930 skill (764 bisa ter-route; 166 pack red-team tetap disabled), routing
+Lumitome: asisten coding terminal di atas OpenCode 2.3.0 (non-invasif, hanya patch logo). Model hanya via 9router; tanpa LiteLLM / proxy lain. Satu registry
+931 skill (765 bisa ter-route; 166 pack red-team tetap disabled), routing
 2 lapis + lazy-load.
 
 ## Tujuan
@@ -33,22 +26,8 @@ orchestrator tipis dengan 6 sektor (+ `misc` sebagai keranjang) + skill lazy.
 Fahmi (pemilik). EnMiChan (kontributor) mengeksekusi dan mengirim perubahan;
 Fahmi review dan menyetujui.
 
-## Praktik rilis (keputusan v0.3.47, eksplisit)
-**Praktik yang benar-benar berjalan: push langsung ke `main` oleh kontributor
-(EnMiChan) setelah verifikasi (validate + suite + scan hijau) dan kartu
-persetujuan push dari Fahmi — BUKAN branch+PR.** Alur: `node
-scripts/bump-version.mjs <x.y.z> "<judul>"` → isi CHANGELOG → `npm run
-validate` + suite penuh + `npm run scan` → commit + tag + GitHub Release
-(`scripts/release.mjs` hanya memverifikasi dan menyiapkan; ia TIDAK PERNAH
-commit/tag/push — pengiriman lewat snapshot-push koordinator, keputusan akhir
-tetap manusia).
-> Ketegangan yang dicatat jujur: `AGENTS.md` repo masih menulis "Perubahan
-> arsitektur/harness tetap via PR (Fahmi yang buka PR)". Aturan itu BELUM
-> diubah dan TIDAK dihapus diam-diam di slice ini — tapi ia bertentangan
-> dengan praktik di atas (slice arsitektur/harness P0–P2 selama ini
-> dikirim push langsung ke main dengan kartu persetujuan). Sampai Fahmi
-> mengubah salah satu sisi, PRD ini mencatat praktik yang berjalan dan
-> menandai ketegangannya, agar tidak ada dokumen yang pura-pura cocok.
+## Praktik rilis (selaras `AGENTS.md` & `lumi-guard.mjs`)
+**Kerja di branch fitur terpisah, JANGAN `git push` ke `main`/`master` secara langsung.** Alur: kerjakan di branch non-`main` → `node scripts/bump-version.mjs <x.y.z> "<judul>"` → isi CHANGELOG → `npm run lint` + `npm run validate` + `npm test` + `npm run scan` → `node scripts/release.mjs <x.y.z>` → push branch fitur tersebut, lalu Fahmi membuka dan me-merge PR serta menerbitkan tag rilis (`scripts/release.mjs` hanya memverifikasi dan mencetak langkah; ia TIDAK PERNAH commit/tag/push otomatis). Aturan ini selaras 100% dengan `AGENTS.md`, `.opencode/rules/01-hard-constraints.md`, dan aturan `push-main` di `harness/lumi-guard.mjs`.
 
 ## Requirement fungsional
 1. Routing 2 lapis (Layer-0 regex 0-token, Layer-1 1x 9router) + maks 5 skill + lazy-load.

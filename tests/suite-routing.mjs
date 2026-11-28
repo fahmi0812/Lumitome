@@ -128,6 +128,8 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const cp = await import("node:child_process");
   const SD = await import("../router/skill-db.mjs");
   const { checkMcpPolicy } = await import("../scripts/check-opencode.mjs");
+  const prevEmbed = process.env.LUMI_EMBED; const prevEmbedModel = process.env.LUMI_EMBED_MODEL;
+  delete process.env.LUMI_EMBED; delete process.env.LUMI_EMBED_MODEL;
   delete process.env.SW_EMBED; delete process.env.SW_EMBED_MODEL;
   const built = await SD.buildIndex({ quiet: true });
   ok("indeks: 765 aktif (157 folder + 608 pack non-red-team), 166 disabled (red-team), 0 pack", built.counts.active === 765 && built.counts.disabled === 166 && built.counts.pack === 0);
@@ -159,12 +161,13 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const dupe = db.prepare("SELECT count(*) c FROM skill_edge WHERE kind='duplicate'").get().c;
   ok(`dedup: ${dupe} duplikat terdeteksi & dikecualikan`, (await SD.searchSkills(db, ["skill"], { status: ["active"], n: 32 })).candidates.every((c) => !db.prepare("SELECT 1 FROM skill_edge e JOIN skill s ON s.id=e.src WHERE s.name=? AND kind='duplicate'").get(c.name)));
   db.close();
-  process.env.SW_9ROUTER_URL = "http://127.0.0.1:9/v1"; process.env.SW_L1_TIMEOUT_MS = "1500";
+  const prev9rUrl = process.env.LUMI_9ROUTER_URL; const prevL1To = process.env.LUMI_L1_TIMEOUT_MS;
+  process.env.LUMI_9ROUTER_URL = "http://127.0.0.1:9/v1"; process.env.LUMI_L1_TIMEOUT_MS = "1500";
   const before = (() => { const d = SD.openDb("runtime/skills.db"); const c = d.prepare("SELECT count(*) c FROM route_log").get().c; d.close(); return c; })();
   const rt = await SD.route("tolong perbaiki bug login yang gagal unit test", { useL1: "always" });
   const after = (() => { const d = SD.openDb("runtime/skills.db"); const c = d.prepare("SELECT count(*) c FROM route_log").get().c; d.close(); return c; })();
   ok("route: 9router mati → fallback deterministik ≤5 + route_log tercatat", rt.l1.status === "unavailable" && rt.picked.length > 0 && rt.picked.length <= 5 && after === before + 1);
-  delete process.env.SW_9ROUTER_URL;
+  if (prev9rUrl === undefined) delete process.env.LUMI_9ROUTER_URL; else process.env.LUMI_9ROUTER_URL = prev9rUrl;
   {
     // v0.3.1: enrichment, trigram, gating L1, timeout keras, cache rute
     const d = SD.openDb("runtime/skills.db");
@@ -175,17 +178,20 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
     ok("L0 trigram: typo 'deploi ke vercle' → vercel-ops top1", r1.candidates[0]?.name === "vercel-ops");
     const rc = await SD.route("jurnal umum dan buku besar toko kelontong", { log: false });
     ok("gating L1: query yakin → L1 skipped (tanpa panggilan model)", rc.l1.status === "skipped" && rc.picked[0] === "akuntansi-umkm");
-    process.env.SW_9ROUTER_URL = "http://10.255.255.1:9/v1"; process.env.SW_L1_TIMEOUT_MS = "3000";
+    process.env.LUMI_9ROUTER_URL = "http://10.255.255.1:9/v1"; process.env.LUMI_L1_TIMEOUT_MS = "3000";
     const t0 = Date.now(); const rto = await SD.route("tolong perbaiki bug login yang gagal unit test", { useL1: "always", log: false });
     ok("L1 timeout keras ≤3.5 s → fallback L0", Date.now() - t0 < 3500 && rto.picked.length > 0 && rto.l1.status !== "ok");
-    delete process.env.SW_9ROUTER_URL; delete process.env.SW_L1_TIMEOUT_MS;
+    if (prev9rUrl === undefined) delete process.env.LUMI_9ROUTER_URL; else process.env.LUMI_9ROUTER_URL = prev9rUrl;
+    if (prevL1To === undefined) delete process.env.LUMI_L1_TIMEOUT_MS; else process.env.LUMI_L1_TIMEOUT_MS = prevL1To;
+    if (prevEmbed !== undefined) process.env.LUMI_EMBED = prevEmbed;
+    if (prevEmbedModel !== undefined) process.env.LUMI_EMBED_MODEL = prevEmbedModel;
     const cf = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "rcache-")), "router-cache.json");
-    process.env.SW_ROUTE_CACHE = cf;
+    process.env.LUMI_ROUTE_CACHE = cf;
     await SD.route("Jurnal umum, dan buku besar!", { log: false });
     const c2 = await SD.route("jurnal umum dan buku besar", { log: false });
     SD.routeCacheSet("x|y", "hash-lama", { picked: ["z"] });
     ok("cache rute: query ternormalisasi hit; katalog beda → miss", c2.cached === true && SD.routeCacheGet("x|y", "hash-baru") === null && SD.routeCacheGet("x|y", "hash-lama") !== null);
-    delete process.env.SW_ROUTE_CACHE; fs.rmSync(path.dirname(cf), { recursive: true, force: true });
+    delete process.env.LUMI_ROUTE_CACHE; fs.rmSync(path.dirname(cf), { recursive: true, force: true });
   }
   // hash berubah → STALE
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "swidx-"));
@@ -258,7 +264,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   {
     const l1dir = fs.mkdtempSync(path.join(os.tmpdir(), "l1-"));
     const l1file = path.join(l1dir, "l1-cache.json");
-    process.env.SW_L1_CACHE = l1file;
+    process.env.LUMI_L1_CACHE = l1file;
     const origFetch = globalThis.fetch;
     let calls = 0;
     globalThis.fetch = async () => { calls++; return { ok: true, text: async () => JSON.stringify({ choices: [{ message: { content: JSON.stringify({ skills: ["security-audit"], confidence: 0.9 }) } }] }) }; };
@@ -283,7 +289,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
     const rAb = await p;
     ok("L1: sinyal luar diabort -> fetch dibatalkan (bukan gantung)", seenSignal?.aborted === true && rAb.status === "unavailable" && Date.now() - tAb < 5000);
     globalThis.fetch = origFetch;
-    delete process.env.SW_L1_CACHE;
+    delete process.env.LUMI_L1_CACHE;
     fs.rmSync(l1dir, { recursive: true, force: true });
   }
   // §4 v0.3.33: metrik golden DIPIN PERSIS pada baseline BARU v0.3.33
@@ -305,15 +311,145 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   // ~8–12ms. Ambang 40ms memberi headroom noise VM tapi gagal pada kecepatan lama.
   {
     const SD4 = await import("../router/skill-db.mjs");
-    process.env.SW_ROUTE_CACHE = "0";
+    process.env.LUMI_ROUTE_CACHE = "0";
     const sample = g.slice(0, 30);
     for (const c of sample.slice(0, 3)) await SD4.route(c.prompt, { useL1: false, log: false });
     const lat = [];
     for (const c of sample) { const t0 = performance.now(); await SD4.route(c.prompt, { useL1: false, log: false }); lat.push(performance.now() - t0); }
-    delete process.env.SW_ROUTE_CACHE;
+    delete process.env.LUMI_ROUTE_CACHE;
     lat.sort((a, b) => a - b);
     const med = lat[Math.floor(lat.length / 2)];
     ok(`latensi route(): median ${med.toFixed(1)}ms < 40ms (30 prompt golden, warmup 3x)`, med < 40);
+  }
+  {
+    // Wave 0 (T0.2): inline env-compat di router/skill-db.mjs + serverInfo.name lumitome-skills
+    const SD5 = await import("../router/skill-db.mjs");
+    ok("T0.2 router embedProvider: LUMI_EMBED_MODEL=\"\" + SW_EMBED_MODEL=\"x\" -> none (tidak fallback)",
+      SD5.embedProvider({ LUMI_EMBED_MODEL: "", SW_EMBED_MODEL: "x" }) === "none"
+      && SD5.embedProvider({ SW_EMBED_MODEL: "x" }) === "9router");
+    ok("T0.2 router routerKey: presedensi + fallback string kosong ke NINEROUTER_API_KEY",
+      SD5.routerKey({ LUMI_KEY_9ROUTER: "a", LUMI_9ROUTER_KEY: "b", SW_9ROUTER_KEY: "c", NINEROUTER_API_KEY: "d" }) === "a"
+      && SD5.routerKey({ LUMI_KEY_9ROUTER: "", LUMI_9ROUTER_KEY: "b", SW_9ROUTER_KEY: "c", NINEROUTER_API_KEY: "d" }) === "b"
+      && SD5.routerKey({ LUMI_KEY_9ROUTER: "", LUMI_9ROUTER_KEY: "", SW_9ROUTER_KEY: "", NINEROUTER_API_KEY: "d" }) === "d");
+    const initAll = cp.execFileSync(process.execPath, ["--no-warnings", "router/skill-search-mcp.mjs", "--sectors", "all"], { input: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} }) + "\n", encoding: "utf8" });
+    const initPen = cp.execFileSync(process.execPath, ["--no-warnings", "router/skill-search-mcp.mjs", "--sector", "penulisan"], { input: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} }) + "\n", encoding: "utf8" });
+    ok("T0.2 MCP serverInfo.name: lumitome-skills (multi) & lumitome-skills-<sector>",
+      JSON.parse(initAll.trim()).result.serverInfo.name === "lumitome-skills"
+      && JSON.parse(initPen.trim()).result.serverInfo.name === "lumitome-skills-penulisan");
+  }
+
+  // --- Wave 3 (T3.3, T3.4, T3.5 + Telemetry): Cascade 9router, Token Estimator, Skill Telemetry ---
+  {
+    const { pathToFileURL } = await import("node:url");
+    const TE = await import("../router/token-estimator.mjs");
+    const CC = await import("../lumitome/config/plugins/lib/cascade-core.mjs");
+    const SM = await import("../scripts/skill-metrics.mjs");
+    const profiles = JSON.parse(fs.readFileSync("router/model_profiles.json", "utf8"));
+
+    // 1) T3.4 Token Estimator & Overthink Guard
+    const proseTok = TE.estimateTokens("Ini adalah kalimat dokumentasi bahasa Indonesia dan English yang normal.");
+    const codeTok = TE.estimateTokens("function x(a,b){if(a===b){return [a,b].map((v)=>v+1);}return {};}");
+    const bTrivial = TE.computeDynamicBudget({ contextWindow: 100000, usedTokens: 1000, taskComplexity: "trivial", env: {} });
+    const bComplex = TE.computeDynamicBudget({ contextWindow: 100000, usedTokens: 1000, taskComplexity: "complex", env: {} });
+    const bThinking = TE.computeDynamicBudget({ contextWindow: 100000, usedTokens: 1000, taskComplexity: "thinking", env: {} });
+    const bOff = TE.computeDynamicBudget({ contextWindow: 100000, usedTokens: 1000, taskComplexity: "trivial", env: { LUMI_OVERTHINK_GUARD: "0" } });
+    ok("T3.4 token-estimator: prose/code/empty deterministik + LUMI_OVERTHINK_GUARD=1 vs 0",
+      TE.estimateTokens("") === 0
+      && proseTok > 0 && codeTok > 0
+      && bTrivial.overthinkGuardActive === true
+      && bTrivial.maxReasoningTokens < bComplex.maxReasoningTokens
+      && bComplex.maxReasoningTokens <= bThinking.maxReasoningTokens
+      && bTrivial.maxSteps < bThinking.maxSteps
+      && bOff.overthinkGuardActive === false && bOff.maxSteps === null);
+
+    // 2) T3.3 & T3.5 Cascade Router (9router-only, fallback, never-downgrade, LUMI_PLAN_PREPASS)
+    const avail = ["ag/gemini-3.8-flash-high", "kr/claude-opus-5.5-thinking-agentic"];
+    const customPassthrough = CC.resolveCascadeModel({
+      event: { kind: "title", agent: "orchestrator", model: { providerID: "anthropic", id: "claude-3" } },
+      availableModels: avail,
+      profiles,
+    });
+    const auxTitle = CC.resolveCascadeModel({
+      event: { kind: "title", agent: "orchestrator", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      availableModels: avail,
+      profiles,
+    });
+    const fallbackNoFlash = CC.resolveCascadeModel({
+      event: { kind: "title", agent: "orchestrator", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      availableModels: ["kr/claude-opus-5.5-thinking-agentic"],
+      profiles,
+    });
+    const neverThink = CC.resolveCascadeModel({
+      event: { kind: "primary", agent: "thinking", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      availableModels: avail,
+      profiles,
+    });
+    const neverReviewer = CC.resolveCascadeModel({
+      event: { kind: "primary", agent: "reviewer", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      availableModels: avail,
+      profiles,
+    });
+    const neverCritic = CC.resolveCascadeModel({
+      event: { kind: "primary", agent: "design-critic", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      availableModels: avail,
+      profiles,
+    });
+    const cascadeOff = CC.resolveCascadeModel({
+      event: { kind: "title", agent: "orchestrator", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      availableModels: avail,
+      profiles,
+      env: { LUMI_CASCADE: "0" },
+    });
+    const prepassOn = CC.resolvePlanPrepass({ role: "thinking", taskComplexity: "thinking", env: { LUMI_PLAN_PREPASS: "1" }, profiles });
+    const prepassTrivial = CC.resolvePlanPrepass({ role: "builder", taskComplexity: "trivial", env: { LUMI_PLAN_PREPASS: "1" }, profiles });
+    const prepassOff = CC.resolvePlanPrepass({ role: "thinking", taskComplexity: "thinking", env: { LUMI_PLAN_PREPASS: "0" }, profiles });
+
+    ok("T3.3/T3.5 cascade-core: providerID=9router invariant, fallback live, never-downgrade thinking/reviewer/design-critic, LUMI_PLAN_PREPASS 0/1",
+      customPassthrough.changed === false && customPassthrough.providerID === "anthropic"
+      && auxTitle.model.providerID === "9router" && auxTitle.model.id === "ag/gemini-3.8-flash-high"
+      && fallbackNoFlash.changed === false && fallbackNoFlash.fallback === true && fallbackNoFlash.model.id === "kr/claude-opus-5.5-thinking-agentic"
+      && neverThink.model.providerID === "9router" && neverThink.model.id === "kr/claude-opus-5.5-thinking-agentic"
+      && neverReviewer.model.id === "kr/claude-opus-5.5-thinking-agentic"
+      && neverCritic.model.id === "kr/claude-opus-5.5-thinking-agentic"
+      && cascadeOff.changed === false && cascadeOff.reason === "cascade-disabled"
+      && prepassOn.active === true && prepassOn.maxTokens === 300
+      && prepassTrivial.active === false && prepassOff.active === false);
+
+    // Plugin lumitome-cascade.ts compatibility (2.3.0 safe + 2.4.2 hook)
+    const cascPlug = await import(pathToFileURL(path.resolve("lumitome/config/plugins/lumitome-cascade.ts")).href + `?t=${Date.now()}`);
+    await cascPlug.default.setup({ location: { directory: process.cwd() } });
+    let resolveCb = null;
+    await cascPlug.default.setup({
+      location: { directory: process.cwd() },
+      session: { hook: async (name, fn) => { if (name === "experimental.model.resolve") resolveCb = fn; } },
+    });
+    ok("T3.3 lumitome-cascade.ts: id lumitome-cascade, aman di 2.3.0, daftar experimental.model.resolve di 2.4.2",
+      cascPlug.default.id === "lumitome-cascade" && typeof resolveCb === "function");
+
+    // 3) Per-sector telemetry & dead-skill detection (tanpa tulis ke runtime/)
+    const tmpTelDir = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-tel-"));
+    try {
+      const missingTel = SM.readSkillRoutingTelemetry(path.join(tmpTelDir, "does-not-exist.jsonl"));
+      const telFile = path.join(tmpTelDir, "skill-routing.jsonl");
+      fs.writeFileSync(telFile, [
+        JSON.stringify({ sector: "coding", top1: "tdd-red-green-refactor", picked: ["tdd-red-green-refactor"], top1_hit: true }),
+        JSON.stringify({ sector: "security", top1: "security-audit", picked: ["security-audit", "owasp-security"], top1_hit: false }),
+      ].join("\n") + "\n");
+      const loadedTel = SM.readSkillRoutingTelemetry(telFile);
+      const dead = SM.detectDeadSkills(["tdd-red-green-refactor", "unused-skill-x"], {
+        goldenUsedSet: new Set(["tdd-red-green-refactor"]),
+        telemetrySkillHits: loadedTel.skill_hits,
+      });
+      ok("T3.5 skill-metrics: by_sector lengkap, fallback bersih saat telemetry absen, deteksi unused/dead skills",
+        Boolean(met.by_sector?.coding && met.by_sector?.security && met.by_sector?.riset && met.by_sector?.penulisan && met.by_sector?.media && met.by_sector?.finance)
+        && met.by_sector.coding.l0_mismatch === 0
+        && missingTel.available === false && missingTel.total_events === 0
+        && loadedTel.available === true && loadedTel.total_events === 2
+        && loadedTel.top1_by_sector.coding.top1_hit_rate === 1
+        && dead.unused_count === 1 && dead.pruning_candidates[0] === "unused-skill-x");
+    } finally {
+      fs.rmSync(tmpTelDir, { recursive: true, force: true });
+    }
   }
 }
 

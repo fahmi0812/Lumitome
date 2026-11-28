@@ -9,20 +9,24 @@ import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
 import { DEFAULT_MODEL } from "./default-model.mjs";
+import { DEFAULT_9ROUTER_URL } from "./default-config.mjs";
+import { resolveEnvValue } from "./env-compat.mjs";
 
 export const NAME_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
 // v0.3.45 (P1-4): preset 9router sekali-klik — nama + tipe + base URL lokal.
 // Key TIDAK PERNAH diisi preset (tetap diminta manual); URL lokal adalah default
 // yang benar (bukan server jarak jauh).
-export const NINEROUTER_PRESET = { name: "9router", type: "openai", baseURL: "http://127.0.0.1:20128/v1" };
+export const NINEROUTER_PRESET = { name: "9router", type: "openai", baseURL: DEFAULT_9ROUTER_URL };
 export const PROVIDER_PRESETS = { "9router": NINEROUTER_PRESET };
 const envName = (n) => `LUMI_KEY_${n.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`;
 const readJ = (f) => { try { return JSON.parse(fs.readFileSync(f, "utf8")); } catch { return {}; } };
 const writeJ = (f, o) => { fs.mkdirSync(path.dirname(f), { recursive: true, mode: 0o700 }); fs.writeFileSync(f + ".tmp", JSON.stringify(o, null, 2) + "\n", { mode: 0o600 }); fs.renameSync(f + ".tmp", f); fs.chmodSync(f, 0o600); };
 export const files = (home) => ({ prov: path.join(home, "providers.json"), cred: path.join(home, "credentials.json") });
 export function load(home) { return readJ(files(home).prov).providers || {}; }
+const NINE_ROUTER_KEY_ALIASES = ["LUMI_9ROUTER_KEY", "SW_9ROUTER_KEY", "NINEROUTER_API_KEY"]; // env-compat-allow
 function keyFor(home, name, env = process.env) {
-  return env[envName(name)] || (name === "9router" ? env.NINEROUTER_API_KEY : undefined) || readJ(files(home).cred)[name];
+  if (name === "9router") return resolveEnvValue(env, "LUMI_KEY_9ROUTER", NINE_ROUTER_KEY_ALIASES) || readJ(files(home).cred)[name];
+  return env[envName(name)] || readJ(files(home).cred)[name];
 }
 
 /** Limit satu model dari entri /v1/models (v0.3.85).
@@ -178,7 +182,7 @@ export function opencodeFragment(home, env = process.env) {
         ...(p.limits?.[m] ? { limit: p.limits[m] } : {}) }])) };
   }
   // 9router: wrapper selalu men-set KEDUA nama (config dasar memakai LUMI_KEY_9ROUTER; skrip lama memakai NINEROUTER_API_KEY)
-  const k9 = penv.LUMI_KEY_9ROUTER || env.LUMI_KEY_9ROUTER || env.NINEROUTER_API_KEY || readJ(files(home).cred)["9router"];
+  const k9 = penv.LUMI_KEY_9ROUTER || resolveEnvValue(env, "LUMI_KEY_9ROUTER", NINE_ROUTER_KEY_ALIASES) || readJ(files(home).cred)["9router"];
   if (k9) { penv.LUMI_KEY_9ROUTER = k9; penv.NINEROUTER_API_KEY = k9; }
   return { providers, env: penv };
 }
@@ -209,7 +213,7 @@ export async function cli({ argv, home, sub, env = process.env, log = console.lo
     // eksplisit menang atas preset; key tetap manual (--key-env/--key-stdin).
     const preset = PROVIDER_PRESETS[val("--preset")];
     if (!preset) { err(`preset tidak dikenal: '${val("--preset")}' (yang ada: ${Object.keys(PROVIDER_PRESETS).join(", ")})`); return 2; }
-    type ??= preset.type; name ??= preset.name; baseURL ??= preset.baseURL;
+    type ??= preset.type; name ??= preset.name; baseURL ??= (val("--preset") === "9router" && env.LUMI_9ROUTER_URL) || preset.baseURL;
   }
   if (val("--key-env")) key = process.env[val("--key-env")];
   if (flag("--key-stdin")) key = fs.readFileSync(0, "utf8").trim();

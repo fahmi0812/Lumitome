@@ -1,5 +1,5 @@
 /**
- * Budget token (len/4) per seksi router/skills-index.md — TRIAL lepas-dorman.
+ * Budget token terkalibrasi per seksi router/skills-index.md — TRIAL lepas-dorman.
  *
  * Satu sumber kebenaran untuk cap indeks; dipakai tests/suite-routing.mjs (asersi
  * keras) dan scripts/validate.mjs (peringatan). Jangan hardcode angka cap
@@ -17,18 +17,21 @@
  * Desain: satu file indeks, asersi per seksi (bukan satu file per sektor) —
  * diff terkecil: generator, --check, dan konsumen sudah berbentuk satu file.
  */
+import { estimateTokens } from "./token-estimator.mjs";
+
 export const INDEX_SECTION_BUDGETS = { coding: 8300, security: 1000, riset: 200, penulisan: 5200, media: 5100, finance: 200, misc: 3200 };
 export const INDEX_DEFAULT_SECTION_BUDGET = 1000;
 export const INDEX_TOTAL_BUDGET = 23200;
 
-/** Token per seksi (len/4) + total dari teks router/skills-index.md. */
-export function indexSectionTokens(text) {
+/** Token per seksi + total dari teks router/skills-index.md (memakai estimator terkalibrasi, kompatibel API). */
+export function indexSectionTokens(text, opts = {}) {
+  const estimator = opts.legacy ? (t) => Math.ceil(String(t).length / 4) : (t) => estimateTokens(t, opts);
   const parts = String(text).split(/^## /m).slice(1);
   const out = {};
   for (const p of parts) {
     const name = p.split("\n")[0].trim();
-    out[name] = Math.ceil(("## " + p).length / 4);
+    out[name] = estimator("## " + p);
   }
-  out.total = Math.ceil(String(text).length / 4);
+  out.total = estimator(String(text));
   return out;
 }

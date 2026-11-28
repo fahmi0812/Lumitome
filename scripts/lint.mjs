@@ -41,16 +41,14 @@
  *     yang mandiri (ARCHITECTURE.md). (b) harness/lumi-guard.mjs
  *     hanya boleh mengimpor `node:*` — guard dimuat engine secara
  *     terisolasi dan fail-closed bila gagal dimuat.
- *
- * Keterbatasan yang dicatat jujur: pemeriksa teks ini memakai
- * stripComments yang sadar-string, tapi TIDAK memahami regex literal
- * secara penuh (pola `//` di dalam regex literal yang tidak di-escape
- * tidak mungkin ada di kode JS valid; pola `\/` yang di-escape
- * ditangani lewat guard backslash). Cek sintaks (`node --check`)
- * TIDAK masuk gate ini: diukur 56 file ≈ 6 detik (spawn tidak
- * paralel efektif di VM ini) — melebihi anggaran < 2 detik; sintaks
- * sudah ditangkap suite karena tiap file diimpor/dijalankan tes atau
- * validate. Bisa jadi LINT-005 bila ada pemeriksa in-process yang cepat.
+ *   LINT-005 no-new-sw-env — larangan kemunculan key env `SW_*` langsung
+ *     di luar allowlist `lumitome/lib/env-compat.mjs` & baris helper
+ *     inline teranotasi `// env-compat-allow` (atau `# env-compat-allow`).
+ *     Metadata frontmatter `swanwright_*` tidak terkena.
+ *   LINT-006 single-oc-version — larangan hardcode literal versi engine
+ *     `2.3.0` / `2.4.2` di file kode (`*.mjs`, `*.ts`, `*.sh`) di luar
+ *     allowlist `lumitome/lib/engine.mjs`, `install.sh`, `scripts/doctor.sh`
+ *     (sementara hingga T1.4 membaca engine.mjs), dan `tests/`.
  *
  * Pakai: `npm run lint` (diwire ke `npm run validate`, fail-closed).
  */
@@ -63,9 +61,39 @@ const LINT_DIRS = ["scripts", "lumitome", "harness", "router"];
 // --- Penghapus komentar yang sadar-string ---------------------------------
 // Mengganti isi komentar dengan spasi (baris baru dipertahankan) supaya
 // nomor baris tetap akurat. Menangani string ' "...", template literal
-// (termasuk ${...}), komentar // dan /* */. Guard backslash mencegah
-// `\/` di dalam regex literal dibaca sebagai awal komentar.
-export function stripComments(src) {
+// (termasuk ${...}), komentar // dan /* */, serta komentar # untuk shell (.sh).
+export function stripComments(src, { shell = false } = {}) {
+  if (shell) {
+    let out = "";
+    let mode = "code"; // code | sq | dq | lc
+    for (let i = 0; i < src.length; i++) {
+      const c = src[i];
+      if (mode === "lc") {
+        if (c === "\n") { mode = "code"; out += c; } else out += " ";
+        continue;
+      }
+      if (mode === "sq") {
+        if (c === "'") mode = "code";
+        out += c;
+        continue;
+      }
+      if (mode === "dq") {
+        if (c === "\\") { out += c + (src[i + 1] ?? ""); i++; continue; }
+        if (c === '"') mode = "code";
+        out += c;
+        continue;
+      }
+      if (c === "'" && src[i - 1] !== "\\") { mode = "sq"; out += c; continue; }
+      if (c === '"' && src[i - 1] !== "\\") { mode = "dq"; out += c; continue; }
+      if (c === "\\" && src[i + 1] !== undefined) { out += c + src[i + 1]; i++; continue; }
+      if (c === "#" && (i === 0 || /[\s;|&(\n]/.test(src[i - 1]))) {
+        mode = "lc"; out += " "; continue;
+      }
+      out += c;
+    }
+    return out;
+  }
+
   let out = "";
   const stack = [{ t: "code" }]; // code | sq | dq | tpl | expr | lc | bc
   for (let i = 0; i < src.length; i++) {
@@ -118,20 +146,36 @@ const PROCESS_EXIT_ALLOW = {
   "lumitome/lib/provider-ui.mjs": "menu TUI — keluar saat pengguna membatalkan (abort)",
 };
 
+const ENV_COMPAT_ALLOW_FILES = new Set([
+  "lumitome/lib/env-compat.mjs",
+]);
+
+const OC_VERSION_ALLOW_FILES = new Set([
+  "lumitome/lib/engine.mjs",
+  "install.sh",
+]);
+const OC_VER_RE = new RegExp(`\\b(${["2", "3", "0"].join("\\.")}|${["2", "4", "2"].join("\\.")})\\b`);
+
 const inDirs = (rel, dirs) => dirs.some((d) => rel === d || rel.startsWith(d + "/"));
 
 /** Lint satu file. Murni (tanpa I/O) — bisa diuji dengan sumber sintetis. */
 export function lintSource(rel, src) {
   const violations = [];
   const push = (rule, line, message) => violations.push({ rule, file: rel, line, message });
-  const code = stripComments(src);
+  const isSh = rel.endsWith(".sh");
+  const isCode = /\.(?:mjs|ts|sh)$/.test(rel);
+  const code = stripComments(src, { shell: isSh });
   const lines = code.split("\n");
+  const rawLines = src.split("\n");
   const prod = inDirs(rel, LINT_DIRS);
   const inLib = rel.startsWith("lumitome/lib/");
   const inRouter = rel.startsWith("router/");
+  const inTests = rel.startsWith("tests/");
+
   lines.forEach((line, i) => {
     const ln = i + 1;
-    if (prod) {
+    const rawLine = rawLines[i] ?? "";
+    if (prod && !isSh) {
       // LINT-001: .length ===/!== literal >= 10 (kedua arah)
       const m1 = line.match(/\.length\s*(?:===|!==)\s*(\d+)\b/)
         || line.match(/\b(\d+)\s*(?:===|!==)\s*[\w$]+(?:\.[\w$]+)*\.length\b/);
@@ -164,6 +208,20 @@ export function lintSource(rel, src) {
         }
       }
     }
+    if (prod && isCode && !ENV_COMPAT_ALLOW_FILES.has(rel) && !/env-compat-allow/.test(rawLine)) {
+      // LINT-005: key env SW_* langsung di luar env-compat.mjs & env-compat-allow
+      const sw = line.match(/\b(SW_[A-Z0-9_]+)\b/);
+      if (sw) {
+        push("LINT-005", ln, `key env legacy "${sw[1]}" dipakai langsung — gunakan LUMI_* lewat env-compat.mjs (atau tandai env-compat-allow untuk fallback sementara)`);
+      }
+    }
+    if (isCode && !inTests && !OC_VERSION_ALLOW_FILES.has(rel)) {
+      // LINT-006: literal versi engine OpenCode di luar engine.mjs/install.sh/doctor.sh
+      const mv = line.match(OC_VER_RE);
+      if (mv) {
+        push("LINT-006", ln, `literal versi engine "${mv[1]}" di-hardcode — baca OC_VERSION / engineAtLeast dari lumitome/lib/engine.mjs`);
+      }
+    }
   });
   return violations;
 }
@@ -174,7 +232,7 @@ export function collectFiles(root) {
     for (const e of fs.readdirSync(path.join(root, d), { withFileTypes: true })) {
       const rel = path.join(d, e.name);
       if (e.isDirectory()) { if (e.name !== "node_modules") walk(rel); }
-      else if (/\.mjs$|\.ts$/.test(e.name)) out.push(rel.split(path.sep).join("/"));
+      else if (/\.mjs$|\.ts$|\.sh$/.test(e.name)) out.push(rel.split(path.sep).join("/"));
     }
   };
   for (const d of LINT_DIRS) if (fs.existsSync(path.join(root, d))) walk(d);

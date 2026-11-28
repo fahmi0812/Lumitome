@@ -16,7 +16,7 @@ if (maj < 22 || (maj === 22 && min < 6)) { process.stderr.write(`lumitome: butuh
 
 const env = { ...process.env };
 const home = lumiHome(env);
-env.LUMI_HOME = home; env.SW_HOME = home; env.LUMI_INSTALL ||= "npm";
+env.LUMI_HOME = home; env.LUMI_INSTALL ||= "npm";
 fs.mkdirSync(path.join(home, "bin"), { recursive: true });
 if (!fs.existsSync(path.join(home, ".lumitome-home"))) fs.writeFileSync(path.join(home, ".lumitome-home"), "");
 const bin = env.LUMI_OPENCODE || engineBin(home);

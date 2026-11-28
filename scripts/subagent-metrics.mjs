@@ -32,6 +32,9 @@ export function summarize(lines) {
   const children = [];
   const childModels = {};
   let malformed = 0;
+  let idleRedrives = 0;
+  let idleRedriveSuccesses = 0;
+  let watchdogTrips = 0;
   const get = (sid) => {
     if (!sessions.has(sid)) sessions.set(sid, { sessionID: sid, agent: "", subagent: 0, mutating: 0, other: 0, blocked: 0, turns: 0, turnsWithoutDelegation: 0 });
     return sessions.get(sid);
@@ -55,6 +58,13 @@ export function summarize(lines) {
       s.agent = e.agent || s.agent;
       s.turns += 1;
       if (e.delegated === false) s.turnsWithoutDelegation += 1;
+    } else if (e.kind === "idle-redrive") {
+      idleRedrives += 1;
+      if (e.recovered === true) idleRedriveSuccesses += 1;
+    } else if (e.kind === "idle-redrive-recovered") {
+      idleRedriveSuccesses += 1;
+    } else if (e.kind === "watchdog-halt" || e.kind === "watchdog-trip") {
+      watchdogTrips += 1;
     } else if (e.kind === "child-session" && typeof e.sessionID === "string") {
       // Engine 2.3.0 mengirim session.created DUA kali per sesi anak
       // (baris kembar, timestamp identik — terbukti live 0376): dedupe per
@@ -73,7 +83,8 @@ export function summarize(lines) {
     ...s,
     delegationRate: s.subagent + s.mutating + s.blocked === 0 ? null : s.subagent / (s.subagent + s.mutating + s.blocked),
   }));
-  return { sessions: list, malformed, children, childModels };
+  const redriveSuccessRate = idleRedrives === 0 ? null : idleRedriveSuccesses / idleRedrives;
+  return { sessions: list, malformed, children, childModels, idleRedrives, redriveSuccessRate, watchdogTrips };
 }
 
 export function renderText({ sessions, malformed, children = [], childModels = {} }) {

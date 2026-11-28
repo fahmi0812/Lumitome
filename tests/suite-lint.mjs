@@ -109,4 +109,34 @@ const has = (vs, rule) => vs.some((v) => v.rule === rule);
     v.includes("./lint.mjs") && v.includes("lintRepo"));
 }
 
+{
+  // Wave 0 (T0.3): stripComments untuk .sh + LINT-005 + LINT-006 + doc-drift
+  const shSrc = `#!/usr/bin/env bash\n# Wajib opencode v2.3.0\narr=(a b)\necho "\${#arr[@]}" # komentar v2.4.2\nurl="https://x#2.3.0"\n`;
+  const shStripped = stripComments(shSrc, { shell: true });
+  ok("lint stripComments (.sh): komentar # dihapus, ${#arr[@]} dan # dalam string tetap utuh",
+    !shStripped.includes("Wajib") && !shStripped.includes("komentar")
+    && shStripped.includes("${#arr[@]}") && shStripped.includes('"https://x#2.3.0"'));
+
+  ok("lint LINT-005: tangkap SW_* baru di luar env-compat & env-compat-allow; loloskan swanwright_* & env-compat-allow",
+    has(lintSource("scripts/foo.mjs", `const x = process.env.SW_FOO;`), "LINT-005")
+    && has(lintSource("scripts/foo.sh", `echo "$SW_FOO"`), "LINT-005")
+    && !has(lintSource("lumitome/lib/env-compat.mjs", `const x = "SW_FOO";`), "LINT-005")
+    && !has(lintSource("router/skill-db.mjs", `const x = process.env.SW_FOO; // env-compat-allow`), "LINT-005")
+    && !has(lintSource("scripts/foo.mjs", `const x = fm.swanwright_sha;`), "LINT-005"));
+
+  ok("lint LINT-006: tangkap literal 2.3.0/2.4.2 di .mjs/.ts/.sh; loloskan komentar & allowlist",
+    has(lintSource("lumitome/lib/build-config.mjs", `const v = "2.4.2";`), "LINT-006")
+    && has(lintSource("scripts/foo.sh", `VER="2.3.0"`), "LINT-006")
+    && !has(lintSource("scripts/foo.sh", `# Wajib opencode v2.3.0\necho ok`), "LINT-006")
+    && !has(lintSource("lumitome/lib/build-config.mjs", `// catatan 2.3.0\nconst x = 1;`), "LINT-006")
+    && !has(lintSource("lumitome/lib/engine.mjs", `export const OC_VERSION = "2.3.0";`), "LINT-006")
+    && !has(lintSource("scripts/doctor.sh", `[ "$OCV" = "opencode v2.3.0" ]`), "LINT-006")
+    && !has(lintSource("tests/suite-services.mjs", `const v = "2.3.0";`), "LINT-006"));
+
+  const DD = await import("../harness/doc-drift.ts");
+  const dr = DD.detectRepoDocDrift(ROOT);
+  ok("T0.3 doc-drift: detectRepoDocDrift(ROOT) bersih (0 drift versi/skill/MCP/plugin)",
+    dr.ok && dr.findings.length === 0, dr.findings);
+}
+
 finish();

@@ -659,4 +659,125 @@ import { ok, skip, finish } from "./harness.mjs";
   ok("v0.3.60: threejs-materials-lighting merujuk ambientcg.com (PBR/HDRI CC0)", ML.includes("ambientcg.com"));
 }
 
+{
+  // Wave 0 (T0.4): pemisahan design-critic + state machine harness/design-loop.mjs + wiring criticInput()
+  const DL = await import("../harness/design-loop.mjs");
+  const DRV = await import("../harness/loopdesign-driver.mjs");
+  const { checkAgents } = await import("../scripts/check-opencode.mjs");
+  const { frontmatter } = await import("../router/parse.mjs");
+  const { criticInput } = await import("../harness/design-gate.mjs");
+
+  const dc = fs.readFileSync(".opencode/agents/design-critic.md", "utf8");
+  const dcBody = dc.replace(/^---\n[\s\S]*?\n---\n/, "");
+  const rev = fs.readFileSync(".opencode/agents/reviewer.md", "utf8");
+  const dcFm = frontmatter(dc);
+  ok("T0.4 design-critic: file agent ada, valid V2, read-only (edit/shell/subagent/question deny), nol /subagent",
+    checkAgents(".opencode/agents").length === 0
+    && dcFm?.mode === "subagent"
+    && ["edit", "shell", "subagent", "question"].every((a) => dcFm.permissions?.some((p) => p.action === a && p.effect === "deny"))
+    && !/\/subagent/.test(dcBody)
+    && !/pemeriksa peran \/subagent/.test(rev));
+
+  ok("T0.4 design-loop: ekspor identik dengan alias loopdesign-driver + LOOP_STATES lengkap",
+    DL.runDesignLoop === DRV.runDesignLoop
+    && JSON.stringify(DL.LOOP_STATES) === JSON.stringify(["DRAFT", "MEASURE", "GATE", "CRITIC", "PATCH", "DONE", "HALT"]));
+
+  // Wiring criticInput() + comparePairwise() + Done-Gate
+  const os = await import("node:os");
+  const tmpWs = fs.mkdtempSync(path.join(os.tmpdir(), "lumiloop04-"));
+  try {
+    let criticCalled = 0;
+    let pairwiseCalled = 0;
+    let iterCount = 0;
+    const res = await DL.runDesignLoop({
+      target: "iter1.html",
+      workspace: tmpWs,
+      maxIterations: 3,
+      brief: { title: "Kopi Senja", code: "LEAK_CODE", claims: "LEAK_CLAIMS" },
+      design: { direction: "Hangat artisanal", character: "tenang, teliti", world: "kertas", moments: "hero", signature: "garis emas" },
+      doneGateInput: { commandExitCode: 0, expectedArtifacts: [], testCommandExitCode: 0, testsGreen: true, facts: ["FACT: test exit=0"] },
+    }, {
+      measureFn: async (t) => {
+        iterCount++;
+        if (t === "iter1.html") {
+          return { pass: false, findings: [{ check: "contrast", severity: "fail", detail: "low" }], screenshots: ["s1.png"], behavior: [{ id: "b1", passed: true }] };
+        }
+        return { pass: true, findings: [], screenshots: ["s2.png"], behavior: [{ id: "b1", passed: true }] };
+      },
+      domFn: async (t) => [{ tag: "h1", label: t }],
+      pairwiseFn: async (prev, cur) => {
+        pairwiseCalled++;
+        return { winner: "b", winnerName: cur, orderConsistent: true, prev, cur };
+      },
+      criticBuilder: (arg) => {
+        criticCalled++;
+        return criticInput(arg);
+      },
+      criticRunner: async (pkt) => ({ summary: "perbaiki kontras", pkt }),
+      patchRunner: async () => ({ target: "iter2.html" }),
+    });
+    const histFile = path.join(tmpWs, ".tmp", "loopdesign", "loop-history.jsonl");
+    ok("T0.4 design-loop: DRAFT->MEASURE->GATE->CRITIC->PATCH->MEASURE->GATE->DONE, panggil criticInput() & comparePairwise(), strip code/claims",
+      res.state === "DONE" && res.iteration === 2 && iterCount === 2
+      && criticCalled === 1 && pairwiseCalled === 1
+      && res.steps[0].criticPacket.direction?.name === "Hangat artisanal"
+      && !("code" in (res.steps[0].criticPacket.brief || {}))
+      && res.transitions.join(",") === "DRAFT->MEASURE,MEASURE->GATE,GATE->CRITIC,CRITIC->PATCH,PATCH->MEASURE,MEASURE->GATE,GATE->DONE"
+      && fs.existsSync(histFile));
+
+    // Design-Gate pass tapi Done-Gate fail -> HALT (tidak boleh DONE)
+    const haltDone = await DL.stepDesignLoop({
+      target: "clean.html",
+      workspace: tmpWs,
+      stateDir: path.join(tmpWs, ".tmp", "loopdesign-dg"),
+      doneGateInput: { commandExitCode: 0, expectedArtifacts: [], testCommandExitCode: 1, testsGreen: false, facts: [] },
+    }, {
+      measureFn: async () => ({ pass: true, findings: [], screenshots: [], behavior: [] }),
+      domFn: async () => [],
+    });
+    ok("T0.4 design-loop: Design-Gate PASS tapi Done-Gate FAIL -> HALT (tidak DONE)",
+      haltDone.state === "HALT" && haltDone.reason === "done-gate-gagal");
+
+    // Behavior Probe fail meskipun gate.pass=true -> CRITIC (tidak DONE)
+    const behFail = await DL.stepDesignLoop({
+      target: "beh.html",
+      workspace: tmpWs,
+      stateDir: path.join(tmpWs, ".tmp", "loopdesign-beh"),
+      doneGateInput: { commandExitCode: 0, expectedArtifacts: [], testCommandExitCode: 0, testsGreen: true, facts: ["FACT: ok"] },
+    }, {
+      measureFn: async () => ({ pass: true, findings: [{ check: "behavior", severity: "fail", detail: "cart not empty" }], screenshots: [], behavior: [{ id: "cart", passed: false }] }),
+      domFn: async () => [],
+    });
+    ok("T0.4 design-loop: Behavior Probe fail menahan DONE -> CRITIC",
+      behFail.state === "CRITIC" && behFail.behaviorProbePassed === false);
+  } finally {
+    fs.rmSync(tmpWs, { recursive: true, force: true });
+  }
+}
+
+// --- Wave 1 (T1.5): kontras WCAG AA theme lumitome.json + wordmark logo.patch ---
+{
+  const theme = JSON.parse(fs.readFileSync("lumitome/config/themes/lumitome.json", "utf8"));
+  const patch = fs.readFileSync("engine/patches/logo.patch", "utf8");
+  const relLum = (hex) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+      .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const ratio = (a, b) => {
+    const l1 = relLum(a), l2 = relLum(b);
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  };
+  const lightBgs = [theme.defs.paper, theme.defs.paper2, theme.defs.paper3];
+  const lightFgs = [theme.defs.bronze, theme.defs.bronzeDeep, theme.defs.umber, theme.defs.inkMuted, theme.defs.ink];
+  const darkFgs = [theme.defs.champagne, theme.defs.goldDeep, theme.defs.cornsilk, theme.defs.goldSoft, theme.defs.gold];
+  const wordmarkLight = "#7A5A1A";
+  ok("T1.5 WCAG AA light theme: semua token teks & wordmark #7A5A1A >= 4.5:1 di paper/paper2/paper3; dark mode utuh >= 4.5:1",
+    lightFgs.every((fg) => lightBgs.every((bg) => ratio(fg, bg) >= 4.5))
+    && [...lightBgs, "#FFFFFF"].every((bg) => ratio(wordmarkLight, bg) >= 4.5)
+    && darkFgs.every((fg) => ratio(fg, theme.defs.night) >= 4.5)
+    && /logoColorLight = \{ left: "#7A5A1A", right: "#7A5A1A" \}/.test(patch)
+    && /luminance > 0\.5/.test(patch));
+}
+
 finish();

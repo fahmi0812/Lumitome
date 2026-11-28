@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased (Wave 0–4 — Lumitome Next)
+
+- **Wave 4 — Sandbox, BYOP Shadow, Dual-Mode Eval & SHarP Ablation:**
+  - `SandboxProvider` (`harness/sandbox/provider.mjs`): antarmuka tunggal `NoopSandbox` (`LUMI_SANDBOX=off` default `$0`), `BwrapSandbox` (`LUMI_SANDBOX=bwrap` fail-closed `SANDBOX_CLOSED` bila biner/namespace absen), dan `RemoteSandboxAdapter` (`LUMI_SANDBOX=remote` opt-in fail-closed + blokir mount kredensial).
+  - BYOP Guardrail Proxy Shadow Mode (`harness/byop-guardrail.mjs` & `harness/byop-guard.mjs`): 100% via `9router`, context stripping + secret scrubbing (`buildGuardrailPayload`), default `LUMI_BYOP_MODE=shadow` (timeout `350 ms`, telemetri `$LUMI_HOME/telemetry/byop-shadow.jsonl`), serta enforce guard keras (`enforce` otomatis di-downgrade ke `shadow` tanpa laporan probe terverifikasi `FPR < 0.01` & `p95_ms <= 350`).
+  - Dual-Mode Eval Suite (`scripts/eval-harness.mjs` + `tests/eval/sim-baseline.jsonl` + `npm run eval`): replay offline deterministik `RPL-01`..`RPL-09` serta mode live `9router`.
+  - SHarP Ablation & Pruning Workflow (`scripts/sharp-ablation.mjs`): memisahkan invarian permanen (`done-gate`, `scan-gate`, `lumi-guard`, `repro-before-edit-headless`, `sticky-taint` — ditolak bila di-prune) vs flag prunable (`LUMI_IDLE_REDRIVE`, `LUMI_CASCADE`, `LUMI_PLAN_PREPASS`, `LUMI_OVERTHINK_GUARD`, `LUMI_EMBED_MODEL`).
+- **Wave 1–3 (Ringkasan Lumitome Next):** dukungan OpenCode 2.4.2 (`policies` top-level, penutupan celah `execute`, `output.exitCode` / `shell-bg`, kontras WCAG light theme & `logo.patch`), `IdleGateController` (`experimental.idle`), `Repro-Before-Edit` + `ATTESTED` witness/STALE + context-stripped reviewer + `HaltingWatchdog`, serta 4-layer memory L1–L4 + Monotonic Sticky Taint + cascade 3-tier `9router` + kalibrasi token.
+- **Single-Source Config (`lumitome/lib/default-config.mjs`):** `lumitome/config/opencode.jsonc` dan root `opencode.jsonc` kini disinkronkan pada `limit` (`1048576`/`65536`), `compaction` (`auto: true`, `keep.tokens: 24000`, `buffer: "10%"`), `tool_output` (`max_lines: 400`, `max_bytes: 16384`), serta variabel `{env:LUMI_9ROUTER_URL}` dan `{env:LUMI_KEY_9ROUTER}` (divalidasi otomatis oleh `npm run validate`).
+- **Pembalikan presedensi & deprecasi `SW_* → LUMI_*` (`lumitome/lib/env-compat.mjs`):**
+  - **`LUMI_*` kini selalu menang atas `SW_*`** di seluruh wrapper, router, dan skrip (`LUMI_HOME > SW_HOME` di `engine.mjs`, `lumitome.mjs`, dan `scripts/doctor.sh`; `LUMI_9ROUTER_URL > SW_9ROUTER_URL`; `LUMI_KEY_9ROUTER > LUMI_9ROUTER_KEY > SW_9ROUTER_KEY > NINEROUTER_API_KEY`). Perubahan dari perilaku lama (`router/skill-db.mjs` & `doctor.sh` yang sebelumnya mendahulukan `SW_*`).
+  - **Aturan `??` vs `||`:** `LUMI_EMBED_MODEL=""` sekarang menonaktifkan embedding secara eksplisit (`none`) tanpa fallback ke `SW_EMBED_MODEL`; sebaliknya kredensial dan URL tetap melewati string kosong `""` ke alias berikutnya.
+  - Alias `SW_*` masih diterima dengan peringatan deprecasi 1× per proses ke `stderr` (`[lumitome] DEPRECATED: ... akan dihapus di v0.5.0`). Nama server MCP `swanwright-skills` diperbarui menjadi `lumitome-skills` / `lumitome-skills-${sector}`.
+
 ## 0.3.85 — fix: limit.context model diteruskan dari 9router — auto-compact 90% kini jalan di jendela asli
 
 - **Bug: auto-compact proaktif tidak pernah terpicu.** `detectModels()` hanya mengambil id model dari `GET /v1/models` 9router dan `opencodeFragment()` mendaftarkan model tanpa `limit` — engine lalu default `limit.context` 0, rumus ceiling `lm(limit, buffer)` jadi Infinity, jadi auto-compact (alasan "auto") tidak jalan sebelum overflow. Yang 90% di v0.3.83 itu benar sebagai setting, tapi tidak pernah mencapai angka jendela model yang sebenarnya.

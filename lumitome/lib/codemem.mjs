@@ -36,7 +36,7 @@ export const CODEMEM_STARTUP_MS = 15000;
  */
 export function codememServer(home, exists = fs.existsSync, nodeExec = process.execPath) {
   const bin = cbmBin(home); if (!exists(bin)) return null;
-  return { type: "local", command: [nodeExec, "--no-warnings", SHIM, bin], timeout: { startup: CODEMEM_STARTUP_MS, catalog: 60000, execution: 600000 } };
+  return { type: "local", protocol: "legacy", command: [nodeExec, "--no-warnings", SHIM, bin], timeout: { startup: CODEMEM_STARTUP_MS, catalog: 60000, execution: 600000 } };
 }
 /** Root repo git terdekat (folder berisi .git, file atau dir) atau null. Path Windows & POSIX. */
 export function gitRoot(dir, { exists = fs.existsSync, p = path } = {}) {

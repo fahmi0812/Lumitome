@@ -42,6 +42,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { frontmatter } from "../router/parse.mjs";
 
@@ -674,7 +675,7 @@ function main() {
   else console.log(o.dryRun ? "\nDry-run selesai (tidak ada yang ditulis)." : "\nSync selesai. Jalankan: npm run skills:registry && npm run validate && npm test");
 }
 
-const isMain = process.argv[1] && path.resolve(process.argv[1]) === new URL(import.meta.url).pathname;
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
   try { main(); } catch (e) { console.error(`sync-upstream: ${e.message}`); process.exitCode = 1; }
 }

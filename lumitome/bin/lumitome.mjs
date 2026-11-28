@@ -16,6 +16,8 @@ import os from "node:os";
 import crypto from "node:crypto";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { DEFAULT_MODEL } from "../lib/default-model.mjs";
+import { resolveEngineBin } from "../lib/engine.mjs";
+import { resolveEnvValue } from "../lib/env-compat.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
@@ -27,7 +29,7 @@ const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process
 
 const argv = process.argv.slice(2);
 // env terisolasi untuk SEMUA pemanggilan engine (termasuk --version): log/state tidak jatuh ke ~/.local/share/opencode user
-const ISO_HOME = env.LUMI_HOME || path.join(os.homedir(), ".lumitome");
+const ISO_HOME = resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]) || path.join(os.homedir(), ".lumitome"); // env-compat-allow
 const isoEnv = () => ({ ...env, XDG_CONFIG_HOME: path.join(ISO_HOME, "xdg-config"), XDG_DATA_HOME: env.LUMI_XDG_DATA || path.join(ISO_HOME, "data"),
   XDG_STATE_HOME: path.join(ISO_HOME, "state"), XDG_CACHE_HOME: path.join(ISO_HOME, "cache"), OPENCODE_DISABLE_AUTOUPDATE: "1" });
 const sub = argv[0] && !argv[0].startsWith("-") ? argv[0] : "";
@@ -92,7 +94,7 @@ if (sub === "trust") {
 // ---------- engine terpin: hanya diganti lewat perintah eksplisit ----------
 if (sub === "engine" || sub === "upgrade-engine" || sub === "upgrade") {
   const EN = await import(pathToFileURL(path.join(ROOT, "lib", "engine.mjs")).href);
-  const home = env.SW_HOME || env.LUMI_HOME || path.join(os.homedir(), ".lumitome");
+  const home = resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]) || path.join(os.homedir(), ".lumitome"); // env-compat-allow
   const cur = EN.engineBin(home);
   const ver = () => { try { return execFileSync(cur, ["--version"], { encoding: "utf8", env: isoEnv() }).trim(); } catch { return "(tidak ada)"; } };
   if (sub === "engine") { console.log(`engine: ${cur}\nversi:  ${ver()}\nbuild:  ${EN.installedFlavor(cur) || "upstream"} (LUMI_ENGINE=upstream → OpenCode resmi)\nautoupdate: mati (OPENCODE_DISABLE_AUTOUPDATE=1, update:"disable")`); process.exit(0); }
@@ -289,12 +291,9 @@ if (!HAS_PROVIDER) {
 
 // binary OpenCode milik lumitome (terpin, di dir sendiri) — tidak memakai/menimpa `opencode` global user
 function ocBin() {
-  if (env.LUMI_OPENCODE) return env.LUMI_OPENCODE;
-  const exe = process.platform === "win32" ? "opencode.exe" : "opencode";
-  for (const d of [env.SW_HOME, env.LUMI_HOME, path.join(os.homedir(), ".lumitome")]) if (d && fs.existsSync(path.join(d, "bin", exe))) return path.join(d, "bin", exe);
-  return exe;
+  return resolveEngineBin({ env, home: resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]) || path.join(os.homedir(), ".lumitome") }); // env-compat-allow
 }
-const HOME = env.LUMI_HOME || path.join(os.homedir(), ".lumitome");
+const HOME = resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]) || path.join(os.homedir(), ".lumitome"); // env-compat-allow
 const WS = fs.realpathSync(env.LUMI_WORKSPACE || process.cwd());
 const RUN_ID = crypto.randomUUID();
 fs.mkdirSync(path.join(HOME, "runs"), { recursive: true });
@@ -434,15 +433,35 @@ if (sub === "serve" || sub === "web") {
 const redact = (t) => { let o = t.replace(/(server password\s*[:=]?\s*)\S+/gi, "$1[REDACTED]"); if (SERVE_PW) o = o.split(SERVE_PW).join("[REDACTED]"); return o; };
 // reaper: proses milik wrapper lumitome lain yang sudah mati (mis. kena kill -9) dibersihkan saat start
 const HAS_PROC = fs.existsSync("/proc/self/environ");
+function ancestorPids() {
+  const out = new Set([process.pid]);
+  let cur = process.pid;
+  for (let i = 0; i < 64 && cur > 1; i++) {
+    try {
+      const s = fs.readFileSync(`/proc/${cur}/stat`, "utf8");
+      const ppid = Number(s.slice(s.lastIndexOf(")") + 2).split(" ")[1]);
+      if (!Number.isInteger(ppid) || ppid <= 0 || out.has(ppid)) break;
+      out.add(ppid); cur = ppid;
+    } catch { break; }
+  }
+  return out;
+}
 function reapOrphans() {
   let n = 0, keep = null; if (!HAS_PROC) return 0;
+  const anc = ancestorPids();
+  const defHome = path.join(os.homedir(), ".lumitome");
   for (const d of fs.readdirSync("/proc")) {
     if (!/^\d+$/.test(d)) continue;
+    const pid = Number(d);
+    if (anc.has(pid)) continue;
     let e; try { e = fs.readFileSync(`/proc/${d}/environ`, "latin1"); } catch { continue; }
     const m = e.match(/(?:^|\0)LUMI_WRAPPER_PID=(\d+)/); if (!m || m[1] === String(process.pid)) continue;
+    const hm = e.match(/(?:^|\0)LUMI_HOME=([^\0]*)/);
+    const procHome = hm && hm[1] ? hm[1] : defHome;
+    if (procHome !== HOME) continue;
     if (fs.existsSync(`/proc/${m[1]}`)) continue;
-    if ((keep ??= keepPids()).has(Number(d))) continue;
-    try { process.kill(Number(d), "SIGKILL"); n++; } catch {}
+    if ((keep ??= keepPids()).has(pid)) continue;
+    try { process.kill(pid, "SIGKILL"); n++; } catch {}
   }
   return n;
 }
@@ -472,6 +491,19 @@ if (sub === "run") {
 }
 // v0.3.51: --auto hanya untuk TUI polos + run (subcommand lain tidak diubah).
 if (AUTO.auto && (sub === "" || sub === "run")) args = AM.withAutoFlag(args);
+// T1.3: cek kesiapan plugin async (#63814) bila terhubung ke server (--server) atau service reuse.
+if (!args.includes("--standalone") && env.LUMI_PLUGIN_WAIT !== "0") {
+  const si = args.indexOf("--server");
+  const serverArg = si >= 0 ? args[si + 1] : args.find((a) => a.startsWith("--server="))?.slice(9);
+  const targetUrl = serverArg || (sub === "" ? SC.status(HOME).url : null);
+  if (targetUrl) {
+    const pw = env.OPENCODE_SERVER_PASSWORD || (() => { try { return fs.readFileSync(path.join(HOME, "serve.password"), "utf8").trim(); } catch { return ""; } })();
+    const auth = pw ? `Basic ${Buffer.from(`opencode:${pw}`).toString("base64")}` : "";
+    const reqIds = SC.requiredPluginIds({ repo: REPO, ws: WS });
+    const pr = await SC.waitForPluginsReady(targetUrl, auth, reqIds, { timeoutMs: 5000, intervalMs: 50, directory: WS });
+    if (!pr.ok && env.LUMI_DEBUG) process.stderr.write(`lumitome: PERINGATAN — ${pr.warning}\n`);
+  }
+}
 // v0.3.53: tidak ada lagi baris status mode auto saat start (Fahmi: jelek) —
 // mode auto tetap aktif default; indikator `auto` tetap terlihat di TUI OpenCode.
 
@@ -596,13 +628,11 @@ if (sub === "run") {
       const r = evaluateDoneGate ? evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], testCommandExitCode: dg.last.exit, facts: dg.facts }) : { isDone: false, failureReason: "tes gagal" };
       process.stderr.write(`lumitome: DONE-GATE FAIL — ${r.failureReason}${dg.last.why ? ` (${dg.last.why})` : ""}; FACT: \`${dg.last.command}\` exit=${dg.last.raw_exit ?? dg.last.exit}\n`); code = 3;
     } else if (dg.ran) process.stderr.write(`lumitome: DONE-GATE PASS — FACT: \`${dg.last.command}\` exit=0\n`);
-    else if (dg.wrote) {
-      // P0-3: kode diubah tapi tidak ada perintah tes di jurnal — gagal (exit 3), bukan lolos diam-diam.
-      // sector/scanGate TIDAK diteruskan: doneGateFromJournal tidak menyediakannya (hanya ran/last/spin/facts/wrote);
-      // evaluateDoneGate tanpa bukti tes sudah fail-closed, jadi pemanggilan tanpa bukti ini gagal sendiri.
+    else if (dg.wrote || dg.bgPending > 0) {
+      // P0-3 + R5: kode diubah atau perintah tes masih berjalan di background tanpa hasil exit code nyata → gagal (exit 3).
       const { evaluateDoneGate } = await import(pathToFileURL(path.join(REPO, "harness", "done-gate.ts")).href).catch(() => ({}));
       const r = evaluateDoneGate ? evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], facts: dg.facts }) : { isDone: false, failureReason: "tidak ada bukti tes" };
-      process.stderr.write(`lumitome: DONE-GATE FAIL — ${r.failureReason}; file diubah tapi tidak ada perintah tes di jurnal\n`); code = 3;
+      process.stderr.write(`lumitome: DONE-GATE FAIL — ${r.failureReason}; ${dg.bgPending > 0 ? `ada ${dg.bgPending} shell-bg belum selesai` : "file diubah tapi tidak ada perintah tes di jurnal"}\n`); code = 3;
     } else process.stderr.write(`lumitome: DONE-GATE SKIP — tidak ada perintah tes di jurnal dan tidak ada file diubah (tugas tanpa kode); gate tidak relevan\n`);
   }
   if (env.LUMI_DEBUG) process.stderr.write(`lumitome: jurnal ${JOURNAL} ${skillNote}\n`);

@@ -11,8 +11,10 @@ import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
+import { resolveEnvValue } from "./env-compat.mjs";
 
 export const OC_VERSION = "2.3.0";
+export const ENGINE_MIN_2_4 = "2.4.2";
 export const LUMI_ENGINE_TAG = "engine-2.3.0-lumi.1";
 // SHA256 aset rilis fahmi0812/Lumitome engine-2.3.0-lumi.1 (sama dengan install.sh). Platform tanpa pin di sini → upstream.
 export const LUMI_PINS = {
@@ -36,9 +38,46 @@ export const OC_PINS = {
 };
 
 /** LUMI_HOME default: ~/.lumitome (Windows: %USERPROFILE%\.lumitome). */
-export function lumiHome(env = process.env, p = path, home = os.homedir()) { return env.LUMI_HOME || p.join(home, ".lumitome"); }
+export function lumiHome(env = process.env, p = path, home = os.homedir()) {
+  return resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]) || p.join(home, ".lumitome"); // env-compat-allow
+}
 export const exeName = (platform = process.platform) => (platform === "win32" ? "opencode.exe" : "opencode");
 export function engineBin(home, platform = process.platform, p = platform === "win32" ? path.win32 : path) { return p.join(home, "bin", exeName(platform)); }
+
+/** Bandingkan versi semver secara numerik (true bila ver >= minVer; lulus "2.10.0" >= "2.4.2"). */
+export function engineAtLeast(ver, minVer = ENGINE_MIN_2_4) {
+  const mA = String(ver || "").match(/(\d+)\.(\d+)\.(\d+)/);
+  const mB = String(minVer || "").match(/(\d+)\.(\d+)\.(\d+)/);
+  if (!mA || !mB) return false;
+  const a = [Number(mA[1]), Number(mA[2]), Number(mA[3])];
+  const b = [Number(mB[1]), Number(mB[2]), Number(mB[3])];
+  for (let i = 0; i < 3; i++) {
+    if (a[i] > b[i]) return true;
+    if (a[i] < b[i]) return false;
+  }
+  return true;
+}
+
+/** Resolusi versi target engine (LUMI_ENGINE_VERSION menimpa OC_VERSION terpin). */
+export function resolveEngineVersion(env = process.env) {
+  const raw = String(env?.LUMI_ENGINE_VERSION || "").trim();
+  return raw || OC_VERSION;
+}
+
+/** Resolusi binary engine: LUMI_ENGINE_BIN > LUMI_OPENCODE > $LUMI_HOME/bin/opencode > ~/.lumitome/bin/opencode > PATH. */
+export function resolveEngineBin({ env = process.env, home = lumiHome(env), platform = process.platform, exists = fs.existsSync } = {}) {
+  const explicit = String(env?.LUMI_ENGINE_BIN || "").trim();
+  if (explicit) return explicit;
+  const legacy = String(env?.LUMI_OPENCODE || "").trim();
+  if (legacy) return legacy;
+  const exe = exeName(platform);
+  for (const d of [home, path.join(os.homedir(), ".lumitome")]) {
+    if (!d) continue;
+    const candidate = path.join(d, "bin", exe);
+    if (exists(candidate)) return candidate;
+  }
+  return exe;
+}
 export function platformKey(platform = process.platform, arch = process.arch) { return `${platform}-${arch === "arm64" ? "arm64" : "x64"}`; }
 export function assetFor(version = OC_VERSION, platform = process.platform, arch = process.arch, flavor = engineFlavor()) {
   const key = platformKey(platform, arch);

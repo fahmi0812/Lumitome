@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "prunable": true,
+  "feature_flag": "LUMI_CASCADE_ROUTING",
+  "providerID": "9router",
+  "never_downgrade_roles": ["thinking", "reviewer", "design-critic"],
+  "never_downgrade_tasks": ["security", "architecture"],
+  "plan_prepass": {
+    "enabled": true,
+    "feature_flag": "LUMI_PLAN_PREPASS",
+    "max_tokens": 300,
+    "active_for_roles": ["thinking"],
+    "active_for_complexities": ["complex", "thinking"],
+    "disabled_for_complexities": ["trivial"]
+  },
+  "tiers": {
+    "tier0_micro": {
+      "providerID": "9router",
+      "description": "Deterministic Tier 0 ($0, regex/FTS5/AST/lint/gates) or micro fast model if explicitly registered in $LUMI_HOME/providers.json",
+      "placeholder_model": "<resolved-from-9router-providers.json:tier0_micro>",
+      "model_patterns": ["*flash-lite*", "*mini*", "*nano*", "*haiku*"],
+      "allow_auxiliary_kinds": ["title", "generate"],
+      "max_thinking_tokens": 2048,
+      "max_output_tokens": 4096
+    },
+    "tier1_fast": {
+      "providerID": "9router",
+      "description": "Fast/low-cost 9router model resolved from live $LUMI_HOME/providers.json",
+      "placeholder_model": "<resolved-from-9router-providers.json:tier1_fast>",
+      "model_patterns": ["*gemini*flash*", "*flash*", "*sonnet*", "*mini*"],
+      "allow_auxiliary_kinds": ["title", "compaction", "generate"],
+      "max_thinking_tokens": 8192,
+      "max_output_tokens": 16384
+    },
+    "tier2_frontier": {
+      "providerID": "9router",
+      "description": "Frontier/high-reasoning 9router model resolved from live $LUMI_HOME/providers.json (never downgraded for thinking/reviewer/design-critic)",
+      "placeholder_model": "<resolved-from-9router-providers.json:tier2_frontier>",
+      "model_patterns": ["*claude*opus*", "*opus*", "*claude*sonnet*", "*gpt-5*", "*o3*", "*gemini*pro*", "*neon*"],
+      "allow_auxiliary_kinds": ["compaction"],
+      "max_thinking_tokens": 16384,
+      "max_output_tokens": 32768
+    }
+  },
+  "defaults": {
+    "max_thinking_tokens": 8192,
+    "preferred_tool_format": "edit",
+    "safety_factor": 1.08,
+    "calibrated_chars_per_token": {
+      "prose": 3.9,
+      "code": 3.2,
+      "unicode": 2.0,
+      "mixed": 3.5
+    }
+  },
+  "profiles": [
+    {
+      "pattern": "*gemini-3.8-flash*|*gemini*flash*",
+      "tier": "tier1_fast",
+      "providerID": "9router",
+      "allow_auxiliary_kinds": ["title", "compaction", "generate"],
+      "preferred_tool_format": "edit",
+      "thinking_effort_cap": "medium",
+      "max_thinking_tokens": 8192,
+      "max_output_tokens": 16384,
+      "limit_sync_source": "providers.mjs#modelLimit",
+      "calibrated_chars_per_token": { "prose": 3.9, "code": 3.3, "unicode": 2.1, "mixed": 3.5 },
+      "prunable": true
+    },
+    {
+      "pattern": "*claude*opus*|*claude*sonnet*|*gpt-5*|*o3*",
+      "tier": "tier2_frontier",
+      "providerID": "9router",
+      "allow_auxiliary_kinds": ["compaction"],
+      "preferred_tool_format": "patch",
+      "thinking_effort_cap": "high",
+      "max_thinking_tokens": 16384,
+      "max_output_tokens": 32768,
+      "limit_sync_source": "providers.mjs#modelLimit",
+      "calibrated_chars_per_token": { "prose": 3.8, "code": 3.1, "unicode": 2.0, "mixed": 3.4 },
+      "prunable": true
+    }
+  ]
+}

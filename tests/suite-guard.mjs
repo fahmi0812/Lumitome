@@ -374,4 +374,304 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
   }
 }
 
+// --- Wave 1 (T1.2): execute Code Mode guard, symlink-escape, TCB protection, classifyAction, 2.4.2 output.exitCode & shell-bg ---
+{
+  const G = await import("../harness/lumi-guard.mjs");
+  const { pathToFileURL } = await import("node:url");
+  const os = await import("node:os");
+  const cp = await import("node:child_process");
+
+  // 1) classifyAction 3-kelas
+  ok("T1.2 classifyAction: lookup vs verify vs commit",
+    G.classifyAction("read", { filePath: "a.ts" }) === "lookup"
+    && G.classifyAction("grep", { pattern: "foo" }) === "lookup"
+    && G.classifyAction("shell", { command: "git status" }) === "lookup"
+    && G.classifyAction("shell", { command: "npm test" }) === "verify"
+    && G.classifyAction("shell", { command: "cd app && npm test" }) === "verify"
+    && G.classifyAction("write", { filePath: "a.ts" }) === "commit"
+    && G.classifyAction("edit", { filePath: "a.ts" }) === "commit"
+    && G.classifyAction("shell", { command: "git commit -m x" }) === "commit"
+    && G.classifyAction("execute", { code: 'await Bun.write("a.txt", "1")' }) === "commit");
+
+  // 2) execute Code Mode guard (.env vs .env.example, opencode:///api/, git push main)
+  ok("T1.2 execute guard: Bun.file('.env') -> deny execute-policy; .env.example -> allow; opencode:///api/ -> deny",
+    G.isGuardedTool("execute") === true
+    && (() => { const r = G.evaluateTool("execute", { code: 'await Bun.file(".env").text()' }); return r.effect === "deny" && r.rule === "execute-policy"; })()
+    && G.evaluateTool("execute", { code: 'await Bun.file(".env.example").text()' }).effect === "allow"
+    && G.evaluateTool("execute", { code: 'await fetch("opencode:///api/session")' }).rule === "execute-policy"
+    && G.evaluateTool("execute", { code: 'await $`git push origin main`' }).rule === "execute-policy");
+
+  // 3) symlink-escape (.tmp/x -> ../../.env) + hard-deny TCB + maintainer branch gating
+  const root12 = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "lumi-t12-")));
+  try {
+    const ws12 = path.join(root12, "ws");
+    const lh12 = path.join(root12, ".lumitome");
+    fs.mkdirSync(path.join(ws12, ".tmp"), { recursive: true });
+    fs.mkdirSync(path.join(ws12, ".git", "hooks"), { recursive: true });
+    fs.mkdirSync(path.join(ws12, "harness"), { recursive: true });
+    fs.mkdirSync(lh12, { recursive: true });
+    fs.writeFileSync(path.join(root12, ".env"), "SECRET=1\n");
+    fs.writeFileSync(path.join(ws12, "harness", "lumi-guard.mjs"), "// tcb\n");
+    fs.symlinkSync("../../.env", path.join(ws12, ".tmp", "x"));
+
+    ok("T1.2 symlink-escape: .tmp/x -> ../../.env ditolak (symlink-escape)",
+      G.evaluateTool("read", { filePath: ".tmp/x" }, { workspace: ws12, home: root12, lumiHome: lh12 }).rule === "symlink-escape"
+      && G.evaluateTool("write", { filePath: ".tmp/x", content: "z" }, { workspace: ws12, home: root12, lumiHome: lh12 }).rule === "symlink-escape");
+
+    ok("T1.2 hard-deny TCB: $LUMI_HOME/**, .git/hooks/**, .git/config -> deny tcb-protected",
+      G.evaluateTool("write", { filePath: path.join(lh12, "evil.mjs"), content: "x" }, { workspace: ws12, home: root12, lumiHome: lh12 }).rule === "tcb-protected"
+      && G.evaluateTool("write", { filePath: ".git/hooks/pre-commit", content: "x" }, { workspace: ws12, home: root12, lumiHome: lh12 }).rule === "tcb-protected"
+      && G.evaluateTool("write", { filePath: ".git/config", content: "x" }, { workspace: ws12, home: root12, lumiHome: lh12 }).rule === "tcb-protected");
+
+    // Git repo untuk menguji branch main vs branch baru agen tanpa trust vs maintainer trusted
+    const gitWs = path.join(root12, "repo");
+    fs.mkdirSync(path.join(gitWs, "harness"), { recursive: true });
+    fs.writeFileSync(path.join(gitWs, "harness", "lumi-guard.mjs"), "// tcb\n");
+    cp.execFileSync("git", ["-C", gitWs, "init", "-b", "main"], { stdio: "ignore" });
+    cp.execFileSync("git", ["-C", gitWs, "config", "user.email", "t@local"], { stdio: "ignore" });
+    cp.execFileSync("git", ["-C", gitWs, "config", "user.name", "t"], { stdio: "ignore" });
+    cp.execFileSync("git", ["-C", gitWs, "add", "."], { stdio: "ignore" });
+    cp.execFileSync("git", ["-C", gitWs, "commit", "-m", "init"], { stdio: "ignore" });
+
+    // Di main bahkan dengan maintainer mode -> DENY
+    const rMain = G.evaluateTool("edit", { filePath: "harness/lumi-guard.mjs" }, { workspace: gitWs, home: root12, lumiHome: lh12, env: { LUMI_MAINTAINER_MODE: "1" } });
+    // Agen buat branch baru via git switch -c tanpa trust.json trusted & tanpa LUMI_MAINTAINER_MODE=1 -> DENY
+    cp.execFileSync("git", ["-C", gitWs, "switch", "-c", "feat/agent-branch"], { stdio: "ignore" });
+    const rAgentBranch = G.evaluateTool("edit", { filePath: "harness/lumi-guard.mjs" }, { workspace: gitWs, home: root12, lumiHome: lh12, tier: "standard", tierSource: "default", env: {} });
+    // Env LUMI_TRUST_TIER=trusted (tierSource: "env") tanpa trust.json / LUMI_MAINTAINER_MODE -> tetap DENY
+    const rEnvTier = G.evaluateTool("edit", { filePath: "harness/lumi-guard.mjs" }, { workspace: gitWs, home: root12, lumiHome: lh12, tier: "trusted", tierSource: "env", env: {} });
+    // Maintainer dengan LUMI_MAINTAINER_MODE=1 di branch non-main -> ALLOW
+    const rMaintEnv = G.evaluateTool("edit", { filePath: "harness/lumi-guard.mjs" }, { workspace: gitWs, home: root12, lumiHome: lh12, env: { LUMI_MAINTAINER_MODE: "1" } });
+    // Maintainer dengan trust.json tier trusted (di luar workspace) di branch non-main -> ALLOW
+    fs.writeFileSync(G.trustFilePath(lh12), JSON.stringify({ projects: { [gitWs]: { tier: "trusted" } } }));
+    const rTrustJson = G.evaluateTool("edit", { filePath: "harness/lumi-guard.mjs" }, { workspace: gitWs, home: root12, lumiHome: lh12, env: {} });
+
+    ok("T1.2 TCB edit repo: main=DENY, agent switch -c tanpa trust=DENY, env tier=DENY, maintainer/trust.json di non-main=ALLOW",
+      rMain.rule === "tcb-protected"
+      && rAgentBranch.rule === "tcb-protected"
+      && rEnvTier.rule === "tcb-protected"
+      && rMaintEnv.effect === "allow"
+      && rTrustJson.effect === "allow");
+  } finally {
+    fs.rmSync(root12, { recursive: true, force: true });
+  }
+
+  // 4) Integrasi plugin lumitome-guard.ts: payload execute.after 2.4.2 (exitCode 0/1 & shell-bg) + doneGateFromJournal
+  const plugDir = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-plug12-"));
+  try {
+    const jFile = path.join(plugDir, "journal.jsonl");
+    const prevEnv = {
+      LUMI_WORKSPACE: process.env.LUMI_WORKSPACE,
+      LUMI_JOURNAL: process.env.LUMI_JOURNAL,
+      LUMI_HARNESS: process.env.LUMI_HARNESS,
+      LUMI_HOME: process.env.LUMI_HOME,
+      LUMI_SANDBOX: process.env.LUMI_SANDBOX,
+      LUMI_HEADLESS: process.env.LUMI_HEADLESS,
+    };
+    process.env.LUMI_WORKSPACE = plugDir;
+    process.env.LUMI_JOURNAL = jFile;
+    process.env.LUMI_HARNESS = path.resolve("harness/lumi-guard.mjs");
+    process.env.LUMI_HOME = path.join(plugDir, ".lumitome");
+    process.env.LUMI_SANDBOX = "off";
+    process.env.LUMI_HEADLESS = "1";
+
+    let beforeHook, afterHook;
+    const guardMod = await import(pathToFileURL(path.resolve("lumitome/config/plugins/lumitome-guard.ts")).href + `?t=${Date.now()}`);
+    await guardMod.default.setup({
+      location: { directory: plugDir },
+      tool: {
+        hook(name, fn) {
+          if (name === "execute.before") beforeHook = fn;
+          if (name === "execute.after") afterHook = fn;
+        },
+      },
+    });
+
+    for (const [k, v] of Object.entries(prevEnv)) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+
+    // execute.before pada tool execute tetap diawasi
+    let execDenied = false;
+    try { await beforeHook({ tool: "execute", input: { code: 'await Bun.file(".env").text()' }, id: "c1", codemode: true }); } catch { execDenied = true; }
+    // Foreground exitCode: 1 lalu shell-bg running (tidak boleh reset spin!) lalu foreground exitCode: 0
+    await afterHook({ tool: "shell", status: "completed", input: { command: "npm test" }, result: { output: { exitCode: 1 } } });
+    await afterHook({ tool: "shell", status: "completed", input: { command: "npm test" }, result: { metadata: { status: "running", shellID: "sh_1" }, output: { exitCode: null } } });
+    await afterHook({ tool: "shell", status: "completed", input: { command: "npm test" }, result: { output: { exitCode: 0 } } });
+
+    const jRows = fs.readFileSync(jFile, "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    const shellRows = jRows.filter((r) => r.kind === "shell");
+    const bgRows = jRows.filter((r) => r.kind === "shell-bg");
+    const dgBgOnly = G.doneGateFromJournal([{ kind: "tool", tool: "edit", status: "completed" }, ...bgRows]);
+    const evBg = evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], ...(dgBgOnly.ran ? { testCommandExitCode: dgBgOnly.last.exit } : {}), facts: dgBgOnly.facts });
+
+    ok("T1.2 lumitome-guard.ts 2.4.2: execute guarded; exitCode 1 -> ok:false; shell-bg -> kind shell-bg & ok:false & UNRUN; exitCode 0 -> ok:true",
+      execDenied === true
+      && shellRows.length === 2
+      && shellRows[0].exit === 1 && shellRows[0].ok === false
+      && shellRows[1].exit === 0 && shellRows[1].ok === true
+      && bgRows.length === 1 && bgRows[0].exit === null && bgRows[0].ok === false && bgRows[0].shellID === "sh_1"
+      && dgBgOnly.ran === 0 && dgBgOnly.bgPending === 1 && evBg.isDone === false);
+  } finally {
+    fs.rmSync(plugDir, { recursive: true, force: true });
+  }
+}
+
+// --- Wave 2 (T2.2): Repro-Before-Edit Gate + INVALID_PROBE ---
+{
+  const RG = await import("../harness/repro-gate.mjs");
+  const { pathToFileURL } = await import("node:url");
+  const tmpBase = path.join(process.cwd(), ".tmp");
+  fs.mkdirSync(tmpBase, { recursive: true });
+  const ws22 = fs.mkdtempSync(path.join(tmpBase, "w2-t22-"));
+  try {
+    // 1) Klasifikasi probe: PASS_NO_REPRO, INVALID_PROBE, VALID_REPRO
+    ok("T2.2 classifyProbeResult: exit 0 -> PASS_NO_REPRO; 127/126/syntax/ENOENT/ModuleNotFoundError/0 tests -> INVALID_PROBE; AssertionError exit 1 -> VALID_REPRO",
+      RG.classifyProbeResult({ command: "npm test", exitCode: 0, output: "1 passed" }).status === "PASS_NO_REPRO"
+      && RG.classifyProbeResult({ command: "pytset", exitCode: 127, output: "command not found" }).status === "INVALID_PROBE"
+      && RG.classifyProbeResult({ command: "./run.sh", exitCode: 126, output: "permission denied" }).status === "INVALID_PROBE"
+      && RG.classifyProbeResult({ command: "node -e '('", exitCode: 2, output: "SyntaxError: Unexpected end of input" }).status === "INVALID_PROBE"
+      && RG.classifyProbeResult({ command: "node bad.mjs", exitCode: 1, output: "ENOENT: no such file or directory" }).status === "INVALID_PROBE"
+      && RG.classifyProbeResult({ command: "python3 -m pytest", exitCode: 1, output: "ModuleNotFoundError: No module named 'foo'" }).status === "INVALID_PROBE"
+      && RG.classifyProbeResult({ command: "node --test", exitCode: 1, output: "0 tests ran" }).status === "INVALID_PROBE"
+      && RG.classifyProbeResult({ command: "npm test", exitCode: 1, output: "AssertionError: expected 1 to equal 2" }).status === "VALID_REPRO");
+
+    // 2) bugfix: tolak edit sebelum probe; INVALID_PROBE tetap tolak; PASS_NO_REPRO tetap tolak; VALID_REPRO izinkan edit
+    const sid = "ses_bug";
+    const rPre = RG.checkReproBeforeEdit({ tool: "edit", input: { filePath: "a.js" }, taskType: "bugfix", workspace: ws22, sessionId: sid });
+    RG.recordReproProbe({ workspace: ws22, sessionId: sid, command: "no_such_cmd", exitCode: 127, output: "command not found" });
+    const rInv = RG.checkReproBeforeEdit({ tool: "write", input: { filePath: "a.js" }, taskType: "bugfix", workspace: ws22, sessionId: sid });
+    RG.recordReproProbe({ workspace: ws22, sessionId: sid, command: "npm test", exitCode: 0, output: "all ok" });
+    const rPassNoRepro = RG.checkReproBeforeEdit({ tool: "patch", input: { patchText: "x" }, taskType: "bugfix", workspace: ws22, sessionId: sid });
+    RG.recordReproProbe({ workspace: ws22, sessionId: sid, command: "node --test repro.mjs", exitCode: 1, output: "AssertionError: boom" });
+    const rValid = RG.checkReproBeforeEdit({ tool: "edit", input: { filePath: "a.js" }, taskType: "bugfix", workspace: ws22, sessionId: sid });
+
+    ok("T2.2 bugfix repro-gate: pre-probe deny (repro-required) -> invalid-probe deny -> pass-no-repro deny -> valid-repro allow",
+      rPre.effect === "deny" && rPre.code === "repro-required"
+      && rInv.effect === "deny" && rInv.code === "invalid-probe"
+      && rPassNoRepro.effect === "deny" && rPassNoRepro.code === "repro-required"
+      && rValid.effect === "allow");
+
+    // 3) Non-bugfix (feature, docs, refactor, general): tidak pernah memblokir edit (nol over-abstention)
+    ok("T2.2 non-bugfix (feature, docs, refactor, general): edit langsung diizinkan tanpa repro",
+      ["feature", "docs", "docs_config", "refactor", "general"].every((tt) =>
+        RG.checkReproBeforeEdit({ tool: "edit", input: { filePath: "a.js" }, taskType: tt, workspace: ws22, sessionId: "ses_nonbug" }).effect === "allow"));
+
+    // 4) LUMI_REPRO_GATE=0: hanya berlaku di interaktif lokal; ditolak/diabaikan di headless & strictGate (G6/G7)
+    ok("T2.2 LUMI_REPRO_GATE=0: bypass interaktif lokal; diabaikan saat headless=true / LUMI_HEADLESS=1 / strictGate=true",
+      RG.checkReproBeforeEdit({ tool: "edit", input: { filePath: "a.js" }, taskType: "bugfix", workspace: ws22, sessionId: "ses_f1", env: { LUMI_REPRO_GATE: "0" }, headless: false, strictGate: false }).effect === "allow"
+      && RG.checkReproBeforeEdit({ tool: "edit", input: { filePath: "a.js" }, taskType: "bugfix", workspace: ws22, sessionId: "ses_f2", env: { LUMI_REPRO_GATE: "0" }, headless: true }).effect === "deny"
+      && RG.checkReproBeforeEdit({ tool: "edit", input: { filePath: "a.js" }, taskType: "bugfix", workspace: ws22, sessionId: "ses_f3", env: { LUMI_REPRO_GATE: "0", LUMI_HEADLESS: "1" } }).effect === "deny"
+      && RG.checkReproBeforeEdit({ tool: "edit", input: { filePath: "a.js" }, taskType: "bugfix", workspace: ws22, sessionId: "ses_f4", env: { LUMI_REPRO_GATE: "0" }, strictGate: true }).effect === "deny");
+
+    // 5) Integrasi lumitome-guard.ts dengan LUMI_TASK_TYPE=bugfix
+    const prevEnv = { LUMI_WORKSPACE: process.env.LUMI_WORKSPACE, LUMI_HARNESS: process.env.LUMI_HARNESS, LUMI_TASK_TYPE: process.env.LUMI_TASK_TYPE, LUMI_SESSION_ID: process.env.LUMI_SESSION_ID, LUMI_SANDBOX: process.env.LUMI_SANDBOX, LUMI_HEADLESS: process.env.LUMI_HEADLESS };
+    try {
+      process.env.LUMI_WORKSPACE = ws22;
+      process.env.LUMI_HARNESS = path.resolve("harness/lumi-guard.mjs");
+      process.env.LUMI_TASK_TYPE = "bugfix";
+      process.env.LUMI_SESSION_ID = "ses_plug_repro";
+      process.env.LUMI_SANDBOX = "off";
+      process.env.LUMI_HEADLESS = "1";
+      let beforeH, afterH;
+      const gm = await import(pathToFileURL(path.resolve("lumitome/config/plugins/lumitome-guard.ts")).href + `?t=${Date.now()}`);
+      await gm.default.setup({
+        location: { directory: ws22 },
+        tool: { hook(n, fn) { if (n === "execute.before") beforeH = fn; if (n === "execute.after") afterH = fn; } },
+      });
+      let blockedBefore = false;
+      try { await beforeH({ tool: "edit", input: { filePath: "bug.mjs" } }); } catch (e) { blockedBefore = /REPRO_GATE/.test(String(e)); }
+      await afterH({ tool: "shell", status: "completed", input: { command: "node --test bug.test.mjs" }, result: { output: { exitCode: 1, output: "AssertionError: fail" } } });
+      let allowedAfter = true;
+      try { await beforeH({ tool: "edit", input: { filePath: "bug.mjs" } }); } catch { allowedAfter = false; }
+      ok("T2.2 integrasi lumitome-guard.ts: bugfix blokir edit sebelum repro, buka setelah VALID_REPRO",
+        blockedBefore && allowedAfter);
+    } finally {
+      for (const [k, v] of Object.entries(prevEnv)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+    }
+  } finally {
+    fs.rmSync(ws22, { recursive: true, force: true });
+  }
+}
+
+// --- Wave 2 (T2.5): Halting Watchdog (progress_delta, N-gram loop, anti-false-positive, dead_ends) ---
+{
+  const WD = await import("../harness/watchdog.mjs");
+  const { pathToFileURL } = await import("node:url");
+  const tmpBase = path.join(process.cwd(), ".tmp");
+  fs.mkdirSync(tmpBase, { recursive: true });
+  const ws25 = fs.mkdtempSync(path.join(tmpBase, "w2-t25-"));
+  try {
+    // 1) Zero-progress streak x3 pada sesi mutasi -> HALT ("zero-progress-streak") + dead_ends.jsonl
+    const dog1 = new WD.HaltingWatchdog({ workspace: ws25, sessionId: "ses_zp", persistDeadEnds: true });
+    dog1.recordStep({ tool: "edit", input: { filePath: "a.ts" }, ok: true, snapshot: { diffHash: "d1", statusHash: "s1", testStatus: "fail" } });
+    const s1 = dog1.recordStep({ tool: "shell", input: { command: "npm test" }, ok: false, exitCode: 1, errorText: "fail 1", snapshot: { diffHash: "d1", statusHash: "s1", testStatus: "fail" } });
+    const s2 = dog1.recordStep({ tool: "shell", input: { command: "npm test -- a" }, ok: false, exitCode: 1, errorText: "fail 2", snapshot: { diffHash: "d1", statusHash: "s1", testStatus: "fail" } });
+    const s3 = dog1.recordStep({ tool: "shell", input: { command: "npm test -- b" }, ok: false, exitCode: 1, errorText: "fail 3", snapshot: { diffHash: "d1", statusHash: "s1", testStatus: "fail" } });
+    const deadFile = WD.deadEndsPath(ws25, "ses_zp");
+    const deadRows = fs.existsSync(deadFile) ? fs.readFileSync(deadFile, "utf8").trim().split("\n").map((l) => JSON.parse(l)) : [];
+    ok("T2.5 watchdog: progress_delta === 0 x3 pada sesi mutasi -> HALT (zero-progress-streak) + dead_ends.jsonl [FAILED_PATH]",
+      s1.verdict === "OK" && s2.verdict === "WARN" && s3.verdict === "HALT" && s3.reason === "zero-progress-streak"
+      && deadRows.length > 0 && deadRows.every((r) => r.tag === "[FAILED_PATH]"));
+
+    // 2) N-gram loop: 3-gram berulang >=3x -> HALT ("ngram-loop")
+    const dog2 = new WD.HaltingWatchdog({ workspace: ws25, sessionId: "ses_ng3", maxZeroProgressStreak: 99 });
+    let v2 = null;
+    for (let i = 0; i < 3; i++) {
+      dog2.recordStep({ tool: "edit", input: { filePath: "x.ts" }, ok: true, snapshot: { diffHash: `d${i}`, statusHash: "s" } });
+      dog2.recordStep({ tool: "shell", input: { command: "npm test" }, ok: false, exitCode: 1, errorText: `err ${i}`, snapshot: { diffHash: `d${i}`, statusHash: "s", testStatus: `e${i}` } });
+      v2 = dog2.recordStep({ tool: "read", input: { filePath: "x.ts" }, ok: true });
+    }
+    ok("T2.5 watchdog: 3-gram (tool, normalized_args) berulang >=3x -> HALT (ngram-loop)",
+      v2.verdict === "HALT" && v2.reason === "ngram-loop");
+
+    // 3) Osilasi 2-langkah (edit A -> test fail -> edit A -> test fail) -> HALT ("ngram-loop")
+    const dog3 = new WD.HaltingWatchdog({ workspace: ws25, sessionId: "ses_ng2", maxZeroProgressStreak: 99 });
+    dog3.recordStep({ tool: "edit", input: { filePath: "a.ts" }, ok: true, snapshot: { diffHash: "dA", statusHash: "sA" } });
+    dog3.recordStep({ tool: "shell", input: { command: "npm test" }, ok: false, exitCode: 1, errorText: "fail A", snapshot: { diffHash: "dA", statusHash: "sA", testStatus: "fail" } });
+    dog3.recordStep({ tool: "edit", input: { filePath: "a.ts" }, ok: true, snapshot: { diffHash: "dB", statusHash: "sB" } });
+    const v3 = dog3.recordStep({ tool: "shell", input: { command: "npm test" }, ok: false, exitCode: 1, errorText: "fail B", snapshot: { diffHash: "dB", statusHash: "sB", testStatus: "fail" } });
+    ok("T2.5 watchdog: osilasi 2-langkah (edit A -> test fail -> edit A -> test fail) -> HALT (ngram-loop)",
+      v3.verdict === "HALT" && v3.reason === "ngram-loop");
+
+    // 4) Guard anti-false-positive: sesi riset / baca-kode murni (0 mutasi, lookup berbeda target) TIDAK halt
+    const dogResearch = new WD.HaltingWatchdog({ workspace: ws25, sessionId: "ses_read" });
+    let vr = null;
+    for (const f of ["a.ts", "b.ts", "c.ts", "d.ts", "e.ts", "f.ts"]) {
+      vr = dogResearch.recordStep({ tool: "read", input: { filePath: f }, ok: true, snapshot: { diffHash: "same", statusHash: "same" } });
+    }
+    vr = dogResearch.recordStep({ tool: "grep", input: { pattern: "foo" }, ok: true, snapshot: { diffHash: "same", statusHash: "same" } });
+    vr = dogResearch.recordStep({ tool: "glob", input: { pattern: "*.mjs" }, ok: true, snapshot: { diffHash: "same", statusHash: "same" } });
+    ok("T2.5 anti-false-positive: sesi riset/baca murni (0 mutasi, lookup berbeda) tidak pernah HALT",
+      vr.verdict === "OK" && dogResearch.hasMutations === false);
+
+    // 5) Integrasi lumitome-guard.ts: N-gram / error berulang 3x memicu [WATCHDOG_HALT] pada beforeHook
+    const prevEnv = { LUMI_WORKSPACE: process.env.LUMI_WORKSPACE, LUMI_HARNESS: process.env.LUMI_HARNESS, LUMI_SESSION_ID: process.env.LUMI_SESSION_ID, LUMI_SANDBOX: process.env.LUMI_SANDBOX };
+    try {
+      process.env.LUMI_WORKSPACE = ws25;
+      process.env.LUMI_HARNESS = path.resolve("harness/lumi-guard.mjs");
+      process.env.LUMI_SESSION_ID = "ses_plug_wd";
+      process.env.LUMI_SANDBOX = "off";
+      let beforeWd, afterWd;
+      const gmWd = await import(pathToFileURL(path.resolve("lumitome/config/plugins/lumitome-guard.ts")).href + `?t=${Date.now()}`);
+      await gmWd.default.setup({
+        location: { directory: ws25 },
+        tool: { hook(n, fn) { if (n === "execute.before") beforeWd = fn; if (n === "execute.after") afterWd = fn; } },
+      });
+      for (let i = 0; i < 3; i++) {
+        await afterWd({ tool: "shell", status: "completed", input: { command: `node test${i}.mjs` }, result: { output: { exitCode: 1, output: "TypeError: x is not a function" } } });
+      }
+      let haltedPlug = false;
+      try { await beforeWd({ tool: "shell", input: { command: "echo next" } }); } catch (e) { haltedPlug = /WATCHDOG_HALT/.test(String(e)); }
+      ok("T2.5 integrasi lumitome-guard.ts: error identik 3x memicu WATCHDOG_HALT pada execute.before",
+        haltedPlug === true);
+    } finally {
+      for (const [k, v] of Object.entries(prevEnv)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+    }
+  } finally {
+    fs.rmSync(ws25, { recursive: true, force: true });
+  }
+}
+
 finish();

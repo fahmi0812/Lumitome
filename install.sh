@@ -350,16 +350,16 @@ note "$SW_HOME/env.sh"
 if [ "$DRY" = 0 ]; then
   cat > "$SW_HOME/env.sh" <<ENV
 # Dibangkitkan install.sh Lumitome $SW_VERSION — HANYA di-source oleh launcher lumitome (bukan shell user).
-export SW_HOME="$SW_HOME" LUMI_HOME="$SW_HOME" LUMI_OPENCODE="$BIN/opencode"
+export LUMI_HOME="$SW_HOME" LUMI_OPENCODE="$BIN/opencode"
 case ":\$PATH:" in *":$BIN:"*) ;; *) export PATH="$BIN:\$PATH";; esac
 ${NODE_DIR:+case ":\$PATH:" in *":$NODE_DIR/bin:"*) ;; *) export PATH="$NODE_DIR/bin:\$PATH";; esac}
-export SW_9ROUTER_URL="\${SW_9ROUTER_URL:-http://127.0.0.1:20128/v1}"
-export SW_9ROUTER_KEY="\${SW_9ROUTER_KEY:-9router}"
-# Token opsional (GITHUB_PERSONAL_ACCESS_TOKEN, SW_MCP_TOKEN_<SEKTOR>, CONTEXT7_API_KEY) → \$SW_HOME/secrets.env
-[ -f "\$SW_HOME/secrets.env" ] && set -a && . "\$SW_HOME/secrets.env" && set +a
+export LUMI_9ROUTER_URL="\${LUMI_9ROUTER_URL:-\${SW_9ROUTER_URL:-http://127.0.0.1:20128/v1}}"
+export LUMI_KEY_9ROUTER="\${LUMI_KEY_9ROUTER:-\${SW_9ROUTER_KEY:-9router}}"
+# Token opsional (GITHUB_PERSONAL_ACCESS_TOKEN, LUMI_MCP_TOKEN_<SEKTOR>, CONTEXT7_API_KEY) → \$LUMI_HOME/secrets.env
+[ -f "\$LUMI_HOME/secrets.env" ] && set -a && . "\$LUMI_HOME/secrets.env" && set +a
 true
 ENV
-  [ -f "$SW_HOME/secrets.env" ] || { umask 077; printf '# export GITHUB_PERSONAL_ACCESS_TOKEN=...\n# SW_MCP_TOKEN_CODING=...\n' > "$SW_HOME/secrets.env"; }
+  [ -f "$SW_HOME/secrets.env" ] || { umask 077; printf '# export GITHUB_PERSONAL_ACCESS_TOKEN=...\n# LUMI_MCP_TOKEN_CODING=...\n' > "$SW_HOME/secrets.env"; }
   chmod 600 "$SW_HOME/secrets.env"
   note "tulis env.sh; secrets.env (600) tidak pernah masuk repo"
 fi
@@ -390,7 +390,7 @@ if [ "$DRY" = 0 ]; then
   cat > "$L" <<LAUNCH
 #!/usr/bin/env bash
 # LUMITOME-LAUNCHER (dibuat install.sh; hapus: bash $PROJECT/install.sh --uninstall)
-export LUMI_HOME="$SW_HOME" SW_HOME="$SW_HOME"
+export LUMI_HOME="$SW_HOME"
 exec "$PROJECT/lumitome/bin/lumitome" "\$@"
 LAUNCH
   chmod 0755 "$L"; note "launcher $L → $PROJECT/lumitome/bin/lumitome"

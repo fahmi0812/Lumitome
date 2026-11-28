@@ -1,32 +1,37 @@
 diff --git a/packages/tui/src/component/logo.tsx b/packages/tui/src/component/logo.tsx
-index 2c3abc3..a49a53d 100644
+index 2c3abc3cb0..1513df7b14 100644
 --- a/packages/tui/src/component/logo.tsx
 +++ b/packages/tui/src/component/logo.tsx
-@@ -3,11 +3,13 @@ import { For, type JSX } from "solid-js"
+@@ -3,11 +3,18 @@ import { For, type JSX } from "solid-js"
  import { useTerminalDimensions } from "@opentui/solid"
  import { useTheme } from "../context/theme"
  import { tint } from "../theme/color"
 -import { go, logo } from "../logo"
-+import { go, logo, logoColor } from "../logo"
++import { go, logo, logoColor, logoColorLight } from "../logo"
  
  export function Logo() {
    const theme = useTheme()
    const dimensions = useTerminalDimensions()
-+  const leftColor = RGBA.fromHex(logoColor.left)
-+  const rightColor = RGBA.fromHex(logoColor.right)
++  const palette = () => {
++    const bg = theme.background.base
++    const luminance = bg.r * 0.2126 + bg.g * 0.7152 + bg.b * 0.0722
++    return luminance > 0.5 ? logoColorLight : logoColor
++  }
++  const leftColor = () => RGBA.fromHex(palette().left)
++  const rightColor = () => RGBA.fromHex(palette().right)
  
    const renderLine = (line: string, fg: RGBA, bold: boolean): JSX.Element[] => {
      const shadow = tint(theme.background.base, fg, 0.25)
-@@ -58,18 +60,18 @@ export function Logo() {
+@@ -58,18 +65,18 @@ export function Logo() {
        ) : dimensions().width < 44 ? (
          <>
            <For each={logo.left.slice(1)}>
 -            {(line) => <box flexDirection="row">{renderLine(line, theme.text.muted, false)}</box>}
-+            {(line) => <box flexDirection="row">{renderLine(line, leftColor, false)}</box>}
++            {(line) => <box flexDirection="row">{renderLine(line, leftColor(), false)}</box>}
            </For>
            <For each={logo.right}>
 -            {(line) => <box flexDirection="row">{renderLine(line, theme.text.base, true)}</box>}
-+            {(line) => <box flexDirection="row">{renderLine(line, rightColor, true)}</box>}
++            {(line) => <box flexDirection="row">{renderLine(line, rightColor(), true)}</box>}
            </For>
          </>
        ) : (
@@ -35,16 +40,16 @@ index 2c3abc3..a49a53d 100644
              <box flexDirection="row" gap={1}>
 -              <box flexDirection="row">{renderLine(line, theme.text.muted, false)}</box>
 -              <box flexDirection="row">{renderLine(logo.right[index()], theme.text.base, true)}</box>
-+              <box flexDirection="row">{renderLine(line, leftColor, false)}</box>
-+              <box flexDirection="row">{renderLine(logo.right[index()], rightColor, true)}</box>
++              <box flexDirection="row">{renderLine(line, leftColor(), false)}</box>
++              <box flexDirection="row">{renderLine(logo.right[index()], rightColor(), true)}</box>
              </box>
            )}
          </For>
 diff --git a/packages/tui/src/logo.ts b/packages/tui/src/logo.ts
-index 8c570fb..a804f28 100644
+index 8c570fb934..7edd634447 100644
 --- a/packages/tui/src/logo.ts
 +++ b/packages/tui/src/logo.ts
-@@ -1,8 +1,11 @@
+@@ -1,8 +1,12 @@
  export const logo = {
 -  left: ["                   ", "█▀▀█ █▀▀█ █▀▀█ █▀▀▄", "█__█ █__█ █^^^ █__█", "▀▀▀▀ █▀▀▀ ▀▀▀▀ ▀~~▀"],
 -  right: ["             ▄     ", "█▀▀▀ █▀▀█ █▀▀█ █▀▀█", "█___ █__█ █__█ █^^^", "▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀"],
@@ -52,8 +57,9 @@ index 8c570fb..a804f28 100644
 +  right: ["                   ", "▀█▀ █▀▀█ █▀▄▀█ █▀▀▀", " █  █__█ █   █ █▀▀ ", " ▀  ▀▀▀▀ ▀   ▀ ▀▀▀▀"],
  }
  
-+// Lumitome: the wordmark is always drawn in gold; the rest of the TUI keeps the active theme.
++// Lumitome: gold on dark backgrounds, high-contrast bronze #7A5A1A on light backgrounds.
 +export const logoColor = { left: "#C9962E", right: "#F3D27A" }
++export const logoColorLight = { left: "#7A5A1A", right: "#7A5A1A" }
 +
  export const go = {
    left: ["    ", "█▀▀▀", "█_^█", "▀▀▀▀"],

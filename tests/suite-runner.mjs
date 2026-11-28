@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { ok, skip, finish, summaryLine } from "./harness.mjs";
 import { parseSummaryLine, aggregateResults, runFiles, discoverSuiteFiles } from "./runner-lib.mjs";
 
@@ -84,7 +85,7 @@ const mkFixtureDir = () => {
 
 // --- discoverSuiteFiles: daftar file suite asli ---
 {
-  const testsDir = path.dirname(new URL(import.meta.url).pathname);
+  const testsDir = path.dirname(fileURLToPath(import.meta.url));
   const files = discoverSuiteFiles(testsDir);
   ok("runner: discoverSuiteFiles menemukan file suite-*.mjs terurut (tanpa harness/runner-lib)",
     files.length >= 7 && files.every((f) => /suite-[a-z-]+\.mjs$/.test(f))
@@ -103,7 +104,7 @@ ok("ringkasan: format 'N passed, N failed, N skipped'",
   summaryLine(382, 0, 2) === "382 passed, 0 failed, 2 skipped" && summaryLine(0, 1, 0) === "0 passed, 1 failed, 0 skipped");
 ok("ringkasan: skipped terhitung dari skip() (maks. 2 situs di seluruh file suite)",
   (() => {
-    const testsDir = path.dirname(new URL(import.meta.url).pathname);
+    const testsDir = path.dirname(fileURLToPath(import.meta.url));
     const files = fs.readdirSync(testsDir).filter((f) => /^suite-[a-z-]+\.mjs$/.test(f) && f !== "suite-runner.mjs");
     let sites = 0;
     for (const f of files) { const src = fs.readFileSync(path.join(testsDir, f), "utf8"); sites += (src.match(/(^|[^\w])skip\(/g) || []).length; }
@@ -115,9 +116,10 @@ ok("ringkasan: skipped terhitung dari skip() (maks. 2 situs di seluruh file suit
 // --- v0.3.82: [FAIL] menunjukkan lokasi + sumber + detail; okEach menyebut bagian yang gagal ---
 {
   const cp = await import("node:child_process");
-  const dir = fs.mkdtempSync(path.join(path.dirname(new URL(import.meta.url).pathname), "fixtures", "tmp-diag-"));
+  const testsDir = path.dirname(fileURLToPath(import.meta.url));
+  const dir = fs.mkdtempSync(path.join(testsDir, "fixtures", "tmp-diag-"));
   const f = path.join(dir, "suite-diag.mjs");
-  const rel = path.relative(dir, path.join(path.dirname(new URL(import.meta.url).pathname), "harness.mjs")).split(path.sep).join("/");
+  const rel = path.relative(dir, path.join(testsDir, "harness.mjs")).split(path.sep).join("/");
   fs.writeFileSync(f, [
     `import { ok, okEach, finish } from "${rel.startsWith(".") ? rel : "./" + rel}";`,
     `const actual = { port: 49374 };`,

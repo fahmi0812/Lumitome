@@ -410,10 +410,10 @@ import { ok, finish } from "./harness.mjs";
   {
     process.env.LUMI_P14_KEY = "k9";
     const errs = [];
-    const rc = await PV.cli({ argv: ["--preset", "9router", "--key-env", "LUMI_P14_KEY"], home, sub: "connect", env: {}, log: () => {}, err: (m) => errs.push(m) });
+    const rc = await PV.cli({ argv: ["--preset", "9router", "--key-env", "LUMI_P14_KEY"], home, sub: "connect", env: { LUMI_9ROUTER_URL: "http://127.0.0.1:19999/v1" }, log: () => {}, err: (m) => errs.push(m) });
     delete process.env.LUMI_P14_KEY;
-    ok("P1-4 (1c) CLI --preset 9router: memakai base URL lokal preset (gagal karena 9router tidak jalan di VM, bukan karena preset salah)",
-      rc === 1 && /127\.0\.0\.1:20128\/v1/.test(errs.join("\n")));
+    ok("P1-4 (1c) CLI --preset 9router: memakai base URL lokal preset (hermetik via port tertutup 19999, bukan karena preset salah)",
+      rc === 1 && /127\.0\.0\.1:19999\/v1/.test(errs.join("\n")));
     const errs2 = [];
     const rc2 = await PV.cli({ argv: ["--preset", "ngawur", "--key-env", "LUMI_P14_KEY"], home, sub: "connect", env: {}, log: () => {}, err: (m) => errs2.push(m) });
     ok("P1-4 (1c) CLI --preset tak dikenal: ditolak (exit 2)",
@@ -562,6 +562,85 @@ import { ok, finish } from "./harness.mjs";
   srv.close(); fs.rmSync(home, { recursive: true, force: true });
   fs.rmSync(sb14, { recursive: true, force: true });
   for (const b of bins14) fs.rmSync(b, { recursive: true, force: true });
+}
+
+{
+  // Wave 0 (T0.1 + T0.2): single-source default-config + env-compat SW_* -> LUMI_*
+  const DC = await import("../lumitome/lib/default-config.mjs");
+  const EC = await import("../lumitome/lib/env-compat.mjs");
+  const PV = await import("../lumitome/lib/providers.mjs");
+  const EN = await import("../lumitome/lib/engine.mjs");
+  const cs = DC.checkConfigSync(".");
+  ok("T0.1 default-config: checkConfigSync(.) sinkron antara lumitome/config/opencode.jsonc dan opencode.jsonc",
+    cs.ok && cs.errors.length === 0, cs.errors);
+
+  const logs = [];
+  const warned = new Set();
+  const stderr = (m) => logs.push(m);
+  const u1 = EC.resolveEnvValue({ SW_9ROUTER_URL: "http://127.0.0.1:9/v1" }, "LUMI_9ROUTER_URL", ["SW_9ROUTER_URL"], { stderr, warned });
+  const u2 = EC.resolveEnvValue({ LUMI_9ROUTER_URL: "", SW_9ROUTER_URL: "http://127.0.0.1:9/v1" }, "LUMI_9ROUTER_URL", ["SW_9ROUTER_URL"], { stderr, warned });
+  const u3 = EC.resolveEnvValue({ LUMI_9ROUTER_URL: "http://127.0.0.1:8/v1", SW_9ROUTER_URL: "http://127.0.0.1:9/v1" }, "LUMI_9ROUTER_URL", ["SW_9ROUTER_URL"], { stderr, warned });
+  ok("T0.2 env-compat URL: SW_9ROUTER_URL fallback saat unset/kosong, 1x [lumitome] DEPRECATED stderr, LUMI_* menang",
+    u1 === "http://127.0.0.1:9/v1" && u2 === "http://127.0.0.1:9/v1" && u3 === "http://127.0.0.1:8/v1"
+    && logs.length === 1 && /\[lumitome\] DEPRECATED: SW_9ROUTER_URL akan dihapus di v0\.5\.0/.test(logs[0]));
+
+  const embEmpty = EC.resolveEnvFlag({ LUMI_EMBED_MODEL: "", SW_EMBED_MODEL: "x" }, "LUMI_EMBED_MODEL", ["SW_EMBED_MODEL"], { stderr, warned: new Set() });
+  const embAlias = EC.resolveEnvFlag({ SW_EMBED_MODEL: "x" }, "LUMI_EMBED_MODEL", ["SW_EMBED_MODEL"], { stderr, warned: new Set() });
+  ok("T0.2 env-compat flag ??: LUMI_EMBED_MODEL=\"\" tidak fallback ke SW_EMBED_MODEL",
+    embEmpty === "" && embAlias === "x");
+
+  const aliases = ["LUMI_9ROUTER_KEY", "SW_9ROUTER_KEY", "NINEROUTER_API_KEY"];
+  const kCanon = EC.resolveEnvValue({ LUMI_KEY_9ROUTER: "k1", LUMI_9ROUTER_KEY: "k2", SW_9ROUTER_KEY: "k3", NINEROUTER_API_KEY: "k4" }, "LUMI_KEY_9ROUTER", aliases, { stderr: () => {}, warned: new Set() });
+  const kLumiAlt = EC.resolveEnvValue({ LUMI_KEY_9ROUTER: "", LUMI_9ROUTER_KEY: "k2", SW_9ROUTER_KEY: "k3", NINEROUTER_API_KEY: "k4" }, "LUMI_KEY_9ROUTER", aliases, { stderr: () => {}, warned: new Set() });
+  const kSw = EC.resolveEnvValue({ LUMI_KEY_9ROUTER: "", LUMI_9ROUTER_KEY: "", SW_9ROUTER_KEY: "k3", NINEROUTER_API_KEY: "k4" }, "LUMI_KEY_9ROUTER", aliases, { stderr: () => {}, warned: new Set() });
+  const kNr = EC.resolveEnvValue({ LUMI_KEY_9ROUTER: "", LUMI_9ROUTER_KEY: "", SW_9ROUTER_KEY: "", NINEROUTER_API_KEY: "k4" }, "LUMI_KEY_9ROUTER", aliases, { stderr: () => {}, warned: new Set() });
+  const os = await import("node:os");
+  const hEmpty = fs.mkdtempSync(path.join(os.tmpdir(), "lumit02-"));
+  const fragEmpty = PV.opencodeFragment(hEmpty, { LUMI_KEY_9ROUTER: "", NINEROUTER_API_KEY: "k-nr" });
+  const fragSw = PV.opencodeFragment(hEmpty, { LUMI_KEY_9ROUTER: "", LUMI_9ROUTER_KEY: "k-lk", SW_9ROUTER_KEY: "k-sw", NINEROUTER_API_KEY: "k-nr" });
+  fs.rmSync(hEmpty, { recursive: true, force: true });
+  ok("T0.2 env-compat kredensial: presedensi LUMI_KEY_9ROUTER > LUMI_9ROUTER_KEY > SW_9ROUTER_KEY > NINEROUTER_API_KEY + fallback kosong",
+    kCanon === "k1" && kLumiAlt === "k2" && kSw === "k3" && kNr === "k4"
+    && fragEmpty.env.LUMI_KEY_9ROUTER === "k-nr" && fragSw.env.LUMI_KEY_9ROUTER === "k-lk");
+
+  const home1 = EN.lumiHome({ LUMI_HOME: "/a/lumi", SW_HOME: "/b/sw" });
+  const home2 = EN.lumiHome({ LUMI_HOME: "", SW_HOME: "/b/sw" });
+  const docLine = fs.readFileSync("scripts/doctor.sh", "utf8").match(/^LH=.*$/m)?.[0] || "";
+  const docBoth = cp.execFileSync("bash", ["-c", `${docLine}\nprintf '%s' "$LH"`], { env: { ...process.env, LUMI_HOME: "/a/lumi", SW_HOME: "/b/sw" }, encoding: "utf8" });
+  const docSw = cp.execFileSync("bash", ["-c", `${docLine}\nprintf '%s' "$LH"`], { env: { ...process.env, LUMI_HOME: "", SW_HOME: "/b/sw" }, encoding: "utf8" });
+  ok("T0.2 LUMI_HOME > SW_HOME di engine.mjs dan scripts/doctor.sh:9",
+    home1 === "/a/lumi" && home2 === "/b/sw" && docBoth === "/a/lumi" && docSw === "/b/sw");
+
+  // Wave 3 (T3.4): determinisme OPENCODE_CONFIG_CONTENT byte-per-byte
+  const BC = await import("../lumitome/lib/build-config.mjs");
+  const wsDet = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-t34-"));
+  try {
+    const hDet = path.join(wsDet, "home");
+    fs.mkdirSync(hDet, { recursive: true });
+    const detArgs = {
+      REPO: process.cwd(),
+      ROOT: path.resolve("lumitome"),
+      HOME: hDet,
+      WS: wsDet,
+      CFG_DIR: path.join(hDet, "config"),
+      JOURNAL: path.join(hDet, "run.jsonl"),
+      RUN_ID: "run-det",
+      FRAG: { providers: {}, env: {} },
+      MODEL: "9router/ag/gemini-3.8-flash-high",
+      HAS_9R_ENV: true,
+      TIMEOUTS: { headerTimeout: 300000, chunkTimeout: 900000, timeout: 3600000 },
+      TRUST: false,
+      sub: "run",
+      prompt: "",
+    };
+    const d1 = await BC.buildFinalConfig({ ...detArgs, env: { LUMI_ENGINE_VERSION: "2.4.2" } });
+    const d2 = await BC.buildFinalConfig({ ...detArgs, env: { LUMI_ENGINE_VERSION: "2.4.2" } });
+    ok("T3.4 buildFinalConfig: OPENCODE_CONFIG_CONTENT identik byte-per-byte lintas panggilan",
+      d1.env.OPENCODE_CONFIG_CONTENT === d2.env.OPENCODE_CONFIG_CONTENT
+      && BC.stableStringify({ b: 1, a: { d: 2, c: 3 } }) === '{"a":{"c":3,"d":2},"b":1}');
+  } finally {
+    fs.rmSync(wsDet, { recursive: true, force: true });
+  }
 }
 
 finish();

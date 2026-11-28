@@ -5,6 +5,7 @@ import { checkSkillsDir, checkConfig, checkAgents, checkPlugins, checkV2Config, 
 import { frontmatter } from "../router/parse.mjs";
 import { checkVersionConsistency } from "./version-check.mjs";
 import { checkCatalog, CATALOG } from "./gen-catalog.mjs";
+import { checkConfigSync } from "../lumitome/lib/default-config.mjs";
 import { INDEX_SECTION_BUDGETS, INDEX_DEFAULT_SECTION_BUDGET, INDEX_TOTAL_BUDGET, indexSectionTokens } from "../router/index-budgets.mjs";
 
 // --- P2-3: mode offline + precheck dependensi ---
@@ -97,6 +98,8 @@ for (const d of skillDirs) {
 pass(`skill valid OpenCode (nama=folder, regex): ${allNames.size}; aktif ${fs.readdirSync(".opencode/skills").length}`);
 const cfgErr = checkConfig();
 if (cfgErr.length) cfgErr.forEach((e) => fail(`config schema: ${e}`)); else pass("opencode.jsonc lolos skema https://opencode.ai/config.json (ajv 2020)");
+const cfgSync = checkConfigSync(".");
+if (!cfgSync.ok) cfgSync.errors.forEach((e) => fail(`config sync: ${e}`)); else pass("lumitome/config/opencode.jsonc == root opencode.jsonc (default-config)");
 const agErr = checkAgents(); agErr.forEach(fail); if (!agErr.length) pass("agents frontmatter valid");
 const plErr = checkPlugins(); plErr.forEach(fail); if (!plErr.length) pass("plugins v2: export default {id, setup}");
 const v2Err = checkV2Config(); v2Err.forEach(fail); if (!v2Err.length) pass("opencode.jsonc native V2 (tanpa kunci V1 deprecated)");

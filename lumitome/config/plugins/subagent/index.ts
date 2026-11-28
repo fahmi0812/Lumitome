@@ -12,7 +12,8 @@
 // session.execution.*. TIDAK ada re-drive (engine tidak punya hook
 // Stop/SubagentStop pemblokir — lihat CHANGELOG v0.3.70).
 import { Plugin } from "@opencode/plugin"
-import { fileURLToPath } from "node:url"
+import path from "node:path"
+import { fileURLToPath, pathToFileURL } from "node:url"
 import { SubagentRpc } from "./rpc.js"
 import { DEFAULT_MODEL } from "../../../lib/default-model.mjs";
 import {
@@ -47,8 +48,12 @@ import {
   newCounters,
   countTool,
   turnDelta,
+  evaluateDelegationViolation,
   debugEnabled,
 } from "./enforce.mjs"
+import { registerExperimentalHook } from "../lib/experimental-adapter.mjs"
+import { IdleGateController } from "../lib/idle-gate-core.mjs"
+import { buildReviewerContextPrompt } from "./prompt.mjs"
 
 // v0.3.71 (A1): preset dibaca dari file user $LUMI_HOME (migrasi dari
 // seed repo bila belum ada; fallback seed bila file user hilang/rusak).
@@ -218,7 +223,45 @@ function watchExecutionEnds(ctx: any, root: string, home: string, sessionAgents:
 // tool di context hook tetap berlaku karena hook itu membawa event.agent).
 async function registerEnforcement(ctx: any, root: string, home: string, sessionAgents: Map<string, string>, countersBySession: Map<string, any>) {
   const debug = debugEnabled()
+  let reviewerCtxMod: any = null
+  let contextBudgetMod: any = null
+  try {
+    reviewerCtxMod = await import(pathToFileURL(path.join(root, "harness", "reviewer-context.mjs")).href)
+  } catch {
+    reviewerCtxMod = null
+  }
+  try {
+    contextBudgetMod = await import(pathToFileURL(path.join(root, "harness", "context-budget.mjs")).href)
+  } catch {
+    contextBudgetMod = null
+  }
   if (typeof ctx.session?.hook === "function") {
+    const idleController = new IdleGateController({ lumiHome: home })
+    await registerExperimentalHook(
+      ctx,
+      "experimental.idle",
+      async (event: any) => {
+        try {
+          const sessionID = event?.sessionID
+          if (typeof sessionID !== "string") return
+          const agent = sessionAgents.get(sessionID)
+          const preset = readPresetSafe(root, home)
+          const counters = countersBySession.get(sessionID)
+          const check = evaluateDelegationViolation(counters, preset, agent)
+          if (!check.violation) return
+          const res = await idleController.handleIdle({
+            sessionID,
+            background: event?.background ?? [],
+            snapshot: { delegationViolation: true },
+            ctx,
+          })
+          appendMetrics(home, { kind: "idle-redrive", sessionID, agent, action: res.action, reason: res.reason ?? "DELEGATION_BYPASS", attempt: res.attempt ?? 0 })
+        } catch {
+          // audit/re-drive fail-silent
+        }
+      },
+      { home },
+    )
     await ctx.session.hook("context", (event: any) => {
       try {
         const preset = readPresetSafe(root, home)
@@ -266,6 +309,13 @@ async function registerEnforcement(ctx: any, root: string, home: string, session
         if (typeof sessionID === "string") countersBySession.set(sessionID, counters)
         appendMetrics(home, { kind: "guard-block", sessionID, agent, tool, reason })
         throw new Error(reason)
+      }
+      // T2.4 + T3.1: context-stripping + secret scrubbing saat delegasi ke reviewer / goldfish
+      if (tool === "subagent" && (event?.input?.agent === "reviewer" || event?.input?.agent === "goldfish")) {
+        if (event.input && typeof event.input.prompt === "string") {
+          const stripped = buildReviewerContextPrompt(event.input.prompt, reviewerCtxMod, contextBudgetMod)
+          if (stripped) event.input = { ...event.input, prompt: stripped }
+        }
       }
     })
     await ctx.tool.hook("execute.after", (event: any) => {

@@ -90,3 +90,95 @@ export function checkRewriteToDocs(input: {
 export function driftSection(findings: string[]): string {
   return ["## Doc-Code Drift", ...(findings.length ? findings.map((f) => `- ${f}`) : ["- (tidak ada)"])].join("\n");
 }
+
+export interface RepoDocDriftResult {
+  ok: boolean;
+  findings: Array<{ id: string; fact: string }>;
+}
+
+/**
+ * Deteksi drift antara fakta kode aktual (engine.mjs, skills-registry.json,
+ * mcp-sectors.json, plugins) dan dokumen repo (ARCHITECTURE.md, README.md, docs/PRD.md).
+ */
+export function detectRepoDocDrift(root = "."): RepoDocDriftResult {
+  const findings: Array<{ id: string; fact: string }> = [];
+  const readOpt = (rel: string) => {
+    try { return fs.readFileSync(path.join(root, rel), "utf8"); } catch { return null; }
+  };
+
+  const eng = readOpt("lumitome/lib/engine.mjs");
+  const inst = readOpt("install.sh");
+  const arch = readOpt("ARCHITECTURE.md");
+  const readme = readOpt("README.md");
+  const prd = readOpt("docs/PRD.md");
+
+  // 1. OC_VERSION drift: engine.mjs vs install.sh & dokumen
+  const ocVer = eng?.match(/export const OC_VERSION\s*=\s*"([^"]+)"/)?.[1];
+  const instVer = inst?.match(/^OC_VERSION=([0-9.]+)/m)?.[1];
+  if (ocVer && instVer && ocVer !== instVer) {
+    findings.push({ id: "oc-version-install", fact: `FACT: drift OC_VERSION install.sh (${instVer}) vs engine.mjs (${ocVer})` });
+  }
+  if (ocVer && arch && !arch.includes(ocVer)) {
+    findings.push({ id: "oc-version-arch", fact: `FACT: drift OC_VERSION ARCHITECTURE.md tidak menyebut ${ocVer}` });
+  }
+  if (ocVer && readme && !readme.includes(ocVer)) {
+    findings.push({ id: "oc-version-readme", fact: `FACT: drift OC_VERSION README.md tidak menyebut ${ocVer}` });
+  }
+
+  // 2. Skill counts: registry vs ARCHITECTURE.md / README.md / docs/PRD.md
+  const regRaw = readOpt("router/skills-registry.json");
+  if (regRaw) {
+    try {
+      const reg = JSON.parse(regRaw);
+      const total = Array.isArray(reg.skills) ? reg.skills.length : 0;
+      const routable = Array.isArray(reg.skills) ? reg.skills.filter((s: { pack?: string }) => s.pack !== "red-team").length : 0;
+      if (total > 0) {
+        if (arch && (!arch.includes(String(total)) || !arch.includes(String(routable)))) {
+          findings.push({ id: "skill-count-arch", fact: `FACT: drift jumlah skill ARCHITECTURE.md vs registry (${total} total / ${routable} routable)` });
+        }
+        if (readme && (!readme.includes(String(total)) || !readme.includes(String(routable)))) {
+          findings.push({ id: "skill-count-readme", fact: `FACT: drift jumlah skill README.md vs registry (${total} total / ${routable} routable)` });
+        }
+        if (prd && (!prd.includes(String(total)) || !prd.includes(String(routable)))) {
+          findings.push({ id: "skill-count-prd", fact: `FACT: drift jumlah skill docs/PRD.md vs registry (${total} total / ${routable} routable)` });
+        }
+      }
+    } catch { /* abaikan parse error di fixture parsial */ }
+  }
+
+  // 3. MCP per sektor: router/mcp-sectors.json vs tabel §3 ARCHITECTURE.md
+  const mcpRaw = readOpt("router/mcp-sectors.json");
+  if (mcpRaw && arch) {
+    try {
+      const mcp = JSON.parse(mcpRaw);
+      const secMatch = arch.match(/## 3\. MCP per sektor[\s\S]*?(?=\n## |\n*$)/);
+      const secBlock = secMatch ? secMatch[0] : "";
+      for (const [sector, servers] of Object.entries<string[]>(mcp.sectors || {})) {
+        const row = secBlock.split("\n").find((l) => l.startsWith(`| ${sector} `));
+        if (!row) {
+          findings.push({ id: `mcp-sector-${sector}`, fact: `FACT: drift ARCHITECTURE.md §3 kehilangan baris sektor ${sector}` });
+          continue;
+        }
+        for (const srv of servers) {
+          if (!row.includes(srv)) {
+            findings.push({ id: `mcp-server-${sector}-${srv}`, fact: `FACT: drift ARCHITECTURE.md §3 sektor ${sector} belum mencantumkan MCP '${srv}'` });
+          }
+        }
+      }
+    } catch { /* abaikan parse error */ }
+  }
+
+  // 4. Plugin IDs: .opencode/plugins/lumitome-harness.ts vs ARCHITECTURE.md & docs/PRD.md
+  const harnessPlugin = readOpt(".opencode/plugins/lumitome-harness.ts");
+  const harnessId = harnessPlugin?.match(/\bid\s*:\s*["']([^"']+)["']/)?.[1];
+  if (harnessId) {
+    if (arch && !arch.includes(harnessId)) {
+      findings.push({ id: "plugin-arch", fact: `FACT: drift plugin ID ARCHITECTURE.md tidak menyebut ${harnessId}` });
+    }
+    if (prd && !prd.includes(harnessId)) {
+      findings.push({ id: "plugin-prd", fact: `FACT: drift plugin ID docs/PRD.md tidak menyebut ${harnessId}` });
+    }
+  }
+
+  return { ok: findings.length === 0, findings };
+}

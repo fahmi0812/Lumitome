@@ -101,7 +101,8 @@
               "integration.use",
               "mcp.use",
               "skill.use",
-              "plugin.use"
+              "plugin.use",
+              "websearch.use"
             ]
           },
           "resource": {
@@ -319,6 +320,10 @@
           "type": "boolean",
           "description": "Enable automatic compaction when context is full (default: true)"
         },
+        "background": {
+          "type": "boolean",
+          "description": "Write the summary in the background as the session nears automatic compaction, so it does not wait for one (default: true). A summary that is never used still costs tokens."
+        },
         "keep": {
           "type": "object",
           "properties": {
@@ -488,6 +493,12 @@
         "portable_shell_scanner": {
           "type": "boolean"
         },
+        "codemode_vm": {
+          "type": "boolean"
+        },
+        "all_flags": {
+          "type": "boolean"
+        },
         "todo": {
           "type": "boolean"
         },
@@ -495,6 +506,42 @@
           "type": "boolean"
         },
         "media_blob": {
+          "type": "boolean"
+        },
+        "console_watches": {
+          "type": "boolean"
+        },
+        "recommended_api": {
+          "type": "boolean"
+        },
+        "model_speeds": {
+          "type": "boolean"
+        },
+        "full_codemode": {
+          "type": "boolean"
+        },
+        "machines": {
+          "type": "boolean"
+        },
+        "home_memory": {
+          "type": "boolean"
+        },
+        "project_overlay": {
+          "type": "boolean"
+        },
+        "opencode_api": {
+          "type": "boolean"
+        },
+        "mcp_skills": {
+          "type": "boolean"
+        },
+        "compaction_jobs": {
+          "type": "boolean"
+        },
+        "sqlite_fts": {
+          "type": "boolean"
+        },
+        "part_rows": {
           "type": "boolean"
         },
         "image_generate": {
@@ -578,7 +625,8 @@
                   "integration.use",
                   "mcp.use",
                   "skill.use",
-                  "plugin.use"
+                  "plugin.use",
+                  "websearch.use"
                 ]
               },
               "resource": {

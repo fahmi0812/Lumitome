@@ -12,6 +12,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { stripJsonc } from "../../router/parse.mjs";
+import { DEFAULT_9ROUTER_URL, DEFAULT_COMPACTION, DEFAULT_TOOL_OUTPUT } from "./default-config.mjs";
+import { ENGINE_MIN_2_4, engineAtLeast, resolveEngineVersion } from "./engine.mjs";
+import { resolveEnvValue } from "./env-compat.mjs";
 
 // default: codemem + 4 sektor inti; finance/media hanya via LUMI_MCP=all atau daftar eksplisit
 // v0.3.13: satu proses `skills` untuk semua sektor (dulu 4 proses skills-<sektor>); codemem hanya aktif di repo git (shim)
@@ -19,15 +22,97 @@ const DEFAULT_MCP = "codemem,skills";
 // agent default: orchestrator di TUI; `run` headless tetap build (delegasi orchestrator headless belum terverifikasi live). LUMI_AGENT menimpa
 const RUN_AGENT = "build";
 const DENY = (r) => ({ action: "shell", resource: r, effect: "deny" });
+const POLICY_SHELL_DENY = [
+  "shell:*git push * main",
+  "shell:*git push * main *",
+  "shell:*git push main *",
+  "shell:*git push *:main",
+  "shell:*git push *:main *",
+  "shell:*git push * master",
+  "shell:*git push * master *",
+  "shell:*git push master *",
+  "shell:*git push *:master",
+  "shell:*git push *:master *",
+  "shell:*git push *refs/heads/main",
+  "shell:*git push *refs/heads/main *",
+  "shell:*git push *refs/heads/master",
+  "shell:*git push *refs/heads/master *",
+  "shell:*git push * +*",
+  "shell:*git push * --force*",
+  "shell:*git push --force*",
+  "shell:*git push * -f",
+  "shell:*git push * -f *",
+  "shell:*git push -f",
+  "shell:*git push -f *",
+  "shell:*git push * --all*",
+  "shell:*git push --all*",
+  "shell:*git push * --mirror*",
+  "shell:*git push --mirror*",
+  "shell:*rm -rf /",
+  "shell:*rm -rf / *",
+  "shell:*rm -rf ~",
+  "shell:*rm -rf ~ *",
+  "shell:sudo *",
+  "shell:* sudo *",
+  "shell:*printenv*",
+  "shell:*codebase-memory-mcp install*",
+  "shell:*codebase-memory-mcp update*",
+];
+const PROJECT_CONFIG_FILES = ["opencode.jsonc", "opencode.json", ".opencode/opencode.jsonc", ".opencode/opencode.json"];
+
+/** Rakitan top-level `policies` untuk OpenCode (ConfigPolicyPlugin). */
+export function buildPolicies(env = process.env, is24 = false) {
+  const out = [];
+  if (String(env?.LUMI_PROVIDER_STRICT ?? "1") !== "0") {
+    out.push(
+      { action: "provider.use", resource: "*", effect: "deny" },
+      { action: "provider.use", resource: "9router", effect: "allow" },
+    );
+  }
+  for (const r of POLICY_SHELL_DENY) {
+    out.push({ action: "tool.use", resource: r, effect: "deny" });
+  }
+  if (is24 && env?.LUMI_WEBSEARCH === "0") {
+    out.push({ action: "websearch.use", resource: "*", effect: "deny" });
+  }
+  return out;
+}
+
+/** Pre-scan config proyek saat LUMI_TRUST_PROJECT=1: cegah blok "policies" proyek menimpa Lumitome. */
+export function scanProjectPolicies(WS) {
+  for (const f of PROJECT_CONFIG_FILES) {
+    const p = path.join(WS, f);
+    if (!fs.existsSync(p)) continue;
+    let raw = "";
+    try { raw = fs.readFileSync(p, "utf8"); } catch { continue; }
+    try {
+      const c = JSON.parse(stripJsonc(raw));
+      if (c && typeof c === "object" && ("policies" in c || (c.experimental && typeof c.experimental === "object" && "policies" in c.experimental))) {
+        return { hasPolicies: true, file: p };
+      }
+    } catch {
+      if (/"policies"\s*:/.test(raw)) return { hasPolicies: true, file: p };
+    }
+  }
+  return { hasPolicies: false, file: null };
+}
 
 // Kepercayaan proyek: default config/plugin/agent proyek TIDAK dimuat (repo asing bisa membawa plugin jahat).
 function projectMcp(WS, TRUST) {
   if (!TRUST) return {};
-  for (const f of ["opencode.jsonc", "opencode.json", ".opencode/opencode.jsonc", ".opencode/opencode.json"]) {
+  for (const f of PROJECT_CONFIG_FILES) {
     const p = path.join(WS, f); if (!fs.existsSync(p)) continue;
     try { const c = JSON.parse(stripJsonc(fs.readFileSync(p, "utf8"))); return c.mcp?.servers || {}; } catch { return {}; }
   }
   return {};
+}
+
+/** Serialisasi JSON deterministik dengan sorted object keys untuk kestabilan KV-cache (T3.4). */
+export function stableStringify(val) {
+  if (val === null || typeof val !== "object") return JSON.stringify(val);
+  if (Array.isArray(val)) return "[" + val.map((v) => (v === undefined ? "null" : stableStringify(v))).join(",") + "]";
+  const keys = Object.keys(val).filter((k) => val[k] !== undefined).sort();
+  return "{" + keys.map((k) => `${JSON.stringify(k)}:${stableStringify(val[k])}`).join(",") + "}";
 }
 
 /**
@@ -35,9 +120,15 @@ function projectMcp(WS, TRUST) {
  * prompt: pesan `run` yang sudah diekstrak entry (promptOf) — hanya dipakai saat sub === "run".
  */
 export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOURNAL, RUN_ID, FRAG, MODEL, HAS_9R_ENV, TIMEOUTS, TRUST, sub, prompt = "" }) {
+  const policyScan = TRUST ? scanProjectPolicies(WS) : { hasPolicies: false, file: null };
+  const effectiveTrust = Boolean(TRUST && !policyScan.hasPolicies);
+  if (policyScan.hasPolicies) {
+    env.OPENCODE_DISABLE_PROJECT_CONFIG = "1";
+    process.stderr.write(`lumitome: PERINGATAN — config proyek (${policyScan.file}) memuat blok "policies"; OPENCODE_DISABLE_PROJECT_CONFIG=1 dipaksa\n`);
+  }
   const wantMcp = (env.LUMI_MCP ?? DEFAULT_MCP).split(",").map((s) => s.trim()).filter(Boolean);
   const mcpOverride = {};
-  for (const [name, def] of Object.entries(projectMcp(WS, TRUST))) {
+  for (const [name, def] of Object.entries(projectMcp(WS, effectiveTrust))) {
     const on = wantMcp.includes("all") || wantMcp.includes(name);
     if (!on) mcpOverride[name] = { ...def, disabled: true };
   }
@@ -45,14 +136,14 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
   // tool per sektor: skills_<sektor>_skill_search (agent sektor hanya diizinkan tool sektornya). Nama lama skills-<sektor> di LUMI_MCP tetap diterima.
   const ALL_SECTORS = ["coding", "security", "riset", "penulisan", "finance", "media"];
   const skillSectors = wantMcp.includes("all") || wantMcp.includes("skills") ? ALL_SECTORS : ALL_SECTORS.filter((sec) => wantMcp.includes(`skills-${sec}`));
-  if (skillSectors.length) mcpOverride.skills = { type: "local", command: [process.execPath, "--no-warnings", path.join(REPO, "router", "skill-search-mcp.mjs"), "--sectors", skillSectors.join(","), "--root", REPO], timeout: { startup: 30000, catalog: 30000, execution: 30000 } };
+  if (skillSectors.length) mcpOverride.skills = { type: "local", protocol: "legacy", command: [process.execPath, "--no-warnings", path.join(REPO, "router", "skill-search-mcp.mjs"), "--sectors", skillSectors.join(","), "--root", REPO], timeout: { startup: 30000, catalog: 30000, execution: 30000 } };
   // drawio (next-ai-draw-io, terpin) — opsional, mati default; hanya bila disebut eksplisit di LUMI_MCP (tidak ikut "all")
   if (wantMcp.includes("drawio")) mcpOverride.drawio = { type: "local", command: ["npx", "-y", "@next-ai-drawio/mcp-server@0.4.15"], environment: { BROWSER: env.BROWSER || "" }, timeout: { startup: 120000, catalog: 120000, execution: 120000 } };
   // blender (ahujasid/mcp-for-blender, terpin 2.2.9) — opsional, mati default; hanya bila disebut eksplisit di LUMI_MCP (tidak ikut "all").
   // KEAMANAN: execute_blender_code menjalankan Python arbitrer di dalam Blender dengan akses penuh user (fitur produknya);
   // safe mode OFF secara default — opt-in validator AST via BLENDER_MCP_SAFE_MODE=1 (hanya jalur MCP, bukan sandbox).
   // Butuh Blender terpasang + addon "MCP for Blender" aktif di Blender (uvx mcp-for-blender install-addon).
-  if (wantMcp.includes("blender")) mcpOverride.blender = { type: "local", command: ["uvx", "mcp-for-blender==2.2.9"], environment: { BLENDER_MCP_SAFE_MODE: env.BLENDER_MCP_SAFE_MODE || "" }, timeout: { startup: 120000, catalog: 120000, execution: 120000 } };
+  if (wantMcp.includes("blender")) mcpOverride.blender = { type: "local", protocol: "legacy", command: ["uvx", "mcp-for-blender==2.2.9"], environment: { BLENDER_MCP_SAFE_MODE: env.BLENDER_MCP_SAFE_MODE || "" }, timeout: { startup: 120000, catalog: 120000, execution: 120000 } };
   // figcraft (storytold/figcraft, terpin v0.18.1) — opsional, mati default; hanya bila disebut eksplisit di LUMI_MCP (tidak ikut "all")
   if (wantMcp.includes("figcraft")) {
     const FC = env.LUMI_FIGCRAFT_CLI || "figcraft-cli";
@@ -82,10 +173,26 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
     if (def) mcpOverride.codemem = def;
     else if (sub === "" || sub === "run" || env.LUMI_DEBUG) process.stderr.write(`lumitome: codemem dilewati — ${CM.cbmBin(HOME)} belum ada\n`);
   }
+  const is24 = engineAtLeast(resolveEngineVersion(env), ENGINE_MIN_2_4);
   // header 300 s, jeda antar-chunk 900 s, total 1 jam (LUMI_*_TIMEOUT_MS) — TIMEOUTS dihitung entry (dipakai juga retry)
   const finalCfg = {
     update: "disable",
     ...(env.LUMI_AGENT ? { default_agent: env.LUMI_AGENT } : { default_agent: sub === "run" ? RUN_AGENT : "orchestrator" }),
+    compaction: {
+      ...DEFAULT_COMPACTION,
+      keep: { ...DEFAULT_COMPACTION.keep },
+      ...(is24 ? { background: sub === "" && env.LUMI_COMPACTION_BACKGROUND === "1" } : {}),
+    },
+    tool_output: { ...DEFAULT_TOOL_OUTPUT },
+    experimental: {
+      subagent_depth: 1,
+      ...(is24 ? {
+        full_codemode: false,
+        opencode_api: false,
+        part_rows: env.LUMI_PART_ROWS === "1",
+      } : {}),
+    },
+    policies: buildPolicies(env, is24),
     providers: { "9router": { settings: { ...TIMEOUTS } } },
     ...(Object.keys(mcpOverride).length ? { mcp: { servers: mcpOverride } } : {}),
     // lapis-2 (lapis-1 = plugin guard): deny di akhir rantai → last-match-wins
@@ -123,9 +230,10 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
         // L1 = cadangan: "auto" (default) hanya saat confidence L0 rendah, timeout keras 3 s; "always"/"1"; "0" = mati
         const l1m = String(env.LUMI_ROUTER_L1 ?? "auto"), useL1 = l1m === "0" ? false : (l1m === "always" || l1m === "1") ? "always" : true;
         const r9 = FRAG.providers["9router"];
-        if (useL1) process.env.SW_9ROUTER_URL ||= env.LUMI_9ROUTER_URL || r9?.settings.baseURL || "http://127.0.0.1:20128/v1";
-        if (useL1 && !process.env.NINEROUTER_API_KEY && r9) process.env.SW_9ROUTER_KEY ||= FRAG.env.LUMI_KEY_9ROUTER;
-        process.env.SW_ROUTE_CACHE ||= path.join(HOME, "router-cache.json");
+        const routerUrlVal = resolveEnvValue(env, "LUMI_9ROUTER_URL", ["SW_9ROUTER_URL"]) || r9?.settings.baseURL || DEFAULT_9ROUTER_URL; // env-compat-allow
+        if (useL1) process.env.LUMI_9ROUTER_URL ||= routerUrlVal;
+        if (useL1 && !process.env.LUMI_KEY_9ROUTER && !process.env.NINEROUTER_API_KEY && r9?.settings) process.env.LUMI_KEY_9ROUTER ||= FRAG.env.LUMI_KEY_9ROUTER;
+        process.env.LUMI_ROUTE_CACHE ||= path.join(HOME, "router-cache.json");
         const r = await SD.route(prompt, { root: REPO, useL1, log: false });
         process.chdir(saved);
         finalCfg.permissions.push({ action: "skill", resource: "*", effect: "deny" }, ...r.picked.map((n) => ({ action: "skill", resource: n, effect: "allow" })));
@@ -136,10 +244,12 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
   // rules inti Lumitome dari config dir milik Lumitome (bukan proyek) → aktif di proyek mana pun walau trust off
   finalCfg.instructions = fs.readdirSync(path.join(ROOT, "rules")).filter((f) => f.endsWith(".md")).sort().map((f) => path.join(CFG_DIR, "rules", f));
   // hanya dir binary yang di-bind read-only ke sandbox — BUKAN seluruh LUMI_HOME (berisi jurnal, serve.password, data engine)
-  const toolDirs = [env.SW_HOME && path.join(env.SW_HOME, "bin"), path.resolve(path.dirname(process.execPath), "..")].filter((d) => d && path.relative(d, HOME).startsWith(".."));
+  const compatHome = resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]); // env-compat-allow
+  const toolDirs = [compatHome && path.join(compatHome, "bin"), path.resolve(path.dirname(process.execPath), "..")].filter((d) => d && path.relative(d, HOME).startsWith(".."));
+  const resolved9RouterUrl = resolveEnvValue(env, "LUMI_9ROUTER_URL", ["SW_9ROUTER_URL"]) || DEFAULT_9ROUTER_URL; // env-compat-allow
   Object.assign(env, {
     OPENCODE_CONFIG_DIR: CFG_DIR,
-    OPENCODE_CONFIG_CONTENT: JSON.stringify(finalCfg),
+    OPENCODE_CONFIG_CONTENT: stableStringify(finalCfg),
     // engine terpin: tanpa cek/unduh update (diverifikasi di v2.2.4: OPENCODE_DISABLE_AUTOUPDATE → "update check skipped")
     OPENCODE_DISABLE_AUTOUPDATE: "1",
     OPENCODE_DISABLE_MODELS_FETCH: env.LUMI_MODELS_FETCH === "1" ? "" : "1", // tanpa fetch models.dev
@@ -151,14 +261,13 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
     PWD: WS, LUMI_WORKSPACE: WS, LUMI_JOURNAL: JOURNAL, LUMI_RUN_ID: RUN_ID,
     LUMI_HARNESS: path.join(REPO, "harness", "lumi-guard.mjs"),
     LUMI_TOOLDIRS: toolDirs.join(path.delimiter), LUMI_SBX_DIR: path.join(HOME, "sbx"),
-    LUMI_9ROUTER_URL: env.LUMI_9ROUTER_URL || "http://127.0.0.1:20128/v1",
+    LUMI_9ROUTER_URL: resolved9RouterUrl,
     ...FRAG.env,
   });
   // Windows: tidak ada bwrap → sandbox OS mati, tapi guard (deny rules, .env, anti-spin, push main) tetap aktif
   // Windows: tanpa bwrap; guard tetap aktif. Pesan hanya dengan LUMI_DEBUG (layar TUI tidak diawali teks tambahan)
   if (process.platform === "win32" && !env.LUMI_SANDBOX) { env.LUMI_SANDBOX = "off"; if (env.LUMI_DEBUG) process.stderr.write("lumitome: Windows, tanpa sandbox; guard aktif\n"); }
-  if (!TRUST) env.OPENCODE_DISABLE_PROJECT_CONFIG = "1";
-  env.SW_9ROUTER_URL ||= env.LUMI_9ROUTER_URL; env.SW_9ROUTER_KEY ||= env.NINEROUTER_API_KEY; // nama SW_* warisan Swanwright, dibaca config proyek
+  if (!effectiveTrust) env.OPENCODE_DISABLE_PROJECT_CONFIG = "1";
   delete env.OPENCODE_CONFIG;
   return { finalCfg, env, skillNote };
 }
