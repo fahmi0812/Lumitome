@@ -1,3 +1,6 @@
+import os from "node:os";
+import path from "node:path";
+
 /**
  * Kompatibilitas variabel env SW_* -> LUMI_* (v0.4.0 Wave 0, T0.2).
  *
@@ -54,4 +57,22 @@ export function resolveEnvValue(env = process.env, canonical, aliases = [], opts
     }
   }
   return opts.defaultValue;
+}
+
+export function resolveCompatLumiHome(env = process.env, opts = {}) {
+  return resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"], opts)
+    || path.join((env && env.HOME) || os.homedir(), ".lumitome");
+}
+
+export function resolveCompatEmbedModel(env = process.env, opts = {}) {
+  return resolveEnvFlag(env, "LUMI_EMBED_MODEL", ["SW_EMBED_MODEL"], opts);
+}
+
+export function resolveCompat9RouterUrl(env = process.env, opts = {}) {
+  return resolveEnvValue(env, "LUMI_9ROUTER_URL", ["SW_9ROUTER_URL"], opts)
+    || "http://127.0.0.1:20128/v1";
+}
+
+export function resolveCompat9RouterKey(env = process.env, opts = {}) {
+  return resolveEnvValue(env, "LUMI_KEY_9ROUTER", ["LUMI_9ROUTER_KEY", "SW_9ROUTER_KEY", "NINEROUTER_API_KEY"], opts) || "";
 }

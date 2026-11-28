@@ -107,6 +107,14 @@ function projectMcp(WS, TRUST) {
   return {};
 }
 
+/** Serialisasi JSON deterministik dengan sorted object keys untuk kestabilan KV-cache (T3.4). */
+export function stableStringify(val) {
+  if (val === null || typeof val !== "object") return JSON.stringify(val);
+  if (Array.isArray(val)) return "[" + val.map((v) => (v === undefined ? "null" : stableStringify(v))).join(",") + "]";
+  const keys = Object.keys(val).filter((k) => val[k] !== undefined).sort();
+  return "{" + keys.map((k) => `${JSON.stringify(k)}:${stableStringify(val[k])}`).join(",") + "}";
+}
+
 /**
  * Rakit finalCfg + env. Kembali: { finalCfg, env, skillNote }.
  * prompt: pesan `run` yang sudah diekstrak entry (promptOf) — hanya dipakai saat sub === "run".
@@ -241,7 +249,7 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
   const resolved9RouterUrl = resolveEnvValue(env, "LUMI_9ROUTER_URL", ["SW_9ROUTER_URL"]) || DEFAULT_9ROUTER_URL; // env-compat-allow
   Object.assign(env, {
     OPENCODE_CONFIG_DIR: CFG_DIR,
-    OPENCODE_CONFIG_CONTENT: JSON.stringify(finalCfg),
+    OPENCODE_CONFIG_CONTENT: stableStringify(finalCfg),
     // engine terpin: tanpa cek/unduh update (diverifikasi di v2.2.4: OPENCODE_DISABLE_AUTOUPDATE → "update check skipped")
     OPENCODE_DISABLE_AUTOUPDATE: "1",
     OPENCODE_DISABLE_MODELS_FETCH: env.LUMI_MODELS_FETCH === "1" ? "" : "1", // tanpa fetch models.dev

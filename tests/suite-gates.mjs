@@ -1573,4 +1573,132 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
   }
 }
 
+// ---------- Wave 3 (T3.1): Cache-Aligned Prefix/Suffix, Secret Scrubbing & Tool Output Offload ----------
+{
+  const CB = await import("../harness/context-budget.mjs");
+  const PR = await import("../lumitome/config/plugins/subagent/prompt.mjs");
+  const { pathToFileURL } = await import("node:url");
+  const tmpBase = path.join(process.cwd(), ".tmp");
+  fs.mkdirSync(tmpBase, { recursive: true });
+  const ws31 = fs.mkdtempSync(path.join(tmpBase, "w3-t31-"));
+  try {
+    const r00 = fs.readFileSync(".opencode/rules/01-hard-constraints.md", "utf8");
+    const rSub = fs.readFileSync(".opencode/rules/subagent.md", "utf8");
+
+    const p1 = CB.assembleCacheAlignedPrompt({
+      staticPrefixParts: [{ name: "rules", content: r00 }, { name: "subagent", content: rSub }],
+      dynamicSuffixParts: [
+        `timestamp=${new Date("2026-11-28T01:00:00Z").toISOString()}`,
+        "git_status=M a.mjs",
+        "witness=w_01",
+      ],
+      maxSuffixChars: 500,
+    });
+    const p2 = CB.assembleCacheAlignedPrompt({
+      staticPrefixParts: [{ name: "rules", content: r00 }, { name: "subagent", content: rSub }],
+      dynamicSuffixParts: [
+        `timestamp=${new Date("2026-11-28T09:30:00Z").toISOString()}`,
+        "git_status=M a.mjs, M b.mjs",
+        "memory_hit=previous auth fix",
+      ],
+      maxSuffixChars: 500,
+    });
+    const pTrunc = CB.assembleCacheAlignedPrompt({
+      staticPrefixParts: ["STATIC"],
+      dynamicSuffixParts: ["D".repeat(400)],
+      maxSuffixChars: 120,
+    });
+    ok("T3.1 assembleCacheAlignedPrompt: prefix_sha256 stabil lintas turn berbeda timestamp & memotong suffix sesuai maxSuffixChars",
+      p1.prefix_sha256 === p2.prefix_sha256
+      && /^[0-9a-f]{64}$/.test(p1.prefix_sha256)
+      && p1.staticPrefix === p2.staticPrefix
+      && p1.dynamicSuffix !== p2.dynamicSuffix
+      && !p1.staticPrefix.includes("2026-11-28")
+      && pTrunc.suffixTruncated === true
+      && pTrunc.dynamicSuffix.length <= 120);
+
+    const fakeKey = ["sk", "proj", "abc1234567890SECRET"].join("-");
+    const fakeBearer = ["tok", "super", "secret", "token", "987654"].join("_");
+    const fakePem = ["-----BEGIN RSA ", "PRIVATE KEY-----\nMIIEpAIBAAKCAQEA123456\n-----END RSA ", "PRIVATE KEY-----"].join("");
+    const secretPayload = [
+      "Header line ERROR: auth failed",
+      `${"OPENAI_API_KEY"}=${fakeKey}`,
+      `Authorization: Bearer ${fakeBearer}`,
+      fakePem,
+      "A".repeat(800),
+      "Tail line done",
+    ].join("\n");
+    const offSmall = CB.offloadLargeOutput("short ok", { workspaceRoot: ws31, runId: "r_small", threshold: 500 });
+    const offLarge = CB.offloadLargeOutput(secretPayload, { workspaceRoot: ws31, runId: "r_large", threshold: 500 });
+    const diskLog = fs.readFileSync(offLarge.logPath, "utf8");
+
+    ok("T3.1 offloadLargeOutput: <=500 tidak ditulis ke disk; >500 di-scrub sebelum tulis .tmp/run_logs/<runId>.log & summary <=500",
+      offSmall.offloaded === false && offSmall.logPath === null
+      && offLarge.offloaded === true
+      && offLarge.logPath === path.join(ws31, ".tmp", "run_logs", "r_large.log")
+      && offLarge.relPath === ".tmp/run_logs/r_large.log"
+      && offLarge.byte_size > 500
+      && /^[0-9a-f]{64}$/.test(offLarge.sha256)
+      && offLarge.summary.length <= 500
+      && offLarge.summary.includes(offLarge.relPath)
+      && offLarge.summary.includes(String(offLarge.byte_size))
+      && offLarge.summary.includes(offLarge.sha256)
+      && !diskLog.includes(fakeKey)
+      && !diskLog.includes(fakeBearer)
+      && !diskLog.includes("MIIEpAIBAAKCAQEA123456")
+      && !offLarge.summary.includes(fakeKey));
+
+    const fakeLive = ["sk", "live", "9999999999999999"].join("-");
+    const revClean = PR.buildReviewerContextPrompt({
+      spec: "Cek API",
+      diff: `+ const k = '${fakeLive}';`,
+      targetFiles: ["a.js"],
+      facts: ["FACT: test ok Bearer secret_bearer_token_abc123"],
+    });
+    ok("T3.1 prompt.mjs scrub: rahasia di diff/facts diskrub di reviewer packet",
+      !revClean.includes(fakeLive) && !revClean.includes("secret_bearer_token_abc123"));
+
+    // Integrasi offloadLargeOutput di lumitome-guard.ts execute.after
+    const prevE = {
+      LUMI_WORKSPACE: process.env.LUMI_WORKSPACE,
+      LUMI_JOURNAL: process.env.LUMI_JOURNAL,
+      LUMI_HARNESS: process.env.LUMI_HARNESS,
+      LUMI_HOME: process.env.LUMI_HOME,
+      LUMI_SANDBOX: process.env.LUMI_SANDBOX,
+      LUMI_RUN_ID: process.env.LUMI_RUN_ID,
+    };
+    const j31 = path.join(ws31, "journal31.jsonl");
+    try {
+      process.env.LUMI_WORKSPACE = ws31;
+      process.env.LUMI_JOURNAL = j31;
+      process.env.LUMI_HARNESS = path.resolve("harness/lumi-guard.mjs");
+      process.env.LUMI_HOME = path.join(ws31, ".lumihome");
+      process.env.LUMI_SANDBOX = "off";
+      process.env.LUMI_RUN_ID = "run_guard_31";
+      let afterH = null;
+      const guardMod = await import(pathToFileURL(path.resolve("lumitome/config/plugins/lumitome-guard.ts")).href + `?t=${Date.now()}`);
+      await guardMod.default.setup({
+        location: { directory: ws31 },
+        tool: { hook: (n, fn) => { if (n === "execute.after") afterH = fn; } },
+      });
+      const sampleStr = ["sk", "secret", "abcdef" + "1234567890"].join("-");
+      const resObj = { output: "X".repeat(700) + ` ${sampleStr}`, metadata: { exit: 0 } };
+      await afterH({ tool: "shell", id: "call_31", status: "completed", input: { command: "echo hi" }, result: resObj });
+      const logFile = path.join(ws31, ".tmp", "run_logs", "run_guard_31", "call_31.log");
+      ok("T3.1 lumitome-guard.ts: output >500 di-offload ke .tmp/run_logs/, token terscrub, result dipendekkan <=500",
+        fs.existsSync(logFile)
+        && !fs.readFileSync(logFile, "utf8").includes(sampleStr)
+        && resObj.output.length <= 500
+        && resObj.output.includes(".tmp/run_logs/run_guard_31/call_31.log"));
+    } finally {
+      for (const [k, v] of Object.entries(prevE)) {
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+      }
+    }
+  } finally {
+    fs.rmSync(ws31, { recursive: true, force: true });
+  }
+}
+
 finish();

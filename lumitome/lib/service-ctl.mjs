@@ -99,6 +99,9 @@ export function requiredPluginIds({ repo = "", ws = "" } = {}) {
   if (repo && fs.existsSync(path.join(repo, "lumitome", "config", "plugins", "lumitome-idle-gate.ts"))) {
     ids.push("lumitome-idle-gate");
   }
+  if (repo && fs.existsSync(path.join(repo, "lumitome", "config", "plugins", "lumitome-cascade.ts"))) {
+    ids.push("lumitome-cascade");
+  }
   const checkHarness = (d) => Boolean(d && fs.existsSync(path.join(d, ".opencode", "plugins", "lumitome-harness.ts")));
   if (checkHarness(ws) || checkHarness(repo)) ids.push("lumitome-harness");
   return ids;

@@ -337,6 +337,120 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
       JSON.parse(initAll.trim()).result.serverInfo.name === "lumitome-skills"
       && JSON.parse(initPen.trim()).result.serverInfo.name === "lumitome-skills-penulisan");
   }
+
+  // --- Wave 3 (T3.3, T3.4, T3.5 + Telemetry): Cascade 9router, Token Estimator, Skill Telemetry ---
+  {
+    const { pathToFileURL } = await import("node:url");
+    const TE = await import("../router/token-estimator.mjs");
+    const CC = await import("../lumitome/config/plugins/lib/cascade-core.mjs");
+    const SM = await import("../scripts/skill-metrics.mjs");
+    const profiles = JSON.parse(fs.readFileSync("router/model_profiles.json", "utf8"));
+
+    // 1) T3.4 Token Estimator & Overthink Guard
+    const proseTok = TE.estimateTokens("Ini adalah kalimat dokumentasi bahasa Indonesia dan English yang normal.");
+    const codeTok = TE.estimateTokens("function x(a,b){if(a===b){return [a,b].map((v)=>v+1);}return {};}");
+    const bTrivial = TE.computeDynamicBudget({ contextWindow: 100000, usedTokens: 1000, taskComplexity: "trivial", env: {} });
+    const bComplex = TE.computeDynamicBudget({ contextWindow: 100000, usedTokens: 1000, taskComplexity: "complex", env: {} });
+    const bThinking = TE.computeDynamicBudget({ contextWindow: 100000, usedTokens: 1000, taskComplexity: "thinking", env: {} });
+    const bOff = TE.computeDynamicBudget({ contextWindow: 100000, usedTokens: 1000, taskComplexity: "trivial", env: { LUMI_OVERTHINK_GUARD: "0" } });
+    ok("T3.4 token-estimator: prose/code/empty deterministik + LUMI_OVERTHINK_GUARD=1 vs 0",
+      TE.estimateTokens("") === 0
+      && proseTok > 0 && codeTok > 0
+      && bTrivial.overthinkGuardActive === true
+      && bTrivial.maxReasoningTokens < bComplex.maxReasoningTokens
+      && bComplex.maxReasoningTokens <= bThinking.maxReasoningTokens
+      && bTrivial.maxSteps < bThinking.maxSteps
+      && bOff.overthinkGuardActive === false && bOff.maxSteps === null);
+
+    // 2) T3.3 & T3.5 Cascade Router (9router-only, fallback, never-downgrade, LUMI_PLAN_PREPASS)
+    const avail = ["ag/gemini-3.8-flash-high", "kr/claude-opus-5.5-thinking-agentic"];
+    const customPassthrough = CC.resolveCascadeModel({
+      event: { kind: "title", agent: "orchestrator", model: { providerID: "anthropic", id: "claude-3" } },
+      availableModels: avail,
+      profiles,
+    });
+    const auxTitle = CC.resolveCascadeModel({
+      event: { kind: "title", agent: "orchestrator", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      availableModels: avail,
+      profiles,
+    });
+    const fallbackNoFlash = CC.resolveCascadeModel({
+      event: { kind: "title", agent: "orchestrator", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      availableModels: ["kr/claude-opus-5.5-thinking-agentic"],
+      profiles,
+    });
+    const neverThink = CC.resolveCascadeModel({
+      event: { kind: "primary", agent: "thinking", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      availableModels: avail,
+      profiles,
+    });
+    const neverReviewer = CC.resolveCascadeModel({
+      event: { kind: "primary", agent: "reviewer", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      availableModels: avail,
+      profiles,
+    });
+    const neverCritic = CC.resolveCascadeModel({
+      event: { kind: "primary", agent: "design-critic", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      availableModels: avail,
+      profiles,
+    });
+    const cascadeOff = CC.resolveCascadeModel({
+      event: { kind: "title", agent: "orchestrator", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      availableModels: avail,
+      profiles,
+      env: { LUMI_CASCADE: "0" },
+    });
+    const prepassOn = CC.resolvePlanPrepass({ role: "thinking", taskComplexity: "thinking", env: { LUMI_PLAN_PREPASS: "1" }, profiles });
+    const prepassTrivial = CC.resolvePlanPrepass({ role: "builder", taskComplexity: "trivial", env: { LUMI_PLAN_PREPASS: "1" }, profiles });
+    const prepassOff = CC.resolvePlanPrepass({ role: "thinking", taskComplexity: "thinking", env: { LUMI_PLAN_PREPASS: "0" }, profiles });
+
+    ok("T3.3/T3.5 cascade-core: providerID=9router invariant, fallback live, never-downgrade thinking/reviewer/design-critic, LUMI_PLAN_PREPASS 0/1",
+      customPassthrough.changed === false && customPassthrough.providerID === "anthropic"
+      && auxTitle.model.providerID === "9router" && auxTitle.model.id === "ag/gemini-3.8-flash-high"
+      && fallbackNoFlash.changed === false && fallbackNoFlash.fallback === true && fallbackNoFlash.model.id === "kr/claude-opus-5.5-thinking-agentic"
+      && neverThink.model.providerID === "9router" && neverThink.model.id === "kr/claude-opus-5.5-thinking-agentic"
+      && neverReviewer.model.id === "kr/claude-opus-5.5-thinking-agentic"
+      && neverCritic.model.id === "kr/claude-opus-5.5-thinking-agentic"
+      && cascadeOff.changed === false && cascadeOff.reason === "cascade-disabled"
+      && prepassOn.active === true && prepassOn.maxTokens === 300
+      && prepassTrivial.active === false && prepassOff.active === false);
+
+    // Plugin lumitome-cascade.ts compatibility (2.3.0 safe + 2.4.2 hook)
+    const cascPlug = await import(pathToFileURL(path.resolve("lumitome/config/plugins/lumitome-cascade.ts")).href + `?t=${Date.now()}`);
+    await cascPlug.default.setup({ location: { directory: process.cwd() } });
+    let resolveCb = null;
+    await cascPlug.default.setup({
+      location: { directory: process.cwd() },
+      session: { hook: async (name, fn) => { if (name === "experimental.model.resolve") resolveCb = fn; } },
+    });
+    ok("T3.3 lumitome-cascade.ts: id lumitome-cascade, aman di 2.3.0, daftar experimental.model.resolve di 2.4.2",
+      cascPlug.default.id === "lumitome-cascade" && typeof resolveCb === "function");
+
+    // 3) Per-sector telemetry & dead-skill detection (tanpa tulis ke runtime/)
+    const tmpTelDir = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-tel-"));
+    try {
+      const missingTel = SM.readSkillRoutingTelemetry(path.join(tmpTelDir, "does-not-exist.jsonl"));
+      const telFile = path.join(tmpTelDir, "skill-routing.jsonl");
+      fs.writeFileSync(telFile, [
+        JSON.stringify({ sector: "coding", top1: "tdd-red-green-refactor", picked: ["tdd-red-green-refactor"], top1_hit: true }),
+        JSON.stringify({ sector: "security", top1: "security-audit", picked: ["security-audit", "owasp-security"], top1_hit: false }),
+      ].join("\n") + "\n");
+      const loadedTel = SM.readSkillRoutingTelemetry(telFile);
+      const dead = SM.detectDeadSkills(["tdd-red-green-refactor", "unused-skill-x"], {
+        goldenUsedSet: new Set(["tdd-red-green-refactor"]),
+        telemetrySkillHits: loadedTel.skill_hits,
+      });
+      ok("T3.5 skill-metrics: by_sector lengkap, fallback bersih saat telemetry absen, deteksi unused/dead skills",
+        Boolean(met.by_sector?.coding && met.by_sector?.security && met.by_sector?.riset && met.by_sector?.penulisan && met.by_sector?.media && met.by_sector?.finance)
+        && met.by_sector.coding.l0_mismatch === 0
+        && missingTel.available === false && missingTel.total_events === 0
+        && loadedTel.available === true && loadedTel.total_events === 2
+        && loadedTel.top1_by_sector.coding.top1_hit_rate === 1
+        && dead.unused_count === 1 && dead.pruning_candidates[0] === "unused-skill-x");
+    } finally {
+      fs.rmSync(tmpTelDir, { recursive: true, force: true });
+    }
+  }
 }
 
 finish();

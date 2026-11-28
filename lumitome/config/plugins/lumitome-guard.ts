@@ -72,6 +72,19 @@ export default {
     const rg = g ? await loadSiblingHarness("repro-gate.mjs") : null;
     const wm = g ? await loadSiblingHarness("witness.mjs") : null;
     const wd = g ? await loadSiblingHarness("watchdog.mjs") : null;
+    const cb = g ? await loadSiblingHarness("context-budget.mjs") : null;
+    const taintMod = g ? await loadSiblingHarness("memory/taint.mjs") : null;
+    const taintTrackers = new Map<string, any>();
+    const getTaintTracker = (sid: string) => {
+      if (!taintMod?.SessionTaintTracker) return null;
+      const key = sid || "default";
+      if (!taintTrackers.has(key)) {
+        const safeSid = String(key).replace(/[^A-Za-z0-9._-]/g, "_") || "default";
+        const stateFile = path.join(WS, ".tmp", "session", safeSid, "taint-state.json");
+        taintTrackers.set(key, new taintMod.SessionTaintTracker({ sessionId: key, stateFile }));
+      }
+      return taintTrackers.get(key);
+    };
     const watchdogs = new Map<string, any>();
     const getWatchdog = (sid: string) => {
       if (!wd) return null;
@@ -106,7 +119,13 @@ export default {
       const meta = { ...(codemode ? { codemode: true } : {}), ...(callId ? { callId } : {}) };
       // P1-2 (3): tool di luar daftar (MCP, webfetch, sub-agent, …) tidak diblokir —
       // daftar tool OpenCode tidak lengkap — tapi dicatat sebagai unguarded di jurnal.
-      if (!SHELL.has(tool) && !FILE.has(tool) && !EXEC.has(tool)) { jot({ kind: "unguarded", tool, ...meta }); return; }
+      if (!SHELL.has(tool) && !FILE.has(tool) && !EXEC.has(tool)) {
+        const sid0 = String(e.sessionID || env.LUMI_SESSION_ID || defaultSessionId);
+        const tt = getTaintTracker(sid0);
+        const tr = tt?.recordToolOrInput?.({ tool, mcpServer: e.mcpServer });
+        jot({ kind: "unguarded", tool, ...(tr?.isTainted ? { taint: tr.taintLevel } : {}), ...meta });
+        return;
+      }
       if (!g) {
         // Guard gagal dimuat: fail-closed untuk tulis/execute, baca tetap jalan (urutan ada di g.evaluateTool).
         if (SHELL.has(tool) || EXEC.has(tool) || (tool !== "read" && tool !== "glob" && tool !== "grep" && tool !== "list")) { jot({ kind: "deny", tool, rule: "closed", ...meta }); throw new Error(closed); }
@@ -166,6 +185,17 @@ export default {
       if (SHELL.has(tool)) jot({ kind: "shell-start", command, effect: r.effect, ...meta });
     });
 
+    const extractOut = (res: any) => {
+      const parts = [res?.output, res?.metadata?.output, ...(Array.isArray(res?.content) ? res.content.map((c: any) => c?.text) : [res?.content])];
+      return parts.map((o) => (typeof o === "string" ? o : o == null ? "" : JSON.stringify(o))).join("\n");
+    };
+    const applyOffloadToResult = (res: any, summary: string) => {
+      if (!res || typeof res !== "object") return;
+      if (typeof res.output === "string") res.output = summary;
+      else if (res.output && typeof res.output === "object" && typeof res.output.output === "string") res.output.output = summary;
+      if (Array.isArray(res.content)) res.content = [{ type: "text", text: summary }];
+    };
+
     await ctx.tool.hook("execute.after", (e: any) => {
       const tool = String(e.tool);
       if (!SHELL.has(tool) && !FILE.has(tool) && !EXEC.has(tool)) return;
@@ -174,14 +204,22 @@ export default {
       const sid = String(e.sessionID || env.LUMI_SESSION_ID || defaultSessionId);
       const meta = { ...(codemode ? { codemode: true } : {}), ...(callId ? { callId } : {}) };
       const dog = getWatchdog(sid);
+      const runId = String(env.LUMI_RUN_ID || sid || "run");
       if (EXEC.has(tool)) {
         const ok = e.status === "completed" && !e.result?.metadata?.error;
         spin?.after(tool, e.input || {}, ok);
-        dog?.recordStep({ tool, input: e.input || {}, ok, errorText: e.result?.metadata?.error ? String(e.result.metadata.error) : "" });
+        const execOut = extractOut(e.result);
+        const execOff = cb?.offloadLargeOutput && execOut.length > 500
+          ? cb.offloadLargeOutput(execOut, { workspaceRoot: WS, runId, callId: callId ? String(callId) : "", threshold: 500, scrub: true })
+          : null;
+        if (execOff?.offloaded) applyOffloadToResult(e.result, execOff.summary);
+        const rawErr = e.result?.metadata?.error ? String(e.result.metadata.error) : "";
+        const errText = cb?.scrubSecrets ? cb.scrubSecrets(rawErr) : rawErr;
+        dog?.recordStep({ tool, input: e.input || {}, ok, errorText: errText });
         if (wm && rg?.isExecuteMutatingCode?.(e.input?.code)) {
           try { wm.invalidateStaleWitnesses({ sessionDir: wm.sessionDirFor(WS, sid), workspace: WS }); } catch {}
         }
-        jot({ kind: "tool", tool, status: e.status, ...meta });
+        jot({ kind: "tool", tool, status: e.status, ...(execOff?.offloaded ? { log_path: execOff.relPath, out_bytes: execOff.byte_size } : {}), ...meta });
         return;
       }
       let original = e.input?.command;
@@ -197,13 +235,17 @@ export default {
       const ok = SHELL.has(tool) ? (!isBg && e.status === "completed" && exit === 0) : e.status === "completed";
       const input = SHELL.has(tool) ? { command: String(original ?? "") } : e.input;
       if (!isBg) spin?.after(tool, input, ok);
-      const out = (() => { const parts = [e.result?.output, e.result?.metadata?.output, ...(Array.isArray(e.result?.content) ? e.result.content.map((c: any) => c?.text) : [e.result?.content])];
-        return parts.map((o) => (typeof o === "string" ? o : o == null ? "" : JSON.stringify(o))).join("\n"); })();
+      const out = extractOut(e.result);
       const failed_output = SHELL.has(tool) && g?.testOutputFailed && g.TEST_CMD?.test(String(original ?? "")) ? g.testOutputFailed(out) : false;
       if (isBg) {
-        jot({ kind: "shell-bg", command: original, exit: null, ok: false, status: e.status, ...(shellID ? { shellID } : {}), out_bytes: out.length, ...meta });
+        jot({ kind: "shell-bg", command: cb?.scrubSecrets ? cb.scrubSecrets(original) : original, exit: null, ok: false, status: e.status, ...(shellID ? { shellID } : {}), out_bytes: out.length, ...meta });
         return;
       }
+      const shellOff = SHELL.has(tool) && cb?.offloadLargeOutput && out.length > 500
+        ? cb.offloadLargeOutput(out, { workspaceRoot: WS, runId, callId: callId ? String(callId) : "", threshold: 500, scrub: true })
+        : null;
+      if (shellOff?.offloaded) applyOffloadToResult(e.result, shellOff.summary);
+      const cleanOut = shellOff ? shellOff.summary : (cb?.scrubSecrets ? cb.scrubSecrets(out) : out);
       if (SHELL.has(tool) && rg && typeof exit === "number") {
         try {
           rg.recordReproProbe({ workspace: WS, sessionId: sid, command: String(original ?? ""), exitCode: exit, output: out });
@@ -235,11 +277,14 @@ export default {
           tool,
           input,
           ok: SHELL.has(tool) ? (ok && !failed_output) : ok,
-          errorText: !ok || failed_output ? out : "",
+          errorText: !ok || failed_output ? cleanOut : "",
           exitCode: exit,
         });
       }
-      jot(SHELL.has(tool) ? { kind: "shell", command: original, exit, ok, status: e.status, out_bytes: out.length, ...(failed_output ? { failed_output: true } : {}), ...meta } : { kind: "tool", tool, status: e.status, ...meta });
+      const safeCmd = cb?.scrubSecrets && typeof original === "string" ? cb.scrubSecrets(original) : original;
+      jot(SHELL.has(tool)
+        ? { kind: "shell", command: safeCmd, exit, ok, status: e.status, out_bytes: out.length, ...(shellOff?.offloaded ? { log_path: shellOff.relPath } : {}), ...(failed_output ? { failed_output: true } : {}), ...meta }
+        : { kind: "tool", tool, status: e.status, ...meta });
     });
   },
 };

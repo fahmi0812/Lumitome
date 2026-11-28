@@ -43,30 +43,52 @@ import { activeRoles, DEFAULT_MODEL } from "./flow.mjs";
 const REVIEW_PERSUASIVE_RE = /^(?:\s*(?:JUDGMENT:|Builder\s*(?:note|claim|summary|explanation|justification)\s*:|Catatan\s*Builder\s*:|Alasan\s*Builder\s*:|Riwayat\s*(?:percakapan|chat)\s*:|Chat\s*history\s*:|Conversation\s*:|Self-check\s*:|Confidence\s*:|I(?:'m| am)\s+(?:100%|very|completely|totally)?\s*(?:confident|sure|certain)|Trust me|Saya\s+yakin|Dijamin\s+(?:aman|lolos|benar)|Percayalah|Everything\s+(?:works|is)\s+perfectly).*)$/gim;
 
 /**
+ * Sanitasi ringan rahasia untuk prompt/observasi di modul pure-JS (tanpa I/O).
+ */
+export function scrubPromptSecrets(text) {
+  let out = String(text ?? "");
+  if (!out) return out;
+  out = out.replace(/-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----/g, "[REDACTED:PRIVATE_KEY]");
+  out = out.replace(/\b(Bearer|Basic)\s+(?!\[REDACTED)(?:[A-Za-z0-9._~+/=-]{8,})/gi, (_, scheme) => `${scheme} [REDACTED:TOKEN]`);
+  out = out.replace(/\bsk-(?:proj-|ant-|live-|test-)?[A-Za-z0-9_-]{12,}\b/g, "[REDACTED:API_KEY]");
+  out = out.replace(/\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{16,}\b/g, "[REDACTED:GITHUB_TOKEN]");
+  out = out.replace(/\bgithub_pat_[A-Za-z0-9_]{16,}\b/g, "[REDACTED:GITHUB_TOKEN]");
+  return out.replace(
+    /(\b(?:NINEROUTER_API_KEY|LUMI_KEY_[A-Z0-9_]+|LUMI_9ROUTER_KEY|[A-Z][A-Z0-9_]*(?:_API_KEY|_SECRET_KEY|_ACCESS_TOKEN|_AUTH_TOKEN|_PRIVATE_KEY|_SECRET|_TOKEN|_PASSWORD|_PASSWD|_KEY))\s*[:=]\s*)(["']?)(?!\[REDACTED)([^\s"'\n\r;]{4,})\2/g,
+    "$1$2[REDACTED:ENV]$2",
+  );
+}
+
+/**
  * Sanitasi deterministik prompt reviewer (M4 / T2.4): buang <think>, narasi persuasif builder,
- * self-praise, riwayat chat, dan klaim ATTESTED(...) mentah tanpa runtime witness.
+ * self-praise, riwayat chat, rahasia, dan klaim ATTESTED(...) mentah tanpa runtime witness.
  */
 export function stripReviewerNoise(text) {
-  let out = String(text ?? "").replace(/<think\b[^>]*>[\s\S]*?<\/think>/gi, "").trim();
+  let out = scrubPromptSecrets(String(text ?? "").replace(/<think\b[^>]*>[\s\S]*?<\/think>/gi, "").trim());
   out = out.replace(/^(?:#{1,3}\s*)?(?:Builder\s+Narrative|Narasi\s+Builder|Conversation\s+History|Riwayat\s+Percakapan|Chain\s+of\s+Thought)\b[\s\S]*?(?=\n#{1,3}\s|\s*$)/gim, "");
   out = out.replace(REVIEW_PERSUASIVE_RE, "");
   out = out.replace(/\bATTESTED\([^)\n]*\)/g, "[STRIPPED_UNVERIFIED_ATTESTED]");
   return out.replace(/\n{3,}/g, "\n\n").trim();
 }
 
-export function buildReviewerContextPrompt(input, reviewerCtxMod = null) {
+export function buildReviewerContextPrompt(input, reviewerCtxMod = null, contextBudgetMod = null) {
+  const scrub = contextBudgetMod?.scrubSecrets ?? scrubPromptSecrets;
   if (typeof input === "string") {
-    if (reviewerCtxMod?.sanitizeReviewerPrompt) return reviewerCtxMod.sanitizeReviewerPrompt(input);
-    return stripReviewerNoise(input) || input.trim();
+    const base = reviewerCtxMod?.sanitizeReviewerPrompt
+      ? reviewerCtxMod.sanitizeReviewerPrompt(input)
+      : (stripReviewerNoise(input) || input.trim());
+    return scrub(base);
   }
   if (reviewerCtxMod?.buildStrippedReviewPacket && reviewerCtxMod?.formatStrippedReviewPacket) {
     const pkt = reviewerCtxMod.buildStrippedReviewPacket(input || {});
-    return reviewerCtxMod.formatStrippedReviewPacket(pkt);
+    return scrub(reviewerCtxMod.formatStrippedReviewPacket(pkt));
   }
   const spec = stripReviewerNoise(input?.spec ?? "");
-  const diff = String(input?.diff ?? "");
+  const diff = scrub(String(input?.diff ?? ""));
   const files = Array.isArray(input?.targetFiles) ? input.targetFiles : [];
-  const facts = (Array.isArray(input?.facts) ? input.facts : []).filter((f) => /^FACT:/i.test(String(f).trim()) && !/\bATTESTED\s*\(/.test(String(f)));
+  const facts = (Array.isArray(input?.facts) ? input.facts : [])
+    .filter((f) => /^FACT:/i.test(String(f).trim()) && !/\bATTESTED\s*\(/.test(String(f)))
+    .map((f) => scrub(f));
   return [
     "[CONTEXT-STRIPPED REVIEW PACKET]",
     "## SPEC",

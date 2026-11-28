@@ -224,10 +224,16 @@ function watchExecutionEnds(ctx: any, root: string, home: string, sessionAgents:
 async function registerEnforcement(ctx: any, root: string, home: string, sessionAgents: Map<string, string>, countersBySession: Map<string, any>) {
   const debug = debugEnabled()
   let reviewerCtxMod: any = null
+  let contextBudgetMod: any = null
   try {
     reviewerCtxMod = await import(pathToFileURL(path.join(root, "harness", "reviewer-context.mjs")).href)
   } catch {
     reviewerCtxMod = null
+  }
+  try {
+    contextBudgetMod = await import(pathToFileURL(path.join(root, "harness", "context-budget.mjs")).href)
+  } catch {
+    contextBudgetMod = null
   }
   if (typeof ctx.session?.hook === "function") {
     const idleController = new IdleGateController({ lumiHome: home })
@@ -304,10 +310,10 @@ async function registerEnforcement(ctx: any, root: string, home: string, session
         appendMetrics(home, { kind: "guard-block", sessionID, agent, tool, reason })
         throw new Error(reason)
       }
-      // T2.4: context-stripping deterministik saat delegasi ke reviewer / goldfish
+      // T2.4 + T3.1: context-stripping + secret scrubbing saat delegasi ke reviewer / goldfish
       if (tool === "subagent" && (event?.input?.agent === "reviewer" || event?.input?.agent === "goldfish")) {
         if (event.input && typeof event.input.prompt === "string") {
-          const stripped = buildReviewerContextPrompt(event.input.prompt, reviewerCtxMod)
+          const stripped = buildReviewerContextPrompt(event.input.prompt, reviewerCtxMod, contextBudgetMod)
           if (stripped) event.input = { ...event.input, prompt: stripped }
         }
       }

@@ -610,6 +610,37 @@ import { ok, finish } from "./harness.mjs";
   const docSw = cp.execFileSync("bash", ["-c", `${docLine}\nprintf '%s' "$LH"`], { env: { ...process.env, LUMI_HOME: "", SW_HOME: "/b/sw" }, encoding: "utf8" });
   ok("T0.2 LUMI_HOME > SW_HOME di engine.mjs dan scripts/doctor.sh:9",
     home1 === "/a/lumi" && home2 === "/b/sw" && docBoth === "/a/lumi" && docSw === "/b/sw");
+
+  // Wave 3 (T3.4): determinisme OPENCODE_CONFIG_CONTENT byte-per-byte
+  const BC = await import("../lumitome/lib/build-config.mjs");
+  const wsDet = fs.mkdtempSync(path.join(os.tmpdir(), "lumi-t34-"));
+  try {
+    const hDet = path.join(wsDet, "home");
+    fs.mkdirSync(hDet, { recursive: true });
+    const detArgs = {
+      REPO: process.cwd(),
+      ROOT: path.resolve("lumitome"),
+      HOME: hDet,
+      WS: wsDet,
+      CFG_DIR: path.join(hDet, "config"),
+      JOURNAL: path.join(hDet, "run.jsonl"),
+      RUN_ID: "run-det",
+      FRAG: { providers: {}, env: {} },
+      MODEL: "9router/ag/gemini-3.8-flash-high",
+      HAS_9R_ENV: true,
+      TIMEOUTS: { headerTimeout: 300000, chunkTimeout: 900000, timeout: 3600000 },
+      TRUST: false,
+      sub: "run",
+      prompt: "",
+    };
+    const d1 = await BC.buildFinalConfig({ ...detArgs, env: { LUMI_ENGINE_VERSION: "2.4.2" } });
+    const d2 = await BC.buildFinalConfig({ ...detArgs, env: { LUMI_ENGINE_VERSION: "2.4.2" } });
+    ok("T3.4 buildFinalConfig: OPENCODE_CONFIG_CONTENT identik byte-per-byte lintas panggilan",
+      d1.env.OPENCODE_CONFIG_CONTENT === d2.env.OPENCODE_CONFIG_CONTENT
+      && BC.stableStringify({ b: 1, a: { d: 2, c: 3 } }) === '{"a":{"c":3,"d":2},"b":1}');
+  } finally {
+    fs.rmSync(wsDet, { recursive: true, force: true });
+  }
 }
 
 finish();
