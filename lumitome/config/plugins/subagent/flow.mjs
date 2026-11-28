@@ -262,7 +262,7 @@ export function modelOptionsForRole(models, stored) {
  * menyebut konteksnya (bukan pesan JSON mentah).
  */
 export const RPC_UNAVAILABLE_MESSAGE = "RPC is unavailable";
-export const RPC_RETRY_ATTEMPTS = 3;
+export const RPC_RETRY_ATTEMPTS = 12;
 export const RPC_RETRY_DELAY_MS = 400;
 
 export function isRpcUnavailableError(e) {
@@ -280,7 +280,8 @@ export async function callRpcWithRetry(label, fn, opts = {}) {
     } catch (e) {
       last = e;
       if (!isRpcUnavailableError(e) || attempt === attempts) break;
-      await sleep(delayMs);
+      const wait = opts.backoff ? Math.min(opts.maxDelayMs ?? 1000, delayMs + (attempt - 1) * 50) : delayMs;
+      await sleep(wait);
     }
   }
   throw new Error(`${label}: ${String(last?.message ?? last)}`);

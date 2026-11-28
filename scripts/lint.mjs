@@ -153,7 +153,6 @@ const ENV_COMPAT_ALLOW_FILES = new Set([
 const OC_VERSION_ALLOW_FILES = new Set([
   "lumitome/lib/engine.mjs",
   "install.sh",
-  "scripts/doctor.sh",
 ]);
 const OC_VER_RE = new RegExp(`\\b(${["2", "3", "0"].join("\\.")}|${["2", "4", "2"].join("\\.")})\\b`);
 

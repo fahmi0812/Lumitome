@@ -92,3 +92,62 @@ export function ensureFresh(home, fp) {
   fs.writeFileSync(fpFile(home), JSON.stringify({ fp }) + "\n", { mode: 0o600 });
   return r;
 }
+
+/** Daftar ID plugin wajib untuk readiness polling /api/plugin. */
+export function requiredPluginIds({ repo = "", ws = "" } = {}) {
+  const ids = ["lumitome-guard", "lumitome.subagent"];
+  const checkHarness = (d) => Boolean(d && fs.existsSync(path.join(d, ".opencode", "plugins", "lumitome-harness.ts")));
+  if (checkHarness(ws) || checkHarness(repo)) ids.push("lumitome-harness");
+  return ids;
+}
+
+/**
+ * Poll GET /api/plugin dengan backoff terukur sampai semua plugin wajib berstatus `active`
+ * (mitigasi async plugin loading OpenCode 2.4.x #63814).
+ */
+export async function waitForPluginsReady(baseUrl, authHeader = "", requiredIds = ["lumitome-guard", "lumitome.subagent"], opts = {}) {
+  const timeoutMs = opts.timeoutMs ?? 5000;
+  const intervalMs = opts.intervalMs ?? 50;
+  const maxIntervalMs = opts.maxIntervalMs ?? 250;
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  const sleepImpl = opts.sleepImpl ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
+  const directory = opts.directory ? `?directory=${encodeURIComponent(opts.directory)}` : "";
+  const url = `${String(baseUrl || "").replace(/\/+$/, "")}/api/plugin${directory}`;
+  const headers = { accept: "application/json", ...(authHeader ? { authorization: authHeader } : {}) };
+  const t0 = Date.now();
+  let delay = intervalMs;
+  let attempts = 0;
+  let lastPlugins = [];
+  let lastError = null;
+  for (;;) {
+    attempts++;
+    try {
+      const res = await fetchImpl(url, { headers, signal: AbortSignal.timeout(Math.max(250, timeoutMs)) });
+      if (res.ok) {
+        const body = await res.json();
+        const list = Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : [];
+        lastPlugins = list;
+        const active = list.filter((p) => (p?.state?.status ?? p?.status) === "active").map((p) => p.id);
+        const missing = requiredIds.filter((id) => !active.includes(id));
+        if (missing.length === 0) {
+          return { ok: true, active, missing: [], plugins: list, attempts, ms: Date.now() - t0 };
+        }
+        lastError = null;
+      } else {
+        lastError = `HTTP ${res.status}`;
+      }
+    } catch (e) {
+      lastError = e?.message || String(e);
+    }
+    const elapsed = Date.now() - t0;
+    if (elapsed >= timeoutMs) {
+      const active = lastPlugins.filter((p) => (p?.state?.status ?? p?.status) === "active").map((p) => p.id);
+      const missing = requiredIds.filter((id) => !active.includes(id));
+      const warning = `plugin belum aktif dalam ${timeoutMs} ms (${missing.join(", ")})${lastError ? `: ${lastError}` : ""}`;
+      if (opts.throwOnTimeout) throw new Error(warning);
+      return { ok: false, active, missing, plugins: lastPlugins, attempts, ms: elapsed, warning };
+    }
+    await sleepImpl(Math.min(delay, Math.max(1, timeoutMs - elapsed)));
+    delay = Math.min(maxIntervalMs, Math.round(delay * 1.5));
+  }
+}

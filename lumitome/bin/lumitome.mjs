@@ -16,6 +16,7 @@ import os from "node:os";
 import crypto from "node:crypto";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { DEFAULT_MODEL } from "../lib/default-model.mjs";
+import { resolveEngineBin } from "../lib/engine.mjs";
 import { resolveEnvValue } from "../lib/env-compat.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -290,11 +291,7 @@ if (!HAS_PROVIDER) {
 
 // binary OpenCode milik lumitome (terpin, di dir sendiri) — tidak memakai/menimpa `opencode` global user
 function ocBin() {
-  if (env.LUMI_OPENCODE) return env.LUMI_OPENCODE;
-  const exe = process.platform === "win32" ? "opencode.exe" : "opencode";
-  const compatHome = resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]); // env-compat-allow
-  for (const d of [compatHome, path.join(os.homedir(), ".lumitome")]) if (d && fs.existsSync(path.join(d, "bin", exe))) return path.join(d, "bin", exe);
-  return exe;
+  return resolveEngineBin({ env, home: resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]) || path.join(os.homedir(), ".lumitome") }); // env-compat-allow
 }
 const HOME = resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]) || path.join(os.homedir(), ".lumitome"); // env-compat-allow
 const WS = fs.realpathSync(env.LUMI_WORKSPACE || process.cwd());
@@ -494,6 +491,19 @@ if (sub === "run") {
 }
 // v0.3.51: --auto hanya untuk TUI polos + run (subcommand lain tidak diubah).
 if (AUTO.auto && (sub === "" || sub === "run")) args = AM.withAutoFlag(args);
+// T1.3: cek kesiapan plugin async (#63814) bila terhubung ke server (--server) atau service reuse.
+if (!args.includes("--standalone") && env.LUMI_PLUGIN_WAIT !== "0") {
+  const si = args.indexOf("--server");
+  const serverArg = si >= 0 ? args[si + 1] : args.find((a) => a.startsWith("--server="))?.slice(9);
+  const targetUrl = serverArg || (sub === "" ? SC.status(HOME).url : null);
+  if (targetUrl) {
+    const pw = env.OPENCODE_SERVER_PASSWORD || (() => { try { return fs.readFileSync(path.join(HOME, "serve.password"), "utf8").trim(); } catch { return ""; } })();
+    const auth = pw ? `Basic ${Buffer.from(`opencode:${pw}`).toString("base64")}` : "";
+    const reqIds = SC.requiredPluginIds({ repo: REPO, ws: WS });
+    const pr = await SC.waitForPluginsReady(targetUrl, auth, reqIds, { timeoutMs: 5000, intervalMs: 50, directory: WS });
+    if (!pr.ok && env.LUMI_DEBUG) process.stderr.write(`lumitome: PERINGATAN — ${pr.warning}\n`);
+  }
+}
 // v0.3.53: tidak ada lagi baris status mode auto saat start (Fahmi: jelek) —
 // mode auto tetap aktif default; indikator `auto` tetap terlihat di TUI OpenCode.
 
@@ -618,13 +628,11 @@ if (sub === "run") {
       const r = evaluateDoneGate ? evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], testCommandExitCode: dg.last.exit, facts: dg.facts }) : { isDone: false, failureReason: "tes gagal" };
       process.stderr.write(`lumitome: DONE-GATE FAIL — ${r.failureReason}${dg.last.why ? ` (${dg.last.why})` : ""}; FACT: \`${dg.last.command}\` exit=${dg.last.raw_exit ?? dg.last.exit}\n`); code = 3;
     } else if (dg.ran) process.stderr.write(`lumitome: DONE-GATE PASS — FACT: \`${dg.last.command}\` exit=0\n`);
-    else if (dg.wrote) {
-      // P0-3: kode diubah tapi tidak ada perintah tes di jurnal — gagal (exit 3), bukan lolos diam-diam.
-      // sector/scanGate TIDAK diteruskan: doneGateFromJournal tidak menyediakannya (hanya ran/last/spin/facts/wrote);
-      // evaluateDoneGate tanpa bukti tes sudah fail-closed, jadi pemanggilan tanpa bukti ini gagal sendiri.
+    else if (dg.wrote || dg.bgPending > 0) {
+      // P0-3 + R5: kode diubah atau perintah tes masih berjalan di background tanpa hasil exit code nyata → gagal (exit 3).
       const { evaluateDoneGate } = await import(pathToFileURL(path.join(REPO, "harness", "done-gate.ts")).href).catch(() => ({}));
       const r = evaluateDoneGate ? evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], facts: dg.facts }) : { isDone: false, failureReason: "tidak ada bukti tes" };
-      process.stderr.write(`lumitome: DONE-GATE FAIL — ${r.failureReason}; file diubah tapi tidak ada perintah tes di jurnal\n`); code = 3;
+      process.stderr.write(`lumitome: DONE-GATE FAIL — ${r.failureReason}; ${dg.bgPending > 0 ? `ada ${dg.bgPending} shell-bg belum selesai` : "file diubah tapi tidak ada perintah tes di jurnal"}\n`); code = 3;
     } else process.stderr.write(`lumitome: DONE-GATE SKIP — tidak ada perintah tes di jurnal dan tidak ada file diubah (tugas tanpa kode); gate tidak relevan\n`);
   }
   if (env.LUMI_DEBUG) process.stderr.write(`lumitome: jurnal ${JOURNAL} ${skillNote}\n`);

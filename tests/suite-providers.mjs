@@ -410,10 +410,10 @@ import { ok, finish } from "./harness.mjs";
   {
     process.env.LUMI_P14_KEY = "k9";
     const errs = [];
-    const rc = await PV.cli({ argv: ["--preset", "9router", "--key-env", "LUMI_P14_KEY"], home, sub: "connect", env: {}, log: () => {}, err: (m) => errs.push(m) });
+    const rc = await PV.cli({ argv: ["--preset", "9router", "--key-env", "LUMI_P14_KEY"], home, sub: "connect", env: { LUMI_9ROUTER_URL: "http://127.0.0.1:19999/v1" }, log: () => {}, err: (m) => errs.push(m) });
     delete process.env.LUMI_P14_KEY;
-    ok("P1-4 (1c) CLI --preset 9router: memakai base URL lokal preset (gagal karena 9router tidak jalan di VM, bukan karena preset salah)",
-      rc === 1 && /127\.0\.0\.1:20128\/v1/.test(errs.join("\n")));
+    ok("P1-4 (1c) CLI --preset 9router: memakai base URL lokal preset (hermetik via port tertutup 19999, bukan karena preset salah)",
+      rc === 1 && /127\.0\.0\.1:19999\/v1/.test(errs.join("\n")));
     const errs2 = [];
     const rc2 = await PV.cli({ argv: ["--preset", "ngawur", "--key-env", "LUMI_P14_KEY"], home, sub: "connect", env: {}, log: () => {}, err: (m) => errs2.push(m) });
     ok("P1-4 (1c) CLI --preset tak dikenal: ditolak (exit 2)",

@@ -723,7 +723,7 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     F.isRpcUnavailableError(new Error("RPC is unavailable: lumitome.subagent")) === true
     && F.isRpcUnavailableError(new Error("Expected JSON value")) === false
     && F.isRpcUnavailableError("RPC is unavailable") === true
-    && F.RPC_RETRY_ATTEMPTS === 3 && F.RPC_RETRY_DELAY_MS === 400);
+    && F.RPC_RETRY_ATTEMPTS === 12 && F.RPC_RETRY_DELAY_MS === 400);
   ok("/subagent v0.3.64: retry — gagal 2x unavailable lalu sukses (sleep 2x, nilai kembali)",
     await (async () => {
       let n = 0; const delays = [];
@@ -744,14 +744,14 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
         return n === 1 && /getPreset: Invalid RPC input/.test(e.message);
       }
     })());
-  ok("/subagent v0.3.64: retry — unavailable terus-menerus habis 3 percobaan lalu lempar dengan label method",
+  ok("/subagent v0.3.64: retry — unavailable terus-menerus habis 12 percobaan lalu lempar dengan label method",
     await (async () => {
       let n = 0;
       try {
         await F.callRpcWithRetry("getLiveModels", () => { n++; throw new Error("RPC is unavailable: lumitome.subagent"); }, { sleep: () => Promise.resolve() });
         return false;
       } catch (e) {
-        return n === 3 && /getLiveModels: RPC is unavailable/.test(e.message);
+        return n === 12 && /getLiveModels: RPC is unavailable/.test(e.message);
       }
     })());
 }

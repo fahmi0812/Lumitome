@@ -11,6 +11,7 @@ import { pathToFileURL, fileURLToPath } from "node:url";
 
 const SHELL = new Set(["shell", "bash"]);
 const FILE = new Set(["read", "edit", "write", "glob", "grep", "list", "patch", "multiedit", "apply_patch"]);
+const EXEC = new Set(["execute"]);
 const env = process.env;
 const WS0 = env.LUMI_WORKSPACE || process.cwd();
 const JOURNAL = env.LUMI_JOURNAL || "";
@@ -73,12 +74,15 @@ export default {
 
     await ctx.tool.hook("execute.before", (e: any) => {
       const tool = String(e.tool);
+      const codemode = Boolean(e.codemode);
+      const callId = e.id;
+      const meta = { ...(codemode ? { codemode: true } : {}), ...(callId ? { callId } : {}) };
       // P1-2 (3): tool di luar daftar (MCP, webfetch, sub-agent, …) tidak diblokir —
       // daftar tool OpenCode tidak lengkap — tapi dicatat sebagai unguarded di jurnal.
-      if (!SHELL.has(tool) && !FILE.has(tool)) { jot({ kind: "unguarded", tool }); return; }
+      if (!SHELL.has(tool) && !FILE.has(tool) && !EXEC.has(tool)) { jot({ kind: "unguarded", tool, ...meta }); return; }
       if (!g) {
-        // Guard gagal dimuat: fail-closed untuk tulis, baca tetap jalan (urutan ada di g.evaluateTool).
-        if (SHELL.has(tool) || (tool !== "read" && tool !== "glob" && tool !== "grep" && tool !== "list")) { jot({ kind: "deny", tool, rule: "closed" }); throw new Error(closed); }
+        // Guard gagal dimuat: fail-closed untuk tulis/execute, baca tetap jalan (urutan ada di g.evaluateTool).
+        if (SHELL.has(tool) || EXEC.has(tool) || (tool !== "read" && tool !== "glob" && tool !== "grep" && tool !== "list")) { jot({ kind: "deny", tool, rule: "closed", ...meta }); throw new Error(closed); }
         return;
       }
       // Urutan penegakan tinggal di guard (harness/lumi-guard.mjs: evaluateTool); plugin hanya wiring.
@@ -86,28 +90,62 @@ export default {
       // bwrap aktif eksplisit; bila off, evaluateTool dipanggil dengan
       // sandbox: null supaya cek scope dilewati (seperti OpenCode biasa).
       const command = SHELL.has(tool) ? String(e.input?.command ?? "") : "";
-      const r = g.evaluateTool(tool, e.input || {}, { workspace: WS, sandbox: sandbox === "bwrap" ? SP : null, tier: TIER, headless, toolDirs, argsDir: env.LUMI_SBX_DIR, sandboxMode: sandbox, spin, closed, lumiHome: env.LUMI_HOME || "" });
+      const r = g.evaluateTool(tool, e.input || {}, {
+        workspace: WS,
+        sandbox: sandbox === "bwrap" ? SP : null,
+        tier: TIER,
+        tierSource,
+        headless,
+        toolDirs,
+        argsDir: env.LUMI_SBX_DIR,
+        sandboxMode: sandbox,
+        spin,
+        closed,
+        lumiHome: env.LUMI_HOME || "",
+        home: env.HOME || os.homedir(),
+        env,
+      });
       if (r.effect === "deny") {
-        jot(r.rule === "spin" ? { kind: "spin", tool, reason: r.reason } : { kind: "deny", tool, rule: r.rule, ...(r.command ? { command: r.command } : {}) });
+        jot(r.rule === "spin" ? { kind: "spin", tool, reason: r.reason, ...meta } : { kind: "deny", tool, rule: r.rule, ...(r.command ? { command: r.command } : {}), ...meta });
         throw new Error(r.reason);
       }
       if (r.rewrite) e.input = { ...e.input, command: r.rewrite.command };
-      if (SHELL.has(tool)) jot({ kind: "shell-start", command, effect: r.effect });
+      if (SHELL.has(tool)) jot({ kind: "shell-start", command, effect: r.effect, ...meta });
     });
 
     await ctx.tool.hook("execute.after", (e: any) => {
       const tool = String(e.tool);
-      if (!SHELL.has(tool) && !FILE.has(tool)) return;
+      if (!SHELL.has(tool) && !FILE.has(tool) && !EXEC.has(tool)) return;
+      const codemode = Boolean(e.codemode);
+      const callId = e.id;
+      const meta = { ...(codemode ? { codemode: true } : {}), ...(callId ? { callId } : {}) };
+      if (EXEC.has(tool)) {
+        const ok = e.status === "completed" && !e.result?.metadata?.error;
+        spin?.after(tool, e.input || {}, ok);
+        jot({ kind: "tool", tool, status: e.status, ...meta });
+        return;
+      }
       let original = e.input?.command;
       if (SHELL.has(tool) && typeof original === "string" && g) original = g.unwrapCommand(original);
-      const exit = e.result?.metadata?.exit ?? e.result?.output?.exit;
-      const ok = e.status === "completed" && (exit === undefined || exit === 0);
+      const shellID = e.result?.metadata?.shellID ?? e.result?.output?.shellID;
+      const bg =
+        e.result?.metadata?.status === "running" ||
+        e.result?.output?.status === "running" ||
+        Boolean(shellID);
+      const rawExit = e.result?.metadata?.exit ?? e.result?.output?.exitCode ?? e.result?.output?.exit;
+      const exit = typeof rawExit === "number" ? rawExit : null;
+      const isBg = SHELL.has(tool) && (bg || exit === null);
+      const ok = SHELL.has(tool) ? (!isBg && e.status === "completed" && exit === 0) : e.status === "completed";
       const input = SHELL.has(tool) ? { command: String(original ?? "") } : e.input;
-      spin?.after(tool, input, ok);
+      if (!isBg) spin?.after(tool, input, ok);
       const out = (() => { const parts = [e.result?.output, e.result?.metadata?.output, ...(Array.isArray(e.result?.content) ? e.result.content.map((c: any) => c?.text) : [e.result?.content])];
         return parts.map((o) => (typeof o === "string" ? o : o == null ? "" : JSON.stringify(o))).join("\n"); })();
       const failed_output = SHELL.has(tool) && g?.testOutputFailed && g.TEST_CMD?.test(String(original ?? "")) ? g.testOutputFailed(out) : false;
-      jot(SHELL.has(tool) ? { kind: "shell", command: original, exit: exit ?? null, status: e.status, out_bytes: out.length, ...(failed_output ? { failed_output: true } : {}) } : { kind: "tool", tool, status: e.status });
+      if (isBg) {
+        jot({ kind: "shell-bg", command: original, exit: null, ok: false, status: e.status, ...(shellID ? { shellID } : {}), out_bytes: out.length, ...meta });
+        return;
+      }
+      jot(SHELL.has(tool) ? { kind: "shell", command: original, exit, ok, status: e.status, out_bytes: out.length, ...(failed_output ? { failed_output: true } : {}), ...meta } : { kind: "tool", tool, status: e.status, ...meta });
     });
   },
 };

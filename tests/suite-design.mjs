@@ -755,4 +755,29 @@ import { ok, skip, finish } from "./harness.mjs";
   }
 }
 
+// --- Wave 1 (T1.5): kontras WCAG AA theme lumitome.json + wordmark logo.patch ---
+{
+  const theme = JSON.parse(fs.readFileSync("lumitome/config/themes/lumitome.json", "utf8"));
+  const patch = fs.readFileSync("engine/patches/logo.patch", "utf8");
+  const relLum = (hex) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+      .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const ratio = (a, b) => {
+    const l1 = relLum(a), l2 = relLum(b);
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  };
+  const lightBgs = [theme.defs.paper, theme.defs.paper2, theme.defs.paper3];
+  const lightFgs = [theme.defs.bronze, theme.defs.bronzeDeep, theme.defs.umber, theme.defs.inkMuted, theme.defs.ink];
+  const darkFgs = [theme.defs.champagne, theme.defs.goldDeep, theme.defs.cornsilk, theme.defs.goldSoft, theme.defs.gold];
+  const wordmarkLight = "#7A5A1A";
+  ok("T1.5 WCAG AA light theme: semua token teks & wordmark #7A5A1A >= 4.5:1 di paper/paper2/paper3; dark mode utuh >= 4.5:1",
+    lightFgs.every((fg) => lightBgs.every((bg) => ratio(fg, bg) >= 4.5))
+    && [...lightBgs, "#FFFFFF"].every((bg) => ratio(wordmarkLight, bg) >= 4.5)
+    && darkFgs.every((fg) => ratio(fg, theme.defs.night) >= 4.5)
+    && /logoColorLight = \{ left: "#7A5A1A", right: "#7A5A1A" \}/.test(patch)
+    && /luminance > 0\.5/.test(patch));
+}
+
 finish();

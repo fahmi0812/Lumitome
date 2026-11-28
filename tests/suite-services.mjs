@@ -523,4 +523,128 @@ import { frontmatter } from "../router/parse.mjs";
   fs.rmSync(hOld, { recursive: true, force: true });
 }
 
+// ---------- Wave 1 (T1.1 / T1.3 / T1.4 / T1.6): engineAtLeast, schema 2.3.0 vs 2.4.2, policies, pre-scan, plugins readiness ----------
+{
+  const EN = await import("../lumitome/lib/engine.mjs");
+  const BC = await import("../lumitome/lib/build-config.mjs");
+  const SC = await import("../lumitome/lib/service-ctl.mjs");
+  const osm = await import("node:os");
+  const { createRequire } = await import("node:module");
+  const Ajv2020 = createRequire(import.meta.url)("ajv/dist/2020").default;
+  const compileSchema = (schemaPath) => {
+    const a = new Ajv2020({ strict: false, allErrors: true, validateFormats: false });
+    for (const f of fs.readdirSync("scripts/schema")) {
+      if (!f.endsWith(".json") || f === "opencode-config.schema.json") continue;
+      const s = JSON.parse(fs.readFileSync(path.join("scripts/schema", f), "utf8"));
+      if (s.$id) a.addSchema(s);
+    }
+    return a.compile(JSON.parse(fs.readFileSync(schemaPath, "utf8")));
+  };
+  const val23 = compileSchema("tests/fixtures/opencode-config-2.3.0.schema.json");
+  const val24 = compileSchema("scripts/schema/opencode-config.schema.json");
+
+  ok("T1.1 engineAtLeast: perbandingan semver numerik (2.10.0 >= 2.4.2, 2.4.2 >= 2.4.2, 2.3.0 < 2.4.2)",
+    EN.ENGINE_MIN_2_4 === "2.4.2"
+    && EN.engineAtLeast("2.10.0", EN.ENGINE_MIN_2_4) === true
+    && EN.engineAtLeast("2.4.2", EN.ENGINE_MIN_2_4) === true
+    && EN.engineAtLeast("2.3.0", EN.ENGINE_MIN_2_4) === false
+    && EN.engineAtLeast("invalid", EN.ENGINE_MIN_2_4) === false);
+
+  ok("T1.1 resolveEngineVersion & T1.4 resolveEngineBin: prioritas LUMI_ENGINE_VERSION / LUMI_ENGINE_BIN",
+    EN.resolveEngineVersion({}) === EN.OC_VERSION
+    && EN.resolveEngineVersion({ LUMI_ENGINE_VERSION: "2.4.2" }) === "2.4.2"
+    && EN.resolveEngineBin({ env: { LUMI_ENGINE_BIN: "/custom/oc", LUMI_OPENCODE: "/old/oc" }, exists: () => false }) === "/custom/oc"
+    && EN.resolveEngineBin({ env: { LUMI_OPENCODE: "/old/oc" }, exists: () => false }) === "/old/oc");
+
+  const ws11 = fs.mkdtempSync(path.join(osm.tmpdir(), "lumi-t11-"));
+  const home11 = path.join(ws11, "home");
+  fs.mkdirSync(home11, { recursive: true });
+  const baseArgs = {
+    REPO: process.cwd(),
+    ROOT: path.resolve("lumitome"),
+    HOME: home11,
+    WS: ws11,
+    CFG_DIR: path.join(home11, "config"),
+    JOURNAL: path.join(home11, "run.jsonl"),
+    RUN_ID: "run-t11",
+    FRAG: { providers: {}, env: {} },
+    MODEL: "9router/ag/gemini-3.8-flash-high",
+    HAS_9R_ENV: true,
+    TIMEOUTS: { headerTimeout: 300000, chunkTimeout: 900000, timeout: 3600000 },
+    TRUST: false,
+  };
+
+  // Mode 2.3.0: tanpa field khusus 2.4.2, lolos schema 2.3.0 & 2.4.2
+  const r23 = await BC.buildFinalConfig({ ...baseArgs, env: { LUMI_ENGINE_VERSION: "2.3.0" }, sub: "run", prompt: "" });
+  ok("T1.1 mode 2.3.0: tanpa key 2.4.2, valid terhadap fixture schema 2.3.0 dan schema 2.4.2",
+    r23.finalCfg.compaction.background === undefined
+    && r23.finalCfg.experimental.full_codemode === undefined
+    && r23.finalCfg.experimental.opencode_api === undefined
+    && r23.finalCfg.experimental.part_rows === undefined
+    && r23.finalCfg.experimental.subagent_depth === 1
+    && Array.isArray(r23.finalCfg.policies) && r23.finalCfg.policies.length > 0
+    && val23(r23.finalCfg) === true && val24(r23.finalCfg) === true);
+
+  // Mode 2.4.2 TUI dengan LUMI_COMPACTION_BACKGROUND=1 vs headless run
+  const r24Tui = await BC.buildFinalConfig({ ...baseArgs, env: { LUMI_ENGINE_VERSION: "2.4.2", LUMI_COMPACTION_BACKGROUND: "1" }, sub: "" });
+  const r24Run = await BC.buildFinalConfig({ ...baseArgs, env: { LUMI_ENGINE_VERSION: "2.4.2", LUMI_COMPACTION_BACKGROUND: "1" }, sub: "run", prompt: "" });
+  ok("T1.1 mode 2.4.2: TUI background=true bila opt-in, run headless selalu background=false + full_codemode/opencode_api/part_rows=false + lolos schema 2.4.2",
+    r24Tui.finalCfg.compaction.background === true
+    && r24Run.finalCfg.compaction.background === false
+    && r24Run.finalCfg.experimental.full_codemode === false
+    && r24Run.finalCfg.experimental.opencode_api === false
+    && r24Run.finalCfg.experimental.part_rows === false
+    && val24(r24Tui.finalCfg) === true && val24(r24Run.finalCfg) === true);
+
+  // LUMI_PROVIDER_STRICT=1 vs 0
+  const pStrict = BC.buildPolicies({ LUMI_PROVIDER_STRICT: "1" }, true);
+  const pLoose = BC.buildPolicies({ LUMI_PROVIDER_STRICT: "0" }, true);
+  ok("T1.1 buildPolicies: LUMI_PROVIDER_STRICT=1 (deny * lalu allow 9router) vs 0 (izinkan custom provider)",
+    pStrict.some((p) => p.action === "provider.use" && p.resource === "*" && p.effect === "deny")
+    && pStrict.some((p) => p.action === "provider.use" && p.resource === "9router" && p.effect === "allow")
+    && pStrict.some((p) => p.action === "tool.use" && p.resource === "shell:*git push * main" && p.effect === "deny")
+    && !pLoose.some((p) => p.action === "provider.use"));
+
+  // Pre-scan LUMI_TRUST_PROJECT=1 dengan blok "policies" di proyek
+  const wsPol = path.join(ws11, "proj-with-policies");
+  fs.mkdirSync(wsPol, { recursive: true });
+  fs.writeFileSync(path.join(wsPol, "opencode.jsonc"), JSON.stringify({ policies: [{ action: "provider.use", resource: "*", effect: "allow" }] }));
+  const rTrustPol = await BC.buildFinalConfig({ ...baseArgs, WS: wsPol, env: { LUMI_ENGINE_VERSION: "2.4.2" }, TRUST: true, sub: "run", prompt: "" });
+  ok("T1.1 pre-scan LUMI_TRUST_PROJECT=1: proyek memuat blok policies → paksa OPENCODE_DISABLE_PROJECT_CONFIG=1",
+    rTrustPol.env.OPENCODE_DISABLE_PROJECT_CONFIG === "1");
+  fs.rmSync(ws11, { recursive: true, force: true });
+
+  // T1.3 waitForPluginsReady
+  let calls = 0;
+  const ready = await SC.waitForPluginsReady("http://127.0.0.1:49999", "Basic x", ["lumitome-guard", "lumitome.subagent"], {
+    timeoutMs: 500,
+    intervalMs: 1,
+    sleepImpl: async () => {},
+    fetchImpl: async () => {
+      calls++;
+      const status = calls >= 3 ? "active" : "pending";
+      return { ok: true, json: async () => ({ data: [{ id: "lumitome-guard", state: { status } }, { id: "lumitome.subagent", state: { status } }] }) };
+    },
+  });
+  const timedOut = await SC.waitForPluginsReady("http://127.0.0.1:49999", "", ["lumitome-guard", "lumitome.subagent"], {
+    timeoutMs: 20,
+    intervalMs: 5,
+    sleepImpl: async (ms) => new Promise((r) => setTimeout(r, ms)),
+    fetchImpl: async () => ({ ok: true, json: async () => ({ data: [{ id: "lumitome-guard", state: { status: "active" } }] }) }),
+  });
+  ok("T1.3 waitForPluginsReady: poll sampai active (3x) → ok; timeout → ok:false + missing menyebut plugin yang belum aktif",
+    ready.ok === true && ready.attempts === 3 && timedOut.ok === false && timedOut.missing.includes("lumitome.subagent") && /lumitome\.subagent/.test(timedOut.warning));
+
+  // T1.4 & T1.6 skrip checks
+  const DOC = fs.readFileSync("scripts/doctor.sh", "utf8");
+  const E2E = fs.readFileSync("scripts/e2e-opencode-v2.sh", "utf8");
+  const BAK = fs.readFileSync("scripts/backup-data.sh", "utf8");
+  ok("T1.4 & T1.6 skrip: doctor.sh tanpa hardcode v2.3.0 & pakai .tmp; e2e teruskan LUMI_ENGINE_BIN/VERSION; backup-data.sh non-destruktif valid",
+    !/v2\.3\.0/.test(DOC) && /mktemp -p "\$ROOT\/\.tmp"/.test(DOC) && /resolveEngineBin/.test(DOC)
+    && /LUMI_ENGINE_BIN/.test(E2E) && /LUMI_ENGINE_VERSION/.test(E2E)
+    && /service stop/.test(BAK) && /LUMI_XDG_DATA/.test(BAK) && !/rm -rf/.test(BAK)
+    && cp.spawnSync("bash", ["-n", "scripts/doctor.sh"]).status === 0
+    && cp.spawnSync("bash", ["-n", "scripts/backup-data.sh"]).status === 0);
+}
+
 finish();

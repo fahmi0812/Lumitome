@@ -357,6 +357,80 @@ function expandPath(p, base, home) {
   if (s === "~") s = home; else if (s.startsWith("~/") || s.startsWith("~\\")) s = path.join(home, s.slice(2));
   return path.resolve(base, s);
 }
+
+/** Resolusi path kanonis berbasis lstatSync + realpathSync (semantik O_NOFOLLOW + deteksi symlink-escape). */
+export function resolveCanonicalObject(rawPath, workspace = process.cwd(), { home = os.homedir() } = {}) {
+  const ws = path.resolve(workspace);
+  let wsReal = ws;
+  try { wsReal = fs.realpathSync(ws); } catch {}
+  const abs = expandPath(String(rawPath || ""), ws, home);
+  const parsed = path.parse(abs);
+  const parts = abs.slice(parsed.root.length).split(path.sep).filter(Boolean);
+  let cur = parsed.root;
+  let isSymlink = false;
+  let symlinkPath = null;
+  let deepExisting = parsed.root;
+  const remaining = [];
+  let missing = false;
+  for (let idx = 0; idx < parts.length; idx++) {
+    cur = path.join(cur, parts[idx]);
+    if (missing) { remaining.push(parts[idx]); continue; }
+    let st;
+    try { st = fs.lstatSync(cur); } catch { missing = true; remaining.push(parts[idx]); continue; }
+    deepExisting = cur;
+    if (st.isSymbolicLink()) {
+      const isLeaf = idx === parts.length - 1;
+      const insideWs = within(ws, cur) || within(wsReal, cur);
+      if (isLeaf || insideWs) {
+        isSymlink = true;
+        symlinkPath ||= cur;
+      }
+    }
+  }
+  let realBase = deepExisting;
+  try { realBase = fs.realpathSync(deepExisting); }
+  catch {
+    try {
+      const linkTarget = fs.readlinkSync(deepExisting);
+      realBase = path.resolve(path.dirname(deepExisting), linkTarget);
+    } catch {}
+  }
+  const real = remaining.length ? path.join(realBase, ...remaining) : realBase;
+  const inWs = within(ws, abs) || within(wsReal, abs);
+  const realInWs = within(wsReal, real) || within(ws, real);
+  const escapedWorkspace = isSymlink && inWs && !realInWs;
+  return { raw: String(rawPath || ""), abs, real, isSymlink, symlinkPath, inWs, realInWs, escapedWorkspace };
+}
+
+function isHardDenyWritePath(p, { home = os.homedir(), lumiHome = path.join(home, ".lumitome") } = {}) {
+  const normP = String(p || "").replaceAll("\\", "/");
+  if (lumiHome && within(lumiHome, p)) return true;
+  if (/(?:^|\/)\.git\/(?:hooks(?:\/|$)|config$|modules$)/.test(normP)) return true;
+  if (/(?:^|\/)\.gitmodules$/.test(normP)) return true;
+  return false;
+}
+function isRepoTcbFile(p, ws) {
+  let wsReal = ws;
+  try { wsReal = fs.realpathSync(ws); } catch {}
+  const rel = within(ws, p) ? path.relative(ws, p) : within(wsReal, p) ? path.relative(wsReal, p) : null;
+  if (!rel || rel.startsWith("..")) return false;
+  const r = rel.replaceAll("\\", "/");
+  return r === "harness/lumi-guard.mjs" || r === "lumitome/config/plugins" || r.startsWith("lumitome/config/plugins/");
+}
+function hasMaintainerTrust(ws, { home = os.homedir(), lumiHome = path.join(home, ".lumitome"), tier, tierSource, branch, env } = {}) {
+  const effEnv = env ?? process.env;
+  const maintainerEnv = String(effEnv?.LUMI_MAINTAINER_MODE || "") === "1";
+  const trustFromFile = (tier === "trusted" && (tierSource === undefined || tierSource === "file"))
+    || resolveTrustTierDetailed(ws, { home, lumiHome, env: {} }).tier === "trusted";
+  if (!maintainerEnv && !trustFromFile) {
+    return { ok: false, reason: "LUMI_DENY tcb-protected: edit file TCB repo butuh trust.json tier 'trusted' (di luar workspace) atau LUMI_MAINTAINER_MODE=1" };
+  }
+  const br = branch ?? currentBranch(ws);
+  if (!br || PROTECTED.test(br)) {
+    return { ok: false, reason: `LUMI_DENY tcb-protected: edit file TCB repo di branch '${br || "HEAD"}' ditolak — kerja di branch fitur non-main/master` };
+  }
+  return { ok: true };
+}
 const WRITE_BINS = /^(tee|touch|mkdir|cp|mv|ln|install|truncate|rsync)$/;
 /** Target tulis yang terlihat di perintah shell (redirect, tee/touch/mkdir/truncate, tujuan cp/mv/ln/install/rsync). */
 export function shellWriteTargets(seg) {
@@ -388,21 +462,54 @@ export function shellOutsidePaths(command, sp, { home = sp.home || os.homedir() 
 }
 
 /** Keputusan untuk tool file (read/edit/write/glob/grep/list/patch). */
-export function classifyFileTool(tool, input, { workspace = process.cwd(), sandbox = null, extraRead = [] } = {}) {
+export function classifyFileTool(tool, input, { workspace = process.cwd(), sandbox = null, extraRead = [], home = os.homedir(), lumiHome = path.join(home, ".lumitome"), tier, tierSource, branch, env } = {}) {
   const vals = [];
   for (const k of ["path", "filePath", "file", "pattern", "include", "glob", "directory"]) if (input && typeof input[k] === "string") vals.push(input[k]);
   if (input && Array.isArray(input.paths)) vals.push(...input.paths.map(String));
   // glob/list hanya mengembalikan nama file → boleh; read/grep/edit/write/patch tetap ditolak
   if (/^(glob|list|ls)$/.test(tool)) return { effect: "allow" };
   for (const v of vals) if (isSecretPath(v) || isSecretPath(path.basename(v))) return { effect: "deny", rule: "secret", reason: `LUMI_DENY secret: ${tool} ke '${v}' dilarang` };
+
+  const pv = [];
+  for (const k of ["path", "filePath", "file", "directory"]) if (input && typeof input[k] === "string" && input[k]) pv.push(input[k]);
+  if (input && Array.isArray(input.paths)) pv.push(...input.paths.map(String));
+  if (typeof input?.patchText === "string") for (const m of input.patchText.matchAll(/^\*\*\* (?:Add|Update|Delete) File: (.+)$/gm)) pv.push(m[1].trim());
+  if (typeof input?.patchText === "string") for (const m of input.patchText.matchAll(/^\*\*\* Move to: (.+)$/gm)) pv.push(m[1].trim());
+
+  const isWrite = /^(edit|write|patch|multiedit|apply_patch)$/.test(tool);
+  const effHome = sandbox?.home || home;
+  const effLumiHome = lumiHome || path.join(effHome, ".lumitome");
+  for (const v of pv) {
+    const obj = resolveCanonicalObject(v, sandbox?.cwd || workspace, { home: effHome });
+    if (obj.isSymlink) {
+      if (isSecretPath(obj.real) || isHomeSecret(obj.real) || obj.escapedWorkspace || (isWrite && isHardDenyWritePath(obj.real, { home: effHome, lumiHome: effLumiHome }))) {
+        return { effect: "deny", rule: "symlink-escape", reason: `LUMI_DENY symlink-escape: '${v}' mengarah ke '${obj.real}'` };
+      }
+      if (sandbox) {
+        const racc = pathAccess(obj.real, sandbox);
+        const extra = (extraRead || []).map((d) => path.resolve(d));
+        if (racc === "masked" || (isWrite && racc !== "write") || (!isWrite && racc === "outside" && !extra.some((d) => within(d, obj.real)))) {
+          return { effect: "deny", rule: "symlink-escape", reason: `LUMI_DENY symlink-escape: '${v}' mengarah ke '${obj.real}'` };
+        }
+      }
+    }
+    if (isSecretPath(obj.real) || isHomeSecret(obj.real)) {
+      return { effect: "deny", rule: "secret", reason: `LUMI_DENY secret: ${tool} ke '${v}' dilarang` };
+    }
+    if (isWrite) {
+      if (isHardDenyWritePath(obj.abs, { home: effHome, lumiHome: effLumiHome }) || isHardDenyWritePath(obj.real, { home: effHome, lumiHome: effLumiHome })) {
+        return { effect: "deny", rule: "tcb-protected", reason: `LUMI_DENY tcb-protected: penulisan ke '${v}' dilarang keras` };
+      }
+      const ws = sandbox?.cwd || workspace;
+      if (isRepoTcbFile(obj.abs, ws) || isRepoTcbFile(obj.real, ws)) {
+        const mt = hasMaintainerTrust(ws, { home: effHome, lumiHome: effLumiHome, tier, tierSource, branch, env });
+        if (!mt.ok) return { effect: "deny", rule: "tcb-protected", reason: mt.reason };
+      }
+    }
+  }
+
   // v0.3.16: kebijakan yang sama dengan bwrap (juga Windows, tanpa bwrap)
   if (sandbox) {
-    const pv = [];
-    for (const k of ["path", "filePath", "file", "directory"]) if (input && typeof input[k] === "string" && input[k]) pv.push(input[k]);
-    if (input && Array.isArray(input.paths)) pv.push(...input.paths.map(String));
-    if (typeof input?.patchText === "string") for (const m of input.patchText.matchAll(/^\*\*\* (?:Add|Update|Delete) File: (.+)$/gm)) pv.push(m[1].trim());
-    if (typeof input?.patchText === "string") for (const m of input.patchText.matchAll(/^\*\*\* Move to: (.+)$/gm)) pv.push(m[1].trim());
-    const isWrite = /^(edit|write|patch|multiedit|apply_patch)$/.test(tool);
     const extra = (extraRead || []).map((d) => path.resolve(d));
     for (const v of pv) {
       const abs = expandPath(v, sandbox.cwd, sandbox.home || os.homedir());
@@ -415,20 +522,116 @@ export function classifyFileTool(tool, input, { workspace = process.cwd(), sandb
   return { effect: "allow" };
 }
 
+/** Keputusan untuk tool `execute` Code Mode: blokir akses secret/TCB/opencode-api/git-push-berbahaya. */
+export function classifyExecuteCode(code, { workspace = process.cwd(), sandbox = null, home = os.homedir(), lumiHome = path.join(home, ".lumitome"), tier, tierSource, branch, env } = {}) {
+  const src = String(code ?? "");
+  if (!src.trim()) return { effect: "allow" };
+  if (isSecretPath(src) || isHomeSecret(src) || KEY_VAR.test(src)) {
+    return { effect: "deny", rule: "execute-policy", reason: "LUMI_DENY execute-policy: kode mengakses path/variabel rahasia (.env/secret/key)" };
+  }
+  if (/(?:Object\.(?:keys|values|entries)|JSON\.stringify|\.\.\.)\s*\(\s*(?:process|Bun)\.env\b|\{\s*\.\.\.(?:process|Bun)\.env\b|\b(?:process|Bun)\.env\s*(?:\)|,|;|\n|$)/.test(src)) {
+    return { effect: "deny", rule: "execute-policy", reason: "LUMI_DENY execute-policy: dump process.env/Bun.env dilarang" };
+  }
+  if (/opencode:\/\/\/api\//i.test(src)) {
+    return { effect: "deny", rule: "execute-policy", reason: "LUMI_DENY execute-policy: akses langsung opencode:///api/ dilarang" };
+  }
+  if (/\bgit\s+(?:-[Cc]\s+\S+\s+)*push\b[^\n;`]*(?:\b(?:main|master)\b|--force\b|-f\b|--all\b|--mirror\b|\s\+[^\s]+)/.test(src)) {
+    return { effect: "deny", rule: "execute-policy", reason: "LUMI_DENY execute-policy: git push ke main/master atau --force/-f/--all dilarang" };
+  }
+  if (/\bsudo\b|\brm\s+-[a-zA-Z]*[rf][a-zA-Z]*\s+(?:\/|~|\$HOME)\b|\bcodebase-memory-mcp\s+(?:install|update)\b/.test(src)) {
+    return { effect: "deny", rule: "execute-policy", reason: "LUMI_DENY execute-policy: perintah destruktif/sudo/codemem install dilarang" };
+  }
+  const effHome = sandbox?.home || home;
+  const effLumiHome = lumiHome || path.join(effHome, ".lumitome");
+  const ws = sandbox?.cwd || workspace;
+  const writeCallRe = /\b(?:Bun\.write|writeFile(?:Sync)?|appendFile(?:Sync)?|rm(?:Sync)?|unlink(?:Sync)?|rename(?:Sync)?|copyFile(?:Sync)?|mkdir(?:Sync)?)\s*\(\s*(['"`])([^'"`]+)\1/g;
+  for (const m of src.matchAll(writeCallRe)) {
+    const p = m[2];
+    const obj = resolveCanonicalObject(p, ws, { home: effHome });
+    if (isSecretPath(p) || isSecretPath(obj.real) || isHomeSecret(obj.real) || obj.escapedWorkspace) {
+      return { effect: "deny", rule: "execute-policy", reason: `LUMI_DENY execute-policy: tulis ke '${p}' ditolak` };
+    }
+    if (isHardDenyWritePath(obj.abs, { home: effHome, lumiHome: effLumiHome }) || isHardDenyWritePath(obj.real, { home: effHome, lumiHome: effLumiHome })) {
+      return { effect: "deny", rule: "execute-policy", reason: `LUMI_DENY execute-policy: tulis ke path TCB '${p}' dilarang` };
+    }
+    if (isRepoTcbFile(obj.abs, ws) || isRepoTcbFile(obj.real, ws)) {
+      const mt = hasMaintainerTrust(ws, { home: effHome, lumiHome: effLumiHome, tier, tierSource, branch, env });
+      if (!mt.ok) return { effect: "deny", rule: "execute-policy", reason: mt.reason };
+    }
+    if (sandbox && pathAccess(obj.real, sandbox) !== "write") {
+      return { effect: "deny", rule: "execute-policy", reason: outsideMessage(p, sandbox, "write") };
+    }
+  }
+  const readCallRe = /\b(?:Bun\.file|Bun\.Glob|readFile(?:Sync)?)\s*\(\s*(['"`])([^'"`]+)\1/g;
+  for (const m of src.matchAll(readCallRe)) {
+    const p = m[2];
+    const obj = resolveCanonicalObject(p, ws, { home: effHome });
+    if (isSecretPath(p) || isSecretPath(obj.real) || isHomeSecret(obj.real) || obj.escapedWorkspace) {
+      return { effect: "deny", rule: "execute-policy", reason: `LUMI_DENY execute-policy: baca '${p}' ditolak` };
+    }
+    if (sandbox && pathAccess(obj.real, sandbox) === "outside") {
+      return { effect: "deny", rule: "execute-policy", reason: outsideMessage(p, sandbox, "read") };
+    }
+  }
+  return { effect: "allow" };
+}
+
+const LOOKUP_TOOLS = new Set(["read", "glob", "grep", "list", "ls", "webfetch", "websearch", "skill", "todoread"]);
+const LOOKUP_SHELL_BINS = new Set(["ls", "cat", "head", "tail", "less", "more", "grep", "rg", "ag", "fd", "find", "stat", "wc", "file", "which", "whereis", "type", "pwd", "basename", "dirname", "realpath", "readlink", "echo", "printf", "test", "[", "jq", "awk", "cd", "true", "false"]);
+const LOOKUP_GIT_SUB = new Set(["status", "diff", "log", "show", "rev-parse", "symbolic-ref", "branch", "tag", "describe", "ls-files", "ls-tree", "blame", "shortlog"]);
+const VERIFY_CMD_RE = /\b(npm (run )?test|pnpm test|yarn test|bun test|node --test|node --experimental-strip-types tests\/|npx (vitest|jest)|vitest|jest|pytest|go test|cargo test|make (test|check)|mvn test|gradle test|tsc( |$)|npm run (build|lint|typecheck|validate|scan)|bash scripts\/(doctor|e2e-opencode-v2)\.sh|git apply --check)\b/;
+
+/** Klasifikasi 3-kelas aksi untuk tata kelola tool/BYOP: "lookup" | "verify" | "commit". */
+export function classifyAction(tool, input = {}) {
+  const t = String(tool || "");
+  if (LOOKUP_TOOLS.has(t)) return "lookup";
+  if (WRITE_TOOLS.has(t)) return "commit";
+  if (SHELL_TOOLS.has(t)) {
+    const cmd = String(input?.command ?? "").trim();
+    if (!cmd) return "lookup";
+    const segs = segments(cmd);
+    if (segs.some((s) => shellWriteTargets(s).length > 0)) return "commit";
+    let hasVerify = false;
+    for (const seg of segs) {
+      const w = words(seg);
+      let i = 0;
+      while (i < w.length && /^(command|exec|nohup|time|env|builtin)$|^[A-Za-z_]+=/.test(w[i])) i++;
+      const bin = path.basename(w[i] || "");
+      const args = w.slice(i + 1);
+      if (VERIFY_CMD_RE.test(seg) || TEST_CMD.test(seg)) { hasVerify = true; continue; }
+      if (bin === "git") {
+        let j = 0;
+        while (j < args.length && (args[j].startsWith("-") || args[j - 1] === "-C" || args[j - 1] === "-c")) j++;
+        const sub = args[j] || "";
+        if (LOOKUP_GIT_SUB.has(sub) && !args.some((a) => a === "-d" || a === "-D" || a === "-f" || a === "--delete")) continue;
+        return "commit";
+      }
+      if (LOOKUP_SHELL_BINS.has(bin)) {
+        if (bin === "find" && args.some((a) => /^-(delete|exec|execdir|ok|okdir|fprint\w*|fls)$/.test(a))) return "commit";
+        continue;
+      }
+      return "commit";
+    }
+    return hasVerify ? "verify" : "lookup";
+  }
+  return "commit";
+}
+
 // ---------- urutan penegakan (v0.3.23) ----------
 // Nama tool yang dijaga. Cerminan di lumitome/config/plugins/lumitome-guard.ts — plugin harus
 // memfilter hook bahkan saat modul guard gagal dimuat, jadi daftar ini ada di dua tempat.
 export const SHELL_TOOLS = new Set(["shell", "bash"]);
 export const FILE_TOOLS = new Set(["read", "edit", "write", "glob", "grep", "list", "patch", "multiedit", "apply_patch"]);
-/** Tool yang dijaga guard (SHELL + FILE). Di luar itu: allow + unguarded (P1-2). */
-export const GUARDED_TOOLS = new Set([...SHELL_TOOLS, ...FILE_TOOLS]);
+export const EXECUTE_TOOLS = new Set(["execute"]);
+/** Tool yang dijaga guard (SHELL + FILE + EXECUTE). Di luar itu: allow + unguarded (P1-2). */
+export const GUARDED_TOOLS = new Set([...SHELL_TOOLS, ...FILE_TOOLS, ...EXECUTE_TOOLS]);
 export function isGuardedTool(tool) { return GUARDED_TOOLS.has(String(tool)); }
 
 /**
  * Satu titik penegakan untuk hook tool.execute.before: urutan kebijakan tinggal di guard,
  * plugin hanya wiring (panggil ini, lempar bila deny, terapkan rewrite, jurnal).
  * Urutan (sama persis dengan yang dulu tinggal di plugin): fail-closed → anti-spin →
- * file: classifyFileTool → shell: classifyShell → shellOutsidePaths → bwrap rewrite.
+ * execute: classifyExecuteCode → file: classifyFileTool → shell: classifyShell → shellOutsidePaths → bwrap rewrite.
  * Kembali: { effect: "allow" | "ask" | "deny", rule?, reason?, rewrite? }.
  * - deny: plugin melempar reason (jurnal: kind "spin" bila rule spin, selain itu "deny").
  * - allow/ask: lanjut; rewrite.command (bila ada) menggantikan input.command (mode bwrap).
@@ -438,12 +641,11 @@ export function evaluateTool(tool, input, ctx = {}) {
   const t = String(tool);
   // P1-2: tool di luar daftar (MCP, webfetch/websearch, sub-agent/task, skill, …)
   // TIDAK diblokir — daftar tool OpenCode tidak lengkap & plugin baru akan patah —
-  // tapi ditandai unguarded supaya plugin mencatatnya di jurnal. Langkah berikut:
-  // perluasan guard ke tool ini (lihat CHANGELOG 0.3.43).
+  // tapi ditandai unguarded supaya plugin mencatatnya di jurnal.
   if (!isGuardedTool(t)) return { effect: "allow", unguarded: true };
-  const { workspace = process.cwd(), sandbox = null, tier = "standard", headless = false, toolDirs = [], argsDir, sandboxMode = "off", spin = null, closed = "", lumiHome = "" } = ctx;
-  // 1) fail-closed: guard/sandbox gagal dibangun → tulis ditolak, baca tetap jalan
-  if (closed && (SHELL_TOOLS.has(t) || (t !== "read" && t !== "glob" && t !== "grep" && t !== "list"))) {
+  const { workspace = process.cwd(), sandbox = null, tier = "standard", tierSource, branch, headless = false, toolDirs = [], argsDir, sandboxMode = "off", spin = null, closed = "", lumiHome = "", home = os.homedir(), env } = ctx;
+  // 1) fail-closed: guard/sandbox gagal dibangun → tulis/execute ditolak, baca tetap jalan
+  if (closed && (SHELL_TOOLS.has(t) || EXECUTE_TOOLS.has(t) || (t !== "read" && t !== "glob" && t !== "grep" && t !== "list"))) {
     return { effect: "deny", rule: "closed", reason: closed };
   }
   // 2) anti-spin (per-signature; instance dibuat sekali di setup plugin, dilewat ctx)
@@ -451,9 +653,15 @@ export function evaluateTool(tool, input, ctx = {}) {
     const s = spin.before(t, SHELL_TOOLS.has(t) ? { command: String(input?.command ?? "") } : input);
     if (s.effect === "deny") return { effect: "deny", rule: "spin", reason: s.reason };
   }
+  // 2b) execute (Code Mode): periksa isi kode sebelum eksekusi
+  if (EXECUTE_TOOLS.has(t)) {
+    const d = classifyExecuteCode(String(input?.code ?? ""), { workspace, sandbox, home, lumiHome, tier, tierSource, branch, env });
+    if (d.effect === "deny") return { effect: "deny", rule: d.rule, reason: d.reason };
+    return { effect: "allow" };
+  }
   // 3) tool file: satu klasifikasi, lalu selesai
   if (FILE_TOOLS.has(t)) {
-    const d = classifyFileTool(t, input || {}, { workspace, sandbox, extraRead: [...toolDirs, lumiHome].filter(Boolean) });
+    const d = classifyFileTool(t, input || {}, { workspace, sandbox, extraRead: [...toolDirs, lumiHome].filter(Boolean), home, lumiHome, tier, tierSource, branch, env });
     if (d.effect === "deny") return { effect: "deny", rule: d.rule, reason: d.reason };
     return { effect: "allow" };
   }
@@ -615,17 +823,18 @@ export function testOutputFailed(text) {
 /** Tool tulis file (baris jurnal kind:"tool" dari plugin guard; baca saja — read/glob/grep/list — bukan tulis). */
 export const WRITE_TOOLS = new Set(["edit", "write", "patch", "multiedit", "apply_patch"]);
 export function doneGateFromJournal(rows) {
-  const tests = rows.filter((r) => r.kind === "shell" && TEST_CMD.test(r.command || "")).map((r) => {
+  const tests = rows.filter((r) => r.kind === "shell" && typeof r.exit === "number" && TEST_CMD.test(r.command || "")).map((r) => {
     const masked = MASKED_EXIT.test(r.command || "") || afterTest(r.command || ""), outFail = !!r.failed_output;
     return masked || outFail ? { ...r, exit: r.exit || 1, raw_exit: r.exit, why: masked ? "exit code tes disamarkan/ditimpa perintah lain (|| true, ; cmd, | pipe, set +e)" : "output tes berisi kegagalan" } : r;
   });
   const last = tests[tests.length - 1];
+  const bgPending = rows.filter((r) => r.kind === "shell-bg").length;
   // spin hanya fatal bila TIDAK ada verifikasi lulus SETELAH trip terakhir
   const si = rows.map((r) => r.kind).lastIndexOf("spin");
-  const okAfter = si >= 0 && rows.slice(si + 1).some((r) => r.kind === "shell" && TEST_CMD.test(r.command || "") && r.exit === 0);
+  const okAfter = si >= 0 && rows.slice(si + 1).some((r) => r.kind === "shell" && typeof r.exit === "number" && TEST_CMD.test(r.command || "") && r.exit === 0);
   const spin = si >= 0 && !okAfter ? rows[si] : null;
   // P0-3: ada file diubah? Hanya tool tulis yang selesai (completed) yang tercatat di jurnal;
   // shell yang menulis file (sed/tee/redirect) tidak terlacak — keterbatasan ini dicatat di CHANGELOG.
   const wrote = rows.some((r) => r.kind === "tool" && WRITE_TOOLS.has(r.tool) && r.status === "completed");
-  return { ran: tests.length, last, spin, facts: tests.map((t) => `FACT: \`${t.command}\` exit=${t.exit}`), wrote };
+  return { ran: tests.length, last, spin, facts: tests.map((t) => `FACT: \`${t.command}\` exit=${t.exit}`), wrote, bgPending };
 }

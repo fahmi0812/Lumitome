@@ -115,6 +115,7 @@
       },
       "codemem": {
         "type": "local",
+        "protocol": "legacy",
         "command": [
           "codebase-memory-mcp"
         ],
@@ -140,6 +141,7 @@
       },
       "blender": {
         "type": "local",
+        "protocol": "legacy",
         "command": [
           "uvx",
           "mcp-for-blender==2.2.9"
@@ -210,6 +212,7 @@
       },
       "markitdown": {
         "type": "local",
+        "protocol": "legacy",
         "command": [
           "uvx",
           "markitdown-mcp==0.0.1a8"
@@ -262,6 +265,7 @@
       },
       "skills": {
         "type": "local",
+        "protocol": "legacy",
         "command": [
           "node",
           "--no-warnings",

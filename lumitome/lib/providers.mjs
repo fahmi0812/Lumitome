@@ -213,7 +213,7 @@ export async function cli({ argv, home, sub, env = process.env, log = console.lo
     // eksplisit menang atas preset; key tetap manual (--key-env/--key-stdin).
     const preset = PROVIDER_PRESETS[val("--preset")];
     if (!preset) { err(`preset tidak dikenal: '${val("--preset")}' (yang ada: ${Object.keys(PROVIDER_PRESETS).join(", ")})`); return 2; }
-    type ??= preset.type; name ??= preset.name; baseURL ??= preset.baseURL;
+    type ??= preset.type; name ??= preset.name; baseURL ??= (val("--preset") === "9router" && env.LUMI_9ROUTER_URL) || preset.baseURL;
   }
   if (val("--key-env")) key = process.env[val("--key-env")];
   if (flag("--key-stdin")) key = fs.readFileSync(0, "utf8").trim();

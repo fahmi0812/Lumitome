@@ -448,6 +448,15 @@ export default Plugin.define({
     // v0.3.69: pengamat peran berjalan — toast "<Peran> jalan" saat subagent
     // mulai di sesi yang sedang ditampilkan (fire-and-forget, fail-silent).
     watchSubagentStarts(context)
+    let subagentActive = false
+    if (typeof (context as any)?.data?.on === "function") {
+      try {
+        ;(context as any).data.on("plugin.updated", (ev: any) => {
+          const p = ev?.plugin ?? ev
+          if (p?.id === "lumitome.subagent") subagentActive = (p?.state?.status ?? p?.status) === "active"
+        })
+      } catch {}
+    }
     context.keymap.layer(() => ({
       mode: "global",
       priority: 10,

@@ -343,4 +343,19 @@ const OFF = { ...ON, enabled: false };
     && /targetAgent/.test(idx));
 }
 
+// --- Wave 1 (T1.3): ketahanan cold-start async plugin (#63814) ---
+{
+  const F = await import("../lumitome/config/plugins/subagent/flow.mjs");
+  const tui = fm("lumitome/config/plugins/subagent/tui.tsx");
+  let tries = 0;
+  const res = await F.callRpcWithRetry("getPreset", async () => {
+    tries++;
+    if (tries <= 3) throw new Error("RPC is unavailable: lumitome.subagent");
+    return { preset: { enabled: true } };
+  }, { sleep: async () => {}, backoff: true });
+  ok("T1.3 cold-start RPC: 3x RPC is unavailable awal lalu sukses tanpa throw; tui.tsx pantau plugin.updated",
+    tries === 4 && res.preset.enabled === true && F.RPC_RETRY_ATTEMPTS === 12
+    && /plugin\.updated/.test(tui));
+}
+
 finish();
