@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "node --experimental-strip-types tests/run.mjs",
+    "eval": "node --experimental-strip-types scripts/eval-harness.mjs --mode replay",
     "scan": "node --experimental-strip-types scripts/scan.ts",
     "validate": "node scripts/validate.mjs",
     "validate:offline": "node scripts/validate.mjs --offline",

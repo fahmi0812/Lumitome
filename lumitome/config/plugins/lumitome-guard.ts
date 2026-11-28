@@ -74,6 +74,8 @@ export default {
     const wd = g ? await loadSiblingHarness("watchdog.mjs") : null;
     const cb = g ? await loadSiblingHarness("context-budget.mjs") : null;
     const taintMod = g ? await loadSiblingHarness("memory/taint.mjs") : null;
+    const sandboxMod = g ? await loadSiblingHarness("sandbox/provider.mjs") : null;
+    const byopMod = g ? await loadSiblingHarness("byop-guardrail.mjs") : null;
     const taintTrackers = new Map<string, any>();
     const getTaintTracker = (sid: string) => {
       if (!taintMod?.SessionTaintTracker) return null;
@@ -107,6 +109,17 @@ export default {
     const sandbox = env.LUMI_SANDBOX === "bwrap" ? "bwrap" : "off";
     const sandboxSource = env.LUMI_SANDBOX ? "env" : "default";
     const tierSource = SCOPE?.tierSource || "default";
+    if (sandboxMod && env.LUMI_SANDBOX) {
+      try {
+        const normMode = sandboxMod.normalizeSandboxMode(env.LUMI_SANDBOX);
+        if (normMode === "remote") {
+          const rp = new sandboxMod.RemoteSandboxAdapter({ env, lumiHome: lumiHomeP });
+          if (!rp.isAvailable()) closed ||= "SANDBOX_CLOSED: LUMI_SANDBOX=remote meminta endpoint & kredensial yang valid (fail-closed)";
+        }
+      } catch (e: any) {
+        closed ||= String(e?.message || e);
+      }
+    }
     if (g && sandbox === "bwrap" && !g.bwrapAvailable()) closed = "SANDBOX_CLOSED: bwrap tidak tersedia/tidak bisa membuat namespace. Shell ditolak (fail-closed). Pasang bubblewrap (apt install bubblewrap), atau jalankan tanpa LUMI_SANDBOX=bwrap (sandbox mati default).";
     jot({ kind: "guard", status: closed ? "closed" : "ok", sandbox, sandboxSource, tier: TIER, tierSource, ws: WS, root: SCOPE?.root, write: SP?.write, reason: closed || undefined });
     // P1-2 (2): tier dari env (bukan file trust) — visibilitas, bukan blokir.
@@ -183,6 +196,26 @@ export default {
       }
       if (r.rewrite) e.input = { ...e.input, command: r.rewrite.command };
       if (SHELL.has(tool)) jot({ kind: "shell-start", command, effect: r.effect, ...meta });
+      const byopModeReq = String(env.LUMI_BYOP_MODE || "").trim().toLowerCase();
+      if (byopMod && g?.classifyAction && (byopModeReq === "shadow" || byopModeReq === "enforce")) {
+        const actionClass = g.classifyAction(tool, e.input || {});
+        if (actionClass === "commit") {
+          const tt = getTaintTracker(sid);
+          return byopMod.evaluateByopGuardrail({
+            actionClass,
+            toolName: tool,
+            sanitizedArgs: e.input || {},
+            taintState: tt?.taintStateDb ?? "clean",
+            env,
+            headless,
+          }).then((bres: any) => {
+            if (!bres.allowed) {
+              jot({ kind: "deny", tool, rule: "byop-guardrail", reason: bres.reason, ...meta });
+              throw new Error(`BYOP_DENY: ${bres.reason}`);
+            }
+          });
+        }
+      }
     });
 
     const extractOut = (res: any) => {
