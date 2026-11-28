@@ -96,6 +96,9 @@ export function ensureFresh(home, fp) {
 /** Daftar ID plugin wajib untuk readiness polling /api/plugin. */
 export function requiredPluginIds({ repo = "", ws = "" } = {}) {
   const ids = ["lumitome-guard", "lumitome.subagent"];
+  if (repo && fs.existsSync(path.join(repo, "lumitome", "config", "plugins", "lumitome-idle-gate.ts"))) {
+    ids.push("lumitome-idle-gate");
+  }
   const checkHarness = (d) => Boolean(d && fs.existsSync(path.join(d, ".opencode", "plugins", "lumitome-harness.ts")));
   if (checkHarness(ws) || checkHarness(repo)) ids.push("lumitome-harness");
   return ids;

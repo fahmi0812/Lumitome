@@ -54,6 +54,33 @@ export default {
       try { g = await import(harnessPath ? pathToFileURL(harnessPath).href : new URL(fallback, import.meta.url).href); }
       catch (e) { closed = `LUMI_GUARD_CLOSED: modul guard gagal dimuat (${String(e)}) — shell & tool tulis ditolak`; }
     }
+    const builtinHarnessDir = pluginRealDir
+      ? path.resolve(pluginRealDir, ["..", "..", "..", "harness"].join("/"))
+      : path.dirname(fallbackPath);
+    const harnessDir = harnessPath ? path.dirname(harnessPath) : builtinHarnessDir;
+    const loadSiblingHarness = async (name: string) => {
+      for (const dir of [harnessDir, builtinHarnessDir]) {
+        try {
+          const p = path.join(dir, name);
+          if (fs.existsSync(p)) return await import(pathToFileURL(p).href);
+        } catch {}
+      }
+      return null;
+    };
+    const defaultSessionId = env.LUMI_SESSION_ID || "default";
+    const defaultTaskType = env.LUMI_TASK_TYPE;
+    const rg = g ? await loadSiblingHarness("repro-gate.mjs") : null;
+    const wm = g ? await loadSiblingHarness("witness.mjs") : null;
+    const wd = g ? await loadSiblingHarness("watchdog.mjs") : null;
+    const watchdogs = new Map<string, any>();
+    const getWatchdog = (sid: string) => {
+      if (!wd) return null;
+      const key = sid || "default";
+      if (!watchdogs.has(key)) {
+        watchdogs.set(key, new wd.HaltingWatchdog({ workspace: WS, sessionId: key, persistDeadEnds: true }));
+      }
+      return watchdogs.get(key);
+    };
     const spin = g ? new g.RuntimeSpin({ maxFail: Number(env.LUMI_SPIN_MAX_FAIL || 3), maxRepeat: Number(env.LUMI_SPIN_MAX_REPEAT || 4) }) : null;
     const toolDirs = (env.LUMI_TOOLDIRS || "").split(path.delimiter).filter(Boolean);
     const headless = env.LUMI_HEADLESS === "1";
@@ -109,6 +136,32 @@ export default {
         jot(r.rule === "spin" ? { kind: "spin", tool, reason: r.reason, ...meta } : { kind: "deny", tool, rule: r.rule, ...(r.command ? { command: r.command } : {}), ...meta });
         throw new Error(r.reason);
       }
+      const sid = String(e.sessionID || env.LUMI_SESSION_ID || defaultSessionId);
+      if (rg) {
+        const reproRes = rg.checkReproBeforeEdit({
+          tool,
+          input: e.input || {},
+          taskType: e.taskType ?? e.metadata?.taskType ?? defaultTaskType,
+          workspace: WS,
+          sessionId: sid,
+          env,
+          headless,
+          strictGate: env.LUMI_STRICT_GATE === "1",
+        });
+        if (reproRes.effect === "deny") {
+          jot({ kind: "deny", tool, rule: reproRes.rule, code: reproRes.code, reason: reproRes.reason, ...meta });
+          throw new Error(reproRes.reason);
+        }
+      }
+      const dog = getWatchdog(sid);
+      if (dog) {
+        const wv = dog.beforeStep(tool, e.input || {});
+        if (wv.verdict === "HALT") {
+          const reason = `[WATCHDOG_HALT] ${wv.reason}: ${wv.detail}`;
+          jot({ kind: "watchdog-halt", tool, reason: wv.reason, detail: wv.detail, ...meta });
+          throw new Error(reason);
+        }
+      }
       if (r.rewrite) e.input = { ...e.input, command: r.rewrite.command };
       if (SHELL.has(tool)) jot({ kind: "shell-start", command, effect: r.effect, ...meta });
     });
@@ -118,10 +171,16 @@ export default {
       if (!SHELL.has(tool) && !FILE.has(tool) && !EXEC.has(tool)) return;
       const codemode = Boolean(e.codemode);
       const callId = e.id;
+      const sid = String(e.sessionID || env.LUMI_SESSION_ID || defaultSessionId);
       const meta = { ...(codemode ? { codemode: true } : {}), ...(callId ? { callId } : {}) };
+      const dog = getWatchdog(sid);
       if (EXEC.has(tool)) {
         const ok = e.status === "completed" && !e.result?.metadata?.error;
         spin?.after(tool, e.input || {}, ok);
+        dog?.recordStep({ tool, input: e.input || {}, ok, errorText: e.result?.metadata?.error ? String(e.result.metadata.error) : "" });
+        if (wm && rg?.isExecuteMutatingCode?.(e.input?.code)) {
+          try { wm.invalidateStaleWitnesses({ sessionDir: wm.sessionDirFor(WS, sid), workspace: WS }); } catch {}
+        }
         jot({ kind: "tool", tool, status: e.status, ...meta });
         return;
       }
@@ -144,6 +203,41 @@ export default {
       if (isBg) {
         jot({ kind: "shell-bg", command: original, exit: null, ok: false, status: e.status, ...(shellID ? { shellID } : {}), out_bytes: out.length, ...meta });
         return;
+      }
+      if (SHELL.has(tool) && rg && typeof exit === "number") {
+        try {
+          rg.recordReproProbe({ workspace: WS, sessionId: sid, command: String(original ?? ""), exitCode: exit, output: out });
+        } catch {}
+      }
+      if (SHELL.has(tool) && wm && typeof exit === "number" && g?.TEST_CMD?.test(String(original ?? ""))) {
+        try {
+          const cmdStr = String(original ?? "");
+          const masked = Boolean(g.MASKED_EXIT?.test(cmdStr) || g.afterTest?.(cmdStr));
+          wm.recordWitness(wm.sessionDirFor(WS, sid), {
+            workspace: WS,
+            command: cmdStr,
+            output: out,
+            exit_code: exit,
+            call_id: callId ?? null,
+            masked_exit: masked,
+            output_failed: Boolean(failed_output),
+          });
+        } catch {}
+      }
+      if (!SHELL.has(tool) && g?.WRITE_TOOLS?.has(tool) && e.status === "completed" && wm) {
+        try {
+          const changed = [e.input?.filePath, e.input?.path, e.input?.file].filter(Boolean);
+          wm.invalidateStaleWitnesses({ sessionDir: wm.sessionDirFor(WS, sid), workspace: WS, changedFiles: changed });
+        } catch {}
+      }
+      if (dog) {
+        dog.recordStep({
+          tool,
+          input,
+          ok: SHELL.has(tool) ? (ok && !failed_output) : ok,
+          errorText: !ok || failed_output ? out : "",
+          exitCode: exit,
+        });
       }
       jot(SHELL.has(tool) ? { kind: "shell", command: original, exit, ok, status: e.status, out_bytes: out.length, ...(failed_output ? { failed_output: true } : {}), ...meta } : { kind: "tool", tool, status: e.status, ...meta });
     });

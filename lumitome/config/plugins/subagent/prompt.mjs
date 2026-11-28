@@ -40,6 +40,48 @@
 // "Model peran berlaku mulai sesi TUI berikutnya."
 import { activeRoles, DEFAULT_MODEL } from "./flow.mjs";
 
+const REVIEW_PERSUASIVE_RE = /^(?:\s*(?:JUDGMENT:|Builder\s*(?:note|claim|summary|explanation|justification)\s*:|Catatan\s*Builder\s*:|Alasan\s*Builder\s*:|Riwayat\s*(?:percakapan|chat)\s*:|Chat\s*history\s*:|Conversation\s*:|Self-check\s*:|Confidence\s*:|I(?:'m| am)\s+(?:100%|very|completely|totally)?\s*(?:confident|sure|certain)|Trust me|Saya\s+yakin|Dijamin\s+(?:aman|lolos|benar)|Percayalah|Everything\s+(?:works|is)\s+perfectly).*)$/gim;
+
+/**
+ * Sanitasi deterministik prompt reviewer (M4 / T2.4): buang <think>, narasi persuasif builder,
+ * self-praise, riwayat chat, dan klaim ATTESTED(...) mentah tanpa runtime witness.
+ */
+export function stripReviewerNoise(text) {
+  let out = String(text ?? "").replace(/<think\b[^>]*>[\s\S]*?<\/think>/gi, "").trim();
+  out = out.replace(/^(?:#{1,3}\s*)?(?:Builder\s+Narrative|Narasi\s+Builder|Conversation\s+History|Riwayat\s+Percakapan|Chain\s+of\s+Thought)\b[\s\S]*?(?=\n#{1,3}\s|\s*$)/gim, "");
+  out = out.replace(REVIEW_PERSUASIVE_RE, "");
+  out = out.replace(/\bATTESTED\([^)\n]*\)/g, "[STRIPPED_UNVERIFIED_ATTESTED]");
+  return out.replace(/\n{3,}/g, "\n\n").trim();
+}
+
+export function buildReviewerContextPrompt(input, reviewerCtxMod = null) {
+  if (typeof input === "string") {
+    if (reviewerCtxMod?.sanitizeReviewerPrompt) return reviewerCtxMod.sanitizeReviewerPrompt(input);
+    return stripReviewerNoise(input) || input.trim();
+  }
+  if (reviewerCtxMod?.buildStrippedReviewPacket && reviewerCtxMod?.formatStrippedReviewPacket) {
+    const pkt = reviewerCtxMod.buildStrippedReviewPacket(input || {});
+    return reviewerCtxMod.formatStrippedReviewPacket(pkt);
+  }
+  const spec = stripReviewerNoise(input?.spec ?? "");
+  const diff = String(input?.diff ?? "");
+  const files = Array.isArray(input?.targetFiles) ? input.targetFiles : [];
+  const facts = (Array.isArray(input?.facts) ? input.facts : []).filter((f) => /^FACT:/i.test(String(f).trim()) && !/\bATTESTED\s*\(/.test(String(f)));
+  return [
+    "[CONTEXT-STRIPPED REVIEW PACKET]",
+    "## SPEC",
+    spec || "(kosong)",
+    "## TARGET FILES",
+    files.length ? files.map((f) => `- ${f}`).join("\n") : "(tidak ditentukan)",
+    "## FACTS (ATTESTED / VERIFIED)",
+    facts.length ? facts.map((f) => `- ${f}`).join("\n") : "(belum ada witness VALID / FACT)",
+    "## DIFF",
+    "```diff",
+    diff || "(diff kosong)",
+    "```",
+  ].join("\n");
+}
+
 /**
  * Pemberitahuan singkat mode /subagent (maks 2 baris).
  * @param {object} preset preset tersimpan (hasil dialog)

@@ -807,7 +807,7 @@ export const TEST_CMD = /\b(npm (run )?test|pnpm test|yarn test|bun test|node --
 /** Exit code tes disamarkan (`|| true`, `; true`, `set +e`, `|| :`, `; exit 0`) → bukan bukti lulus. */
 export const MASKED_EXIT = /\|\|\s*(true|:|exit\s+0)\b|;\s*(true|:|exit\s+0)\s*(;|$|\bdone\b)|\bset\s+\+e\b/;
 /** Ada perintah lain setelah perintah tes yang menentukan exit (`;`, `|`, `||`, newline, `&` latar) → exit bukan milik tes. `&&` aman. */
-function afterTest(cmd) {
+export function afterTest(cmd) {
   const re = new RegExp(TEST_CMD.source, "g"); let m, end = -1;
   while ((m = re.exec(cmd))) end = m.index + m[0].length;
   if (end < 0) return false;

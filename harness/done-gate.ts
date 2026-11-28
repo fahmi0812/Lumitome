@@ -13,6 +13,12 @@
 import * as fs from "fs";
 import { checkDiffScope } from "./scan-gate.ts";
 import { checkRewriteToDocs } from "./doc-drift.ts";
+import {
+  readWitnesses,
+  readFeatures,
+  invalidateStaleWitnesses,
+  isValidAttestedRecord,
+} from "./witness.mjs";
 import type { CiStatus, DoneGateInput, DoneGateResult, GateStatus } from "./io-schema/types.ts";
 
 const RELEASE_ACCOUNTED = ["typecheck", "tests", "build"] as const;
@@ -150,6 +156,80 @@ function unmitigatedBlocks(input: DoneGateInput): string[] {
   return reasons;
 }
 
+function witnessBlocks(input: DoneGateInput): string[] {
+  const reasons: string[] = [];
+  let witnesses: Array<Record<string, unknown>> | undefined = input.witnesses;
+  let featuresDoc: { features?: Array<Record<string, unknown>> } | Array<Record<string, unknown>> | undefined = input.features;
+
+  if (input.sessionDir) {
+    try {
+      if (input.workspace) {
+        const inv = invalidateStaleWitnesses({
+          sessionDir: input.sessionDir,
+          workspace: input.workspace,
+          changedFiles: input.changedFiles ?? [],
+        });
+        if (!witnesses) witnesses = inv.witnesses;
+        if (!featuresDoc && inv.features) featuresDoc = inv.features;
+      } else {
+        if (!witnesses) witnesses = readWitnesses(input.sessionDir);
+        if (!featuresDoc) featuresDoc = readFeatures(input.sessionDir) ?? undefined;
+      }
+    } catch {
+      reasons.push("GATE_STATE_UNREADABLE: gagal membaca runtime witness/features.json");
+      return reasons;
+    }
+  }
+
+  const witnessList = Array.isArray(witnesses) ? witnesses : [];
+  const validPassing = witnessList.filter((w) =>
+    isValidAttestedRecord(w) && w.status === "VALID" && w.exit_code === 0 && !w.masked_exit && !w.output_failed
+  );
+  const validIds = new Set(validPassing.map((w) => String(w.source_id)));
+
+  // Anti-spoof: tolak klaim teks ATTESTED(...) di chat/facts yang tidak ada di runtime witnesses.jsonl
+  const claimedTexts = [
+    ...(input.facts ?? []),
+    ...(input.agentText ? [input.agentText] : []),
+  ];
+  for (const txt of claimedTexts) {
+    for (const m of String(txt).matchAll(/\bATTESTED\(([^,)\s]+)/g)) {
+      const claimedId = m[1].trim();
+      if (!validIds.has(claimedId)) {
+        reasons.push(`klaim teks ATTESTED(${claimedId},...) ditolak: tidak ada witness VALID di runtime witnesses.jsonl`);
+      }
+    }
+  }
+
+  if (input.requireWitness && validPassing.length === 0) {
+    reasons.push("tidak ada runtime witness ATTESTED berstatus VALID (exit_code=0)");
+  }
+
+  // Jika ada witness STALE dan tidak ada witness VALID sesudahnya -> blokir
+  const lastStaleIdx = witnessList.map((w) => w?.status).lastIndexOf("STALE");
+  if (lastStaleIdx >= 0) {
+    const hasFreshValidAfter = witnessList.slice(lastStaleIdx + 1).some((w) =>
+      isValidAttestedRecord(w) && w.status === "VALID" && w.exit_code === 0 && !w.masked_exit && !w.output_failed
+    );
+    if (!hasFreshValidAfter) {
+      reasons.push("runtime witness berstatus STALE — file berubah setelah verifikasi, wajib verifikasi ulang");
+    }
+  }
+
+  const featureList = Array.isArray(featuresDoc)
+    ? featuresDoc
+    : (featuresDoc && Array.isArray(featuresDoc.features) ? featuresDoc.features : []);
+  if (featureList.length > 0) {
+    const unsettled = featureList.filter((f) => f?.passes !== true || f?.status !== "PASS");
+    if (unsettled.length > 0) {
+      const desc = unsettled.map((f) => `${f?.id ?? "?"} (${f?.status ?? "FAIL"})`).join(", ");
+      reasons.push(`features.json belum semua PASS: ${desc}`);
+    }
+  }
+
+  return reasons;
+}
+
 export function evaluateDoneGate(input: DoneGateInput): DoneGateResult {
   const exitCodeOk = input.commandExitCode === 0;
 
@@ -192,7 +272,8 @@ export function evaluateDoneGate(input: DoneGateInput): DoneGateResult {
   const push = pushBlocks(input);
   const release = releaseBlocks(input);
   const scan = scanBlocks(input);
-  const extra = [...push.reasons, ...release.reasons, ...scan.reasons, ...unmitigatedBlocks(input)];
+  const witness = witnessBlocks(input);
+  const extra = [...push.reasons, ...release.reasons, ...scan.reasons, ...unmitigatedBlocks(input), ...witness];
   const waived = [...push.waived, ...release.waived, ...scan.waived];
   const warnings = [
     ...(input.scanGate?.warnings ?? []),

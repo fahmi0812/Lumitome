@@ -228,3 +228,33 @@ export function turnDelta(counters) {
   };
   return delta;
 }
+
+/**
+ * Evaluasi pelanggaran delegasi untuk Pre-Stop Re-drive Gate (M1 / T2.1).
+ * Mengintip delta tool call sejak audit terakhir tanpa memajukan penanda audited.
+ */
+export function evaluateDelegationViolation(counters, preset, agent, { turnHasCodeClaim = false } = {}) {
+  if (!shouldEnforce(preset, agent)) {
+    return { violation: false, reason: null, delta: null };
+  }
+  const c = counters || newCounters();
+  const delta = c.audited
+    ? {
+        subagent: (c.subagent || 0) - (c.audited.subagent || 0),
+        mutating: (c.mutating || 0) - (c.audited.mutating || 0),
+        other: (c.other || 0) - (c.audited.other || 0),
+        blocked: (c.blocked || 0) - (c.audited.blocked || 0),
+      }
+    : {
+        subagent: c.subagent || 0,
+        mutating: c.mutating || 0,
+        other: c.other || 0,
+        blocked: c.blocked || 0,
+      };
+  const violated = (delta.mutating > 0 || delta.blocked > 0 || Boolean(turnHasCodeClaim)) && delta.subagent === 0;
+  return {
+    violation: violated,
+    reason: violated ? "DELEGATION_BYPASS" : null,
+    delta,
+  };
+}

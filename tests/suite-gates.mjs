@@ -1415,4 +1415,162 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
     && !/LUMI_SANDBOX=off menurunkan tier strict/.test(fm("lumitome/bin/lumitome.mjs")));
 }
 
+// ---------- Wave 2 (T2.1): Pre-Stop Re-Drive Gate (experimental.idle + maxRedrives=2 + bypasses) ----------
+{
+  const { pathToFileURL } = await import("node:url");
+  const EA = await import("../lumitome/config/plugins/lib/experimental-adapter.mjs");
+  const IGC = await import("../lumitome/config/plugins/lib/idle-gate-core.mjs");
+  const tmpBase = path.join(process.cwd(), ".tmp");
+  fs.mkdirSync(tmpBase, { recursive: true });
+  const w2Dir = fs.mkdtempSync(path.join(tmpBase, "w2-t21-"));
+  try {
+    // 1) Kompatibilitas 2.3.0: tanpa session.hook -> capability-missing logged, tidak throw
+    const reg23 = await EA.registerExperimentalHook({}, "experimental.idle", () => {}, { home: w2Dir });
+    const regRej = await EA.registerExperimentalHook(
+      { session: { hook: async () => { throw new Error("unknown hook experimental.idle"); } } },
+      "experimental.idle",
+      () => {},
+      { home: w2Dir },
+    );
+    const telRows = fs.readFileSync(EA.telemetryPath(w2Dir), "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    ok("T2.1 experimental-adapter: graceful capability check 2.3.0 (tanpa crash, log capability-missing)",
+      reg23.registered === false && regRej.registered === false && telRows.filter((r) => r.kind === "capability-missing").length === 2);
+
+    // 2) Circuit breaker maxRedrives = 2: attempt 1-2 inject synthetic (idempoten), attempt 3 trip idle-circuit-open
+    const injected = [];
+    const warnings = [];
+    const mockCtx = {
+      session: {
+        synthetic: async (p) => { injected.push(p); return { ok: true }; },
+      },
+    };
+    const ctrl = new IGC.IdleGateController({
+      maxRedrives: 2,
+      env: {},
+      lumiHome: w2Dir,
+      onWarning: (m) => warnings.push(m),
+    });
+    ctrl.onUserInput("ses_1");
+    const r1 = await ctrl.handleIdle({ sessionID: "ses_1", background: [], snapshot: { wrote: true, ran: 0 }, ctx: mockCtx });
+    const r2 = await ctrl.handleIdle({ sessionID: "ses_1", background: [], snapshot: { wrote: true, ran: 0 }, ctx: mockCtx });
+    const r3 = await ctrl.handleIdle({ sessionID: "ses_1", background: [], snapshot: { wrote: true, ran: 0 }, ctx: mockCtx });
+    ok("T2.1 idle-gate: attempt 1-2 inject synthetic idempoten; attempt 3 trip idle-circuit-open & berhenti",
+      r1.action === "redrive" && r1.attempt === 1 && r1.id.startsWith("msg_lumi_redrive_")
+      && r2.action === "redrive" && r2.attempt === 2 && r2.id !== r1.id
+      && injected.length === 2
+      && r3.action === "circuit-open" && r3.reason === "idle-circuit-open"
+      && warnings.some((w) => /idle-circuit-open/.test(w)));
+
+    // 3) Bypass aman: Q&A non-mutasi, question/BLOCKED, compaction, subagent, interrupt, background own, verified PASS, LUMI_IDLE_REDRIVE=0
+    const ctrl2 = new IGC.IdleGateController({ maxRedrives: 2, env: {}, lumiHome: w2Dir, onWarning: () => {} });
+    let inj2 = 0;
+    const ctx2 = { session: { synthetic: async () => { inj2++; } } };
+    const bNoMut = await ctrl2.handleIdle({ sessionID: "s_qa", snapshot: { wrote: false, ran: 0 }, ctx: ctx2 });
+    const bWait = await ctrl2.handleIdle({ sessionID: "s_wait", snapshot: { wrote: true, ran: 0, waitingForUser: true }, ctx: ctx2 });
+    const bBlk = await ctrl2.handleIdle({ sessionID: "s_blk", snapshot: { wrote: true, ran: 0, blocked: true }, ctx: ctx2 });
+    ctrl2.onCompactionStarted("s_cmp");
+    const bCmp = await ctrl2.handleIdle({ sessionID: "s_cmp", snapshot: { wrote: true, ran: 0 }, ctx: ctx2 });
+    ctrl2.markSubagentActive("s_sub", true);
+    const bSub = await ctrl2.handleIdle({ sessionID: "s_sub", snapshot: { wrote: true, ran: 0 }, ctx: ctx2 });
+    const bInt = await ctrl2.handleIdle({ sessionID: "s_int", snapshot: { wrote: true, ran: 0, interrupted: true }, ctx: ctx2 });
+    const bBg = await ctrl2.handleIdle({ sessionID: "s_bg", background: [{ kind: "shell", sessionID: "s_bg", shellID: "sh1", command: "npm test" }], snapshot: { wrote: true, ran: 0 }, ctx: ctx2 });
+    const bPass = await ctrl2.handleIdle({ sessionID: "s_ok", snapshot: { wrote: true, ran: 1, lastExit: 0, hasValidWitness: true, featuresAllPass: true }, ctx: ctx2 });
+    const ctrlOff = new IGC.IdleGateController({ env: { LUMI_IDLE_REDRIVE: "0" }, lumiHome: w2Dir });
+    const bOff = await ctrlOff.handleIdle({ sessionID: "s_off", snapshot: { wrote: true, ran: 0 }, ctx: ctx2 });
+    ok("T2.1 idle-gate bypasses: Q&A non-mutasi, question/BLOCKED, compaction, subagent, interrupt, background own, PASS, LUMI_IDLE_REDRIVE=0 -> 0 redrive",
+      inj2 === 0
+      && bNoMut.action === "allow" && bNoMut.skipReason === "no-mutations"
+      && bWait.action === "allow" && bWait.skipReason === "waiting-for-user"
+      && bBlk.action === "allow" && bBlk.skipReason === "waiting-for-user"
+      && bCmp.action === "allow" && bCmp.skipReason === "compaction-active"
+      && bSub.action === "allow" && bSub.skipReason === "subagent-active"
+      && bInt.action === "allow" && bInt.skipReason === "user-interrupted"
+      && bBg.action === "allow" && bBg.skipReason === "background-own"
+      && bPass.action === "allow" && bPass.skipReason === "verified-pass"
+      && bOff.action === "bypass" && bOff.skipReason === "flag-off");
+
+    // 4) Plugin lumitome-idle-gate.ts: setup aman di 2.3.0 & hook experimental.idle berjalan di 2.4.2
+    const idlePlug = await import(pathToFileURL(path.resolve("lumitome/config/plugins/lumitome-idle-gate.ts")).href + `?t=${Date.now()}`);
+    await idlePlug.default.setup({ location: { directory: w2Dir } }); // 2.3.0 tanpa session.hook -> tidak throw
+    let idleCb = null;
+    const plugSyn = [];
+    await idlePlug.default.setup({
+      location: { directory: w2Dir },
+      tool: { hook: async () => {} },
+      session: {
+        hook: async (name, fn) => { if (name === "experimental.idle") idleCb = fn; },
+        synthetic: async (p) => { plugSyn.push(p); },
+      },
+    });
+    ok("T2.1 lumitome-idle-gate.ts: setup kompatibel 2.3.0 & mendaftarkan experimental.idle di 2.4.2",
+      idlePlug.default.id === "lumitome-idle-gate" && typeof idleCb === "function");
+  } finally {
+    fs.rmSync(w2Dir, { recursive: true, force: true });
+  }
+}
+
+// ---------- Wave 2 (T2.3): Runtime-Attested Witness, features.json Default-FAIL & Tether STALE/UNSETTLED ----------
+{
+  const W = await import("../harness/witness.mjs");
+  const tmpBase = path.join(process.cwd(), ".tmp");
+  fs.mkdirSync(tmpBase, { recursive: true });
+  const ws23 = fs.mkdtempSync(path.join(tmpBase, "w2-t23-"));
+  try {
+    const srcFile = path.join(ws23, "app.mjs");
+    fs.writeFileSync(srcFile, "export const v = 1;\n");
+    const sDir = W.sessionDirFor(ws23, "ses_t23");
+
+    // 1) features.json Default-FAIL (bahkan bila input mencoba passes: true)
+    const doc = W.initFeatures(sDir, [{ id: "F-01", description: "app v=1", passes: true, status: "PASS" }], { overwrite: true });
+    ok("T2.3 features.json: selalu inisialisasi default FAIL (passes:false), tidak pernah default PASS",
+      doc.features.length === 1 && doc.features[0].passes === false && doc.features[0].status === "FAIL");
+    const dgUnverified = evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], testCommandExitCode: 0, sessionDir: sDir, workspace: ws23, requireWitness: true });
+    ok("T2.3 done-gate: features.json masih FAIL tanpa witness -> FAIL",
+      dgUnverified.isDone === false && /features\.json|witness/i.test(dgUnverified.failureReason || ""));
+
+    // 2) Record ATTESTED 5-field witness & promote feature -> PASS -> Done-Gate PASS
+    const wRec = W.recordWitness(sDir, {
+      workspace: ws23,
+      command: "npm test",
+      output: "ok 1 - pass",
+      exit_code: 0,
+      source_id: "w_01",
+      targetFiles: ["app.mjs"],
+    });
+    const promo = W.promoteFeatureWithWitness({ sessionDir: sDir, workspace: ws23, featureId: "F-01", witnessId: "w_01" });
+    const dgPass = evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], testCommandExitCode: 0, sessionDir: sDir, workspace: ws23, requireWitness: true });
+    ok("T2.3 witness ATTESTED 5-field + promote -> PASS & Done-Gate PASS",
+      W.isValidAttestedRecord(wRec)
+      && /^ATTESTED\(w_01,[0-9a-f]{64},[0-9a-f]{64},0,/.test(wRec.attested)
+      && promo.ok === true && promo.feature.passes === true && promo.feature.status === "PASS"
+      && dgPass.isDone === true);
+
+    // 3) Anti-spoof: klaim ATTESTED(...) di teks chat / facts tanpa runtime witness ditolak Done-Gate
+    const dgSpoof = evaluateDoneGate({
+      commandExitCode: 0,
+      expectedArtifacts: [],
+      testCommandExitCode: 0,
+      facts: ["FACT: ATTESTED(w_fake,aaa,bbb,0,ccc)"],
+      agentText: "ATTESTED(w_forged,111,222,0,333)",
+      witnesses: [wRec],
+    });
+    ok("T2.3 anti-spoof: klaim teks ATTESTED(...) palsu ditolak Done-Gate",
+      dgSpoof.isDone === false && /w_fake|w_forged/.test(dgSpoof.failureReason || ""));
+
+    // 4) Mutasi 1 byte pada derived_from -> witness STALE + feature UNSETTLED -> Done-Gate FAIL
+    fs.writeFileSync(srcFile, "export const v = 2;\n");
+    const inv = W.invalidateStaleWitnesses({ sessionDir: sDir, workspace: ws23 });
+    const dgStale = evaluateDoneGate({ commandExitCode: 0, expectedArtifacts: [], testCommandExitCode: 0, sessionDir: sDir, workspace: ws23, requireWitness: true });
+    ok("T2.3 tether drift: mutasi 1 byte -> witness STALE + feature UNSETTLED -> Done-Gate FAIL",
+      inv.staleWitnessIds.includes("w_01")
+      && inv.unsettledFeatureIds.includes("F-01")
+      && inv.witnesses[0].status === "STALE"
+      && inv.features.features[0].status === "UNSETTLED"
+      && inv.features.features[0].passes === false
+      && dgStale.isDone === false);
+  } finally {
+    fs.rmSync(ws23, { recursive: true, force: true });
+  }
+}
+
 finish();

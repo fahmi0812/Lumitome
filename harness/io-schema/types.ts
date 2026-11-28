@@ -80,6 +80,17 @@ export interface DoneGateInput {
   /** File yang lulus tes sebelum perubahan + alasan perubahan per file (cek rewrite demi dokumen → WARN). */
   passingBefore?: string[];
   changeReasons?: Record<string, string>;
+  /** Wave 2 (T2.3): direktori sesi (<ws>/.tmp/session/<session_id>) untuk membaca witnesses.jsonl & features.json. */
+  sessionDir?: string;
+  workspace?: string;
+  /** Runtime-attested witness objects (hanya dari runtime witnesses.jsonl, bukan string chat). */
+  witnesses?: Array<Record<string, unknown>>;
+  /** Snapshot features.json atau daftar item fitur. */
+  features?: Array<Record<string, unknown>> | { features: Array<Record<string, unknown>> };
+  /** Wajibkan keberadaan runtime witness VALID (exit_code === 0). */
+  requireWitness?: boolean;
+  /** Teks output/laporan agen untuk deteksi klaim ATTESTED(...) palsu tanpa runtime witness. */
+  agentText?: string;
 }
 
 export interface DoneGateResult {
