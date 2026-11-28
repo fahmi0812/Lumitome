@@ -119,7 +119,7 @@ export function stableStringify(val) {
  * Rakit finalCfg + env. Kembali: { finalCfg, env, skillNote }.
  * prompt: pesan `run` yang sudah diekstrak entry (promptOf) — hanya dipakai saat sub === "run".
  */
-export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOURNAL, RUN_ID, FRAG, MODEL, HAS_9R_ENV, TIMEOUTS, TRUST, sub, prompt = "" }) {
+export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOURNAL, RUN_ID, FRAG, MODEL, HAS_9R_ENV, TIMEOUTS, TRUST, sub, prompt = "", installedEngineVersion }) {
   const policyScan = TRUST ? scanProjectPolicies(WS) : { hasPolicies: false, file: null };
   const effectiveTrust = Boolean(TRUST && !policyScan.hasPolicies);
   if (policyScan.hasPolicies) {
@@ -173,7 +173,7 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
     if (def) mcpOverride.codemem = def;
     else if (sub === "" || sub === "run" || env.LUMI_DEBUG) process.stderr.write(`lumitome: codemem dilewati — ${CM.cbmBin(HOME)} belum ada\n`);
   }
-  const is24 = engineAtLeast(resolveEngineVersion(env), ENGINE_MIN_2_4);
+  const is24 = engineAtLeast(resolveEngineVersion(env, { installedVersion: installedEngineVersion }), ENGINE_MIN_2_4);
   // header 300 s, jeda antar-chunk 900 s, total 1 jam (LUMI_*_TIMEOUT_MS) — TIMEOUTS dihitung entry (dipakai juga retry)
   const finalCfg = {
     update: "disable",

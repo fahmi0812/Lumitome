@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.1 — Upgrade pinned engine to OpenCode v2.4.2 (engine-2.4.2-lumi.1) & safe transition guard
+
+- **Pin Engine OpenCode `v2.4.2` (`lumitome/lib/engine.mjs`, `install.sh`):**
+  - `OC_VERSION` naik dari `2.3.0` ke `2.4.2` dan `LUMI_ENGINE_TAG` ke `engine-2.4.2-lumi.1` (build Lumitome dengan `logo.patch`) beserta pin SHA256 resmi untuk seluruh 6 platform (`linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`, `win32-x64`, `win32-arm64`) pada `LUMI_PINS` maupun `OC_PINS` (`anomalyco/opencode` `v2.4.2`), tersinkron dengan `install.sh` (`oc_asset` / `lumi_asset`).
+- **Safe Transition Guard `2.3.0 → 2.4.2` (`lumitome/lib/engine.mjs`, `lumitome/lib/build-config.mjs`, `lumitome/bin/lumitome.mjs`):**
+  - Menambah `detectInstalledEngineVersion({ bin, env })` (baca tag `.flavor` bertag `engine-<versi>-*` tanpa spawn proses, dengan fallback `engineVersion(bin, env)` untuk instalasi upstream/lama) dan memperluas `resolveEngineVersion(env, { installedVersion })` dengan prioritas `LUMI_ENGINE_VERSION` → `installedVersion` → `OC_VERSION`.
+  - `lumitome.mjs` meneruskan `installedEngineVersion` ke `buildFinalConfig(...)` (bila `LUMI_ENGINE_VERSION` tidak diset) dan memasukkannya ke `SCX.fingerprint(...)` agar service daemon lama otomatis di-restart setelah `lumitome upgrade`.
+  - File statis `lumitome/config/opencode.jsonc` & `opencode.jsonc` tetap valid ganda (`2.3.0` & `2.4.2`), sementara `OPENCODE_CONFIG_CONTENT` mengaktifkan opsi khusus `2.4.2` hanya saat binary engine >= `2.4.2` — sehingga `lumitome update` sebelum `lumitome upgrade` tetap 100% aman bagi pengguna `2.3.0`.
+- **Tes, Dokumen & Verifikasi:**
+  - `tests/suite-services.mjs` diperbarui untuk pin `2.4.2` (`engine-2.4.2-lumi.1`), CLI `lumitome upgrade`, `detectInstalledEngineVersion`, dan transisi aman `buildFinalConfig` (schema `2.3.0` vs `2.4.2`).
+  - Dokumen (`README.md`, `ARCHITECTURE.md`, `docs/ARCHITECTURE.md`, `docs/PRD.md`, `lumitome/README.md`, `NOTICE.md`) diperbarui ke OpenCode `v2.4.2` dan alur `lumitome update` → `lumitome upgrade`.
+  - Diverifikasi dengan `npm run lint`, `npm run validate`, `npm run validate:offline`, `npm test`, `npm run eval`, `npm run scan -- --secret-only`, `node scripts/release.mjs 0.4.1`, dan uji live `scripts/e2e-opencode-v2.sh` menggunakan binary `v2.4.2` (`engine-2.4.2-lumi.1`).
+
 ## 0.4.0 — Lumitome Next — Verifier-Independent Harness, 4-Layer Memory & OpenCode 2.4.2 Readiness
 
 - **Wave 4 — Sandbox, BYOP Shadow, Dual-Mode Eval & SHarP Ablation:**

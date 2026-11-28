@@ -3,7 +3,7 @@
 > Dokumen ini ditulis ulang di v0.3.47 (P2-2) dan disinkronkan ulang pada Wave 0 (`v0.3.85+`): PRD lama ("Swanwright 0.1.0") sudah tidak cocok dengan repo. Setiap angka di bawah ini bisa ditelusur ke pengukuran (`npm run skills:metrics`, `runtime/metrics.json`) atau file sumber yang disebut. Plugin runtime aktif adalah `.opencode/plugins/lumitome-harness.ts` (`lumitome-harness`) dan `lumitome/config/plugins/lumitome-guard.ts` (`lumitome-guard`); sisa path `.swanwright/` / `swanwright.ts` sudah digantikan sejak v0.3.82.
 
 ## Latar
-Lumitome: asisten coding terminal di atas OpenCode 2.3.0 (non-invasif, hanya patch logo). Model hanya via 9router; tanpa LiteLLM / proxy lain. Satu registry
+Lumitome: asisten coding terminal di atas OpenCode v2.4.2 (`engine-2.4.2-lumi.1`, non-invasif, hanya patch logo; tetap kompatibel dengan binary 2.3.0 terpasang sebelum `lumitome upgrade` via deteksi versi aktual). Model hanya via 9router; tanpa LiteLLM / proxy lain. Satu registry
 931 skill (765 bisa ter-route; 166 pack red-team tetap disabled), routing
 2 lapis + lazy-load.
 

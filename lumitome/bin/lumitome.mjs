@@ -16,7 +16,7 @@ import os from "node:os";
 import crypto from "node:crypto";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { DEFAULT_MODEL } from "../lib/default-model.mjs";
-import { resolveEngineBin } from "../lib/engine.mjs";
+import { detectInstalledEngineVersion, resolveEngineBin } from "../lib/engine.mjs";
 import { resolveEnvValue } from "../lib/env-compat.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -358,7 +358,8 @@ if (TRUST) {
 const TIMEOUTS = PV.providerTimeouts(env);
 const VALUE_FLAGS = new Set(["-m", "--model", "-s", "--session", "--agent", "--format", "-f", "--file", "--title", "--log-level", "--server"]);
 function promptOf(rest) { const out = []; for (let i = 0; i < rest.length; i++) { const a = rest[i]; if (VALUE_FLAGS.has(a)) { i++; continue; } if (a.startsWith("-")) continue; out.push(a); } return out.join(" "); }
-const { skillNote } = await (await import(pathToFileURL(path.join(ROOT, "lib", "build-config.mjs")).href)).buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOURNAL, RUN_ID, FRAG, MODEL: TUI_MODEL, HAS_9R_ENV, TIMEOUTS, TRUST, sub, prompt: sub === "run" ? promptOf(argv.slice(1)) : "" });
+const installedEngineVersion = env.LUMI_ENGINE_VERSION ? null : detectInstalledEngineVersion({ bin: ocBin(), env: isoEnv() });
+const { skillNote } = await (await import(pathToFileURL(path.join(ROOT, "lib", "build-config.mjs")).href)).buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOURNAL, RUN_ID, FRAG, MODEL: TUI_MODEL, HAS_9R_ENV, TIMEOUTS, TRUST, sub, prompt: sub === "run" ? promptOf(argv.slice(1)) : "", installedEngineVersion });
 
 // TUI/attach memakai "managed service" OpenCode (port default 49374 — sama dengan `opencode serve --service` milik
 // user). Lumitome memakai port & state sendiri di LUMI_HOME; service milik user tidak disentuh/dimatikan.
@@ -389,7 +390,7 @@ if (sub === "" || sub === "run") {
 // boleh me-reuse daemon yang cache agent-nya masih preset lama.
 if (sub === "" || sub === "service") {
   const SCX = await import(pathToFileURL(path.join(ROOT, "lib", "service-ctl.mjs")).href);
-  const fp = SCX.fingerprint([VERSION, env.OPENCODE_CONFIG_CONTENT, FRAG.env, env.LUMI_SANDBOX || "", env.LUMI_9ROUTER_URL || "", TRUST, JSON.stringify(Object.fromEntries(Object.entries(FRAG.providers).map(([n, p]) => [n, [...Object.keys(p.models)].sort()]))) , SCX.presetAgentHash({ home: HOME, root: REPO }) ]);
+  const fp = SCX.fingerprint([VERSION, installedEngineVersion || "", env.OPENCODE_CONFIG_CONTENT, FRAG.env, env.LUMI_SANDBOX || "", env.LUMI_9ROUTER_URL || "", TRUST, JSON.stringify(Object.fromEntries(Object.entries(FRAG.providers).map(([n, p]) => [n, [...Object.keys(p.models)].sort()]))) , SCX.presetAgentHash({ home: HOME, root: REPO }) ]);
   try { const r = SCX.ensureFresh(HOME, fp); if (env.LUMI_DEBUG) process.stderr.write(`lumitome: service ${r}\n`); } catch (e) { if (env.LUMI_DEBUG) process.stderr.write(`lumitome: cek service gagal (${e.message})\n`); }
 }
 
