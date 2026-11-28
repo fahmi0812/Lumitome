@@ -569,7 +569,7 @@ import { frontmatter } from "../router/parse.mjs";
   fs.writeFileSync(EN.flavorFile(detBin), "engine-2.4.2-lumi.1\n");
   const detTagged = EN.detectInstalledEngineVersion({ bin: detBin, env: {} });
   fs.writeFileSync(EN.flavorFile(detBin), "upstream\n");
-  const detUpstream = EN.detectInstalledEngineVersion({ bin: detBin, env: {} });
+  const detUpstream = EN.detectInstalledEngineVersion({ bin: detBin, env: { PATH: process.env.PATH } });
   const detMissing = EN.detectInstalledEngineVersion({ bin: path.join(ws11, "missing-oc"), env: {} });
   ok("transisi aman: detectInstalledEngineVersion baca .flavor bertag tanpa spawn; fallback --version untuk upstream; null bila tidak ada",
     detTagged === "2.4.2" && detUpstream === "2.3.0" && detMissing === null);
