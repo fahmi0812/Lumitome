@@ -53,11 +53,12 @@ import { frontmatter } from "../router/parse.mjs";
   const EN = await import("../lumitome/lib/engine.mjs");
   const wh = EN.lumiHome({}, path.win32, "C:\\Users\\Fahmi");
   ok("npm/win: LUMI_HOME = %USERPROFILE%\\.lumitome; engine = bin\\opencode.exe", wh === "C:\\Users\\Fahmi\\.lumitome" && EN.engineBin(wh, "win32") === "C:\\Users\\Fahmi\\.lumitome\\bin\\opencode.exe");
-  const w = EN.assetFor("2.3.0", "win32", "x64"), l = EN.assetFor("2.3.0", "linux", "x64"), m = EN.assetFor("2.3.0", "darwin", "arm64");
-  ok("npm/engine: aset terpin + SHA256 per platform (win32-x64 zip, linux tar.gz, darwin zip)", w.name === "opencode-windows-x64.zip" && /^[0-9a-f]{64}$/.test(w.sha256) && l.name.endsWith(".tar.gz") && m.name.endsWith(".zip") && w.url.includes("/releases/download/engine-2.3.0-lumi.1/"));
-  const wu = EN.assetFor("2.3.0", "win32", "x64", "upstream"), lu = EN.assetFor("2.3.0", "linux", "x64", "upstream");
-  ok("npm/engine: LUMI_ENGINE=upstream → aset resmi anomalyco v2.3.0 dengan pin lama", EN.engineFlavor({ LUMI_ENGINE: "upstream" }) === "upstream" && EN.engineFlavor({}) === "lumi" && wu.url.includes("anomalyco/opencode/releases/download/v2.3.0/") && lu.sha256 === "fc0f81522aceeabac47693d88389efa2bc517ce74c2c38fd6967819fcc6e4d3b" && wu.sha256 !== w.sha256);
-  ok("npm/engine: semua platform terpin punya build Lumitome + SHA256", Object.keys(EN.OC_PINS).every((k) => /^[0-9a-f]{64}$/.test(EN.LUMI_PINS[k]?.[1] || "")) && fs.existsSync("engine/patches/logo.patch"));
+  const w = EN.assetFor("2.4.2", "win32", "x64"), l = EN.assetFor("2.4.2", "linux", "x64"), m = EN.assetFor("2.4.2", "darwin", "arm64");
+  ok("npm/engine: aset terpin + SHA256 per platform (win32-x64 zip, linux tar.gz, darwin zip)", EN.OC_VERSION === "2.4.2" && EN.LUMI_ENGINE_TAG === "engine-2.4.2-lumi.1" && w.name === "opencode-windows-x64.zip" && /^[0-9a-f]{64}$/.test(w.sha256) && l.name.endsWith(".tar.gz") && m.name.endsWith(".zip") && w.url.includes("/releases/download/engine-2.4.2-lumi.1/"));
+  const wu = EN.assetFor("2.4.2", "win32", "x64", "upstream"), lu = EN.assetFor("2.4.2", "linux", "x64", "upstream");
+  ok("npm/engine: LUMI_ENGINE=upstream → aset resmi anomalyco v2.4.2 dengan pin upstream", EN.engineFlavor({ LUMI_ENGINE: "upstream" }) === "upstream" && EN.engineFlavor({}) === "lumi" && wu.url.includes("anomalyco/opencode/releases/download/v2.4.2/") && lu.sha256 === "452912288f934d1771bd5bd0d8611ba3a6adc3db3ac3333c37facf373770ba66" && wu.sha256 !== w.sha256);
+  const instSh = fs.readFileSync("install.sh", "utf8");
+  ok("npm/engine: semua platform terpin punya build Lumitome + SHA256 (sinkron dengan install.sh)", Object.keys(EN.OC_PINS).every((k) => /^[0-9a-f]{64}$/.test(EN.LUMI_PINS[k]?.[1] || "") && /^[0-9a-f]{64}$/.test(EN.OC_PINS[k]?.[1] || "")) && ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64"].every((k) => instSh.includes(EN.LUMI_PINS[k][1]) && instSh.includes(EN.OC_PINS[k][1])) && fs.existsSync("engine/patches/logo.patch"));
   ok("npm/engine: versi lain (upgrade-engine) tetap dari rilis resmi", EN.assetFor("2.4.0", "linux", "x64").url.includes("anomalyco/opencode/releases/download/v2.4.0/"));
   let bad = ""; await EN.installEngine({ home: fs.mkdtempSync(path.join((await import("node:os")).tmpdir(), "lumieng-")), log: () => {}, fetchImpl: async () => ({ ok: true, arrayBuffer: async () => new TextEncoder().encode("palsu").buffer }) }).catch((e) => { bad = e.message; });
   ok("npm/engine: unduhan dengan SHA256 salah ditolak", /SHA256 tidak cocok/.test(bad));
@@ -477,10 +478,10 @@ import { frontmatter } from "../router/parse.mjs";
   // `upgrade-engine <versi> --sha256 ...` tetap jalan manual/lanjutan.
   const EN = await import("../lumitome/lib/engine.mjs");
   const osm = await import("node:os");
-  const PIN_LINUX_X64 = "0e8328e8b307795065a87263c196c03ff36dd6f7fe366cb420603b3b8758df72";
+  const PIN_LINUX_X64 = "7c9f9ac6c3ad45928c0d9eae019a160cc66a29446044e572dc081285700d6a8c";
   const a = EN.assetFor(EN.OC_VERSION, "linux", "x64");
-  ok("upgrade: versi terpin 2.3.0 + SHA256 linux-x64 = pin install.sh (build Lumitome)",
-    EN.OC_VERSION === "2.3.0" && a.sha256 === PIN_LINUX_X64 && a.url.includes("/releases/download/engine-2.3.0-lumi.1/")
+  ok("upgrade: versi terpin 2.4.2 + SHA256 linux-x64 = pin install.sh (build Lumitome)",
+    EN.OC_VERSION === "2.4.2" && EN.LUMI_ENGINE_TAG === "engine-2.4.2-lumi.1" && a.sha256 === PIN_LINUX_X64 && a.url.includes("/releases/download/engine-2.4.2-lumi.1/")
     && fs.readFileSync("install.sh", "utf8").includes(PIN_LINUX_X64));
   let bad = "";
   await EN.installEngine({ home: fs.mkdtempSync(path.join(osm.tmpdir(), "lumiupg-")), log: () => {}, fetchImpl: async () => ({ ok: true, arrayBuffer: async () => new TextEncoder().encode("palsu").buffer }) }).catch((e) => { bad = e.message; });
@@ -505,16 +506,16 @@ import { frontmatter } from "../router/parse.mjs";
   };
   const runCli = (home, args, input) => cp.spawnSync(process.execPath, ["--experimental-strip-types", "--no-warnings", path.resolve("lumitome/bin/lumitome.mjs"), ...args],
     { encoding: "utf8", timeout: 60000, cwd: home, input, env: { ...process.env, HOME: home, LUMI_HOME: home, SW_HOME: home, LUMI_WORKSPACE: home, LUMI_AUTO_INDEX: "0", NINEROUTER_API_KEY: "" } });
-  const hCur = mkFake("2.3.0");
+  const hCur = mkFake("2.4.2");
   const rCur = runCli(hCur, ["upgrade"]);
-  ok("upgrade CLI: engine sudah 2.3.0 → exit 0, satu baris 'sudah versi terbaru', tanpa unduhan",
-    rCur.status === 0 && /engine sudah versi terbaru — v2\.3\.0/.test(rCur.stdout) && !/mengunduh/.test(rCur.stderr + rCur.stdout));
+  ok("upgrade CLI: engine sudah 2.4.2 → exit 0, satu baris 'sudah versi terbaru', tanpa unduhan",
+    rCur.status === 0 && /engine sudah versi terbaru — v2\.4\.2/.test(rCur.stdout) && !/mengunduh/.test(rCur.stderr + rCur.stdout));
   fs.rmSync(hCur, { recursive: true, force: true });
-  const hOld = mkFake("2.2.4");
+  const hOld = mkFake("2.3.0");
   const rNo = runCli(hOld, ["upgrade"], "tidak\n");
-  ok("upgrade CLI: tanpa --yes + jawab bukan 'ya' → dibatalkan (exit 1), engine lama dipertahankan, tanpa unduhan",
-    rNo.status === 1 && /dibatalkan/.test(rNo.stderr + rNo.stdout));
-  const rArg = runCli(hOld, ["upgrade", "2.3.0"]);
+  ok("upgrade CLI: engine 2.3.0 tanpa --yes + jawab bukan 'ya' → prompt konfirmasi → dibatalkan (exit 1), engine lama dipertahankan, tanpa unduhan",
+    rNo.status === 1 && /Ganti engine opencode v2\.3\.0 → v2\.4\.2/.test(rNo.stderr) && /dibatalkan/.test(rNo.stderr + rNo.stdout));
+  const rArg = runCli(hOld, ["upgrade", "2.4.2"]);
   ok("upgrade CLI: argumen posisi ditolak (exit 2, usage 'lumitome upgrade [--yes]')",
     rArg.status === 2 && /pakai: lumitome upgrade \[--yes\]/.test(rArg.stderr + rArg.stdout));
   const rUe = runCli(hOld, ["upgrade-engine"]);
@@ -550,8 +551,10 @@ import { frontmatter } from "../router/parse.mjs";
     && EN.engineAtLeast("2.3.0", EN.ENGINE_MIN_2_4) === false
     && EN.engineAtLeast("invalid", EN.ENGINE_MIN_2_4) === false);
 
-  ok("T1.1 resolveEngineVersion & T1.4 resolveEngineBin: prioritas LUMI_ENGINE_VERSION / LUMI_ENGINE_BIN",
+  ok("T1.1 resolveEngineVersion & T1.4 resolveEngineBin: prioritas LUMI_ENGINE_VERSION > installedVersion > OC_VERSION",
     EN.resolveEngineVersion({}) === EN.OC_VERSION
+    && EN.resolveEngineVersion({}, { installedVersion: "2.3.0" }) === "2.3.0"
+    && EN.resolveEngineVersion({ LUMI_ENGINE_VERSION: "2.4.2" }, { installedVersion: "2.3.0" }) === "2.4.2"
     && EN.resolveEngineVersion({ LUMI_ENGINE_VERSION: "2.4.2" }) === "2.4.2"
     && EN.resolveEngineBin({ env: { LUMI_ENGINE_BIN: "/custom/oc", LUMI_OPENCODE: "/old/oc" }, exists: () => false }) === "/custom/oc"
     && EN.resolveEngineBin({ env: { LUMI_OPENCODE: "/old/oc" }, exists: () => false }) === "/old/oc");
@@ -559,6 +562,18 @@ import { frontmatter } from "../router/parse.mjs";
   const ws11 = fs.mkdtempSync(path.join(osm.tmpdir(), "lumi-t11-"));
   const home11 = path.join(ws11, "home");
   fs.mkdirSync(home11, { recursive: true });
+  // Deteksi cepat versi engine terpasang: flavor bertag tanpa spawn vs fallback --version
+  const detBin = path.join(ws11, "fake-det-oc");
+  fs.writeFileSync(detBin, "#!/usr/bin/env node\nconsole.log('opencode v2.3.0');\n");
+  fs.chmodSync(detBin, 0o755);
+  fs.writeFileSync(EN.flavorFile(detBin), "engine-2.4.2-lumi.1\n");
+  const detTagged = EN.detectInstalledEngineVersion({ bin: detBin, env: {} });
+  fs.writeFileSync(EN.flavorFile(detBin), "upstream\n");
+  const detUpstream = EN.detectInstalledEngineVersion({ bin: detBin, env: { PATH: process.env.PATH } });
+  const detMissing = EN.detectInstalledEngineVersion({ bin: path.join(ws11, "missing-oc"), env: {} });
+  ok("transisi aman: detectInstalledEngineVersion baca .flavor bertag tanpa spawn; fallback --version untuk upstream; null bila tidak ada",
+    detTagged === "2.4.2" && detUpstream === "2.3.0" && detMissing === null);
+
   const baseArgs = {
     REPO: process.cwd(),
     ROOT: path.resolve("lumitome"),
@@ -576,25 +591,38 @@ import { frontmatter } from "../router/parse.mjs";
 
   // Mode 2.3.0: tanpa field khusus 2.4.2, lolos schema 2.3.0 & 2.4.2
   const r23 = await BC.buildFinalConfig({ ...baseArgs, env: { LUMI_ENGINE_VERSION: "2.3.0" }, sub: "run", prompt: "" });
-  ok("T1.1 mode 2.3.0: tanpa key 2.4.2, valid terhadap fixture schema 2.3.0 dan schema 2.4.2",
+  const r23Inst = await BC.buildFinalConfig({ ...baseArgs, env: {}, installedEngineVersion: "2.3.0", sub: "run", prompt: "" });
+  ok("T1.1 mode 2.3.0 & transisi aman: installedEngineVersion=2.3.0 tanpa key 2.4.2, valid terhadap fixture schema 2.3.0 dan schema 2.4.2",
     r23.finalCfg.compaction.background === undefined
     && r23.finalCfg.experimental.full_codemode === undefined
     && r23.finalCfg.experimental.opencode_api === undefined
     && r23.finalCfg.experimental.part_rows === undefined
     && r23.finalCfg.experimental.subagent_depth === 1
     && Array.isArray(r23.finalCfg.policies) && r23.finalCfg.policies.length > 0
-    && val23(r23.finalCfg) === true && val24(r23.finalCfg) === true);
+    && val23(r23.finalCfg) === true && val24(r23.finalCfg) === true
+    && r23Inst.finalCfg.compaction.background === undefined
+    && r23Inst.finalCfg.experimental.full_codemode === undefined
+    && r23Inst.finalCfg.experimental.opencode_api === undefined
+    && r23Inst.finalCfg.experimental.part_rows === undefined
+    && val23(r23Inst.finalCfg) === true && val24(r23Inst.finalCfg) === true);
 
-  // Mode 2.4.2 TUI dengan LUMI_COMPACTION_BACKGROUND=1 vs headless run
+  // Mode 2.4.2 TUI dengan LUMI_COMPACTION_BACKGROUND=1 vs headless run (plus default OC_VERSION=2.4.2 tanpa installedEngineVersion)
   const r24Tui = await BC.buildFinalConfig({ ...baseArgs, env: { LUMI_ENGINE_VERSION: "2.4.2", LUMI_COMPACTION_BACKGROUND: "1" }, sub: "" });
   const r24Run = await BC.buildFinalConfig({ ...baseArgs, env: { LUMI_ENGINE_VERSION: "2.4.2", LUMI_COMPACTION_BACKGROUND: "1" }, sub: "run", prompt: "" });
-  ok("T1.1 mode 2.4.2: TUI background=true bila opt-in, run headless selalu background=false + full_codemode/opencode_api/part_rows=false + lolos schema 2.4.2",
+  const r24Inst = await BC.buildFinalConfig({ ...baseArgs, env: {}, installedEngineVersion: "2.4.2", sub: "run", prompt: "" });
+  const r24Def = await BC.buildFinalConfig({ ...baseArgs, env: {}, sub: "run", prompt: "" });
+  ok("T1.1 mode 2.4.2: TUI background=true bila opt-in, run headless selalu background=false + full_codemode/opencode_api/part_rows=false + default/installed 2.4.2 lolos schema 2.4.2",
     r24Tui.finalCfg.compaction.background === true
     && r24Run.finalCfg.compaction.background === false
     && r24Run.finalCfg.experimental.full_codemode === false
     && r24Run.finalCfg.experimental.opencode_api === false
     && r24Run.finalCfg.experimental.part_rows === false
-    && val24(r24Tui.finalCfg) === true && val24(r24Run.finalCfg) === true);
+    && r24Inst.finalCfg.compaction.background === false
+    && r24Inst.finalCfg.experimental.full_codemode === false
+    && r24Def.finalCfg.compaction.background === false
+    && r24Def.finalCfg.experimental.full_codemode === false
+    && val24(r24Tui.finalCfg) === true && val24(r24Run.finalCfg) === true
+    && val24(r24Inst.finalCfg) === true && val24(r24Def.finalCfg) === true);
 
   // LUMI_PROVIDER_STRICT=1 vs 0
   const pStrict = BC.buildPolicies({ LUMI_PROVIDER_STRICT: "1" }, true);

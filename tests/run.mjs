@@ -28,7 +28,26 @@ for (let i = 0; i < args.length; i++) {
 const all = discoverSuiteFiles(testsDir);
 const files = filters.length ? all.filter((f) => filters.some((s) => path.basename(f).includes(s))) : all;
 if (files.length === 0) { console.error("run.mjs: tidak ada file suite yang cocok"); process.exit(2); }
+const writeAll = (stream, text) => new Promise((resolve, reject) => {
+  if (!text) return resolve();
+  stream.write(text, (err) => (err ? reject(err) : resolve()));
+});
+
 const r = await runFiles(files, { cwd: repoRoot, jobs: jobs || undefined, failFast, serial });
-for (const f of r.perFile) process.stdout.write(f.output);
-console.log(`\n${r.pass} passed, ${r.fail} failed, ${r.skipped} skipped (${(r.durationMs / 1000).toFixed(1)}s, ${r.perFile.length} file)`);
-process.exit(r.ok ? 0 : 1);
+for (const f of r.perFile) await writeAll(process.stdout, f.output);
+await writeAll(process.stdout, `\n${r.pass} passed, ${r.fail} failed, ${r.skipped} skipped (${(r.durationMs / 1000).toFixed(1)}s, ${r.perFile.length} file)\n`);
+if (!r.ok) {
+  const failedFiles = r.perFile.filter((f) => f.status !== 0 || f.crashed || f.fail > 0);
+  const summaryLines = ["\n=== RINGKASAN KEGAGALAN (tests/run.mjs) ==="];
+  for (const f of failedFiles) {
+    const rel = path.relative(repoRoot, f.file);
+    summaryLines.push(`- ${rel} (exit=${f.status}, fail=${f.fail}, crashed=${Boolean(f.crashed)})`);
+    const lines = String(f.output || "").split("\n");
+    const failLines = lines.filter((l) => /\[FAIL\]|^\s+at\s+|^\s+detail:|^\s+gagal:|Error:|TypeError:|SyntaxError:/.test(l));
+    for (const fl of (failLines.length ? failLines.slice(0, 40) : lines.slice(-15).filter(Boolean))) {
+      summaryLines.push(`  ${fl}`);
+    }
+  }
+  await writeAll(process.stderr, summaryLines.join("\n") + "\n");
+}
+process.exitCode = r.ok ? 0 : 1;

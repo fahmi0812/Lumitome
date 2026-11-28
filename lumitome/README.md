@@ -1,7 +1,7 @@
-# lumitome 0.3.0
+# lumitome 0.4.1
 
-Wrapper CLI aman di atas **OpenCode v2.3.0** + harness Swanwright, provider **9router**.
-`lumitome <subcommand> …`: semua argumen diteruskan ke `opencode`. Tanpa subcommand = TUI.
+Wrapper CLI aman di atas **OpenCode v2.4.2** ([`engine-2.4.2-lumi.1`](https://github.com/fahmi0812/Lumitome/releases/tag/engine-2.4.2-lumi.1)) + harness Swanwright, provider **9router**.
+`lumitome <subcommand> …`: semua argumen diteruskan ke `opencode`. Tanpa subcommand = TUI. Alur upgrade: `lumitome update` lalu `lumitome upgrade` (aman walau belum upgrade engine karena wrapper mendeteksi versi binary aktual, sehingga binary `2.3.0` tetap berjalan tanpa error schema).
 
 ```bash
 export NINEROUTER_API_KEY=…            # wajib; tidak pernah dicetak/ditulis wrapper
@@ -55,7 +55,7 @@ Skill: harness memakai skill & DB router miliknya sendiri (`config/skills` → `
 | `LUMI_SERVE_PASSWORD_FILE` | `$LUMI_HOME/serve.password` | file password `serve`/`web` (0600) |
 | `LUMI_HOME` | `~/.lumitome` | jurnal `runs/`, XDG data/state/cache, `sbx/` |
 | `LUMI_OPENCODE` / `LUMI_ENGINE_BIN` | `opencode` | path binary OpenCode (`LUMI_ENGINE_BIN` menang atas `LUMI_OPENCODE`) |
-| `LUMI_ENGINE_VERSION` | `OC_VERSION` | override versi target engine (mis. uji lokal `2.4.2`) |
+| `LUMI_ENGINE_VERSION` | `OC_VERSION` (atau versi binary terpasang) | override versi target engine (menang atas deteksi binary terpasang dan `OC_VERSION`, mis. `2.3.0` atau `2.4.2`) |
 | `LUMI_PROVIDER_STRICT` | `1` | `1` = strict `9router`-only via top-level `policies`; `0` = izinkan custom provider di `$LUMI_HOME/providers.json` |
 | `LUMI_COMPACTION_BACKGROUND` | `0` | `1` = aktifkan `compaction.background` khusus di TUI interaktif (headless `run` selalu `false`) |
 | `LUMI_DEBUG` | — | log jurnal, skill terpilih, cleanup |

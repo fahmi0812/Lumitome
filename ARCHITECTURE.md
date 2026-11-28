@@ -1,6 +1,6 @@
-# Arsitektur Lumitome v0.4.0
+# Arsitektur Lumitome v0.4.1
 
-Target: **OpenCode v2.3.0** (rilis GitHub anomalyco/opencode; kesiapan **OpenCode v2.4.2** via `LUMI_ENGINE_BIN` & `scripts/backup-data.sh`). Model hanya via **9router**. 931 skill di satu registry (765 bisa ter-route; 166 pack red-team tetap disabled, termasuk `api-security` & `llm-security`). Sejak v0.3.27 (satu korpus): tidak ada lagi pack nonaktif/dorman. Dokumen ini diperbarui di v0.4.0 (Lumitome Next, Wave 0–4) agar cocok dengan kode aktual (`modern-web-guidance`, MCP `tableau` & `platformio`, `default-config.mjs`, `env-compat.mjs`, `/loopdesign`, `lumitome-idle-gate`, 4-layer memory L1–L4, `SandboxProvider`, BYOP shadow mode, dan `eval-harness`).
+Target: **OpenCode v2.4.2** (`engine-2.4.2-lumi.1`, rilis GitHub `fahmi0812/Lumitome` / upstream `anomalyco/opencode`; kompatibilitas mundur otomatis ke binary `2.3.0` terpasang saat transisi `lumitome update` sebelum `lumitome upgrade`). Model hanya via **9router**. 931 skill di satu registry (765 bisa ter-route; 166 pack red-team tetap disabled, termasuk `api-security` & `llm-security`). Sejak v0.3.27 (satu korpus): tidak ada lagi pack nonaktif/dorman. Dokumen ini diperbarui di v0.4.0–v0.4.1 (Lumitome Next, Wave 0–4 + pin OpenCode v2.4.2) agar cocok dengan kode aktual (`modern-web-guidance`, MCP `tableau` & `platformio`, `default-config.mjs`, `env-compat.mjs`, `/loopdesign`, `lumitome-idle-gate`, 4-layer memory L1–L4, `SandboxProvider`, BYOP shadow mode, `eval-harness`, dan `detectInstalledEngineVersion`).
 Diagram: `docs/diagrams/arsitektur-final.png` (sistem) · `docs/diagrams/orchestrator-final.png` (alur orchestrator). Sumber Mermaid di sebelahnya.
 
 ![Arsitektur final](docs/diagrams/arsitektur-final.png)
@@ -9,7 +9,7 @@ Diagram: `docs/diagrams/arsitektur-final.png` (sistem) · `docs/diagrams/orchest
 
 | # | Lapisan | Path | Inti |
 |---|---|---|---|
-| ① | Pemasangan | `install.sh`, `scripts/doctor.sh` | OpenCode v2.3.0 / Node 22.23.4 / codebase-memory-mcp v0.12.1 / uv 0.13.6 — SHA256 terpin **dan** cocok file checksum rilis; ke `~/.lumitome` (`LUMI_HOME`); idempoten; tidak menyentuh `~/.config/opencode`; engine di-upgrade via `lumitome upgrade` (v0.3.66, tanpa argumen versi/hash) |
+| ① | Pemasangan | `install.sh`, `scripts/doctor.sh` | OpenCode v2.4.2 (`engine-2.4.2-lumi.1`) / Node 22.23.4 / codebase-memory-mcp v0.12.1 / uv 0.13.6 — SHA256 terpin **dan** cocok file checksum rilis; ke `~/.lumitome` (`LUMI_HOME`); idempoten; tidak menyentuh `~/.config/opencode`; alur upgrade: `lumitome update` lalu `lumitome upgrade` (aman walau belum upgrade engine karena deteksi versi binary aktual menjaga kompatibilitas 2.3.0) |
 | ② | OpenCode + `.opencode/` | `opencode.jsonc`, `.opencode/agents`, `rules`, `plugins`, `skills` | Orchestrator (primary) → sub-agen sektor (depth=1) → Elephant/Goldfish/Synthesizer; + 4 agen peran /subagent (Thinking/Search/Build/Review, §7). Code Mode v2 tetap aktif |
 | ③ | Skill Query Layer | `router/skill-db.mjs`, `scripts/skill-index.mjs`, `scripts/skill-query.mjs`, `router/skill-search-mcp.mjs`, `runtime/skills.db` | SQLite FTS5 BM25 (+sqlite-vec opsional), filter SQL sebelum ranking, RRF, dedup, top-24, 1 panggilan 9router pilih-saja ≤5, `route_log` |
 | ④ | MCP per sektor | `router/mcp-sectors.json`, `scripts/gen-policy.mjs`, `docs/MCP.md`, `docs/MCP-GATEWAY.md`, `config/mcp-gateway/` | deny-by-default `*_*` → allow server sektor sendiri; gateway opsional (mati) |

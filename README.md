@@ -9,13 +9,13 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.4.0-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.4.1-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
 
 Lumitome is a coding assistant that runs in your terminal. It is built on
-OpenCode, locked to version 2.3.0, and it runs separately from any OpenCode you
+OpenCode, locked to version 2.4.2, and it runs separately from any OpenCode you
 already have installed.
 
 You give it a task, such as "fix the failing tests". It reads your code, edits
@@ -29,6 +29,11 @@ security, finance, media, and misc. 765 of them can be routed to. The
 - `/stitch-ui` builds UI from a reference image.
 - `/external-tools` installs an external app and connects it to the agent.
 
+## What's new in v0.4.1
+
+- **Pinned OpenCode `2.4.2` (`engine-2.4.2-lumi.1`):** upgrades the default pinned engine across all 6 platforms (`linux`/`darwin`/`windows` x64 & arm64, both Lumitome build and upstream fallback) with verified SHA256 pins.
+- **Safe `lumitome update` → `lumitome upgrade` transition:** Lumitome automatically detects the actually installed engine binary version (reading `.flavor` tag without spawning, or `--version` fallback) so updating Lumitome before running `lumitome upgrade` stays 100% compatible with existing `2.3.0` binaries and restarts stale background services automatically once upgraded.
+
 ## What's new in v0.4.0 (Lumitome Next)
 
 - **Verifier-independent harness:** `lumitome-idle-gate` (`experimental.idle` bounded re-drive), `Repro-Before-Edit` (`INVALID_PROBE` filtering before bugfix edits), 5-field `ATTESTED` runtime witnesses (degrading to `STALE`/`UNSETTLED` on file mutation), context-stripped reviewer packets, and `HaltingWatchdog`.
@@ -36,7 +41,7 @@ security, finance, media, and misc. 765 of them can be routed to. The
 - **9router-only 3-tier cascade & token guard:** `LUMI_*` env precedence over legacy `SW_*`, deterministic 3-tier model cascade (never downgrading `thinking`, `reviewer`, or `design-critic`), and `LUMI_OVERTHINK_GUARD`.
 - **Fail-closed `SandboxProvider` & BYOP shadow mode:** unified `NoopSandbox` (default), `BwrapSandbox`, and `RemoteSandboxAdapter` (fail-closed `SANDBOX_CLOSED`), plus BYOP Guardrail Proxy defaulting to non-blocking `shadow` mode (`LUMI_BYOP_MODE=shadow`, `350 ms` timeout).
 - **Dual-mode eval & SHarP ablation:** `npm run eval` runs offline deterministic replay (`RPL-01`..`RPL-09`) or live 9router probing; `scripts/sharp-ablation.mjs` enforces permanent invariants vs prunable flags.
-- **WCAG AA light theme & OpenCode `2.4.2` readiness:** light-theme contrast fixes, top-level `policies`, `output.exitCode` / `shell-bg` tracking, and manual `2.4.2` testing via `LUMI_ENGINE_BIN` + `scripts/backup-data.sh` (pinned engine remains `2.3.0` until `engine-2.4.2-lumi.1` assets ship).
+- **WCAG AA light theme & OpenCode `2.4.2` readiness:** light-theme contrast fixes, top-level `policies`, `output.exitCode` / `shell-bg` tracking, and `scripts/backup-data.sh` (pinned engine upgraded to `2.4.2` in v0.4.1).
 
 ## Install
 
@@ -65,7 +70,7 @@ in `~/.lumitome/logs/install.log`.
 **Windows, or any system with npm:**
 
 ```bash
-npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.0.tar.gz
+npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.1.tar.gz
 ```
 
 Run it in PowerShell or Command Prompt. You do not need Git for this. The
@@ -76,7 +81,7 @@ Once Lumitome is on the npm registry, this shorter form will also work:
 npm install -g lumitome
 ```
 
-The npm install downloads OpenCode 2.3.0 for your system, checks its SHA256
+The npm install downloads OpenCode 2.4.2 for your system, checks its SHA256
 hash, and keeps it in `~/.lumitome` (on Windows: `%USERPROFILE%\.lumitome`). If
 that download fails, it tries again the first time you run `lumitome`.
 
@@ -95,14 +100,14 @@ Option A (recommended): allow scripts for your user, then run the install again.
 
 ```powershell
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
-npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.0.tar.gz
+npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.1.tar.gz
 ```
 
 Option B (changes nothing): use the `npm.cmd` shim instead, or run the same
 command in Command Prompt (`cmd.exe`).
 
 ```powershell
-npm.cmd install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.0.tar.gz
+npm.cmd install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.1.tar.gz
 ```
 
 Type the command yourself, and do not paste the terminal's output back into the
@@ -279,22 +284,26 @@ On v0.3.1, which has no `update` command, run the install line again once.
 
 ### Upgrading the OpenCode engine
 
-`lumitome update` does not change the OpenCode version. To upgrade the engine,
-run `lumitome upgrade` with no arguments. It installs the pinned version (2.3.0)
-and verifies its checksum. Restart the TUI afterwards so the new engine takes
-effect. For manual or advanced use,
-`lumitome upgrade-engine <version> --sha256 <hash>` is still available.
+`lumitome update` updates Lumitome without changing your OpenCode binary. Because
+Lumitome detects the installed binary version automatically, running
+`lumitome update` before `lumitome upgrade` stays 100% compatible with an older
+`2.3.0` engine. To upgrade the engine afterwards, run `lumitome upgrade` with no
+arguments (optional backup first: `bash scripts/backup-data.sh backup`). It
+installs the pinned version (`2.4.2`, tag `engine-2.4.2-lumi.1`) and verifies
+its checksum. Restart the TUI afterwards so the new engine takes effect. For
+manual or advanced use, `lumitome upgrade-engine <version> --sha256 <hash>` is
+still available.
 
 ### About the OpenCode copy
 
-The only change Lumitome makes to OpenCode 2.3.0 is the start-screen logo: it
+The only change Lumitome makes to OpenCode 2.4.2 is the start-screen logo: it
 says LUMITOME in gold instead of "opencode". Everything else, including the
-colors, is plain OpenCode 2.3.0.
+colors, is plain OpenCode 2.4.2.
 
-It is built from the official 2.3.0 source with OpenCode's own build script.
+It is built from the official 2.4.2 source with OpenCode's own build script.
 The change is in [`engine/patches/logo.patch`](engine/patches/logo.patch), and
 the files are on the
-[engine-2.3.0-lumi.1](https://github.com/fahmi0812/Lumitome/releases/tag/engine-2.3.0-lumi.1)
+[engine-2.4.2-lumi.1](https://github.com/fahmi0812/Lumitome/releases/tag/engine-2.4.2-lumi.1)
 release page with their SHA256 hashes. To use the unchanged official OpenCode
 instead, set `LUMI_ENGINE=upstream` before you install or run Lumitome.
 
@@ -429,12 +438,13 @@ settings), [`ARCHITECTURE.md`](ARCHITECTURE.md), [`CHANGELOG.md`](CHANGELOG.md)
 ## Bahasa Indonesia
 
 Lumitome adalah asisten coding yang berjalan di terminal. Dibangun di atas
-OpenCode versi 2.3.0 yang masih menjadi engine terpin sampai aset rilis
-`engine-2.4.2-lumi.1` terbit (uji manual OpenCode `2.4.2` sudah didukung penuh
-lewat `LUMI_ENGINE_BIN` atau `lumitome upgrade-engine` + `scripts/backup-data.sh`),
+OpenCode versi **2.4.2** terpin ([`engine-2.4.2-lumi.1`](https://github.com/fahmi0812/Lumitome/releases/tag/engine-2.4.2-lumi.1)),
 dan terpisah dari OpenCode yang sudah Anda pasang.
 
-**Yang baru di v0.4.0 (Lumitome Next):** verifier-independent gates
+**Yang baru di v0.4.1 & v0.4.0:** engine terpin naik ke OpenCode `2.4.2`
+(`engine-2.4.2-lumi.1`, 6 platform) dengan deteksi versi binary terpasang agar
+alur `lumitome update` → `lumitome upgrade` tetap 100% aman bagi pengguna `2.3.0`,
+melanjutkan fitur Lumitome Next v0.4.0: verifier-independent gates
 (`lumitome-idle-gate`, `Repro-Before-Edit` + `INVALID_PROBE`, witness
 `ATTESTED` 5-field & degradasi `STALE`/`UNSETTLED`, reviewer bebas-narasi,
 `HaltingWatchdog`), memori selektif 4-lapis (L1–L4) + ledger FTS5-BM25 +
@@ -445,9 +455,9 @@ Monotonic Sticky Taint, cascade 3-tier khusus `9router` + `LUMI_OVERTHINK_GUARD`
 **Pasang** (selalu memasang rilis bertag, bukan isi `main`):
 
 - Linux/macOS: jalankan baris `curl ... install.sh | bash` di atas. Versi
-  tertentu: `LUMI_REF=v0.4.0 bash`; versi pengembangan: `LUMI_REF=main bash`.
+  tertentu: `LUMI_REF=v0.4.1 bash`; versi pengembangan: `LUMI_REF=main bash`.
 - Windows (atau OS apa pun yang punya npm, butuh Node.js 22.6+):
-  `npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.0.tar.gz`.
+  `npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.1.tar.gz`.
   Setelah terbit di npm: `npm install -g lumitome`.
 
 **Mulai:** ketik `lumitome`. Kalau belum ada provider, layar provider muncul
@@ -456,11 +466,15 @@ API key; key tampil sebagai titik (•). Layanan apa pun yang mirip API OpenAI
 atau Anthropic bisa dipakai. Daftar model diambil otomatis. Pilih model dengan
 `/model`.
 
-**Update:** `lumitome update`. Cek dulu dengan `lumitome update --check`, batalkan
-dengan `lumitome update --rollback`. **Upgrade engine:** `lumitome upgrade` (tanpa
-argumen; menaikkan engine OpenCode ke versi terpin 2.3.0 dengan checksum terverifikasi;
-restart TUI sesudahnya; untuk uji manual `2.4.2`, pakai `LUMI_ENGINE_BIN` atau
-`lumitome upgrade-engine <versi> --sha256 <hash>` setelah `bash scripts/backup-data.sh`).
+**Update & Upgrade engine:** jalankan `lumitome update` lalu `lumitome upgrade`
+(opsional backup sebelum upgrade: `bash scripts/backup-data.sh backup`).
+`lumitome update` aman dijalankan sebelum `lumitome upgrade` karena Lumitome
+mendeteksi versi binary engine yang terpasang secara otomatis (tetap kompatibel
+dengan binary `2.3.0`). Cek update dulu dengan `lumitome update --check`,
+batalkan dengan `lumitome update --rollback`. `lumitome upgrade` (tanpa argumen)
+menaikkan engine OpenCode ke versi terpin `2.4.2` (`engine-2.4.2-lumi.1`)
+dengan checksum terverifikasi; restart TUI sesudahnya (untuk manual:
+`lumitome upgrade-engine <versi> --sha256 <hash>`).
 
 **Keamanan:** secara default mode auto menyala dan sandbox mati (`NoopSandbox`),
 jadi agen menjalankan perintah tanpa bertanya. Yang selalu diblokir: membaca

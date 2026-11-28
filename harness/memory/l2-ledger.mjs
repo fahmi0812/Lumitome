@@ -61,7 +61,7 @@ function sanitizeMeta(meta) {
   }
 }
 
-export function buildLedgerFtsQuery(query) {
+export function buildLedgerFtsQuery(query, { operator = "OR" } = {}) {
   const words = String(query ?? "")
     .toLowerCase()
     .normalize("NFKD")
@@ -70,7 +70,8 @@ export function buildLedgerFtsQuery(query) {
     .filter((w) => w.length >= 2);
   const uniq = [...new Set(words)].slice(0, 16);
   if (!uniq.length) return null;
-  return uniq.map((w) => (w.length >= 4 ? `"${w}"*` : `"${w}"`)).join(" OR ");
+  const sep = operator === "AND" ? " " : " OR ";
+  return uniq.map((w) => (w.length >= 4 ? `"${w}"*` : `"${w}"`)).join(sep);
 }
 
 export function openLedgerDb(dbPath) {
@@ -203,12 +204,17 @@ export class L2Ledger {
 
   searchFts(query, { limit = 10, sessionId = null } = {}) {
     const t0 = performance.now();
-    const fts = buildLedgerFtsQuery(query);
-    if (!fts) return { hits: [], ms: Number((performance.now() - t0).toFixed(3)) };
+    const ftsAnd = buildLedgerFtsQuery(query, { operator: "AND" });
+    if (!ftsAnd) return { hits: [], ms: Number((performance.now() - t0).toFixed(3)) };
+    const ftsOr = buildLedgerFtsQuery(query, { operator: "OR" });
     const lim = Math.max(1, Math.min(100, Number(limit) || 10));
-    const rows = sessionId
+    const runMatch = (fts) => (sessionId
       ? this.#searchSessionStmt.all(fts, String(sessionId), lim)
-      : this.#searchStmt.all(fts, lim);
+      : this.#searchStmt.all(fts, lim));
+    let rows = runMatch(ftsAnd);
+    if (rows.length === 0 && ftsOr && ftsOr !== ftsAnd) {
+      rows = runMatch(ftsOr);
+    }
     const hits = rows.map((r) => {
       const tainted = r.taint_state === "tainted_external";
       return {
