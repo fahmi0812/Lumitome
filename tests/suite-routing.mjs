@@ -362,40 +362,94 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
       && bTrivial.maxSteps < bThinking.maxSteps
       && bOff.overthinkGuardActive === false && bOff.maxSteps === null);
 
-    // 2) T3.3 & T3.5 Cascade Router (9router-only, fallback, never-downgrade, LUMI_PLAN_PREPASS)
-    const avail = ["ag/gemini-3.8-flash-high", "kr/claude-opus-5.5-thinking-agentic"];
+    // 2) T3.3 & T3.5 Cascade Router (9router-only, session-model compaction, preset-only title/generate, never-downgrade, LUMI_PLAN_PREPASS)
+    const avail = ["antigravity/gemini-3.6-flash-high", "ag/gemini-3.8-flash-high", "kr/claude-opus-5.5-thinking-agentic"];
+    const preset = {
+      enabled: true,
+      roles: {
+        search: { active: true, model: "9router/ag/gemini-3.8-flash-high" },
+        thinking: { active: true, model: "9router/kr/claude-opus-5.5-thinking-agentic" },
+        reviewer: { active: true, model: "9router/kr/claude-opus-5.5-thinking-agentic" },
+      },
+    };
     const customPassthrough = CC.resolveCascadeModel({
       event: { kind: "title", agent: "orchestrator", model: { providerID: "anthropic", id: "claude-3" } },
+      preset,
       availableModels: avail,
       profiles,
     });
-    const auxTitle = CC.resolveCascadeModel({
+    const auxTitleNoPreset = CC.resolveCascadeModel({
       event: { kind: "title", agent: "orchestrator", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
       availableModels: avail,
       profiles,
+    });
+    const auxGenNoPreset = CC.resolveCascadeModel({
+      event: { kind: "generate", agent: "orchestrator", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      availableModels: avail,
+      profiles,
+    });
+    const auxTitlePreset = CC.resolveCascadeModel({
+      event: { kind: "title", agent: "orchestrator", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      preset,
+      availableModels: avail,
+      profiles,
+    });
+    const auxGenEnv = CC.resolveCascadeModel({
+      event: { kind: "generate", agent: "orchestrator", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      availableModels: avail,
+      profiles,
+      env: { LUMI_TITLE_MODEL: "9router/ag/gemini-3.8-flash-high" },
     });
     const fallbackNoFlash = CC.resolveCascadeModel({
       event: { kind: "title", agent: "orchestrator", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      preset,
       availableModels: ["kr/claude-opus-5.5-thinking-agentic"],
       profiles,
     });
+    const compactionRolesOk = ["orchestrator", "thinking", "search", "builder", "reviewer"].every((role) => {
+      const r = CC.resolveCascadeModel({
+        event: { kind: "compaction", agent: role, model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+        preset,
+        availableModels: avail,
+        profiles,
+      });
+      return r.changed === false && r.model.providerID === "9router" && r.model.id === "kr/claude-opus-5.5-thinking-agentic" && r.reason === "compaction-session-model";
+    });
+    const compactionExplicit = CC.resolveCascadeModel({
+      event: { kind: "compaction", agent: "orchestrator", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      preset,
+      availableModels: avail,
+      profiles,
+      env: { LUMI_COMPACTION_MODEL: "9router/ag/gemini-3.8-flash-high" },
+    });
+    const compactionExplicitMissing = CC.resolveCascadeModel({
+      event: { kind: "compaction", agent: "orchestrator", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      preset,
+      availableModels: avail,
+      profiles,
+      env: { LUMI_COMPACTION_MODEL: "9router/ag/tidak-ada" },
+    });
     const neverThink = CC.resolveCascadeModel({
       event: { kind: "primary", agent: "thinking", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      preset,
       availableModels: avail,
       profiles,
     });
     const neverReviewer = CC.resolveCascadeModel({
       event: { kind: "primary", agent: "reviewer", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      preset,
       availableModels: avail,
       profiles,
     });
     const neverCritic = CC.resolveCascadeModel({
       event: { kind: "primary", agent: "design-critic", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      preset,
       availableModels: avail,
       profiles,
     });
     const cascadeOff = CC.resolveCascadeModel({
       event: { kind: "title", agent: "orchestrator", model: { providerID: "9router", id: "kr/claude-opus-5.5-thinking-agentic" } },
+      preset,
       availableModels: avail,
       profiles,
       env: { LUMI_CASCADE: "0" },
@@ -404,9 +458,15 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
     const prepassTrivial = CC.resolvePlanPrepass({ role: "builder", taskComplexity: "trivial", env: { LUMI_PLAN_PREPASS: "1" }, profiles });
     const prepassOff = CC.resolvePlanPrepass({ role: "thinking", taskComplexity: "thinking", env: { LUMI_PLAN_PREPASS: "0" }, profiles });
 
-    ok("T3.3/T3.5 cascade-core: providerID=9router invariant, fallback live, never-downgrade thinking/reviewer/design-critic, LUMI_PLAN_PREPASS 0/1",
+    ok("T3.3/T3.5 cascade-core: compaction=session-model, preset-only title/generate (tanpa blind glob), LUMI_COMPACTION_MODEL/LUMI_TITLE_MODEL, providerID=9router, never-downgrade, LUMI_PLAN_PREPASS 0/1",
       customPassthrough.changed === false && customPassthrough.providerID === "anthropic"
-      && auxTitle.model.providerID === "9router" && auxTitle.model.id === "ag/gemini-3.8-flash-high"
+      && compactionRolesOk
+      && compactionExplicit.changed === true && compactionExplicit.model.id === "ag/gemini-3.8-flash-high" && compactionExplicit.reason === "explicit-compaction-model"
+      && compactionExplicitMissing.changed === false && compactionExplicitMissing.fallback === true && compactionExplicitMissing.model.id === "kr/claude-opus-5.5-thinking-agentic"
+      && auxTitleNoPreset.changed === false && auxTitleNoPreset.model.id === "kr/claude-opus-5.5-thinking-agentic"
+      && auxGenNoPreset.changed === false && auxGenNoPreset.model.id === "kr/claude-opus-5.5-thinking-agentic"
+      && auxTitlePreset.changed === true && auxTitlePreset.model.providerID === "9router" && auxTitlePreset.model.id === "ag/gemini-3.8-flash-high"
+      && auxGenEnv.changed === true && auxGenEnv.model.providerID === "9router" && auxGenEnv.model.id === "ag/gemini-3.8-flash-high"
       && fallbackNoFlash.changed === false && fallbackNoFlash.fallback === true && fallbackNoFlash.model.id === "kr/claude-opus-5.5-thinking-agentic"
       && neverThink.model.providerID === "9router" && neverThink.model.id === "kr/claude-opus-5.5-thinking-agentic"
       && neverReviewer.model.id === "kr/claude-opus-5.5-thinking-agentic"

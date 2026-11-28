@@ -99,7 +99,7 @@ async function confirm(q, out = process.stderr) {
 /** Setelah update: migrasi config & hentikan service lama milik LUMI_HOME (diam-diam; gagal tidak fatal). */
 async function afterUpdate({ repo, home, log }) {
   try { const mf = path.join(repo, "lumitome", "lib", "config-migrate.mjs");
-    if (fs.existsSync(mf)) { const M = await import(pathToFileURL(mf).href); if (M.migrateConfigFile(path.join(home, "config", "opencode.jsonc"))) log("config dimigrasi"); } } catch (e) { log(`migrasi: ${e.message}`); }
+    if (fs.existsSync(mf)) { const M = await import(pathToFileURL(mf).href); if (M.migrateConfigFile(path.join(home, "config", "opencode.jsonc"))) log("config dimigrasi"); if (M.migrateEnvFile(path.join(home, "env.sh"))) log("env.sh dimigrasi"); } } catch (e) { log(`migrasi: ${e.message}`); }
   try { const sf = path.join(repo, "lumitome", "lib", "service-ctl.mjs");
     if (fs.existsSync(sf)) { const S = await import(pathToFileURL(sf).href); if (S.stop(home)) log("service lama dihentikan"); } } catch (e) { log(`service: ${e.message}`); }
 }

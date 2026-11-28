@@ -669,6 +669,38 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
     } finally {
       for (const [k, v] of Object.entries(prevEnv)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
     }
+
+    // 6) Regresi: workspace non-git dengan 4x edit file berbeda + isi berubah -> tetap OK
+    {
+      const os25 = await import("node:os");
+      const nonGitDir = fs.mkdtempSync(path.join(os25.tmpdir(), "lumi-nongit-wd-"));
+      try {
+        const dogNonGit = new WD.HaltingWatchdog({ workspace: nonGitDir, sessionId: "ses_nongit" });
+        let vNg = null;
+        for (let i = 1; i <= 4; i++) {
+          const fp = path.join(nonGitDir, `file${i}.mjs`);
+          fs.writeFileSync(fp, `export const v = ${i};
+`);
+          vNg = dogNonGit.recordStep({ tool: "edit", input: { filePath: fp }, ok: true });
+        }
+        ok("T2.5 regresi: 4x edit file berbeda di workspace non-git tidak false-positive zero-progress-streak",
+          vNg.verdict === "OK" && dogNonGit.zeroProgressStreak === 0);
+      } finally {
+        fs.rmSync(nonGitDir, { recursive: true, force: true });
+      }
+    }
+
+    // 7) Regresi: serangkaian perintah verifikasi sukses yang berbeda pasca-edit -> tetap OK
+    {
+      const dogVer = new WD.HaltingWatchdog({ workspace: ws25, sessionId: "ses_verify_seq" });
+      dogVer.recordStep({ tool: "edit", input: { filePath: "a.ts" }, ok: true, snapshot: { diffHash: "d1", statusHash: "s1" } });
+      let vVer = null;
+      for (const cmd of ["npm run lint", "npm run validate", "npm run eval", "npm test"]) {
+        vVer = dogVer.recordStep({ tool: "shell", input: { command: cmd }, ok: true, exitCode: 0, snapshot: { diffHash: "d1", statusHash: "s1" } });
+      }
+      ok("T2.5 regresi: 4 perintah verifikasi sukses berbeda beruntun tidak false-positive zero-progress-streak",
+        vVer.verdict === "OK" && dogVer.zeroProgressStreak === 0);
+    }
   } finally {
     fs.rmSync(ws25, { recursive: true, force: true });
   }

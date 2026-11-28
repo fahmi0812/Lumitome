@@ -366,6 +366,51 @@ import { ok, finish } from "./harness.mjs";
   fs.writeFileSync(cf, '{ "compaction": { "auto": true, "buffer": 5000 } }\r\n');
   ok("migrasi: buffer pilihan user (5000) tidak disentuh", !CM12.migrateConfigFile(cf) && fs.readFileSync(cf, "utf8").includes('"buffer": 5000'));
   ok("migrasi: file tidak ada → aman", CM12.migrateConfigFile(path.join(h, "tidak-ada.jsonc")) === false);
+
+  // v0.4.2: migrasi env.sh (SW_9ROUTER_URL / SW_9ROUTER_KEY → LUMI_9ROUTER_URL / LUMI_KEY_9ROUTER)
+  const envOld2 = [
+    "# Dibangkitkan install.sh Lumitome 0.3.20 — SW_9ROUTER_URL tetap komentar",
+    'export SW_9ROUTER_URL="${SW_9ROUTER_URL:-http://127.0.0.1:20128/v1}"',
+    'export SW_9ROUTER_KEY="${SW_9ROUTER_KEY:-9router}"',
+    "",
+  ].join("\r\n");
+  const envMigrated2 = CM12.migrateEnvText(envOld2);
+  ok("migrasi env.sh (format lama 2 baris): ubah LHS+fallback, komentar utuh, CRLF dipertahankan, idempoten",
+    envMigrated2.includes("# Dibangkitkan install.sh Lumitome 0.3.20 — SW_9ROUTER_URL tetap komentar")
+    && envMigrated2.includes('export LUMI_9ROUTER_URL="${LUMI_9ROUTER_URL:-http://127.0.0.1:20128/v1}"')
+    && envMigrated2.includes('export LUMI_KEY_9ROUTER="${LUMI_KEY_9ROUTER:-9router}"')
+    && envMigrated2.includes("\r\n")
+    && CM12.migrateEnvText(envMigrated2) === envMigrated2);
+
+  const envCombined = 'export SW_9ROUTER_URL="http://127.0.0.1:20128/v1" SW_9ROUTER_KEY="mykey"\n';
+  const envCombinedOut = CM12.migrateEnvText(envCombined);
+  ok("migrasi env.sh (format gabungan 1 baris): ubah sisi kiri = saja & idempoten",
+    envCombinedOut === 'export LUMI_9ROUTER_URL="http://127.0.0.1:20128/v1" LUMI_KEY_9ROUTER="mykey"\n'
+    && CM12.migrateEnvText(envCombinedOut) === envCombinedOut);
+
+  const envModern = [
+    'export LUMI_9ROUTER_URL="${LUMI_9ROUTER_URL:-${SW_9ROUTER_URL:-http://127.0.0.1:20128/v1}}"',
+    'export LUMI_KEY_9ROUTER="${LUMI_KEY_9ROUTER:-${SW_9ROUTER_KEY:-9router}}"',
+    "",
+  ].join("\n");
+  ok("migrasi env.sh (format modern): ${SW_9ROUTER_*} di sisi kanan tidak disentuh & idempoten",
+    CM12.migrateEnvText(envModern) === envModern);
+
+  const envFile = path.join(h, "env.sh");
+  fs.writeFileSync(envFile, envOld2, "utf8");
+  const envChanged1 = CM12.migrateEnvFile(envFile);
+  const envChanged2 = CM12.migrateEnvFile(envFile);
+  const envAfter = fs.readFileSync(envFile, "utf8");
+  const envLink = path.join(h, "env-link.sh");
+  fs.symlinkSync(envFile, envLink);
+  ok("migrasi env.sh file: tulis hanya saat berubah, idempoten, symlink/tidak-ada aman, update.mjs & lumitome.mjs memanggil migrateEnvFile",
+    envChanged1 === true && envChanged2 === false
+    && envAfter.includes('export LUMI_9ROUTER_URL="${LUMI_9ROUTER_URL:-http://127.0.0.1:20128/v1}"')
+    && CM12.migrateEnvFile(envLink) === false
+    && CM12.migrateEnvFile(path.join(h, "tidak-ada-env.sh")) === false
+    && /migrateEnvFile/.test(W12)
+    && /migrateEnvFile/.test(fs.readFileSync("lumitome/lib/update.mjs", "utf8")));
+
   fs.rmSync(h, { recursive: true, force: true }); fs.rmSync(h2, { recursive: true, force: true });
 }
 

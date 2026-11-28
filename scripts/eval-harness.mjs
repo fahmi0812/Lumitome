@@ -591,6 +591,16 @@ async function runRpl08(scenario, { repoRoot, env = process.env }) {
     });
     assertCond(fb.model.providerID === "9router" && fb.model.id === "ag/custom-only", "fallback deterministik ke model sesi gagal");
 
+    // Regresi v0.4.2: compaction dengan antigravity/gemini-3.6-flash-high di availableModels tetap mempertahankan model sesi aktif
+    const compAvail = ["antigravity/gemini-3.6-flash-high", ...avail];
+    const compRes = resolveCascadeModel({
+      event: { kind: "compaction", agent: "orchestrator", model: { providerID: "9router", id: "ag/claude-opus-4-6" } },
+      preset,
+      availableModels: compAvail,
+      env: {},
+    });
+    assertCond(compRes.changed === false && compRes.model.providerID === "9router" && compRes.model.id === "ag/claude-opus-4-6", "compaction tidak boleh berpindah ke antigravity/gemini-3.6-flash-high");
+
     // LUMI_PLAN_PREPASS & LUMI_OVERTHINK_GUARD
     const ppOn = resolvePlanPrepass({ role: "thinking", env: { ...env, LUMI_PLAN_PREPASS: env?.LUMI_PLAN_PREPASS ?? "1" } });
     const ppOff = resolvePlanPrepass({ role: "thinking", env: { ...env, LUMI_PLAN_PREPASS: "0" } });

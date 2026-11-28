@@ -35,7 +35,8 @@ const isoEnv = () => ({ ...env, XDG_CONFIG_HOME: path.join(ISO_HOME, "xdg-config
 const sub = argv[0] && !argv[0].startsWith("-") ? argv[0] : "";
 // v0.3.12: migrasi salinan config lama ("buffer": "20%", {env:NINEROUTER_API_KEY}) — juga terpanggil oleh cek pasca-update
 try { const CM0 = await import(pathToFileURL(path.join(ROOT, "lib", "config-migrate.mjs")).href);
-  CM0.migrateConfigFile(path.join(ISO_HOME, "config", "opencode.jsonc")); } catch {}
+  CM0.migrateConfigFile(path.join(ISO_HOME, "config", "opencode.jsonc"));
+  CM0.migrateEnvFile(path.join(ISO_HOME, "env.sh")); } catch {}
 if (argv[0] === "--version" || argv[0] === "-v") {
   let oc = "?"; try { oc = execFileSync(ocBin(), ["--version"], { encoding: "utf8", env: isoEnv() }).trim(); } catch {}
   console.log(`lumitome ${VERSION} (${oc})`); process.exit(0);

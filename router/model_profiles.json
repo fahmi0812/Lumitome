@@ -3,6 +3,8 @@
   "prunable": true,
   "feature_flag": "LUMI_CASCADE_ROUTING",
   "providerID": "9router",
+  "compaction_policy": "session-model",
+  "catalog_glob_disabled": true,
   "never_downgrade_roles": ["thinking", "reviewer", "design-critic"],
   "never_downgrade_tasks": ["security", "architecture"],
   "plan_prepass": {
