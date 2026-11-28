@@ -367,7 +367,7 @@ import { ok, finish } from "./harness.mjs";
   ok("migrasi: buffer pilihan user (5000) tidak disentuh", !CM12.migrateConfigFile(cf) && fs.readFileSync(cf, "utf8").includes('"buffer": 5000'));
   ok("migrasi: file tidak ada → aman", CM12.migrateConfigFile(path.join(h, "tidak-ada.jsonc")) === false);
 
-  // v0.4.2: migrasi env.sh (SW_9ROUTER_URL / SW_9ROUTER_KEY → LUMI_9ROUTER_URL / LUMI_KEY_9ROUTER)
+  // v0.4.2 + v0.4.3: migrasi env.sh (SW_9ROUTER_URL / SW_9ROUTER_KEY → LUMI_9ROUTER_URL / LUMI_KEY_9ROUTER + hapus dummy :-9router)
   const envOld2 = [
     "# Dibangkitkan install.sh Lumitome 0.3.20 — SW_9ROUTER_URL tetap komentar",
     'export SW_9ROUTER_URL="${SW_9ROUTER_URL:-http://127.0.0.1:20128/v1}"',
@@ -375,26 +375,49 @@ import { ok, finish } from "./harness.mjs";
     "",
   ].join("\r\n");
   const envMigrated2 = CM12.migrateEnvText(envOld2);
-  ok("migrasi env.sh (format lama 2 baris): ubah LHS+fallback, komentar utuh, CRLF dipertahankan, idempoten",
+  ok("migrasi env.sh (format lama): URL dimigrasi, dummy SW_9ROUTER_KEY:-9router dihapus, komentar utuh, CRLF dipertahankan, idempoten",
     envMigrated2.includes("# Dibangkitkan install.sh Lumitome 0.3.20 — SW_9ROUTER_URL tetap komentar")
     && envMigrated2.includes('export LUMI_9ROUTER_URL="${LUMI_9ROUTER_URL:-http://127.0.0.1:20128/v1}"')
-    && envMigrated2.includes('export LUMI_KEY_9ROUTER="${LUMI_KEY_9ROUTER:-9router}"')
+    && !/SW_9ROUTER_KEY|LUMI_KEY_9ROUTER/.test(envMigrated2)
     && envMigrated2.includes("\r\n")
     && CM12.migrateEnvText(envMigrated2) === envMigrated2);
 
   const envCombined = 'export SW_9ROUTER_URL="http://127.0.0.1:20128/v1" SW_9ROUTER_KEY="mykey"\n';
   const envCombinedOut = CM12.migrateEnvText(envCombined);
-  ok("migrasi env.sh (format gabungan 1 baris): ubah sisi kiri = saja & idempoten",
+  const envRealStandalone = 'export SW_9ROUTER_KEY="sk-real"\nexport LUMI_KEY_9ROUTER="sk-keep"\n# export LUMI_KEY_9ROUTER="${LUMI_KEY_9ROUTER:-9router}"\n';
+  ok("migrasi env.sh (key asli user): SW_9ROUTER_KEY=mykey/sk-real dimigrasi, komentar & LUMI_KEY_9ROUTER asli utuh, idempoten",
     envCombinedOut === 'export LUMI_9ROUTER_URL="http://127.0.0.1:20128/v1" LUMI_KEY_9ROUTER="mykey"\n'
-    && CM12.migrateEnvText(envCombinedOut) === envCombinedOut);
+    && CM12.migrateEnvText(envCombinedOut) === envCombinedOut
+    && CM12.migrateEnvText(envRealStandalone) === 'export LUMI_KEY_9ROUTER="sk-real"\nexport LUMI_KEY_9ROUTER="sk-keep"\n# export LUMI_KEY_9ROUTER="${LUMI_KEY_9ROUTER:-9router}"\n');
 
   const envModern = [
     'export LUMI_9ROUTER_URL="${LUMI_9ROUTER_URL:-${SW_9ROUTER_URL:-http://127.0.0.1:20128/v1}}"',
     'export LUMI_KEY_9ROUTER="${LUMI_KEY_9ROUTER:-${SW_9ROUTER_KEY:-9router}}"',
+    'export LUMI_KEY_9ROUTER="${LUMI_KEY_9ROUTER:-9router}"',
     "",
   ].join("\n");
-  ok("migrasi env.sh (format modern): ${SW_9ROUTER_*} di sisi kanan tidak disentuh & idempoten",
-    CM12.migrateEnvText(envModern) === envModern);
+  const envModernOut = CM12.migrateEnvText(envModern);
+  ok("migrasi env.sh (format v0.4.0-v0.4.2): dummy :-9router dihapus, ${SW_9ROUTER_URL:-...} di RHS tidak disentuh & idempoten",
+    envModernOut === 'export LUMI_9ROUTER_URL="${LUMI_9ROUTER_URL:-${SW_9ROUTER_URL:-http://127.0.0.1:20128/v1}}"\n'
+    && CM12.migrateEnvText(envModernOut) === envModernOut);
+
+  // v0.4.3: placeholder dummy "9router" tidak boleh menimpa key asli di credentials.json
+  const hReal = fs.mkdtempSync(path.join(osm.tmpdir(), "lumi-ph-"));
+  fs.writeFileSync(path.join(hReal, "providers.json"), JSON.stringify({ providers: { "9router": { type: "openai", baseURL: "http://127.0.0.1:1/v1", models: ["m"] } } }));
+  fs.writeFileSync(path.join(hReal, "credentials.json"), JSON.stringify({ "9router": "k-real" }));
+  const fragPhLumi = PV12.opencodeFragment(hReal, { LUMI_KEY_9ROUTER: "9router" });
+  const fragPhSw = PV12.opencodeFragment(hReal, { SW_9ROUTER_KEY: "9router" });
+  const fragEnvReal = PV12.opencodeFragment(hReal, { LUMI_KEY_9ROUTER: "k-env-real" });
+  const fragEmptyFallback = PV12.opencodeFragment(h2, { LUMI_KEY_9ROUTER: "9router" });
+  const instSh43 = fs.readFileSync("install.sh", "utf8");
+  fs.rmSync(hReal, { recursive: true, force: true });
+  ok("placeholder 9router: dummy LUMI_KEY_9ROUTER/SW_9ROUTER_KEY='9router' tidak menimpa credentials.json, env key asli menang, kosong tetap fallback, install.sh bebas :-9router",
+    PV12.PLACEHOLDER_9ROUTER_KEY === "9router"
+    && fragPhLumi.env.LUMI_KEY_9ROUTER === "k-real" && fragPhLumi.env.NINEROUTER_API_KEY === "k-real"
+    && fragPhSw.env.LUMI_KEY_9ROUTER === "k-real" && fragPhSw.env.NINEROUTER_API_KEY === "k-real"
+    && fragEnvReal.env.LUMI_KEY_9ROUTER === "k-env-real" && fragEnvReal.env.NINEROUTER_API_KEY === "k-env-real"
+    && fragEmptyFallback.env.LUMI_KEY_9ROUTER === "9router" && fragEmptyFallback.env.NINEROUTER_API_KEY === "9router"
+    && !/:-9router/.test(instSh43) && !/export LUMI_KEY_9ROUTER=/.test(instSh43));
 
   const envFile = path.join(h, "env.sh");
   fs.writeFileSync(envFile, envOld2, "utf8");

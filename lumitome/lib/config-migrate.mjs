@@ -32,23 +32,28 @@ export function migrateConfigFile(file) {
   return true;
 }
 
+const DUMMY_9ROUTER_EXPORT_RE = /^\s*export\s+(?:LUMI_KEY_9ROUTER|SW_9ROUTER_KEY)=[\x22\x27]?\$\{(?:LUMI_KEY_9ROUTER|SW_9ROUTER_KEY):-(?:\$\{SW_9ROUTER_KEY:-)?9router\}?\}[\x22\x27]?\s*$/; // env-compat-allow
+
 /**
- * Migrasi env.sh lama (SW_9ROUTER_URL / SW_9ROUTER_KEY) ke LUMI_9ROUTER_URL / LUMI_KEY_9ROUTER.
+ * Migrasi env.sh lama (SW_9ROUTER_URL / SW_9ROUTER_KEY) ke LUMI_9ROUTER_URL / LUMI_KEY_9ROUTER
+ * serta hapus baris ekspor placeholder dummy `:-9router` bawaan install.sh lama maupun v0.4.0-v0.4.2.
  * - Baris komentar (# ...) tidak disentuh.
  * - Baris modern (`export LUMI_9ROUTER_URL="${LUMI_9ROUTER_URL:-${SW_9ROUTER_URL:-...}}"`) tidak disentuh.
+ * - Ekspor key asli milik user dipertahankan (SW_9ROUTER_KEY="sk-..." -> LUMI_KEY_9ROUTER="sk-...").
  * - CRLF/LF dipertahankan dan 100% idempoten.
  */
 export function migrateEnvText(t) {
-  return String(t).split("\n").map((rawLine) => {
+  return String(t).split("\n").flatMap((rawLine) => {
     const hasCr = rawLine.endsWith("\r");
     const line = hasCr ? rawLine.slice(0, -1) : rawLine;
-    if (/^\s*#/.test(line)) return rawLine;
+    if (/^\s*#/.test(line)) return [rawLine];
+    if (DUMMY_9ROUTER_EXPORT_RE.test(line)) return [];
     const next = line
       .replace(/(^|[\s;])SW_9ROUTER_URL=(["']?)\$\{SW_9ROUTER_URL:-/g, "$1LUMI_9ROUTER_URL=$2${LUMI_9ROUTER_URL:-") // env-compat-allow
       .replace(/(^|[\s;])SW_9ROUTER_KEY=(["']?)\$\{SW_9ROUTER_KEY:-/g, "$1LUMI_KEY_9ROUTER=$2${LUMI_KEY_9ROUTER:-") // env-compat-allow
       .replace(/(^|[\s;])SW_9ROUTER_URL=/g, "$1LUMI_9ROUTER_URL=") // env-compat-allow
       .replace(/(^|[\s;])SW_9ROUTER_KEY=/g, "$1LUMI_KEY_9ROUTER="); // env-compat-allow
-    return hasCr ? next + "\r" : next;
+    return [hasCr ? next + "\r" : next];
   }).join("\n");
 }
 

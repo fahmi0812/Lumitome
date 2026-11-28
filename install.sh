@@ -354,7 +354,7 @@ export LUMI_HOME="$SW_HOME" LUMI_OPENCODE="$BIN/opencode"
 case ":\$PATH:" in *":$BIN:"*) ;; *) export PATH="$BIN:\$PATH";; esac
 ${NODE_DIR:+case ":\$PATH:" in *":$NODE_DIR/bin:"*) ;; *) export PATH="$NODE_DIR/bin:\$PATH";; esac}
 export LUMI_9ROUTER_URL="\${LUMI_9ROUTER_URL:-\${SW_9ROUTER_URL:-http://127.0.0.1:20128/v1}}"
-export LUMI_KEY_9ROUTER="\${LUMI_KEY_9ROUTER:-\${SW_9ROUTER_KEY:-9router}}"
+# API key 9router disimpan lewat 'lumitome connect' (credentials.json) atau LUMI_KEY_9ROUTER di secrets.env
 # Token opsional (GITHUB_PERSONAL_ACCESS_TOKEN, LUMI_MCP_TOKEN_<SEKTOR>, CONTEXT7_API_KEY) → \$LUMI_HOME/secrets.env
 [ -f "\$LUMI_HOME/secrets.env" ] && set -a && . "\$LUMI_HOME/secrets.env" && set +a
 true
