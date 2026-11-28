@@ -195,6 +195,8 @@ export class HaltingWatchdog {
     this.zeroProgressStreak = 0;
     this.lastFingerprint = null;
     this.visitedFingerprints = new Set();
+    this.fileHashes = new Map();
+    this.succeededCmdsSinceMutation = new Set();
     this.window = [];
     this.errorCounts = new Map();
     this.deadEnds = [];
@@ -317,6 +319,23 @@ export class HaltingWatchdog {
     const didMutate = mutating === true || isMutatingCall(t, input);
     if (didMutate) this.hasMutations = true;
 
+    let resolvedTarget = "";
+    if (didMutate && ok !== false) {
+      const targetPath = input?.filePath ?? input?.path ?? input?.file ?? "";
+      if (targetPath) {
+        const p = String(targetPath).trim();
+        resolvedTarget = this.workspace ? path.resolve(this.workspace, p) : path.resolve(p);
+        try {
+          if (fs.existsSync(resolvedTarget) && fs.statSync(resolvedTarget).isFile()) {
+            this.fileHashes.set(resolvedTarget, sha256(fs.readFileSync(resolvedTarget)));
+          }
+        } catch {}
+      }
+    }
+    if (didMutate || ok === false) {
+      this.succeededCmdsSinceMutation.clear();
+    }
+
     this.window.push({ tool: t, norm, sig, ok: ok !== false, lookupOnly });
     if (this.window.length > this.windowSize) this.window.shift();
 
@@ -332,10 +351,28 @@ export class HaltingWatchdog {
 
     // Progress delta hanya dilacak saat sesi sudah bermutasi (anti-false-positive sesi riset/baca murni)
     if (this.hasMutations && !lookupOnly) {
+      let snapDiffHash = snapshot?.diffHash;
+      let snapStatusHash = snapshot?.statusHash;
+      if (!snapshot && this.workspace) {
+        let gitSnap = readGitDiffSnapshot(this.workspace);
+        if (!gitSnap.hasGit && resolvedTarget) {
+          const subSnap = readGitDiffSnapshot(path.dirname(resolvedTarget));
+          if (subSnap.hasGit) gitSnap = subSnap;
+        }
+        if (!gitSnap.hasGit || this.fileHashes.size > 0) {
+          const fileDigest = [...this.fileHashes.entries()]
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([k, v]) => `${k}:${v}`)
+            .join("|");
+          snapDiffHash = fileDigest ? sha256(`${gitSnap.diffHash}|${fileDigest}`) : gitSnap.diffHash;
+          snapStatusHash = gitSnap.statusHash;
+        }
+      }
+
       const fp = snapshot?.fingerprint || computeProgressFingerprint({
         workspace: snapshot ? undefined : this.workspace,
-        diffHash: snapshot?.diffHash,
-        statusHash: snapshot?.statusHash,
+        diffHash: snapDiffHash,
+        statusHash: snapStatusHash,
         testOutputHash: snapshot?.testOutputHash ?? "",
         testStatus: snapshot?.testStatus ?? (exitCode !== null ? `exit:${exitCode}` : ok === false ? "fail" : "ok"),
         validWitnessIds: snapshot?.validWitnessIds ?? [],
@@ -355,6 +392,13 @@ export class HaltingWatchdog {
           this.visitedFingerprints.add(fp);
         }
         this.lastFingerprint = fp;
+      }
+
+      if (!didMutate && ok !== false && SHELL_TOOLS.has(t)) {
+        if (!this.succeededCmdsSinceMutation.has(sig)) {
+          this.succeededCmdsSinceMutation.add(sig);
+          this.zeroProgressStreak = 0;
+        }
       }
     }
 

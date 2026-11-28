@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.4.1-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.4.2-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -70,7 +70,7 @@ in `~/.lumitome/logs/install.log`.
 **Windows, or any system with npm:**
 
 ```bash
-npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.1.tar.gz
+npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.2.tar.gz
 ```
 
 Run it in PowerShell or Command Prompt. You do not need Git for this. The
@@ -100,14 +100,14 @@ Option A (recommended): allow scripts for your user, then run the install again.
 
 ```powershell
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
-npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.1.tar.gz
+npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.2.tar.gz
 ```
 
 Option B (changes nothing): use the `npm.cmd` shim instead, or run the same
 command in Command Prompt (`cmd.exe`).
 
 ```powershell
-npm.cmd install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.1.tar.gz
+npm.cmd install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.2.tar.gz
 ```
 
 Type the command yourself, and do not paste the terminal's output back into the
@@ -457,7 +457,7 @@ Monotonic Sticky Taint, cascade 3-tier khusus `9router` + `LUMI_OVERTHINK_GUARD`
 - Linux/macOS: jalankan baris `curl ... install.sh | bash` di atas. Versi
   tertentu: `LUMI_REF=v0.4.1 bash`; versi pengembangan: `LUMI_REF=main bash`.
 - Windows (atau OS apa pun yang punya npm, butuh Node.js 22.6+):
-  `npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.1.tar.gz`.
+  `npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.2.tar.gz`.
   Setelah terbit di npm: `npm install -g lumitome`.
 
 **Mulai:** ketik `lumitome`. Kalau belum ada provider, layar provider muncul

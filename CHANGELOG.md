@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.2 — Compaction on active session model, preset-only cascade, env.sh auto-migration & watchdog fix
+
+- **Compaction memakai model sesi aktif (fix 404 `antigravity/gemini-3.6-flash-high`):** `cascade-core.mjs` tidak lagi membajak `kind: "compaction"` ke glob katalog 9router; tiap sesi (`orchestrator`, `thinking`, `search`, `builder`, `reviewer`) melakukan compaction dengan model aktifnya sendiri (mendapat prompt-cache hit & 0 risiko 404), dengan override opsional `LUMI_COMPACTION_MODEL`.
+- **Preset-only cascade routing (zero blind catalog globbing):** `lumitome-cascade` hanya merutekan ke model sesi aktif, model pilihan user di preset `/subagent`, atau override eksplisit (`LUMI_COMPACTION_MODEL`, `LUMI_TITLE_MODEL`) — tidak pernah memilih model acak dari `/v1/models`.
+- **Migrasi otomatis `~/.lumitome/env.sh`:** `config-migrate.mjs` (`migrateEnvFile`) otomatis mengganti `SW_9ROUTER_URL`/`SW_9ROUTER_KEY` lama ke `LUMI_9ROUTER_URL`/`LUMI_KEY_9ROUTER` saat `lumitome update` dan startup agar peringatan `DEPRECATED` hilang otomatis (idempoten, komentar utuh, `secrets.env` tidak disentuh).
+- **Fix false-positive `HaltingWatchdog`:** edit multi-file di workspace non-git / sub-repo dan rangkaian perintah verifikasi berbeda yang sukses (`lint`, `validate`, `eval`, `test`) tidak lagi memicu `[WATCHDOG_HALT] zero-progress-streak`.
+
 ## 0.4.1 — Upgrade pinned engine to OpenCode v2.4.2 (engine-2.4.2-lumi.1) & safe transition guard
 
 - **Pin Engine OpenCode `v2.4.2` (`lumitome/lib/engine.mjs`, `install.sh`):**

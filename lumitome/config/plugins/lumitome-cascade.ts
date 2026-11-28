@@ -78,7 +78,7 @@ export default {
           state: getState(sid),
           env,
         });
-        if (res.model && res.model.providerID === NINEROUTER_PROVIDER_ID && res.model.id) {
+        if (res.changed && res.model && res.model.providerID === NINEROUTER_PROVIDER_ID && res.model.id) {
           event.model = res.model;
         }
       },
