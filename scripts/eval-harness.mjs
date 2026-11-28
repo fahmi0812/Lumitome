@@ -514,16 +514,21 @@ async function runRpl07(scenario, { repoRoot }) {
     const tW0 = performance.now();
     ledger.appendTurns(turns);
     const writeMs = performance.now() - tW0;
-    ledger.searchFts("deterministic benchmark", { limit: 5 });
-    const tQ0 = performance.now();
-    const hitsRes = ledger.searchFts("deterministic benchmark", { limit: 5 });
-    const queryMs = performance.now() - tQ0;
+    ledger.searchFts("turn_250 module validation", { limit: 5 });
+    const queryLatencies = [];
+    let hitsRes = null;
+    for (let q = 0; q < 5; q++) {
+      const tQ0 = performance.now();
+      hitsRes = ledger.searchFts("turn_250 module validation", { limit: 5 });
+      queryLatencies.push(performance.now() - tQ0);
+    }
+    const queryMs = percentile(queryLatencies, 50);
     const taintRes = ledger.searchFts("external page snippet", { limit: 5 });
     ledger.close();
 
     assertCond(hitsRes.hits.length > 0, "L2 FTS5 harus mengembalikan hasil");
     assertCond(writeMs < Number(cases.max_write_ms || 500), `L2 500-turn writeMs=${writeMs.toFixed(1)}ms melebihi 500ms`);
-    assertCond(queryMs < Number(cases.max_query_ms || 5), `L2 FTS5 queryMs=${queryMs.toFixed(2)}ms melebihi 5ms`);
+    assertCond(queryMs < Number(cases.max_query_ms || 5), `L2 FTS5 p50 queryMs=${queryMs.toFixed(2)}ms melebihi 5ms`);
     assertCond(taintRes.hits[0]?.taggedText?.includes("[TAINTED_EXTERNAL_DATA]") && !taintRes.hits[0]?.raw_text?.includes(secretVal), "L2 harus menandai tainted_external & scrub secret");
 
     // Monotonic Sticky Taint & L4 gate

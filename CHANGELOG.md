@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (Wave 0–4 — Lumitome Next)
+## 0.4.0 — Lumitome Next — Verifier-Independent Harness, 4-Layer Memory & OpenCode 2.4.2 Readiness
 
 - **Wave 4 — Sandbox, BYOP Shadow, Dual-Mode Eval & SHarP Ablation:**
   - `SandboxProvider` (`harness/sandbox/provider.mjs`): antarmuka tunggal `NoopSandbox` (`LUMI_SANDBOX=off` default `$0`), `BwrapSandbox` (`LUMI_SANDBOX=bwrap` fail-closed `SANDBOX_CLOSED` bila biner/namespace absen), dan `RemoteSandboxAdapter` (`LUMI_SANDBOX=remote` opt-in fail-closed + blokir mount kredensial).
@@ -13,6 +13,7 @@
   - **`LUMI_*` kini selalu menang atas `SW_*`** di seluruh wrapper, router, dan skrip (`LUMI_HOME > SW_HOME` di `engine.mjs`, `lumitome.mjs`, dan `scripts/doctor.sh`; `LUMI_9ROUTER_URL > SW_9ROUTER_URL`; `LUMI_KEY_9ROUTER > LUMI_9ROUTER_KEY > SW_9ROUTER_KEY > NINEROUTER_API_KEY`). Perubahan dari perilaku lama (`router/skill-db.mjs` & `doctor.sh` yang sebelumnya mendahulukan `SW_*`).
   - **Aturan `??` vs `||`:** `LUMI_EMBED_MODEL=""` sekarang menonaktifkan embedding secara eksplisit (`none`) tanpa fallback ke `SW_EMBED_MODEL`; sebaliknya kredensial dan URL tetap melewati string kosong `""` ke alias berikutnya.
   - Alias `SW_*` masih diterima dengan peringatan deprecasi 1× per proses ke `stderr` (`[lumitome] DEPRECATED: ... akan dihapus di v0.5.0`). Nama server MCP `swanwright-skills` diperbarui menjadi `lumitome-skills` / `lumitome-skills-${sector}`.
+- **Fix determinisme benchmark FTS5 CI (`harness/memory/l2-ledger.mjs`, `tests/suite-memory.mjs`, `scripts/eval-harness.mjs`, `tests/suite-eval.mjs`):** memakai kolom bawaan `episodic_fts.rank` alih-alih `bm25(episodic_fts)` saat join, mengukur median (`p50`) dari 5 kueri setelah warmup (tetap `< 5 ms`) dengan kueri selektif realistis pada `RPL-07`, serta menambah diagnostik daftar `RPL-*` gagal di `suite-eval.mjs`.
 
 ## 0.3.85 — fix: limit.context model diteruskan dari 9router — auto-compact 90% kini jalan di jendela asli
 

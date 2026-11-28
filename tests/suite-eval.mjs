@@ -335,6 +335,7 @@ try {
   {
     const replay = await runReplayEval({ repoRoot: process.cwd() });
     const ids = replay.results.map((r) => r.id);
+    const failedScenarios = replay.results.filter((s) => s.status !== "PASS").map((s) => `${s.id}: ${s.error || s.status}`);
     ok(
       "T4.3 eval-harness --mode replay: 9/9 RPL-01..RPL-09 PASS deterministik offline",
       replay.ok === true
@@ -342,6 +343,7 @@ try {
         && replay.failed === 0
         && replay.total === 9
         && ids.join(",") === "RPL-01,RPL-02,RPL-03,RPL-04,RPL-05,RPL-06,RPL-07,RPL-08,RPL-09",
+      () => `passed=${replay.passed}/${replay.total}, failed=[${failedScenarios.join("; ")}]`,
     );
 
     const liveHome = path.join(workRoot, "live-home");

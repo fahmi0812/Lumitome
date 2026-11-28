@@ -127,7 +127,7 @@ export class L2Ledger {
       "INSERT INTO episodic_turn (ts, session_id, workspace, agent, taint_state, kind, raw_text, meta_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     );
     this.#searchStmt = this.#db.prepare(
-      `SELECT t.id, t.ts, t.session_id, t.workspace, t.agent, t.taint_state, t.kind, t.raw_text, t.meta_json, bm25(episodic_fts) AS rank
+      `SELECT t.id, t.ts, t.session_id, t.workspace, t.agent, t.taint_state, t.kind, t.raw_text, t.meta_json, episodic_fts.rank AS rank
        FROM episodic_fts
        JOIN episodic_turn t ON t.id = episodic_fts.rowid
        WHERE episodic_fts MATCH ?
@@ -135,7 +135,7 @@ export class L2Ledger {
        LIMIT ?`,
     );
     this.#searchSessionStmt = this.#db.prepare(
-      `SELECT t.id, t.ts, t.session_id, t.workspace, t.agent, t.taint_state, t.kind, t.raw_text, t.meta_json, bm25(episodic_fts) AS rank
+      `SELECT t.id, t.ts, t.session_id, t.workspace, t.agent, t.taint_state, t.kind, t.raw_text, t.meta_json, episodic_fts.rank AS rank
        FROM episodic_fts
        JOIN episodic_turn t ON t.id = episodic_fts.rowid
        WHERE episodic_fts MATCH ? AND t.session_id = ?
