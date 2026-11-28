@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.85-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.4.0-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -28,6 +28,15 @@ security, finance, media, and misc. 765 of them can be routed to. The
 - `/docs-pack` scaffolds a project's 12 living docs.
 - `/stitch-ui` builds UI from a reference image.
 - `/external-tools` installs an external app and connects it to the agent.
+
+## What's new in v0.4.0 (Lumitome Next)
+
+- **Verifier-independent harness:** `lumitome-idle-gate` (`experimental.idle` bounded re-drive), `Repro-Before-Edit` (`INVALID_PROBE` filtering before bugfix edits), 5-field `ATTESTED` runtime witnesses (degrading to `STALE`/`UNSETTLED` on file mutation), context-stripped reviewer packets, and `HaltingWatchdog`.
+- **Selective 4-layer memory & sticky taint:** L1–L4 working/episodic/structural/long-term memory backed by an immutable JSONL + SQLite FTS5-BM25 ledger (`L2Ledger`), paired with monotonic sticky taint (`webfetch`/external MCP → `TAINTED`, holding L4 promotion at `HOLD_FOR_APPROVAL` until explicit approval).
+- **9router-only 3-tier cascade & token guard:** `LUMI_*` env precedence over legacy `SW_*`, deterministic 3-tier model cascade (never downgrading `thinking`, `reviewer`, or `design-critic`), and `LUMI_OVERTHINK_GUARD`.
+- **Fail-closed `SandboxProvider` & BYOP shadow mode:** unified `NoopSandbox` (default), `BwrapSandbox`, and `RemoteSandboxAdapter` (fail-closed `SANDBOX_CLOSED`), plus BYOP Guardrail Proxy defaulting to non-blocking `shadow` mode (`LUMI_BYOP_MODE=shadow`, `350 ms` timeout).
+- **Dual-mode eval & SHarP ablation:** `npm run eval` runs offline deterministic replay (`RPL-01`..`RPL-09`) or live 9router probing; `scripts/sharp-ablation.mjs` enforces permanent invariants vs prunable flags.
+- **WCAG AA light theme & OpenCode `2.4.2` readiness:** light-theme contrast fixes, top-level `policies`, `output.exitCode` / `shell-bg` tracking, and manual `2.4.2` testing via `LUMI_ENGINE_BIN` + `scripts/backup-data.sh` (pinned engine remains `2.3.0` until `engine-2.4.2-lumi.1` assets ship).
 
 ## Install
 
@@ -56,7 +65,7 @@ in `~/.lumitome/logs/install.log`.
 **Windows, or any system with npm:**
 
 ```bash
-npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.85.tar.gz
+npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.0.tar.gz
 ```
 
 Run it in PowerShell or Command Prompt. You do not need Git for this. The
@@ -86,14 +95,14 @@ Option A (recommended): allow scripts for your user, then run the install again.
 
 ```powershell
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
-npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.85.tar.gz
+npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.0.tar.gz
 ```
 
 Option B (changes nothing): use the `npm.cmd` shim instead, or run the same
 command in Command Prompt (`cmd.exe`).
 
 ```powershell
-npm.cmd install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.85.tar.gz
+npm.cmd install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.0.tar.gz
 ```
 
 Type the command yourself, and do not paste the terminal's output back into the
@@ -208,6 +217,13 @@ below are the protection that remains.
   `~/.gnupg`, `~/.aws`, `~/.azure`, `~/.kube`, `~/.config/gcloud`, keyrings,
   browser profiles and cookies, or `~/.lumitome/credentials.json`, and it will
   not send them anywhere.
+- **Code Mode `execute` policy (`execute-policy`).** Inside `execute`, access to
+  `.env`/secrets, `process.env`/`Bun.env` dumps, `opencode:///api/`, and
+  destructive/forbidden git or shell calls is denied.
+- **TCB hard-deny (`tcb-protected`).** Writes to `$LUMI_HOME/**`,
+  `.git/hooks/**`, and `.git/config` are blocked; edits to repo TCB files
+  require maintainer trust (`LUMI_MAINTAINER_MODE=1` or trusted `trust.json`)
+  on a non-`main`/`master` branch.
 - **Risky actions are stopped.** Examples: deleting files outside your project,
   pushing to the `main` branch, and running local `sudo`.
 - **SSH only with a deploy key.** SSH to your own server works with a dedicated
@@ -215,13 +231,21 @@ below are the protection that remains.
 
 **Other safeguards:**
 
+- **Fail-closed sandbox & BYOP shadow default.** `BwrapSandbox` and
+  `RemoteSandboxAdapter` fail closed (`SANDBOX_CLOSED`) when `bwrap` or remote
+  endpoints are unavailable or credential mounts are attempted. BYOP guardrails
+  default to non-blocking `shadow` mode (`enforce` requires a verified probe
+  report with `FPR < 0.01` and `p95_ms <= 350`).
 - **It checks its work before saying "done".** It looks at the real result of
-  the last test run. If the tests failed, the task is not done.
+  the last test run (`shell-bg` stays `UNRUN`/fail until completed) and runtime
+  `ATTESTED` witnesses. If tests failed or witnesses went `STALE`, the task is
+  not done.
 - **It does not trust a project's own settings.** Plugins and settings that come
-  with a cloned project are ignored unless you set `LUMI_TRUST_PROJECT=1`. In a
-  terminal you must then type `ya` every session. That approval is logged to the
-  journal and is never permanent. A non-interactive run logs a hard warning
-  instead.
+  with a cloned project are ignored unless you set `LUMI_TRUST_PROJECT=1`. Even
+  with `LUMI_TRUST_PROJECT=1`, Lumitome pre-scans project configs for `policies`
+  blocks and forces `OPENCODE_DISABLE_PROJECT_CONFIG=1` if found. In a terminal
+  you must then type `ya` every session. That approval is logged to the journal
+  and is never permanent. A non-interactive run logs a hard warning instead.
 - **It leaves your own OpenCode alone.** Lumitome keeps its own copy of OpenCode
   in `~/.lumitome`. It does not read or change your OpenCode settings, sessions,
   or saved logins. It also uses its own background server port, so it works
@@ -353,6 +377,7 @@ If you installed with npm: run `npm uninstall -g lumitome`, then delete the
 ```bash
 npm install
 npm test
+npm run eval
 npm run validate
 npm run lint
 ```
@@ -374,7 +399,7 @@ Its rules:
   and annotated legacy compat lines (`env-compat-allow`).
 - LINT-006: single OpenCode engine version source — no hardcoded `"2.3.0"` /
   `"2.4.2"` literals in code files (`*.mjs`, `*.ts`, `*.sh`) outside
-  `lumitome/lib/engine.mjs`, `install.sh`, and `scripts/doctor.sh`.
+  `lumitome/lib/engine.mjs` and `install.sh`.
 
 `npm run validate` runs lint and fails if lint fails. Principle: a new
 correction becomes a lint rule, not a new skill or prompt addition.
@@ -404,15 +429,25 @@ settings), [`ARCHITECTURE.md`](ARCHITECTURE.md), [`CHANGELOG.md`](CHANGELOG.md)
 ## Bahasa Indonesia
 
 Lumitome adalah asisten coding yang berjalan di terminal. Dibangun di atas
-OpenCode versi 2.3.0 yang dikunci, dan terpisah dari OpenCode yang sudah Anda
-pasang.
+OpenCode versi 2.3.0 yang masih menjadi engine terpin sampai aset rilis
+`engine-2.4.2-lumi.1` terbit (uji manual OpenCode `2.4.2` sudah didukung penuh
+lewat `LUMI_ENGINE_BIN` atau `lumitome upgrade-engine` + `scripts/backup-data.sh`),
+dan terpisah dari OpenCode yang sudah Anda pasang.
+
+**Yang baru di v0.4.0 (Lumitome Next):** verifier-independent gates
+(`lumitome-idle-gate`, `Repro-Before-Edit` + `INVALID_PROBE`, witness
+`ATTESTED` 5-field & degradasi `STALE`/`UNSETTLED`, reviewer bebas-narasi,
+`HaltingWatchdog`), memori selektif 4-lapis (L1–L4) + ledger FTS5-BM25 +
+Monotonic Sticky Taint, cascade 3-tier khusus `9router` + `LUMI_OVERTHINK_GUARD`,
+`SandboxProvider` fail-closed + BYOP shadow mode, serta eval dual-mode
+(`npm run eval`) + ablasi SHarP.
 
 **Pasang** (selalu memasang rilis bertag, bukan isi `main`):
 
 - Linux/macOS: jalankan baris `curl ... install.sh | bash` di atas. Versi
-  tertentu: `LUMI_REF=v0.3.79 bash`; versi pengembangan: `LUMI_REF=main bash`.
+  tertentu: `LUMI_REF=v0.4.0 bash`; versi pengembangan: `LUMI_REF=main bash`.
 - Windows (atau OS apa pun yang punya npm, butuh Node.js 22.6+):
-  `npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.3.85.tar.gz`.
+  `npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.0.tar.gz`.
   Setelah terbit di npm: `npm install -g lumitome`.
 
 **Mulai:** ketik `lumitome`. Kalau belum ada provider, layar provider muncul
@@ -423,14 +458,17 @@ atau Anthropic bisa dipakai. Daftar model diambil otomatis. Pilih model dengan
 
 **Update:** `lumitome update`. Cek dulu dengan `lumitome update --check`, batalkan
 dengan `lumitome update --rollback`. **Upgrade engine:** `lumitome upgrade` (tanpa
-argumen; menaikkan engine OpenCode ke versi terpin dengan checksum terverifikasi;
-restart TUI sesudahnya).
+argumen; menaikkan engine OpenCode ke versi terpin 2.3.0 dengan checksum terverifikasi;
+restart TUI sesudahnya; untuk uji manual `2.4.2`, pakai `LUMI_ENGINE_BIN` atau
+`lumitome upgrade-engine <versi> --sha256 <hash>` setelah `bash scripts/backup-data.sh`).
 
-**Keamanan:** secara default mode auto menyala dan sandbox mati, jadi agen
-menjalankan perintah tanpa bertanya. Yang selalu diblokir: membaca `.env` dan
-file rahasia lain, menghapus file di luar proyek, push ke `main`, dan `sudo`
-lokal. Untuk dijalankan tanpa diawasi, pakai `LUMI_AUTO_MODE=0` dan (di Linux)
-`LUMI_SANDBOX=bwrap`.
+**Keamanan:** secara default mode auto menyala dan sandbox mati (`NoopSandbox`),
+jadi agen menjalankan perintah tanpa bertanya. Yang selalu diblokir: membaca
+`.env` dan file rahasia lain (termasuk lewat Code Mode `execute-policy`),
+mengubah path TCB (`tcb-protected`), menimpa `policies` lewat config proyek saat
+`LUMI_TRUST_PROJECT=1`, menghapus file di luar proyek, push ke `main`, dan
+`sudo` lokal. Untuk dijalankan tanpa diawasi, pakai `LUMI_AUTO_MODE=0` dan
+(di Linux) `LUMI_SANDBOX=bwrap`.
 
 **Hapus:** `bash ~/.lumitome/src/install.sh --uninstall`.
 

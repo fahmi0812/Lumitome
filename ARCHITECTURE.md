@@ -1,6 +1,6 @@
-# Arsitektur Lumitome v0.3.85
+# Arsitektur Lumitome v0.4.0
 
-Target: **OpenCode v2.3.0** (rilis GitHub anomalyco/opencode). Model hanya via **9router**. 931 skill di satu registry (765 bisa ter-route; 166 pack red-team tetap disabled, termasuk `api-security` & `llm-security`). Sejak v0.3.27 (satu korpus): tidak ada lagi pack nonaktif/dorman. Dokumen ini diperbarui di v0.3.85 / Wave 0 agar cocok dengan kode aktual (`modern-web-guidance`, MCP `tableau` & `platformio`, `default-config.mjs`, `env-compat.mjs`, dan `/loopdesign`).
+Target: **OpenCode v2.3.0** (rilis GitHub anomalyco/opencode; kesiapan **OpenCode v2.4.2** via `LUMI_ENGINE_BIN` & `scripts/backup-data.sh`). Model hanya via **9router**. 931 skill di satu registry (765 bisa ter-route; 166 pack red-team tetap disabled, termasuk `api-security` & `llm-security`). Sejak v0.3.27 (satu korpus): tidak ada lagi pack nonaktif/dorman. Dokumen ini diperbarui di v0.4.0 (Lumitome Next, Wave 0–4) agar cocok dengan kode aktual (`modern-web-guidance`, MCP `tableau` & `platformio`, `default-config.mjs`, `env-compat.mjs`, `/loopdesign`, `lumitome-idle-gate`, 4-layer memory L1–L4, `SandboxProvider`, BYOP shadow mode, dan `eval-harness`).
 Diagram: `docs/diagrams/arsitektur-final.png` (sistem) · `docs/diagrams/orchestrator-final.png` (alur orchestrator). Sumber Mermaid di sebelahnya.
 
 ![Arsitektur final](docs/diagrams/arsitektur-final.png)
