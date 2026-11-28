@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.3 — Fix dummy 9router placeholder key shadowing credentials.json from lumitome connect
+
+- **Fix placeholder dummy `"9router"` menimpa API key asli dari `lumitome connect` (`lumitome/lib/providers.mjs`):** menambahkan `PLACEHOLDER_9ROUTER_KEY = "9router"` sehingga `keyFor` dan `opencodeFragment` mengabaikan nilai dummy `"9router"` dari env (`LUMI_KEY_9ROUTER`, `LUMI_9ROUTER_KEY`, `SW_9ROUTER_KEY`, `NINEROUTER_API_KEY`) ketika `credentials.json` menyimpan key asli, tetap mendahulukan env key sungguhan, dan tetap menyediakan fallback `"9router"` saat `credentials.json` kosong.
+- **Hapus ekspor dummy `:-9router` di `install.sh`:** `env.sh` baru tidak lagi mengekspor `LUMI_KEY_9ROUTER="${LUMI_KEY_9ROUTER:-${SW_9ROUTER_KEY:-9router}}"`, diganti komentar panduan ke `lumitome connect` / `secrets.env`.
+- **Pembersihan otomatis `env.sh` lama (`lumitome/lib/config-migrate.mjs`):** `migrateEnvText` menghapus baris ekspor placeholder dummy `:-9router` bawaan `install.sh` lama maupun v0.4.0–v0.4.2 secara idempoten dengan mempertahankan baris komentar, `LUMI_9ROUTER_URL`, key asli user, dan akhiran CRLF/LF.
+- **Tes regresi (`tests/suite-providers.mjs`):** memperbarui uji migrasi `env.sh` dan menambah uji regresi placeholder `"9router"` vs `credentials.json` serta pemeriksaan `install.sh`.
+
 ## 0.4.2 — Compaction on active session model, preset-only cascade, env.sh auto-migration & watchdog fix
 
 - **Compaction memakai model sesi aktif (fix 404 `antigravity/gemini-3.6-flash-high`):** `cascade-core.mjs` tidak lagi membajak `kind: "compaction"` ke glob katalog 9router; tiap sesi (`orchestrator`, `thinking`, `search`, `builder`, `reviewer`) melakukan compaction dengan model aktifnya sendiri (mendapat prompt-cache hit & 0 risiko 404), dengan override opsional `LUMI_COMPACTION_MODEL`.

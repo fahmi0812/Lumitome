@@ -23,9 +23,15 @@ const readJ = (f) => { try { return JSON.parse(fs.readFileSync(f, "utf8")); } ca
 const writeJ = (f, o) => { fs.mkdirSync(path.dirname(f), { recursive: true, mode: 0o700 }); fs.writeFileSync(f + ".tmp", JSON.stringify(o, null, 2) + "\n", { mode: 0o600 }); fs.renameSync(f + ".tmp", f); fs.chmodSync(f, 0o600); };
 export const files = (home) => ({ prov: path.join(home, "providers.json"), cred: path.join(home, "credentials.json") });
 export function load(home) { return readJ(files(home).prov).providers || {}; }
+export const PLACEHOLDER_9ROUTER_KEY = "9router";
 const NINE_ROUTER_KEY_ALIASES = ["LUMI_9ROUTER_KEY", "SW_9ROUTER_KEY", "NINEROUTER_API_KEY"]; // env-compat-allow
 function keyFor(home, name, env = process.env) {
-  if (name === "9router") return resolveEnvValue(env, "LUMI_KEY_9ROUTER", NINE_ROUTER_KEY_ALIASES) || readJ(files(home).cred)[name];
+  if (name === "9router") {
+    const envKey = resolveEnvValue(env, "LUMI_KEY_9ROUTER", NINE_ROUTER_KEY_ALIASES);
+    const saved = readJ(files(home).cred)[name];
+    if (envKey && envKey !== PLACEHOLDER_9ROUTER_KEY) return envKey;
+    return saved || envKey || undefined;
+  }
   return env[envName(name)] || readJ(files(home).cred)[name];
 }
 
@@ -182,7 +188,9 @@ export function opencodeFragment(home, env = process.env) {
         ...(p.limits?.[m] ? { limit: p.limits[m] } : {}) }])) };
   }
   // 9router: wrapper selalu men-set KEDUA nama (config dasar memakai LUMI_KEY_9ROUTER; skrip lama memakai NINEROUTER_API_KEY)
-  const k9 = penv.LUMI_KEY_9ROUTER || resolveEnvValue(env, "LUMI_KEY_9ROUTER", NINE_ROUTER_KEY_ALIASES) || readJ(files(home).cred)["9router"];
+  const envK9 = resolveEnvValue(env, "LUMI_KEY_9ROUTER", NINE_ROUTER_KEY_ALIASES);
+  const savedK9 = readJ(files(home).cred)["9router"];
+  const k9 = penv.LUMI_KEY_9ROUTER || (envK9 && envK9 !== PLACEHOLDER_9ROUTER_KEY ? envK9 : savedK9 || envK9);
   if (k9) { penv.LUMI_KEY_9ROUTER = k9; penv.NINEROUTER_API_KEY = k9; }
   return { providers, env: penv };
 }
