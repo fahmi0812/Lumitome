@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased (Wave 0 — Lumitome Next)
+
+- **Single-Source Config (`lumitome/lib/default-config.mjs`):** `lumitome/config/opencode.jsonc` dan root `opencode.jsonc` kini disinkronkan pada `limit` (`1048576`/`65536`), `compaction` (`auto: true`, `keep.tokens: 24000`, `buffer: "10%"`), `tool_output` (`max_lines: 400`, `max_bytes: 16384`), serta variabel `{env:LUMI_9ROUTER_URL}` dan `{env:LUMI_KEY_9ROUTER}` (divalidasi otomatis oleh `npm run validate`).
+- **Pembalikan presedensi & deprecasi `SW_* → LUMI_*` (`lumitome/lib/env-compat.mjs`):**
+  - **`LUMI_*` kini selalu menang atas `SW_*`** di seluruh wrapper, router, dan skrip (`LUMI_HOME > SW_HOME` di `engine.mjs`, `lumitome.mjs`, dan `scripts/doctor.sh`; `LUMI_9ROUTER_URL > SW_9ROUTER_URL`; `LUMI_KEY_9ROUTER > LUMI_9ROUTER_KEY > SW_9ROUTER_KEY > NINEROUTER_API_KEY`). Perubahan dari perilaku lama (`router/skill-db.mjs` & `doctor.sh` yang sebelumnya mendahulukan `SW_*`).
+  - **Aturan `??` vs `||`:** `LUMI_EMBED_MODEL=""` sekarang menonaktifkan embedding secara eksplisit (`none`) tanpa fallback ke `SW_EMBED_MODEL`; sebaliknya kredensial dan URL tetap melewati string kosong `""` ke alias berikutnya.
+  - Alias `SW_*` masih diterima dengan peringatan deprecasi 1× per proses ke `stderr` (`[lumitome] DEPRECATED: ... akan dihapus di v0.5.0`). Nama server MCP `swanwright-skills` diperbarui menjadi `lumitome-skills` / `lumitome-skills-${sector}`.
+
 ## 0.3.85 — fix: limit.context model diteruskan dari 9router — auto-compact 90% kini jalan di jendela asli
 
 - **Bug: auto-compact proaktif tidak pernah terpicu.** `detectModels()` hanya mengambil id model dari `GET /v1/models` 9router dan `opencodeFragment()` mendaftarkan model tanpa `limit` — engine lalu default `limit.context` 0, rumus ceiling `lm(limit, buffer)` jadi Infinity, jadi auto-compact (alasan "auto") tidak jalan sebelum overflow. Yang 90% di v0.3.83 itu benar sebagai setting, tapi tidak pernah mencapai angka jendela model yang sebenarnya.

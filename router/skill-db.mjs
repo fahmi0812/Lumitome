@@ -20,6 +20,35 @@ export const DEFAULT_DB = "runtime/skills.db";
 export const RRF_K = 60;
 export const N_MIN = 16, N_MAX = 32, N_DEFAULT = 24, PICK_MAX = 5;
 
+// Inline env-compat mirror (LINT-004a: router/ dilarang mengimpor ../).
+const _warnedSw = new Set();
+function warnSwOnce(alias, canonical) {
+  if (_warnedSw.has(alias)) return;
+  _warnedSw.add(alias);
+  process.stderr.write(`[lumitome] DEPRECATED: ${alias} akan dihapus di v0.5.0; ganti dengan ${canonical}\n`);
+}
+export function envFlag(canonical, aliases = [], env = process.env) {
+  if (env[canonical] !== undefined) return env[canonical];
+  for (const a of aliases) {
+    if (env[a] !== undefined) {
+      if (a.startsWith("SW_")) warnSwOnce(a, canonical);
+      return env[a];
+    }
+  }
+  return undefined;
+}
+export function envVal(canonical, aliases = [], env = process.env) {
+  if (env[canonical] !== undefined && String(env[canonical]) !== "") return String(env[canonical]);
+  for (const a of aliases) {
+    const v = env[a];
+    if (v !== undefined && String(v) !== "") {
+      if (a.startsWith("SW_")) warnSwOnce(a, canonical);
+      return String(v);
+    }
+  }
+  return undefined;
+}
+
 let _sqlite;
 function sqlite() {
   if (_sqlite) return _sqlite;
@@ -55,7 +84,7 @@ export function ftsQuery(q) {
 }
 
 // ---------- embedding ----------
-/** Provider: "9router" (POST /embeddings, butuh SW_EMBED_MODEL), "hash" (n-gram karakter, leksikal, BUKAN semantik), "none". */
+/** Provider: "9router" (POST /embeddings, butuh LUMI_EMBED_MODEL), "hash" (n-gram karakter, leksikal, BUKAN semantik), "none". */
 export const EMBED_DIM_HASH = 256;
 export function hashEmbed(text, dim = EMBED_DIM_HASH) {
   const v = new Float32Array(dim);
@@ -69,21 +98,28 @@ export function hashEmbed(text, dim = EMBED_DIM_HASH) {
   for (let i = 0; i < dim; i++) v[i] /= n;
   return v;
 }
-export function embedProvider() {
-  const p = (process.env.SW_EMBED || "auto").toLowerCase();
-  if (p === "auto") return process.env.SW_EMBED_MODEL ? "9router" : "none";
+export function embedProvider(env = process.env) {
+  const p = (envFlag("LUMI_EMBED", ["SW_EMBED"], env) ?? "auto").toLowerCase(); // env-compat-allow
+  const model = envFlag("LUMI_EMBED_MODEL", ["SW_EMBED_MODEL"], env); // env-compat-allow
+  if (p === "auto") return model ? "9router" : "none";
   return p;
+}
+export function routerUrl(env = process.env) {
+  return envVal("LUMI_9ROUTER_URL", ["SW_9ROUTER_URL"], env) || "http://127.0.0.1:20128/v1"; // env-compat-allow
 }
 export async function embed(texts, provider = embedProvider()) {
   if (provider === "none") return null;
   if (provider === "hash") return texts.map((t) => hashEmbed(t));
   if (provider === "9router") {
-    const base = process.env.SW_9ROUTER_URL || "http://127.0.0.1:20128/v1";
+    const base = routerUrl();
+    const model = envFlag("LUMI_EMBED_MODEL", ["SW_EMBED_MODEL"]); // env-compat-allow
+    const timeoutMs = Number(envVal("LUMI_EMBED_TIMEOUT_MS", ["SW_EMBED_TIMEOUT_MS"]) || 15000); // env-compat-allow
+    const key = routerKey() || "9router";
     try {
       const r = await fetch(`${base}/embeddings`, {
-        method: "POST", signal: AbortSignal.timeout(Number(process.env.SW_EMBED_TIMEOUT_MS || 15000)),
-        headers: { "content-type": "application/json", authorization: `Bearer ${process.env.SW_9ROUTER_KEY || "9router"}` },
-        body: JSON.stringify({ model: process.env.SW_EMBED_MODEL, input: texts }),
+        method: "POST", signal: AbortSignal.timeout(timeoutMs),
+        headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+        body: JSON.stringify({ model, input: texts }),
       });
       if (!r.ok) return null;
       const j = await r.json();
@@ -332,7 +368,7 @@ export async function searchSkills(db, queries, opts = {}) {
     if (fq) { lists.push(ftsStmt.all(fq, ...params, perQuery).map((r, i) => [r.name, i + 1])); weights.push(1.0); }
     if (vecStmt && qv?.[qi]) {
       const rows = vecStmt.all(new Uint8Array(qv[qi].buffer), 200, ...params).slice(0, perQuery);
-      lists.push(rows.map((r, i) => [r.name, i + 1])); weights.push(Number(process.env.SW_VEC_WEIGHT || 0.5));
+      lists.push(rows.map((r, i) => [r.name, i + 1])); weights.push(Number(envVal("LUMI_VEC_WEIGHT", ["SW_VEC_WEIGHT"]) || 0.5)); // env-compat-allow
     }
   });
   // hint Layer-0 (deterministik): nama skill berawalan hint → satu daftar RRF tambahan
@@ -393,30 +429,34 @@ export function parseSelection(txt) {
   }
   throw new SyntaxError("objek JSON tidak tertutup");
 }
-export function routerKey() { return process.env.SW_9ROUTER_KEY || process.env.NINEROUTER_API_KEY || process.env.LUMI_9ROUTER_KEY || ""; }
+const ROUTER_KEY_ALIASES = ["LUMI_9ROUTER_KEY", "SW_9ROUTER_KEY", "NINEROUTER_API_KEY"]; // env-compat-allow
+export function routerKey(env = process.env) {
+  return envVal("LUMI_KEY_9ROUTER", ROUTER_KEY_ALIASES, env) || "";
+}
 /** TTL cache L1 (detik; default 7 hari, sama seperti route-cache) — v0.3.46 P2-1 §4.
  * Dulu tanpa TTL: pilihan model lama bisa awet selamanya. Entri tanpa `ts`
  * (dibuat sebelum TTL ada) dianggap kedaluwarsa dan di-fetch ulang. */
-export function l1CacheTtlMs() { return Number(process.env.SW_L1_CACHE_TTL_S || 604800) * 1000; }
+export function l1CacheTtlMs() { return Number(envVal("LUMI_L1_CACHE_TTL_S", ["SW_L1_CACHE_TTL_S"]) || 604800) * 1000; } // env-compat-allow
 export async function selectL1(prompt, candidates, { root = ".", timeoutMs, signal } = {}) {
-  const base = process.env.SW_9ROUTER_URL || process.env.LUMI_9ROUTER_URL || "http://127.0.0.1:20128/v1";
-  const model = process.env.SW_ROUTER_MODEL || "ag/gemini-3.8-flash-high";
+  const base = routerUrl();
+  const model = envVal("LUMI_ROUTER_MODEL", ["SW_ROUTER_MODEL"]) || "ag/gemini-3.8-flash-high"; // env-compat-allow
   const key = routerKey();
   if (!key && !/127\.0\.0\.1|localhost/.test(base)) return { status: "no-key", ms: 0, model };
   const sys = fs.readFileSync(path.join(root, "router/layer1-select.md"), "utf8");
-  const topk = Number(process.env.SW_L1_TOPK || 12);
+  const topk = Number(envVal("LUMI_L1_TOPK", ["SW_L1_TOPK"]) || 12); // env-compat-allow
   const cands = candidates.slice(0, topk);
   // prompt ringkas: nama + deskripsi ≤90 char, tanpa skor/sektor
   const user = JSON.stringify({ task: sanitize(prompt, 1200), candidates: cands.map((c) => ({ name: c.name, desc: String(c.description || "").slice(0, 90) })) });
   const ckey = sha256(`${model}\n${user}`).slice(0, 32);
-  const cfile = process.env.SW_L1_CACHE || path.join(root, "runtime/l1-cache.json");
+  const l1CacheFlag = envFlag("LUMI_L1_CACHE", ["SW_L1_CACHE"]); // env-compat-allow
+  const cfile = (l1CacheFlag && l1CacheFlag !== "0") ? l1CacheFlag : path.join(root, "runtime/l1-cache.json");
   let cache = {}; try { cache = JSON.parse(fs.readFileSync(cfile, "utf8")); } catch {}
   const ttlMs = l1CacheTtlMs();
-  if (process.env.SW_L1_CACHE !== "0") {
+  if (l1CacheFlag !== "0") {
     const hit = cache[ckey];
     if (hit && hit.ts && Date.now() - hit.ts <= ttlMs) { const { ts: _ts, ...rest } = hit; return { ...rest, ms: 0, cached: true }; }
   }
-  const save = (res) => { if (process.env.SW_L1_CACHE === "0" || res.status !== "ok") return res;
+  const save = (res) => { if (l1CacheFlag === "0" || res.status !== "ok") return res;
     try { cache[ckey] = { ts: Date.now(), ...res };
       for (const k of Object.keys(cache)) { const e = cache[k]; if (!e.ts || Date.now() - e.ts > ttlMs) delete cache[k]; }
       const ks = Object.keys(cache); for (const k of ks.slice(0, Math.max(0, ks.length - 500))) delete cache[k];
@@ -428,7 +468,7 @@ export async function selectL1(prompt, candidates, { root = ".", timeoutMs, sign
     // v0.3.46 P2-1 §4 — sinyal luar (dari route() saat race timeout menang)
     // digabung dengan timeout internal: fetch yang kalah race dibatalkan,
     // bukan dibiarkan jalan sampai timeout-nya sendiri.
-    const timeoutSignal = AbortSignal.timeout(timeoutMs || Number(process.env.SW_L1_TIMEOUT_MS || 3000));
+    const timeoutSignal = AbortSignal.timeout(timeoutMs || Number(envVal("LUMI_L1_TIMEOUT_MS", ["SW_L1_TIMEOUT_MS"]) || 3000)); // env-compat-allow
     const sig = signal ? AbortSignal.any([timeoutSignal, signal]) : timeoutSignal;
     const r = await fetch(`${base}/chat/completions`, {
       method: "POST", signal: sig,
@@ -445,10 +485,10 @@ export async function selectL1(prompt, candidates, { root = ".", timeoutMs, sign
 }
 
 /**
- * Fallback deterministik (tanpa L1): ambil kandidat yang skornya ≥ SW_FALLBACK_RATIO × skor teratas
- * (skor RRF naik bila skill muncul di >1 daftar: FTS multi-query + hint L0), maks SW_FALLBACK_MAX (default 3).
+ * Fallback deterministik (tanpa L1): ambil kandidat yang skornya ≥ LUMI_FALLBACK_RATIO × skor teratas
+ * (skor RRF naik bila skill muncul di >1 daftar: FTS multi-query + hint L0), maks LUMI_FALLBACK_MAX (default 3).
  */
-export function fallbackPick(cands, { ratio = Number(process.env.SW_FALLBACK_RATIO || 0), max = Number(process.env.SW_FALLBACK_MAX || 3) } = {}) {
+export function fallbackPick(cands, { ratio = Number(envVal("LUMI_FALLBACK_RATIO", ["SW_FALLBACK_RATIO"]) || 0), max = Number(envVal("LUMI_FALLBACK_MAX", ["SW_FALLBACK_MAX"]) || 3) } = {}) { // env-compat-allow
   if (!cands.length) return [];
   const top = cands[0].score || 0;
   return cands.filter((c, i) => i === 0 || c.score >= top * ratio).slice(0, Math.min(max, PICK_MAX)).map((c) => c.name);
@@ -470,11 +510,11 @@ export async function route(prompt, { root = ".", file = DEFAULT_DB, useL1 = tru
   if (hit) { db.close(); return { ...hit, l0: L0, cached: true, retr_ms: 0 }; }
   const { searchL0, pickL0 } = await import("./l0.mjs");
   const res = searchL0(db, prompt, { sectors: l0.sektor ? [l0.sektor] : [], hints: l0.skillsHint || [], n: n || 12 });
-  const confTh = Number(process.env.SW_L1_CONF || 0.15);
+  const confTh = Number(envVal("LUMI_L1_CONF", ["SW_L1_CONF"]) || 0.15); // env-compat-allow
   const low = !res.candidates.length || res.conf < confTh;
   let l1 = { status: "skipped", reason: low ? "no-candidates" : "confident" };
   if (res.candidates.length && (mode === "always" || (mode === "auto" && low))) {
-    const tk = Number(process.env.SW_L1_TOPK || 8), ms = Number(process.env.SW_L1_TIMEOUT_MS || 3000);
+    const tk = Number(envVal("LUMI_L1_TOPK", ["SW_L1_TOPK"]) || 8), ms = Number(envVal("LUMI_L1_TIMEOUT_MS", ["SW_L1_TIMEOUT_MS"]) || 3000); // env-compat-allow
     // v0.3.46 P2-1 §4 — timeout race membatalkan fetch L1 (AbortController),
     // bukan hanya mengabaikan hasilnya sementara fetch jalan terus.
     const ac = new AbortController();
@@ -485,7 +525,7 @@ export async function route(prompt, { root = ".", file = DEFAULT_DB, useL1 = tru
   const out = { l0: L0, candidates: res.candidates, picked, l1, conf: res.conf, fixes: res.fixes, retr_ms: res.retr_ms };
   if (log) {
     db.prepare(`INSERT INTO route_log (ts,session,task_hash,l0_sector,l0_explicit,candidates,picked,loaded,l1_model,l1_status,l1_ms,retr_ms)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(new Date().toISOString(), process.env.SW_SESSION || null, sha256(prompt).slice(0, 16), l0.sektor || null,
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(new Date().toISOString(), envVal("LUMI_SESSION", ["SW_SESSION"]) || null, sha256(prompt).slice(0, 16), l0.sektor || null, // env-compat-allow
       JSON.stringify(l0.skillsHint || []), JSON.stringify(res.candidates.map((c) => ({ n: c.name, s: c.score }))), JSON.stringify(picked), null,
       l1.model || null, l1.status, l1.ms ?? null, Math.round(res.retr_ms));
   }
@@ -498,21 +538,23 @@ export async function route(prompt, { root = ".", file = DEFAULT_DB, useL1 = tru
 /** Normalisasi query untuk kunci cache: lowercase, tanpa diakritik/tanda baca, spasi tunggal. */
 export function normQuery(q) { return String(q).toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim(); }
 function routeCacheFile() {
-  if (process.env.SW_ROUTE_CACHE) return process.env.SW_ROUTE_CACHE === "0" ? null : process.env.SW_ROUTE_CACHE;
-  return process.env.LUMI_HOME ? path.join(process.env.LUMI_HOME, "router-cache.json") : null;
+  const rc = envFlag("LUMI_ROUTE_CACHE", ["SW_ROUTE_CACHE"]); // env-compat-allow
+  if (rc !== undefined) return rc === "0" || rc === "" ? null : rc;
+  const home = envVal("LUMI_HOME", ["SW_HOME"]); // env-compat-allow
+  return home ? path.join(home, "router-cache.json") : null;
 }
 function routeCacheRead(f) { try { return JSON.parse(fs.readFileSync(f, "utf8")); } catch { return {}; } }
 export function routeCacheGet(key, catalog) {
   const f = routeCacheFile(); if (!f) return null;
   const e = routeCacheRead(f)[sha256(key).slice(0, 32)];
-  const ttl = Number(process.env.SW_ROUTE_CACHE_TTL_S || 604800) * 1000;
+  const ttl = Number(envVal("LUMI_ROUTE_CACHE_TTL_S", ["SW_ROUTE_CACHE_TTL_S"]) || 604800) * 1000; // env-compat-allow
   if (!e || e.catalog !== catalog || Date.now() - e.ts > ttl) return null;
   return e.v;
 }
 export function routeCacheSet(key, catalog, v) {
   const f = routeCacheFile(); if (!f) return;
   try {
-    const c = routeCacheRead(f); const now = Date.now(), ttl = Number(process.env.SW_ROUTE_CACHE_TTL_S || 604800) * 1000;
+    const c = routeCacheRead(f); const now = Date.now(), ttl = Number(envVal("LUMI_ROUTE_CACHE_TTL_S", ["SW_ROUTE_CACHE_TTL_S"]) || 604800) * 1000; // env-compat-allow
     for (const [k, e] of Object.entries(c)) if (e.catalog !== catalog || now - e.ts > ttl) delete c[k];
     c[sha256(key).slice(0, 32)] = { ts: now, catalog, v };
     const ks = Object.keys(c); for (const k of ks.slice(0, Math.max(0, ks.length - 1000))) delete c[k];

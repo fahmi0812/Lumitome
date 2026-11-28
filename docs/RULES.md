@@ -41,3 +41,8 @@ Teks ditulis ulang (parafrase/sintesis), tidak disalin. Sumber dibaca pada SHA b
 | fahmi0812/Swanwright | da868bdb4a5423bfd017d19aa5f2ad4a3d5d089b | MIT | hard constraints, evidence FACT, doc-code drift (arXiv:2610.30571) |
 
 Keputusan auto-mode: Karpathy dan superpowers menyarankan "tanya bila ragu", sedangkan poteto menyarankan "never block on the human". Lumitome memilih: ambiguitas kecil → `ASUMSI:` lalu lanjut; tanya hanya untuk risiko merusak atau yang tidak bisa di-undo (grokbot-field-notes "when to stop and ask"). Analisis lengkap: laporan riset LUMITOME-RULES-SYNTHESIS.
+
+## Pemetaan Aturan Global Runtime vs Aturan Khusus Repo Lumitome
+Agar tidak terjadi anggapan aturan aktif padahal tidak dimuat oleh `build-config.mjs`:
+- **Aturan Global Runtime (`lumitome/rules/*.md` — `00-core.md`, `01-safety.md`):** Disuntikkan oleh `lumitome/lib/build-config.mjs` ke `finalCfg.instructions` untuk **semua** proyek pengguna (di-mount dari `$LUMI_HOME/config/rules`), tetap berlaku walau `LUMI_TRUST_PROJECT` mati. Berisi prinsip kerja inti, batas keras keamanan, larangan push `main`, dan prioritas doc-code-drift.
+- **Aturan Khusus Repo Lumitome (`.opencode/rules/*.md` — `00-doc-code-drift.md`, `01-hard-constraints.md`, `02-evidence.md`, `03-routing.md`, `04-correct.md`, `05-sectors.md`, `06-coding-karpathy.md`, `subagent.md`):** Dimuat oleh root `opencode.jsonc` / frontmatter agent saat bekerja di dalam repo `Lumitome` sendiri (atau saat `LUMI_TRUST_PROJECT=1` pada repo ini). Tidak ikut dimuat otomatis ke proyek eksternal pengguna.

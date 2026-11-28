@@ -11,6 +11,7 @@ import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
+import { resolveEnvValue } from "./env-compat.mjs";
 
 export const OC_VERSION = "2.3.0";
 export const LUMI_ENGINE_TAG = "engine-2.3.0-lumi.1";
@@ -36,7 +37,9 @@ export const OC_PINS = {
 };
 
 /** LUMI_HOME default: ~/.lumitome (Windows: %USERPROFILE%\.lumitome). */
-export function lumiHome(env = process.env, p = path, home = os.homedir()) { return env.LUMI_HOME || p.join(home, ".lumitome"); }
+export function lumiHome(env = process.env, p = path, home = os.homedir()) {
+  return resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]) || p.join(home, ".lumitome"); // env-compat-allow
+}
 export const exeName = (platform = process.platform) => (platform === "win32" ? "opencode.exe" : "opencode");
 export function engineBin(home, platform = process.platform, p = platform === "win32" ? path.win32 : path) { return p.join(home, "bin", exeName(platform)); }
 export function platformKey(platform = process.platform, arch = process.arch) { return `${platform}-${arch === "arm64" ? "arm64" : "x64"}`; }

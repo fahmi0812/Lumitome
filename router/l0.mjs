@@ -3,7 +3,7 @@
  * + koreksi typo trigram (Jaccard trigram karakter vs kosakata indeks) + daftar kemiripan trigram
  * + hint Layer-0 → RRF. Menghasilkan kandidat + confidence (margin BM25 top1 vs top2).
  */
-import { tokens, rrf, hintMatch, sanitize } from "./skill-db.mjs";
+import { tokens, rrf, hintMatch, sanitize, envVal } from "./skill-db.mjs";
 
 const tri = (w) => { const s = ` ${w} `, out = new Set(); for (let i = 0; i + 3 <= s.length; i++) out.add(s.slice(i, i + 3)); return out; };
 const jac = (a, b) => { let n = 0; for (const x of a) if (b.has(x)) n++; return n / (a.size + b.size - n || 1); };
@@ -36,7 +36,7 @@ function vocab(db) {
 }
 
 /** Koreksi token yang tidak ada di kosakata ke term terdekat (Jaccard trigram ≥ th). */
-export function correct(db, toks, th = Number(process.env.SW_TRI_TH || 0.45)) {
+export function correct(db, toks, th = Number(envVal("LUMI_TRI_TH", ["SW_TRI_TH"]) || 0.45)) { // env-compat-allow
   const { terms } = vocab(db); const out = [];
   for (const t of toks) {
     if (t.length < 4 || terms.has(t)) continue;
@@ -93,7 +93,7 @@ export function searchL0(db, prompt, { sectors = [], hints = [], n = 12 } = {}) 
       if (sc > 0) C.push([name, sc]);
     }
     C.sort((a, b) => b[1] - a[1]);
-    if (C.length) { lists.push(C.slice(0, 30).map(([nm], i) => [nm, i + 1])); weights.push(Number(process.env.SW_TRI_W || 0.6)); }
+    if (C.length) { lists.push(C.slice(0, 30).map(([nm], i) => [nm, i + 1])); weights.push(Number(envVal("LUMI_TRI_W", ["SW_TRI_W"]) || 0.6)); } // env-compat-allow
     const hl = []; for (const h of hints) for (const nm of allowed) if (hintMatch(nm, h) && !hl.includes(nm)) hl.push(nm);
     if (hl.length) { lists.push(hl.map((nm, i) => [nm, i + 1])); weights.push(1.0); }
     const bm = new Map([...(B.length ? B : []), ...A].map((r) => [r.name, r.sc]));
@@ -107,12 +107,12 @@ export function searchL0(db, prompt, { sectors = [], hints = [], n = 12 } = {}) 
   // sektor-salah dengan false-widen 9/112 kasus sektor-benar. BM25 saja
   // tidak memisahkan (median sektor-benar 17,3 vs sektor-salah 11,1);
   // skor fusi saja juga tidak (median 0,042 vs 0,026, rentang tumpang tindih).
-  // Ambang via env SW_WIDEN_SCORE (0,03) / SW_WIDEN_BM25 (12).
+  // Ambang via env LUMI_WIDEN_SCORE (0,03) / LUMI_WIDEN_BM25 (12).
   const weak = (r) => {
     if (!r.fused.length) return true;
     const topScore = r.fused[0][1];
     const topBm = r.bm.get(r.fused[0][0]) || 0;
-    return topScore < Number(process.env.SW_WIDEN_SCORE || 0.03) && topBm < Number(process.env.SW_WIDEN_BM25 || 12);
+    return topScore < Number(envVal("LUMI_WIDEN_SCORE", ["SW_WIDEN_SCORE"]) || 0.03) && topBm < Number(envVal("LUMI_WIDEN_BM25", ["SW_WIDEN_BM25"]) || 12); // env-compat-allow
   };
   if (sectors.length && weak(res)) { res = run([]); widened = true; }
   const info = db.prepare("SELECT sector, short, description, requires_consent FROM skill WHERE name = ?");
@@ -123,7 +123,7 @@ export function searchL0(db, prompt, { sectors = [], hints = [], n = 12 } = {}) 
 }
 
 /** Pilihan deterministik: top1 + kandidat lain yg skor fusi ≥ ratio×top1 dan BM25 ≥ bmRatio×BM25-top (maks max). */
-export function pickL0(cands, { ratio = Number(process.env.SW_PICK_RATIO || 0.85), bmRatio = Number(process.env.SW_PICK_BM || 0.6), max = Number(process.env.SW_FALLBACK_MAX || 3) } = {}) {
+export function pickL0(cands, { ratio = Number(envVal("LUMI_PICK_RATIO", ["SW_PICK_RATIO"]) || 0.85), bmRatio = Number(envVal("LUMI_PICK_BM", ["SW_PICK_BM"]) || 0.6), max = Number(envVal("LUMI_FALLBACK_MAX", ["SW_FALLBACK_MAX"]) || 3) } = {}) { // env-compat-allow
   if (!cands.length) return [];
   const top = cands[0], tb = Math.max(...cands.map((c) => c.bm25), 0);
   return [top, ...cands.slice(1).filter((c) => c.score >= top.score * ratio && (tb === 0 || c.bm25 >= tb * bmRatio))].slice(0, max).map((c) => c.name);

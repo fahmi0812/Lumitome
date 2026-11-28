@@ -12,6 +12,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { stripJsonc } from "../../router/parse.mjs";
+import { DEFAULT_9ROUTER_URL, DEFAULT_COMPACTION, DEFAULT_TOOL_OUTPUT } from "./default-config.mjs";
+import { resolveEnvValue } from "./env-compat.mjs";
 
 // default: codemem + 4 sektor inti; finance/media hanya via LUMI_MCP=all atau daftar eksplisit
 // v0.3.13: satu proses `skills` untuk semua sektor (dulu 4 proses skills-<sektor>); codemem hanya aktif di repo git (shim)
@@ -86,6 +88,8 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
   const finalCfg = {
     update: "disable",
     ...(env.LUMI_AGENT ? { default_agent: env.LUMI_AGENT } : { default_agent: sub === "run" ? RUN_AGENT : "orchestrator" }),
+    compaction: { ...DEFAULT_COMPACTION, keep: { ...DEFAULT_COMPACTION.keep } },
+    tool_output: { ...DEFAULT_TOOL_OUTPUT },
     providers: { "9router": { settings: { ...TIMEOUTS } } },
     ...(Object.keys(mcpOverride).length ? { mcp: { servers: mcpOverride } } : {}),
     // lapis-2 (lapis-1 = plugin guard): deny di akhir rantai → last-match-wins
@@ -123,9 +127,10 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
         // L1 = cadangan: "auto" (default) hanya saat confidence L0 rendah, timeout keras 3 s; "always"/"1"; "0" = mati
         const l1m = String(env.LUMI_ROUTER_L1 ?? "auto"), useL1 = l1m === "0" ? false : (l1m === "always" || l1m === "1") ? "always" : true;
         const r9 = FRAG.providers["9router"];
-        if (useL1) process.env.SW_9ROUTER_URL ||= env.LUMI_9ROUTER_URL || r9?.settings.baseURL || "http://127.0.0.1:20128/v1";
-        if (useL1 && !process.env.NINEROUTER_API_KEY && r9) process.env.SW_9ROUTER_KEY ||= FRAG.env.LUMI_KEY_9ROUTER;
-        process.env.SW_ROUTE_CACHE ||= path.join(HOME, "router-cache.json");
+        const routerUrlVal = resolveEnvValue(env, "LUMI_9ROUTER_URL", ["SW_9ROUTER_URL"]) || r9?.settings.baseURL || DEFAULT_9ROUTER_URL; // env-compat-allow
+        if (useL1) process.env.LUMI_9ROUTER_URL ||= routerUrlVal;
+        if (useL1 && !process.env.LUMI_KEY_9ROUTER && !process.env.NINEROUTER_API_KEY && r9?.settings) process.env.LUMI_KEY_9ROUTER ||= FRAG.env.LUMI_KEY_9ROUTER;
+        process.env.LUMI_ROUTE_CACHE ||= path.join(HOME, "router-cache.json");
         const r = await SD.route(prompt, { root: REPO, useL1, log: false });
         process.chdir(saved);
         finalCfg.permissions.push({ action: "skill", resource: "*", effect: "deny" }, ...r.picked.map((n) => ({ action: "skill", resource: n, effect: "allow" })));
@@ -136,7 +141,9 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
   // rules inti Lumitome dari config dir milik Lumitome (bukan proyek) → aktif di proyek mana pun walau trust off
   finalCfg.instructions = fs.readdirSync(path.join(ROOT, "rules")).filter((f) => f.endsWith(".md")).sort().map((f) => path.join(CFG_DIR, "rules", f));
   // hanya dir binary yang di-bind read-only ke sandbox — BUKAN seluruh LUMI_HOME (berisi jurnal, serve.password, data engine)
-  const toolDirs = [env.SW_HOME && path.join(env.SW_HOME, "bin"), path.resolve(path.dirname(process.execPath), "..")].filter((d) => d && path.relative(d, HOME).startsWith(".."));
+  const compatHome = resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]); // env-compat-allow
+  const toolDirs = [compatHome && path.join(compatHome, "bin"), path.resolve(path.dirname(process.execPath), "..")].filter((d) => d && path.relative(d, HOME).startsWith(".."));
+  const resolved9RouterUrl = resolveEnvValue(env, "LUMI_9ROUTER_URL", ["SW_9ROUTER_URL"]) || DEFAULT_9ROUTER_URL; // env-compat-allow
   Object.assign(env, {
     OPENCODE_CONFIG_DIR: CFG_DIR,
     OPENCODE_CONFIG_CONTENT: JSON.stringify(finalCfg),
@@ -151,14 +158,13 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
     PWD: WS, LUMI_WORKSPACE: WS, LUMI_JOURNAL: JOURNAL, LUMI_RUN_ID: RUN_ID,
     LUMI_HARNESS: path.join(REPO, "harness", "lumi-guard.mjs"),
     LUMI_TOOLDIRS: toolDirs.join(path.delimiter), LUMI_SBX_DIR: path.join(HOME, "sbx"),
-    LUMI_9ROUTER_URL: env.LUMI_9ROUTER_URL || "http://127.0.0.1:20128/v1",
+    LUMI_9ROUTER_URL: resolved9RouterUrl,
     ...FRAG.env,
   });
   // Windows: tidak ada bwrap → sandbox OS mati, tapi guard (deny rules, .env, anti-spin, push main) tetap aktif
   // Windows: tanpa bwrap; guard tetap aktif. Pesan hanya dengan LUMI_DEBUG (layar TUI tidak diawali teks tambahan)
   if (process.platform === "win32" && !env.LUMI_SANDBOX) { env.LUMI_SANDBOX = "off"; if (env.LUMI_DEBUG) process.stderr.write("lumitome: Windows, tanpa sandbox; guard aktif\n"); }
   if (!TRUST) env.OPENCODE_DISABLE_PROJECT_CONFIG = "1";
-  env.SW_9ROUTER_URL ||= env.LUMI_9ROUTER_URL; env.SW_9ROUTER_KEY ||= env.NINEROUTER_API_KEY; // nama SW_* warisan Swanwright, dibaca config proyek
   delete env.OPENCODE_CONFIG;
   return { finalCfg, env, skillNote };
 }

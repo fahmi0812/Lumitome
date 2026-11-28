@@ -392,4 +392,4 @@ export async function cli({ argv = process.argv.slice(2), root = REPO_DEFAULT, h
   return 0;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) process.exit(await cli());
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exit(await cli());

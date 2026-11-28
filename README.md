@@ -21,8 +21,8 @@ already have installed.
 You give it a task, such as "fix the failing tests". It reads your code, edits
 files, and runs commands to get it done.
 
-It ships 930 skills in one registry, covering coding, writing, research,
-security, finance, media, and misc. 764 of them can be routed to. The
+It ships 931 skills in one registry, covering coding, writing, research,
+security, finance, media, and misc. 765 of them can be routed to. The
 166-skill red-team pack stays disabled. Some built-in commands:
 
 - `/docs-pack` scaffolds a project's 12 living docs.
@@ -370,6 +370,11 @@ Its rules:
 - LINT-003: no `console.*(` calls in `lumitome/lib/`.
 - LINT-004: layer boundaries. `router/` imports nothing outside itself, and
   `harness/lumi-guard.mjs` imports only `node:*`.
+- LINT-005: no new direct `SW_*` env keys outside `lumitome/lib/env-compat.mjs`
+  and annotated legacy compat lines (`env-compat-allow`).
+- LINT-006: single OpenCode engine version source — no hardcoded `"2.3.0"` /
+  `"2.4.2"` literals in code files (`*.mjs`, `*.ts`, `*.sh`) outside
+  `lumitome/lib/engine.mjs`, `install.sh`, and `scripts/doctor.sh`.
 
 `npm run validate` runs lint and fails if lint fails. Principle: a new
 correction becomes a lint rule, not a new skill or prompt addition.

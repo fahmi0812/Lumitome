@@ -128,6 +128,8 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const cp = await import("node:child_process");
   const SD = await import("../router/skill-db.mjs");
   const { checkMcpPolicy } = await import("../scripts/check-opencode.mjs");
+  const prevEmbed = process.env.LUMI_EMBED; const prevEmbedModel = process.env.LUMI_EMBED_MODEL;
+  delete process.env.LUMI_EMBED; delete process.env.LUMI_EMBED_MODEL;
   delete process.env.SW_EMBED; delete process.env.SW_EMBED_MODEL;
   const built = await SD.buildIndex({ quiet: true });
   ok("indeks: 765 aktif (157 folder + 608 pack non-red-team), 166 disabled (red-team), 0 pack", built.counts.active === 765 && built.counts.disabled === 166 && built.counts.pack === 0);
@@ -159,12 +161,13 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const dupe = db.prepare("SELECT count(*) c FROM skill_edge WHERE kind='duplicate'").get().c;
   ok(`dedup: ${dupe} duplikat terdeteksi & dikecualikan`, (await SD.searchSkills(db, ["skill"], { status: ["active"], n: 32 })).candidates.every((c) => !db.prepare("SELECT 1 FROM skill_edge e JOIN skill s ON s.id=e.src WHERE s.name=? AND kind='duplicate'").get(c.name)));
   db.close();
-  process.env.SW_9ROUTER_URL = "http://127.0.0.1:9/v1"; process.env.SW_L1_TIMEOUT_MS = "1500";
+  const prev9rUrl = process.env.LUMI_9ROUTER_URL; const prevL1To = process.env.LUMI_L1_TIMEOUT_MS;
+  process.env.LUMI_9ROUTER_URL = "http://127.0.0.1:9/v1"; process.env.LUMI_L1_TIMEOUT_MS = "1500";
   const before = (() => { const d = SD.openDb("runtime/skills.db"); const c = d.prepare("SELECT count(*) c FROM route_log").get().c; d.close(); return c; })();
   const rt = await SD.route("tolong perbaiki bug login yang gagal unit test", { useL1: "always" });
   const after = (() => { const d = SD.openDb("runtime/skills.db"); const c = d.prepare("SELECT count(*) c FROM route_log").get().c; d.close(); return c; })();
   ok("route: 9router mati → fallback deterministik ≤5 + route_log tercatat", rt.l1.status === "unavailable" && rt.picked.length > 0 && rt.picked.length <= 5 && after === before + 1);
-  delete process.env.SW_9ROUTER_URL;
+  if (prev9rUrl === undefined) delete process.env.LUMI_9ROUTER_URL; else process.env.LUMI_9ROUTER_URL = prev9rUrl;
   {
     // v0.3.1: enrichment, trigram, gating L1, timeout keras, cache rute
     const d = SD.openDb("runtime/skills.db");
@@ -175,17 +178,20 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
     ok("L0 trigram: typo 'deploi ke vercle' → vercel-ops top1", r1.candidates[0]?.name === "vercel-ops");
     const rc = await SD.route("jurnal umum dan buku besar toko kelontong", { log: false });
     ok("gating L1: query yakin → L1 skipped (tanpa panggilan model)", rc.l1.status === "skipped" && rc.picked[0] === "akuntansi-umkm");
-    process.env.SW_9ROUTER_URL = "http://10.255.255.1:9/v1"; process.env.SW_L1_TIMEOUT_MS = "3000";
+    process.env.LUMI_9ROUTER_URL = "http://10.255.255.1:9/v1"; process.env.LUMI_L1_TIMEOUT_MS = "3000";
     const t0 = Date.now(); const rto = await SD.route("tolong perbaiki bug login yang gagal unit test", { useL1: "always", log: false });
     ok("L1 timeout keras ≤3.5 s → fallback L0", Date.now() - t0 < 3500 && rto.picked.length > 0 && rto.l1.status !== "ok");
-    delete process.env.SW_9ROUTER_URL; delete process.env.SW_L1_TIMEOUT_MS;
+    if (prev9rUrl === undefined) delete process.env.LUMI_9ROUTER_URL; else process.env.LUMI_9ROUTER_URL = prev9rUrl;
+    if (prevL1To === undefined) delete process.env.LUMI_L1_TIMEOUT_MS; else process.env.LUMI_L1_TIMEOUT_MS = prevL1To;
+    if (prevEmbed !== undefined) process.env.LUMI_EMBED = prevEmbed;
+    if (prevEmbedModel !== undefined) process.env.LUMI_EMBED_MODEL = prevEmbedModel;
     const cf = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "rcache-")), "router-cache.json");
-    process.env.SW_ROUTE_CACHE = cf;
+    process.env.LUMI_ROUTE_CACHE = cf;
     await SD.route("Jurnal umum, dan buku besar!", { log: false });
     const c2 = await SD.route("jurnal umum dan buku besar", { log: false });
     SD.routeCacheSet("x|y", "hash-lama", { picked: ["z"] });
     ok("cache rute: query ternormalisasi hit; katalog beda → miss", c2.cached === true && SD.routeCacheGet("x|y", "hash-baru") === null && SD.routeCacheGet("x|y", "hash-lama") !== null);
-    delete process.env.SW_ROUTE_CACHE; fs.rmSync(path.dirname(cf), { recursive: true, force: true });
+    delete process.env.LUMI_ROUTE_CACHE; fs.rmSync(path.dirname(cf), { recursive: true, force: true });
   }
   // hash berubah → STALE
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "swidx-"));
@@ -258,7 +264,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   {
     const l1dir = fs.mkdtempSync(path.join(os.tmpdir(), "l1-"));
     const l1file = path.join(l1dir, "l1-cache.json");
-    process.env.SW_L1_CACHE = l1file;
+    process.env.LUMI_L1_CACHE = l1file;
     const origFetch = globalThis.fetch;
     let calls = 0;
     globalThis.fetch = async () => { calls++; return { ok: true, text: async () => JSON.stringify({ choices: [{ message: { content: JSON.stringify({ skills: ["security-audit"], confidence: 0.9 }) } }] }) }; };
@@ -283,7 +289,7 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
     const rAb = await p;
     ok("L1: sinyal luar diabort -> fetch dibatalkan (bukan gantung)", seenSignal?.aborted === true && rAb.status === "unavailable" && Date.now() - tAb < 5000);
     globalThis.fetch = origFetch;
-    delete process.env.SW_L1_CACHE;
+    delete process.env.LUMI_L1_CACHE;
     fs.rmSync(l1dir, { recursive: true, force: true });
   }
   // §4 v0.3.33: metrik golden DIPIN PERSIS pada baseline BARU v0.3.33
@@ -305,15 +311,31 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   // ~8–12ms. Ambang 40ms memberi headroom noise VM tapi gagal pada kecepatan lama.
   {
     const SD4 = await import("../router/skill-db.mjs");
-    process.env.SW_ROUTE_CACHE = "0";
+    process.env.LUMI_ROUTE_CACHE = "0";
     const sample = g.slice(0, 30);
     for (const c of sample.slice(0, 3)) await SD4.route(c.prompt, { useL1: false, log: false });
     const lat = [];
     for (const c of sample) { const t0 = performance.now(); await SD4.route(c.prompt, { useL1: false, log: false }); lat.push(performance.now() - t0); }
-    delete process.env.SW_ROUTE_CACHE;
+    delete process.env.LUMI_ROUTE_CACHE;
     lat.sort((a, b) => a - b);
     const med = lat[Math.floor(lat.length / 2)];
     ok(`latensi route(): median ${med.toFixed(1)}ms < 40ms (30 prompt golden, warmup 3x)`, med < 40);
+  }
+  {
+    // Wave 0 (T0.2): inline env-compat di router/skill-db.mjs + serverInfo.name lumitome-skills
+    const SD5 = await import("../router/skill-db.mjs");
+    ok("T0.2 router embedProvider: LUMI_EMBED_MODEL=\"\" + SW_EMBED_MODEL=\"x\" -> none (tidak fallback)",
+      SD5.embedProvider({ LUMI_EMBED_MODEL: "", SW_EMBED_MODEL: "x" }) === "none"
+      && SD5.embedProvider({ SW_EMBED_MODEL: "x" }) === "9router");
+    ok("T0.2 router routerKey: presedensi + fallback string kosong ke NINEROUTER_API_KEY",
+      SD5.routerKey({ LUMI_KEY_9ROUTER: "a", LUMI_9ROUTER_KEY: "b", SW_9ROUTER_KEY: "c", NINEROUTER_API_KEY: "d" }) === "a"
+      && SD5.routerKey({ LUMI_KEY_9ROUTER: "", LUMI_9ROUTER_KEY: "b", SW_9ROUTER_KEY: "c", NINEROUTER_API_KEY: "d" }) === "b"
+      && SD5.routerKey({ LUMI_KEY_9ROUTER: "", LUMI_9ROUTER_KEY: "", SW_9ROUTER_KEY: "", NINEROUTER_API_KEY: "d" }) === "d");
+    const initAll = cp.execFileSync(process.execPath, ["--no-warnings", "router/skill-search-mcp.mjs", "--sectors", "all"], { input: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} }) + "\n", encoding: "utf8" });
+    const initPen = cp.execFileSync(process.execPath, ["--no-warnings", "router/skill-search-mcp.mjs", "--sector", "penulisan"], { input: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} }) + "\n", encoding: "utf8" });
+    ok("T0.2 MCP serverInfo.name: lumitome-skills (multi) & lumitome-skills-<sector>",
+      JSON.parse(initAll.trim()).result.serverInfo.name === "lumitome-skills"
+      && JSON.parse(initPen.trim()).result.serverInfo.name === "lumitome-skills-penulisan");
   }
 }
 

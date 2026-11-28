@@ -16,6 +16,7 @@ import os from "node:os";
 import crypto from "node:crypto";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { DEFAULT_MODEL } from "../lib/default-model.mjs";
+import { resolveEnvValue } from "../lib/env-compat.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");                 // .../lumitome
@@ -27,7 +28,7 @@ const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process
 
 const argv = process.argv.slice(2);
 // env terisolasi untuk SEMUA pemanggilan engine (termasuk --version): log/state tidak jatuh ke ~/.local/share/opencode user
-const ISO_HOME = env.LUMI_HOME || path.join(os.homedir(), ".lumitome");
+const ISO_HOME = resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]) || path.join(os.homedir(), ".lumitome"); // env-compat-allow
 const isoEnv = () => ({ ...env, XDG_CONFIG_HOME: path.join(ISO_HOME, "xdg-config"), XDG_DATA_HOME: env.LUMI_XDG_DATA || path.join(ISO_HOME, "data"),
   XDG_STATE_HOME: path.join(ISO_HOME, "state"), XDG_CACHE_HOME: path.join(ISO_HOME, "cache"), OPENCODE_DISABLE_AUTOUPDATE: "1" });
 const sub = argv[0] && !argv[0].startsWith("-") ? argv[0] : "";
@@ -92,7 +93,7 @@ if (sub === "trust") {
 // ---------- engine terpin: hanya diganti lewat perintah eksplisit ----------
 if (sub === "engine" || sub === "upgrade-engine" || sub === "upgrade") {
   const EN = await import(pathToFileURL(path.join(ROOT, "lib", "engine.mjs")).href);
-  const home = env.SW_HOME || env.LUMI_HOME || path.join(os.homedir(), ".lumitome");
+  const home = resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]) || path.join(os.homedir(), ".lumitome"); // env-compat-allow
   const cur = EN.engineBin(home);
   const ver = () => { try { return execFileSync(cur, ["--version"], { encoding: "utf8", env: isoEnv() }).trim(); } catch { return "(tidak ada)"; } };
   if (sub === "engine") { console.log(`engine: ${cur}\nversi:  ${ver()}\nbuild:  ${EN.installedFlavor(cur) || "upstream"} (LUMI_ENGINE=upstream → OpenCode resmi)\nautoupdate: mati (OPENCODE_DISABLE_AUTOUPDATE=1, update:"disable")`); process.exit(0); }
@@ -291,10 +292,11 @@ if (!HAS_PROVIDER) {
 function ocBin() {
   if (env.LUMI_OPENCODE) return env.LUMI_OPENCODE;
   const exe = process.platform === "win32" ? "opencode.exe" : "opencode";
-  for (const d of [env.SW_HOME, env.LUMI_HOME, path.join(os.homedir(), ".lumitome")]) if (d && fs.existsSync(path.join(d, "bin", exe))) return path.join(d, "bin", exe);
+  const compatHome = resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]); // env-compat-allow
+  for (const d of [compatHome, path.join(os.homedir(), ".lumitome")]) if (d && fs.existsSync(path.join(d, "bin", exe))) return path.join(d, "bin", exe);
   return exe;
 }
-const HOME = env.LUMI_HOME || path.join(os.homedir(), ".lumitome");
+const HOME = resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]) || path.join(os.homedir(), ".lumitome"); // env-compat-allow
 const WS = fs.realpathSync(env.LUMI_WORKSPACE || process.cwd());
 const RUN_ID = crypto.randomUUID();
 fs.mkdirSync(path.join(HOME, "runs"), { recursive: true });
@@ -434,15 +436,35 @@ if (sub === "serve" || sub === "web") {
 const redact = (t) => { let o = t.replace(/(server password\s*[:=]?\s*)\S+/gi, "$1[REDACTED]"); if (SERVE_PW) o = o.split(SERVE_PW).join("[REDACTED]"); return o; };
 // reaper: proses milik wrapper lumitome lain yang sudah mati (mis. kena kill -9) dibersihkan saat start
 const HAS_PROC = fs.existsSync("/proc/self/environ");
+function ancestorPids() {
+  const out = new Set([process.pid]);
+  let cur = process.pid;
+  for (let i = 0; i < 64 && cur > 1; i++) {
+    try {
+      const s = fs.readFileSync(`/proc/${cur}/stat`, "utf8");
+      const ppid = Number(s.slice(s.lastIndexOf(")") + 2).split(" ")[1]);
+      if (!Number.isInteger(ppid) || ppid <= 0 || out.has(ppid)) break;
+      out.add(ppid); cur = ppid;
+    } catch { break; }
+  }
+  return out;
+}
 function reapOrphans() {
   let n = 0, keep = null; if (!HAS_PROC) return 0;
+  const anc = ancestorPids();
+  const defHome = path.join(os.homedir(), ".lumitome");
   for (const d of fs.readdirSync("/proc")) {
     if (!/^\d+$/.test(d)) continue;
+    const pid = Number(d);
+    if (anc.has(pid)) continue;
     let e; try { e = fs.readFileSync(`/proc/${d}/environ`, "latin1"); } catch { continue; }
     const m = e.match(/(?:^|\0)LUMI_WRAPPER_PID=(\d+)/); if (!m || m[1] === String(process.pid)) continue;
+    const hm = e.match(/(?:^|\0)LUMI_HOME=([^\0]*)/);
+    const procHome = hm && hm[1] ? hm[1] : defHome;
+    if (procHome !== HOME) continue;
     if (fs.existsSync(`/proc/${m[1]}`)) continue;
-    if ((keep ??= keepPids()).has(Number(d))) continue;
-    try { process.kill(Number(d), "SIGKILL"); n++; } catch {}
+    if ((keep ??= keepPids()).has(pid)) continue;
+    try { process.kill(pid, "SIGKILL"); n++; } catch {}
   }
   return n;
 }

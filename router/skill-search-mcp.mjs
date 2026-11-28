@@ -7,18 +7,18 @@
 import readline from "node:readline";
 import path from "node:path";
 import fs from "node:fs";
-import { openDb, searchSkills, SECTORS, DEFAULT_DB } from "./skill-db.mjs";
+import { openDb, searchSkills, SECTORS, DEFAULT_DB, envVal } from "./skill-db.mjs";
 
 // --sector <s> : mode lama, satu tool `skill_search` (server skills-<s>)
 // --sectors a,b|all : satu proses untuk banyak sektor (server `skills`), tool `<sektor>_skill_search` per sektor
 const arg = (f) => { const k = process.argv.indexOf(f); return k >= 0 ? process.argv[k + 1] : undefined; };
 const multiArg = arg("--sectors");
 const multi = multiArg !== undefined;
-const sectors = multi ? (multiArg === "all" ? [...SECTORS] : multiArg.split(",").map((x) => x.trim()).filter(Boolean)) : [arg("--sector") ?? process.env.SW_SECTOR];
+const sectors = multi ? (multiArg === "all" ? [...SECTORS] : multiArg.split(",").map((x) => x.trim()).filter(Boolean)) : [arg("--sector") ?? envVal("LUMI_SECTOR", ["SW_SECTOR"])]; // env-compat-allow
 const bad = sectors.filter((x) => !SECTORS.includes(x));
 if (!sectors.length || bad.length) { process.stderr.write(`sektor tidak valid: ${bad.join(",") || "(kosong)"}\n`); process.exit(2); }
 const sector = sectors[0];
-const root = arg("--root") || process.env.SW_ROOT || process.cwd();
+const root = arg("--root") || envVal("LUMI_ROOT", ["SW_ROOT"]) || process.cwd(); // env-compat-allow
 const dbFile = path.join(root, DEFAULT_DB);
 const VERSION = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
 
@@ -60,7 +60,7 @@ rl.on("line", async (line) => {
   if (id === undefined || id === null) return; // notifikasi
   try {
     let result;
-    if (method === "initialize") result = { protocolVersion: params?.protocolVersion || "2025-06-18", capabilities: { tools: { listChanged: false } }, serverInfo: { name: multi ? "swanwright-skills" : `swanwright-skills-${sector}`, version: VERSION }, instructions: multi ? `Pakai <sektor>_skill_search (sektor: ${sectors.join(", ")}) bila butuh skill yang belum diberikan orchestrator. Hanya membaca indeks.` : `Pakai skill_search bila butuh skill sektor ${sector} yang belum diberikan orchestrator. Hanya membaca indeks.` };
+    if (method === "initialize") result = { protocolVersion: params?.protocolVersion || "2025-06-18", capabilities: { tools: { listChanged: false } }, serverInfo: { name: multi ? "lumitome-skills" : `lumitome-skills-${sector}`, version: VERSION }, instructions: multi ? `Pakai <sektor>_skill_search (sektor: ${sectors.join(", ")}) bila butuh skill yang belum diberikan orchestrator. Hanya membaca indeks.` : `Pakai skill_search bila butuh skill sektor ${sector} yang belum diberikan orchestrator. Hanya membaca indeks.` };
     else if (method === "ping") result = {};
     else if (method === "tools/list") result = { tools: TOOLS };
     else if (method === "tools/call") result = await call(params?.name, params?.arguments);

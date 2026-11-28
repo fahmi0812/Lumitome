@@ -1,6 +1,6 @@
 // Lumitome — config dasar (dimuat sebagai OPENCODE_CONFIG_DIR oleh bin/lumitome).
 // Override final yang tidak bisa dikalahkan config proyek dikirim wrapper via OPENCODE_CONFIG_CONTENT.
-// "model" di bawah = DEFAULT_MODEL; sumber tunggal: lumitome/lib/default-model.mjs — ubah di sana, samakan di sini (v0.3.71, A3).
+// "model" di bawah = DEFAULT_MODEL; sumber tunggal: lumitome/lib/default-model.mjs & default-config.mjs (v0.4.0 Wave 0).
 {
   "$schema": "https://opencode.ai/config.json",
   "model": "9router/ag/gemini-3.8-flash-high",

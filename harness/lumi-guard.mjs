@@ -19,7 +19,7 @@ const SECRET_PATHS = [
 ];
 // dump env berisi key provider
 const ENV_DUMP = /(?:^|[;&|(\s`])(?:printenv|env|export\s+-p|set|declare\s+-x)(?=$|[\s;&|)`])(?!\s*[A-Za-z_]+=)/;
-const KEY_VAR = /\$\{?(?:NINEROUTER_API_KEY|SW_9ROUTER_KEY|LUMI_9ROUTER_KEY|[A-Z_]*(?:API_KEY|TOKEN|SECRET)[A-Z_]*)\}?/;
+const KEY_VAR = /\$\{?(?:NINEROUTER_API_KEY|LUMI_KEY_9ROUTER|LUMI_9ROUTER_KEY|SW_9ROUTER_KEY|[A-Z_]*(?:API_KEY|TOKEN|SECRET)[A-Z_]*)\}?/; // env-compat-allow
 
 export function isSecretPath(p) {
   const s = " " + String(p || "") + " ";

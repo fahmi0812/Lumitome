@@ -5,8 +5,8 @@
 # Info/WARN: playwright, chromedev, markitdown, 9router.  Pakai: bash scripts/doctor.sh [dir-proyek]
 set -uo pipefail
 DIR="$(cd "${1:-.}" && pwd)"; cd "$DIR"
-# Home instalasi = LUMI_HOME (default ~/.lumitome), sama dengan install.sh. SW_HOME tetap dihormati bila diset.
-LH="${SW_HOME:-${LUMI_HOME:-$HOME/.lumitome}}"
+# Home instalasi = LUMI_HOME (default ~/.lumitome), sama dengan install.sh. LUMI_HOME menang atas SW_HOME.
+LH="${LUMI_HOME:-${SW_HOME:-$HOME/.lumitome}}" # env-compat-allow
 [ -f "$LH/env.sh" ] && . "$LH/env.sh"
 FAILS=0; WARNS=0
 pass(){ printf '[PASS] %s\n' "$*"; }; fail(){ printf '[FAIL] %s\n' "$*"; FAILS=$((FAILS+1)); }; warn(){ printf '[WARN] %s\n' "$*"; WARNS=$((WARNS+1)); }
@@ -16,7 +16,7 @@ command -v codebase-memory-mcp >/dev/null && pass "$(codebase-memory-mcp --versi
 command -v uvx >/dev/null && pass "uvx ada" || warn "uvx tidak ada (markitdown)"
 node --no-warnings scripts/skill-index.mjs --check >/dev/null && pass "indeks skill FRESH (runtime/skills.db)" || { node --no-warnings scripts/skill-index.mjs >/dev/null && pass "indeks skill dibangun ulang (hash berubah)" || fail "indeks skill gagal"; }
 node --no-warnings scripts/gen-policy.mjs --check >/dev/null && pass "permissions agent sinkron (gen-policy)" || fail "permissions agent basi → npm run policy"
-[ -d .git ] || { git init -q && git -c user.email=doctor@local -c user.name=doctor add -A >/dev/null && git -c user.email=doctor@local -c user.name=doctor commit -qm "swanwright doctor snapshot" && warn "repo git belum ada → dibuat lokal (tanpa remote)"; }
+[ -d .git ] || { git init -q && git -c user.email=doctor@local -c user.name=doctor add -A >/dev/null && git -c user.email=doctor@local -c user.name=doctor commit -qm "lumitome doctor snapshot" && warn "repo git belum ada → dibuat lokal (tanpa remote)"; }
 
 PORT="${PORT:-$(node -e 'const s=require("net").createServer();s.listen(0,"127.0.0.1",()=>{console.log(s.address().port);s.close()})')}"
 export OPENCODE_PASSWORD="${OPENCODE_PASSWORD:-$(node -e 'console.log(require("crypto").randomBytes(18).toString("hex"))')}"
@@ -49,9 +49,9 @@ const miss=["orchestrator","sectors/coding","sectors/finance","sectors/media","s
 if(miss.length)f++; out("FAIL",!miss.length,`agents Lumitome ${10-miss.length}/10${miss.length?" hilang: "+miss:""}`);
 fs.writeFileSync(AF+".res",`${f} ${w}`);
 JS
-F2=1; W2=0; [ -f "$LOG.agents.res" ] && read F2 W2 < "$LOG.agents.res"; FAILS=$((FAILS+F2)); WARNS=$((WARNS+W2)); [ "${SW_DOCTOR_KEEP:-}" ] && cp "$S" "$M" "$P" "$SW_DOCTOR_KEEP"/ 2>/dev/null; rm -f "$LOG.agents" "$LOG.agents.res"
+F2=1; W2=0; [ -f "$LOG.agents.res" ] && read F2 W2 < "$LOG.agents.res"; FAILS=$((FAILS+F2)); WARNS=$((WARNS+W2)); DK="${LUMI_DOCTOR_KEEP:-${SW_DOCTOR_KEEP:-}}"; [ "$DK" ] && cp "$S" "$M" "$P" "$DK"/ 2>/dev/null; rm -f "$LOG.agents" "$LOG.agents.res" # env-compat-allow
 R="$(printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"skill_search","arguments":{"query":"tdd unit test gagal","k":3}}}' | node --no-warnings router/skill-search-mcp.mjs --sector coding | tail -1)"
 echo "$R" | grep -q '"tdd-red-green-refactor"' && pass "skill_search(coding, 'tdd unit test gagal') → tdd-red-green-refactor" || fail "skill_search tidak waras: $R"
-U="${SW_9ROUTER_URL:-http://127.0.0.1:20128/v1}"; C=$(curl -s -m 5 -A swanwright-doctor -o /dev/null -w '%{http_code}' "$U" 2>/dev/null); [[ "$C" =~ ^[2-4][0-9][0-9]$ ]] && pass "9router hidup ($U, HTTP $C tanpa auth)" || warn "9router tidak terjangkau ($U) — Layer-1 pakai fallback deterministik"
+U="${LUMI_9ROUTER_URL:-${SW_9ROUTER_URL:-http://127.0.0.1:20128/v1}}"; C=$(curl -s -m 5 -A lumitome-doctor -o /dev/null -w '%{http_code}' "$U" 2>/dev/null); [[ "$C" =~ ^[2-4][0-9][0-9]$ ]] && pass "9router hidup ($U, HTTP $C tanpa auth)" || warn "9router tidak terjangkau ($U) — Layer-1 pakai fallback deterministik" # env-compat-allow
 echo "doctor: ${FAILS} FAIL, ${WARNS} WARN"
 [ "$FAILS" = 0 ]

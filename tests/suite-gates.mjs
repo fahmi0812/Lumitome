@@ -1053,17 +1053,17 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
       && /Mode \/subagent saat ini: OFF\./.test(fm(path.join(tmp, ".opencode", "agents", "orchestrator.md"))));
     const pp68 = path.join(tmp, ".opencode", "lumitome-subagent.json");
     ok("/subagent v0.3.68: cli() --check exit 1 saat blok konfigurasi basi, exit 0 sesudah diterapkan",
-      ASP.cli({ argv: ["--preset", pp68, "--check"], root: tmp, log: () => {}, err: () => {} }) === 1
-      && ASP.cli({ argv: ["--preset", pp68], root: tmp, log: () => {}, err: () => {} }) === 0
-      && ASP.cli({ argv: ["--preset", pp68, "--check"], root: tmp, log: () => {}, err: () => {} }) === 0);
+      ASP.cli({ argv: ["--preset", pp68, "--check"], root: tmp, home: tmp, log: () => {}, err: () => {} }) === 1
+      && ASP.cli({ argv: ["--preset", pp68], root: tmp, home: tmp, log: () => {}, err: () => {} }) === 0
+      && ASP.cli({ argv: ["--preset", pp68, "--check"], root: tmp, home: tmp, log: () => {}, err: () => {} }) === 0);
     const logs = [];
     // cli() membaca preset dari DISK (v0.3.71 A1: --preset eksplisit) —
     // tulis pOpus dulu supaya off/on menguji preset itu (seperti tes v0.3.67).
     fs.writeFileSync(pp68, JSON.stringify(pOpus, null, 2) + "\n");
     ok("/subagent v0.3.68: cli() off menulis blok OFF; cli() on mengembalikan blok paralel + Thinking opus",
-      ASP.cli({ argv: ["--preset", pp68, "off"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
+      ASP.cli({ argv: ["--preset", pp68, "off"], root: tmp, home: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
       && /- Mode: OFF\./.test(rulesTmp())
-      && ASP.cli({ argv: ["--preset", pp68, "on"], root: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
+      && ASP.cli({ argv: ["--preset", pp68, "on"], root: tmp, home: tmp, log: (m) => logs.push(m), err: () => {} }) === 0
       && /- Mode: paralel\./.test(rulesTmp()) && rulesTmp().includes(`- Thinking: ${OPUS}`));
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
   // Fixture tanpa rules/subagent.md: sync blok = peringatan, bukan error.
