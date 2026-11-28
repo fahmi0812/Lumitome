@@ -40,6 +40,7 @@ export function resolveAutoMode({ env = process.env, argv = [] } = {}) {
   const raw = String(env.LUMI_AUTO_MODE ?? "").trim().toLowerCase();
   if (OFF_VALUES.has(raw)) return { auto: false, source: "env" };
   if (ON_VALUES.has(raw)) return { auto: true, source: "env" };
+  if (String(env.LUMI_AUTONOMY ?? "") === "full") return { auto: true, source: "env" };
   return { auto: true, source: "default" };
 }
 

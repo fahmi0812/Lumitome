@@ -5,7 +5,7 @@
 2. Hooks plugin deterministik
 3. `rules/*.md` ringkas
 4. Skill (10–40 baris prinsip idealnya; body upstream apa adanya)
-5. Review manusia (Fahmi buka PR)
+5. Review manusia (Fahmi buka PR; kecuali opt-in `LUMI_AUTONOMY=full` dengan branch protection `main` + `gh pr merge --auto`)
 
 ## /correct
 Koreksi → tes atau hook bila bisa; else 1 baris rule ber-id+tanggal.

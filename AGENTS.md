@@ -13,7 +13,7 @@ Lapisan non-invasif di atas OpenCode. Jangan patch core OpenCode. Model hanya vi
 - `npm run sync-upstream` — re-fetch skill dari SHA ter-pin
 
 ## Larangan keras
-1. Jangan `git push` ke `main`/`master`, termasuk untuk perubahan skill. Kerja di branch lain, push branch itu, lalu Fahmi yang membuka dan me-merge PR; jangan buka PR otomatis. Guard menegakkan ini (`harness/lumi-guard.mjs`, aturan `push-main`), begitu juga `--force`, `--all`, dan refspec `+`. Sebelum push: registry + indeks + `npm run validate` + `npm test` lolos (CI menjalankan ulang di PR).
+1. Jangan `git push` ke `main`/`master`, termasuk untuk perubahan skill. Kerja di branch lain, push branch itu, lalu Fahmi yang membuka dan me-merge PR; jangan buka PR otomatis KECUALI `LUMI_AUTONOMY=full` (mode `full`: agent boleh push branch fitur, `gh pr create`, `gh pr merge --auto` setelah required checks hijau, `gh release create`, MCP GitHub & browser tanpa konfirmasi). MUTLAK tetap dilarang di semua mode: push/force/`--all`/refspec `+` ke `main`/`master`, `gh pr merge` tanpa `--auto` atau dengan `--admin`, hapus repo/release/branch, baca token/`hosts.yml`, `gh auth token`, `gh secret`. Guard menegakkan ini (`harness/lumi-guard.mjs`, aturan `push-main`). Sebelum push: registry + indeks + `npm run validate` + `npm test` lolos (CI menjalankan ulang di PR).
 2. Jangan LiteLLM / proxy selain 9router.
 3. `/pentest` wajib `--pentest` + file consent + scope.
 4. Klaim DONE tanpa FACT (perintah+exit/hash) ditolak Done-Gate.

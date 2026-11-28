@@ -10,6 +10,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import { pathToFileURL } from "node:url";
 import { stripJsonc } from "../../router/parse.mjs";
 import { DEFAULT_9ROUTER_URL, DEFAULT_COMPACTION, DEFAULT_TOOL_OUTPUT } from "./default-config.mjs";
@@ -174,6 +175,35 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
     else if (sub === "" || sub === "run" || env.LUMI_DEBUG) process.stderr.write(`lumitome: codemem dilewati — ${CM.cbmBin(HOME)} belum ada\n`);
   }
   const is24 = engineAtLeast(resolveEngineVersion(env, { installedVersion: installedEngineVersion }), ENGINE_MIN_2_4);
+  const autonomyFull = String(env?.LUMI_AUTONOMY ?? "") === "full" && String(env?.LUMI_AUTO_MODE ?? "") !== "0";
+  const browserAllow = [
+    { action: "playwright_*", resource: "*", effect: "allow" },
+    { action: "chromedev_*", resource: "*", effect: "allow" },
+    { action: "chrome-devtools*", resource: "*", effect: "allow" },
+    { action: "browser-act*", resource: "*", effect: "allow" },
+  ];
+  // OpenCode 2.4.2 (ConfigAgentPlugin): top-level `permissions` di-push SEBELUM frontmatter agent,
+  // sedangkan `OPENCODE_CONFIG_CONTENT.agents[id].permissions` di-push SESUDAH frontmatter agent
+  // (last-match-wins), sehingga override `ask` di `.opencode/agents/sectors/*.md` harus via `agents`.
+  const autonomyAgents = autonomyFull ? {
+    "sectors/coding": {
+      permissions: [
+        { action: "github_*", resource: "*", effect: "allow" },
+        { action: "github_delete_*", resource: "*", effect: "deny" },
+        { action: "github_merge_*", resource: "*", effect: "ask" },
+        ...browserAllow,
+      ],
+    },
+    "sectors/media": {
+      permissions: [...browserAllow],
+    },
+    "sectors/riset": {
+      permissions: [
+        { action: "playwright_*", resource: "*", effect: "allow" },
+        { action: "browser-act*", resource: "*", effect: "allow" },
+      ],
+    },
+  } : null;
   // header 300 s, jeda antar-chunk 900 s, total 1 jam (LUMI_*_TIMEOUT_MS) — TIMEOUTS dihitung entry (dipakai juga retry)
   const finalCfg = {
     update: "disable",
@@ -195,10 +225,17 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
     policies: buildPolicies(env, is24),
     providers: { "9router": { settings: { ...TIMEOUTS } } },
     ...(Object.keys(mcpOverride).length ? { mcp: { servers: mcpOverride } } : {}),
+    ...(autonomyAgents ? { agents: autonomyAgents } : {}),
     // lapis-2 (lapis-1 = plugin guard): deny di akhir rantai → last-match-wins
     permissions: [
       // pola diawali "*" karena string yang dicek OpenCode = `bwrap --args 3 bash -c '<perintah>' …`
-      { action: "shell", resource: "*git push *", effect: "ask" },
+      { action: "shell", resource: "*git push *", effect: autonomyFull ? "allow" : "ask" },
+      ...(autonomyFull ? [
+        { action: "github_*", resource: "*", effect: "allow" },
+        { action: "github_delete_*", resource: "*", effect: "deny" },
+        { action: "github_merge_*", resource: "*", effect: "ask" },
+        ...browserAllow,
+      ] : []),
       // v0.3.55: konsultasi modern-web-guidance di Maker loopdesign/stitch-ui —
       // hanya perintah persis ini yang di-allowlist; JANGAN pernah `npx *` telanjang.
       { action: "shell", resource: "*npx -y modern-web-guidance@latest *", effect: "allow" },
@@ -247,6 +284,11 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
   const compatHome = resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]); // env-compat-allow
   const toolDirs = [compatHome && path.join(compatHome, "bin"), path.resolve(path.dirname(process.execPath), "..")].filter((d) => d && path.relative(d, HOME).startsWith(".."));
   const resolved9RouterUrl = resolveEnvValue(env, "LUMI_9ROUTER_URL", ["SW_9ROUTER_URL"]) || DEFAULT_9ROUTER_URL; // env-compat-allow
+  const userHome = env.HOME || os.homedir();
+  const ghConfigDir = !env.GH_CONFIG_DIR && userHome ? path.join(userHome, ".config", "gh") : "";
+  const gitConfigGlobal = !env.GIT_CONFIG_GLOBAL && userHome
+    ? [path.join(userHome, ".gitconfig"), path.join(userHome, ".config", "git", "config")].find((p) => fs.existsSync(p))
+    : "";
   Object.assign(env, {
     OPENCODE_CONFIG_DIR: CFG_DIR,
     OPENCODE_CONFIG_CONTENT: stableStringify(finalCfg),
@@ -257,7 +299,9 @@ export async function buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOU
     XDG_DATA_HOME: env.LUMI_XDG_DATA || path.join(HOME, "data"),
     XDG_STATE_HOME: path.join(HOME, "state"), XDG_CACHE_HOME: path.join(HOME, "cache"),
     // isolasi dari instalasi OpenCode user: ~/.config/opencode, ~/.local/share/opencode (auth.json, sesi) tidak dibaca/ditulis
-    XDG_CONFIG_HOME: path.join(HOME, "xdg-config"),
+    XDG_CONFIG_HOME: env.LUMI_XDG_CONFIG || path.join(HOME, "xdg-config"),
+    ...(ghConfigDir && fs.existsSync(ghConfigDir) ? { GH_CONFIG_DIR: ghConfigDir } : {}),
+    ...(gitConfigGlobal ? { GIT_CONFIG_GLOBAL: gitConfigGlobal } : {}),
     PWD: WS, LUMI_WORKSPACE: WS, LUMI_JOURNAL: JOURNAL, LUMI_RUN_ID: RUN_ID,
     LUMI_HARNESS: path.join(REPO, "harness", "lumi-guard.mjs"),
     LUMI_TOOLDIRS: toolDirs.join(path.delimiter), LUMI_SBX_DIR: path.join(HOME, "sbx"),

@@ -30,7 +30,7 @@ const die = (code, msg) => { process.stderr.write(`lumitome: ${msg}\n`); process
 const argv = process.argv.slice(2);
 // env terisolasi untuk SEMUA pemanggilan engine (termasuk --version): log/state tidak jatuh ke ~/.local/share/opencode user
 const ISO_HOME = resolveEnvValue(env, "LUMI_HOME", ["SW_HOME"]) || path.join(os.homedir(), ".lumitome"); // env-compat-allow
-const isoEnv = () => ({ ...env, XDG_CONFIG_HOME: path.join(ISO_HOME, "xdg-config"), XDG_DATA_HOME: env.LUMI_XDG_DATA || path.join(ISO_HOME, "data"),
+const isoEnv = () => ({ ...env, XDG_CONFIG_HOME: env.LUMI_XDG_CONFIG || path.join(ISO_HOME, "xdg-config"), XDG_DATA_HOME: env.LUMI_XDG_DATA || path.join(ISO_HOME, "data"),
   XDG_STATE_HOME: path.join(ISO_HOME, "state"), XDG_CACHE_HOME: path.join(ISO_HOME, "cache"), OPENCODE_DISABLE_AUTOUPDATE: "1" });
 const sub = argv[0] && !argv[0].startsWith("-") ? argv[0] : "";
 // v0.3.12: migrasi salinan config lama ("buffer": "20%", {env:NINEROUTER_API_KEY}) — juga terpanggil oleh cek pasca-update
@@ -355,10 +355,25 @@ if (TRUST) {
   if (!d.allowed) die(1, "LUMI_TRUST_PROJECT=1 dibatalkan: tanpa konfirmasi, config proyek tidak dimuat. Jalankan tanpa LUMI_TRUST_PROJECT=1, atau ketik 'ya' di terminal.");
   if (d.mode === "non-tty") process.stderr.write(`lumitome: PERINGATAN KERAS — LUMI_TRUST_PROJECT=1 tanpa konfirmasi interaktif (non-TTY, bukan terminal); config proyek DIMUAT atas risiko env ini. Dicatat di jurnal (${JOURNAL}), berlaku sesi ini saja.\n`);
 }
+// identitas git dari host (pakai HOME/XDG asli sebelum buildFinalConfig mengisolasi XDG_CONFIG_HOME); fail-silent, tanpa log nilai
+{
+  const gitCfg = (key) => {
+    try {
+      return execFileSync("git", ["config", "--get", key], { cwd: WS, env, encoding: "utf8", timeout: 1500, stdio: ["ignore", "pipe", "ignore"] }).trim();
+    } catch { return ""; }
+  };
+  if (!env.GIT_AUTHOR_NAME) { const v = gitCfg("user.name"); if (v) env.GIT_AUTHOR_NAME = v; }
+  if (!env.GIT_AUTHOR_EMAIL) { const v = gitCfg("user.email"); if (v) env.GIT_AUTHOR_EMAIL = v; }
+  if (!env.GIT_COMMITTER_NAME && env.GIT_AUTHOR_NAME) env.GIT_COMMITTER_NAME = env.GIT_AUTHOR_NAME;
+  if (!env.GIT_COMMITTER_EMAIL && env.GIT_AUTHOR_EMAIL) env.GIT_COMMITTER_EMAIL = env.GIT_AUTHOR_EMAIL;
+}
 // header 300 s, jeda antar-chunk 900 s, total 1 jam (LUMI_*_TIMEOUT_MS) — dipakai juga retry di bawah
 const TIMEOUTS = PV.providerTimeouts(env);
 const VALUE_FLAGS = new Set(["-m", "--model", "-s", "--session", "--agent", "--format", "-f", "--file", "--title", "--log-level", "--server"]);
 function promptOf(rest) { const out = []; for (let i = 0; i < rest.length; i++) { const a = rest[i]; if (VALUE_FLAGS.has(a)) { i++; continue; } if (a.startsWith("-")) continue; out.push(a); } return out.join(" "); }
+const AM = await import(pathToFileURL(path.join(ROOT, "lib", "auto-mode.mjs")).href);
+const AUTO = AM.resolveAutoMode({ env, argv });
+if (!AUTO.auto) env.LUMI_AUTO_MODE = "0";
 const installedEngineVersion = env.LUMI_ENGINE_VERSION ? null : detectInstalledEngineVersion({ bin: ocBin(), env: isoEnv() });
 const { skillNote } = await (await import(pathToFileURL(path.join(ROOT, "lib", "build-config.mjs")).href)).buildFinalConfig({ env, REPO, ROOT, HOME, WS, CFG_DIR, JOURNAL, RUN_ID, FRAG, MODEL: TUI_MODEL, HAS_9R_ENV, TIMEOUTS, TRUST, sub, prompt: sub === "run" ? promptOf(argv.slice(1)) : "", installedEngineVersion });
 
@@ -476,8 +491,6 @@ if (reaped && env.LUMI_DEBUG) process.stderr.write(`lumitome: reaper membersihka
 // v0.3.51: mode auto default — flag --auto engine OpenCode (auto-approve yang
 // bukan deny; deny tetap berlaku, guard tetap termuat). Opt-out:
 // LUMI_AUTO_MODE=0 atau --no-auto (flag dibuang di sini, jangan sampai ke engine).
-const AM = await import(pathToFileURL(path.join(ROOT, "lib", "auto-mode.mjs")).href);
-const AUTO = AM.resolveAutoMode({ env, argv });
 let args = AM.stripNoAuto(argv.slice());
 if (sub === "run") {
   const rest = args.slice(1);
@@ -562,7 +575,7 @@ function runOnce(a) {
     const handlers = { SIGINT: fwd("SIGINT"), SIGTERM: fwd("SIGTERM"), SIGHUP: fwd("SIGHUP") };
     for (const [s, h] of Object.entries(handlers)) process.on(s, h);
     // watchdog respons pertama: tanpa output & tanpa aktivitas tool dalam LUMI_FIRST_OUTPUT_MS → provider dianggap diam
-    const t0 = Date.now(), firstMs = Number(env.LUMI_FIRST_OUTPUT_MS || 90000);
+    const t0 = Date.now(), firstMs = Number(env.LUMI_FIRST_OUTPUT_MS || 180000);
     const acted = () => readJournal().some((r) => r.kind !== "guard");
     const wd = sub === "run" && firstMs > 0 ? setInterval(() => {
       // header "> agent · model", event JSON step_start/error & baris kosong/ANSI bukan respons
@@ -579,7 +592,7 @@ function runOnce(a) {
 const readJournal = () => { try { return fs.readFileSync(JOURNAL, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l)); } catch { return []; } };
 const TIMEOUT_RE = /timeout|timed out|ETIMEDOUT|headerTimeout|chunkTimeout|TimeoutError|aborted due to timeout/i;
 
-const DEADLINE = Date.now() + Number(env.LUMI_DEADLINE_MS || 300000); // batas keras run (default 5 menit)
+const DEADLINE = Date.now() + Number(env.LUMI_DEADLINE_MS || 1800000); // batas keras run (default 30 menit)
 let deadlineHit = false, stallHit = false;
 // preflight provider (v0.3.44: modul lib/preflight.mjs — server MATI gagal-cepat
 // tanpa retry + diagnosis terpandu; server LAMBAT tetap di-retry, timeout tidak

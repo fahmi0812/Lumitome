@@ -10,21 +10,22 @@ metadata:
 
 ## Operational Rules
 
-1. **Hardcoded Maximum Iterations:**
-   - The loop counter is hardcoded to `max_iterations = 3`.
-   - It is strictly non-negotiable and cannot be bypassed by model prompting.
+1. **Canonical Rule (Single Definition):**
+   - **3 consecutive failures for the SAME hypothesis/approach → stop & report; substantively changing hypothesis resets the counter.**
+   - (`max_iterations = 3` per hypothesis, hardcoded and non-negotiable — cannot be bypassed by model prompting.)
 
 2. **Iteration Tracking:**
-   - Iteration 1: Normal execution and Done-Gate validation.
-   - Iteration 2 (if Iteration 1 failed): Re-plan with error feedback.
-   - Iteration 3 (if Iteration 2 failed): Final attempt with targeted diagnostics. If this fails, the circuit breaker TRIPS immediately.
+   - Failure 1: Re-check diagnostics and adjust or pivot.
+   - Failure 2 (same hypothesis): Trigger root-cause re-evaluation / Exception Auditor (`/audit`) before a 3rd attempt.
+   - Failure 3 (same hypothesis): Circuit breaker TRIPS immediately.
+   - Substantive hypothesis change (replacing the underlying root-cause premise/approach rather than repeating tweaks): Resets the consecutive failure counter to `0`.
 
 3. **Exception Auditor Trigger:**
-   - If two consecutive failures occur, trigger the `iFixAi` Exception Auditor (`/audit`) for deep root-cause failure analysis.
+   - If two consecutive failures occur on the same hypothesis, trigger the `iFixAi` Exception Auditor (`/audit`) for deep root-cause failure analysis.
 
 4. **Circuit Breaker Tripped Behavior:**
-   - When tripped, cease all tool calls and automated attempts.
+   - When tripped, cease all tool calls and automated attempts on that hypothesis.
    - Output an unvarnished diagnosis detailing:
-     - The exact failures across all 3 iterations.
+     - The exact failures across all 3 consecutive attempts and the attacked premise.
      - Why the Done-Gate could not be satisfied.
      - Specific recommendations for manual operator intervention.

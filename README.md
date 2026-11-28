@@ -9,7 +9,7 @@
 # Lumitome
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9962e.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.4.3-e8c266.svg)
+![Version](https://img.shields.io/badge/version-0.4.4-e8c266.svg)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.6-a97a1e.svg)
 
 </div>
@@ -70,7 +70,7 @@ in `~/.lumitome/logs/install.log`.
 **Windows, or any system with npm:**
 
 ```bash
-npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.3.tar.gz
+npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.4.tar.gz
 ```
 
 Run it in PowerShell or Command Prompt. You do not need Git for this. The
@@ -100,14 +100,14 @@ Option A (recommended): allow scripts for your user, then run the install again.
 
 ```powershell
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
-npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.3.tar.gz
+npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.4.tar.gz
 ```
 
 Option B (changes nothing): use the `npm.cmd` shim instead, or run the same
 command in Command Prompt (`cmd.exe`).
 
 ```powershell
-npm.cmd install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.3.tar.gz
+npm.cmd install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.4.tar.gz
 ```
 
 Type the command yourself, and do not paste the terminal's output back into the
@@ -258,6 +258,37 @@ below are the protection that remains.
 
 **Safer setup for unattended runs:** `LUMI_AUTO_MODE=0` (or `--no-auto`), plus
 `LUMI_SANDBOX=bwrap` on Linux.
+
+### Mode otonom penuh (`LUMI_AUTONOMY=full`)
+
+Opt-in untuk mengizinkan agent menjalankan siklus branch fitur → PR → rilis tanpa konfirmasi per langkah:
+
+1. Login GitHub CLI sekali di terminal: `gh auth login`.
+2. Aktifkan di `~/.lumitome/env.sh`:
+   ```bash
+   export LUMI_AUTONOMY=full
+   ```
+3. **Rekomendasi wajib:** aktifkan branch protection pada `main` di GitHub dengan required check `ci / gates` (tanpa itu `gh pr merge --auto` akan langsung merge).
+
+Saat `LUMI_AUTONOMY=full` aktif, agent boleh push branch fitur, `gh pr create`, `gh pr merge --auto` (GitHub merge otomatis setelah required checks hijau), `gh release create`, serta memakai MCP GitHub & browser tanpa konfirmasi.
+
+**Tetap mutlak dilarang di semua mode (termasuk `LUMI_AUTONOMY=full`):**
+
+- `git push` / `--force` / `--all` / refspec `+` ke `main` atau `master`
+- `gh pr merge` tanpa `--auto`, atau memakai `--admin`
+- Menghapus repo, release, atau branch remote (`gh repo delete`, `gh release delete`, `git push --delete`)
+- Membaca/menampilkan token, `hosts.yml`, `gh auth token`, atau `gh secret`
+
+**Variabel lingkungan otonomi & timeout (baru / default diperbarui):**
+
+| Env | Default | Fungsi |
+|---|---|---|
+| `LUMI_AUTONOMY` | — | `full` = opt-in mode otonom penuh (push branch fitur, `gh pr create`, `gh pr merge --auto`, `gh release create`, MCP GitHub/browser tanpa konfirmasi) |
+| `LUMI_WATCHDOG` | `1` (aktif) | `0` (`LUMI_WATCHDOG=0`) mematikan `HaltingWatchdog` |
+| `LUMI_XDG_CONFIG` | — | Override direktori `XDG_CONFIG_HOME` untuk sesi Lumitome |
+| `LUMI_DEADLINE_MS` | `1800000` | Batas keras satu `run` dalam ms (30 menit; sebelumnya `300000`) → exit 124 |
+| `LUMI_FIRST_OUTPUT_MS` | `180000` | Provider diam tanpa output/aksi dalam ms (3 menit; sebelumnya `90000`) → exit 124 |
+| `LUMI_IDLE_MAX_REDRIVES` | `3` | Maks re-drive otomatis `lumitome-idle-gate` per sesi (sebelumnya `2`) |
 
 ## Updating
 
@@ -457,7 +488,7 @@ Monotonic Sticky Taint, cascade 3-tier khusus `9router` + `LUMI_OVERTHINK_GUARD`
 - Linux/macOS: jalankan baris `curl ... install.sh | bash` di atas. Versi
   tertentu: `LUMI_REF=v0.4.1 bash`; versi pengembangan: `LUMI_REF=main bash`.
 - Windows (atau OS apa pun yang punya npm, butuh Node.js 22.6+):
-  `npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.3.tar.gz`.
+  `npm install -g https://github.com/fahmi0812/Lumitome/archive/refs/tags/v0.4.4.tar.gz`.
   Setelah terbit di npm: `npm install -g lumitome`.
 
 **Mulai:** ketik `lumitome`. Kalau belum ada provider, layar provider muncul

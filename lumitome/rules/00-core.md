@@ -8,7 +8,7 @@ Sintesis prinsip harness (atribusi: docs/RULES.md). Berlaku di semua proyek & ag
 4. **Bedah.** Ubah hanya yang perlu; ikuti gaya kode yang ada; jangan rapikan kode sekitar. Hapus hanya orphan buatanmu sendiri. Tiap baris diff harus terlacak ke permintaan.
 5. **Akar masalah.** Reproduksi dulu, telusuri "kenapa" sampai dasar, baru perbaiki. Jangan bungkam gejala (guard/try-catch/skip tes). Cari pola yang sama di tempat lain.
 6. **Buktikan, jangan klaim.** Selesai = verifikasi segar di sesi ini (perintah + exit code + output relevan). Cek benda aslinya, bukan proksi. Tanpa bukti tulis "belum terverifikasi", bukan "selesai".
-7. **Jangan berputar.** Gagal yang sama 2× → ganti hipotesis/pendekatan; 3× → berhenti & laporkan apa yang sudah dicoba.
+7. **Jangan berputar (anti-spin).** Maks 3 gagal berturut-turut untuk hipotesis/pendekatan yang sama → berhenti & laporkan; ganti hipotesis secara nyata me-reset hitungan (definisi: skill `anti-spin-circuit-breaker`).
 8. **Hemat konteks.** Baca yang relevan saja; ringkas output besar; muat skill hanya bila cocok (tanpa skill lebih baik daripada skill salah).
 
 ## Laporan akhir

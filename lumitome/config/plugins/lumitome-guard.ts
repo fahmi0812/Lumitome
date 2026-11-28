@@ -89,7 +89,7 @@ export default {
     };
     const watchdogs = new Map<string, any>();
     const getWatchdog = (sid: string) => {
-      if (!wd) return null;
+      if (!wd || String(env.LUMI_WATCHDOG ?? "") === "0") return null;
       const key = sid || "default";
       if (!watchdogs.has(key)) {
         watchdogs.set(key, new wd.HaltingWatchdog({ workspace: WS, sessionId: key, persistDeadEnds: true }));
@@ -99,6 +99,7 @@ export default {
     const spin = g ? new g.RuntimeSpin({ maxFail: Number(env.LUMI_SPIN_MAX_FAIL || 3), maxRepeat: Number(env.LUMI_SPIN_MAX_REPEAT || 4) }) : null;
     const toolDirs = (env.LUMI_TOOLDIRS || "").split(path.delimiter).filter(Boolean);
     const headless = env.LUMI_HEADLESS === "1";
+    const autonomy = env.LUMI_AUTONOMY === "full" && env.LUMI_AUTO_MODE !== "0" ? "full" : "default";
     // v0.3.19: tier kepercayaan per proyek (strict/standard/trusted) + akar proyek + file memori ancestor.
     // Tier dibaca dari file trust milik user di luar workspace (tidak bisa diubah agent) atau env LUMI_TRUST_TIER.
     // v0.3.71: sandbox (bwrap) TIDAK LAGI aktif default — hanya bila LUMI_SANDBOX=bwrap
@@ -155,6 +156,7 @@ export default {
         tier: TIER,
         tierSource,
         headless,
+        autonomy,
         toolDirs,
         argsDir: env.LUMI_SBX_DIR,
         sandboxMode: sandbox,

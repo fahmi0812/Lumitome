@@ -27,4 +27,4 @@ Kamu executor sektor **finance**. Backtest/analisis finansial. Dry-run saja; buk
 - Shell lewat bwrap bila tersedia. Jangan push ke main.
 - Setelah kerja: tulis FACT (perintah + exit/hash) ke `runtime/evidence/<id>/`.
 - Bila menyentuh kode: patuhi `.opencode/rules/00-doc-code-drift.md` (kode/tes > dokumen basi; drift → FACT).
-- Belum ada skill finance (tidak ada sumber); jangan mencari skill — kerja langsung dengan dry-run + FACT.
+- Skill finance terdaftar: `akuntansi-umkm`, `analisis-laporan-keuangan`, `keuangan-pribadi`, `pajak-dasar-id` (bukan rekomendasi trading/saham); kerja tetap dengan dry-run + FACT.

@@ -673,6 +673,150 @@ import { frontmatter } from "../router/parse.mjs";
     && /service stop/.test(BAK) && /LUMI_XDG_DATA/.test(BAK) && !/rm -rf/.test(BAK)
     && cp.spawnSync("bash", ["-n", "scripts/doctor.sh"]).status === 0
     && cp.spawnSync("bash", ["-n", "scripts/backup-data.sh"]).status === 0);
+
+  // Item C, D, H, I, N: jembatan gh/git config, identitas git, timeout default, LUMI_AUTONOMY=full, auto-mode priority
+  const tmpBase = path.join(process.cwd(), ".tmp");
+  fs.mkdirSync(tmpBase, { recursive: true });
+  const fxDir = fs.mkdtempSync(path.join(tmpBase, "lumi-autonomy-"));
+  try {
+    const { frontmatter } = await import("../router/parse.mjs");
+    const evalPerm = (rules, action, resource) => {
+      const esc = (s) => String(s).replaceAll("\\", "/").replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".");
+      const match = (val, pat) => {
+        let p = esc(pat);
+        if (p.endsWith(" .*")) p = p.slice(0, -3) + "( .*)?";
+        return new RegExp(`^${p}$`, "s").test(String(val).replaceAll("\\", "/"));
+      };
+      const hit = rules.findLast((r) => match(action, r.action) && match(resource, r.resource));
+      return hit ? hit.effect : "ask";
+    };
+
+    // 1) Default (tanpa env): push ask, XDG terisolasi, GH_CONFIG_DIR/GIT_CONFIG_GLOBAL tidak diset bila path tidak ada
+    const fakeHomeEmpty = path.join(fxDir, "home-empty");
+    const lumiHomeDef = path.join(fxDir, "lumi-def");
+    fs.mkdirSync(fakeHomeEmpty, { recursive: true });
+    fs.mkdirSync(path.join(lumiHomeDef, "config"), { recursive: true });
+    const defArgs = {
+      ...baseArgs,
+      HOME: lumiHomeDef,
+      WS: fxDir,
+      CFG_DIR: path.join(lumiHomeDef, "config"),
+      JOURNAL: path.join(lumiHomeDef, "run.jsonl"),
+    };
+    const rDef = await BC.buildFinalConfig({ ...defArgs, env: { HOME: fakeHomeEmpty, LUMI_ENGINE_VERSION: "2.4.2" }, sub: "run", prompt: "" });
+    ok("autonomy default: git push = ask, agents override tidak ada, XDG terisolasi, GH_CONFIG_DIR/GIT_CONFIG_GLOBAL tidak diset saat path absen",
+      evalPerm(rDef.finalCfg.permissions, "shell", "bwrap --args 3 bash -c 'git push origin feat/x'") === "ask"
+      && rDef.finalCfg.agents === undefined
+      && rDef.env.XDG_CONFIG_HOME === path.join(lumiHomeDef, "xdg-config")
+      && rDef.env.GH_CONFIG_DIR === undefined
+      && rDef.env.GIT_CONFIG_GLOBAL === undefined);
+
+    // 2) LUMI_AUTONOMY=full: push allow, main/force tetap deny, github/browser allow di top-level & sector override, ask berbahaya tetap ask
+    const rFull = await BC.buildFinalConfig({ ...defArgs, env: { HOME: fakeHomeEmpty, LUMI_ENGINE_VERSION: "2.4.2", LUMI_AUTONOMY: "full" }, sub: "" });
+    const rFull23 = await BC.buildFinalConfig({ ...defArgs, env: { HOME: fakeHomeEmpty, LUMI_ENGINE_VERSION: "2.3.0", LUMI_AUTONOMY: "full" }, sub: "" });
+    const codingFm = frontmatter(fs.readFileSync(".opencode/agents/sectors/coding.md", "utf8"))?.permissions || [];
+    const mediaFm = frontmatter(fs.readFileSync(".opencode/agents/sectors/media.md", "utf8"))?.permissions || [];
+    const risetFm = frontmatter(fs.readFileSync(".opencode/agents/sectors/riset.md", "utf8"))?.permissions || [];
+    const effCoding = [...rFull.finalCfg.permissions, ...codingFm, ...(rFull.finalCfg.agents?.["sectors/coding"]?.permissions || [])];
+    const effMedia = [...rFull.finalCfg.permissions, ...mediaFm, ...(rFull.finalCfg.agents?.["sectors/media"]?.permissions || [])];
+    const effRiset = [...rFull.finalCfg.permissions, ...risetFm, ...(rFull.finalCfg.agents?.["sectors/riset"]?.permissions || [])];
+    ok("LUMI_AUTONOMY=full: git push branch=allow, main/master/force=deny, github/browser=allow (menang atas frontmatter), platformio/blender/tableau/offensive/codemem tetap ask, schema 2.3/2.4 valid",
+      evalPerm(rFull.finalCfg.permissions, "shell", "bwrap --args 3 bash -c 'git push origin feat/x'") === "allow"
+      && evalPerm(rFull.finalCfg.permissions, "shell", "bwrap --args 3 bash -c 'git push origin main'") === "deny"
+      && evalPerm(rFull.finalCfg.permissions, "shell", "bwrap --args 3 bash -c 'git push origin master'") === "deny"
+      && evalPerm(rFull.finalCfg.permissions, "shell", "bwrap --args 3 bash -c 'git push --force origin feat/x'") === "deny"
+      && evalPerm(rFull.finalCfg.permissions, "shell", "bwrap --args 3 bash -c 'git push -f origin feat/x'") === "deny"
+      && evalPerm(rFull.finalCfg.permissions, "shell", "bwrap --args 3 bash -c 'git push origin +feat/x'") === "deny"
+      && evalPerm(effCoding, "github_create_issue", "*") === "allow"
+      && evalPerm(effCoding, "github_push_files", "*") === "allow"
+      && evalPerm(effCoding, "github_delete_repo", "*") === "deny"
+      && evalPerm(effCoding, "github_merge_pull_request", "*") === "ask"
+      && evalPerm(rFull.finalCfg.permissions, "github_delete_repo", "*") === "deny"
+      && evalPerm(rFull.finalCfg.permissions, "github_merge_pull_request", "*") === "ask"
+      && evalPerm(effCoding, "playwright_navigate", "*") === "allow"
+      && evalPerm(effCoding, "chromedev_click", "*") === "allow"
+      && evalPerm(effCoding, "chrome-devtools_eval", "*") === "allow"
+      && evalPerm(effCoding, "browser-act_open", "*") === "allow"
+      && evalPerm(effCoding, "platformio_upload_firmware", "*") === "ask"
+      && evalPerm(effCoding, "codemem_delete_project", "*") === "ask"
+      && evalPerm(effCoding, "skill", "offensive-cloud") === "ask"
+      && evalPerm(effMedia, "playwright_navigate", "*") === "allow"
+      && evalPerm(effMedia, "chromedev_click", "*") === "allow"
+      && evalPerm(effMedia, "blender_execute_blender_code", "*") === "ask"
+      && evalPerm(effRiset, "playwright_navigate", "*") === "allow"
+      && evalPerm(effRiset, "tableau_delete-workbook", "*") === "ask"
+      && val23(rFull23.finalCfg) === true && val24(rFull.finalCfg) === true);
+
+    // 3) auto-mode: --no-auto & LUMI_AUTO_MODE=0 tetap menang atas LUMI_AUTONOMY=full (termasuk buildFinalConfig)
+    const AM = await import("../lumitome/lib/auto-mode.mjs");
+    const rFullOff = await BC.buildFinalConfig({ ...defArgs, env: { HOME: fakeHomeEmpty, LUMI_ENGINE_VERSION: "2.4.2", LUMI_AUTONOMY: "full", LUMI_AUTO_MODE: "0" }, sub: "" });
+    ok("auto-mode priority: --no-auto dan LUMI_AUTO_MODE=0 tetap menang atas LUMI_AUTONOMY=full",
+      AM.resolveAutoMode({ env: { LUMI_AUTONOMY: "full" }, argv: [] }).auto === true
+      && AM.resolveAutoMode({ env: { LUMI_AUTONOMY: "full" }, argv: ["--no-auto"] }).auto === false
+      && AM.resolveAutoMode({ env: { LUMI_AUTONOMY: "full", LUMI_AUTO_MODE: "0" }, argv: [] }).auto === false
+      && evalPerm(rFullOff.finalCfg.permissions, "shell", "bwrap --args 3 bash -c 'git push origin feat/x'") === "ask"
+      && rFullOff.finalCfg.agents === undefined);
+
+    // 4) Item C: LUMI_XDG_CONFIG override + GH_CONFIG_DIR + GIT_CONFIG_GLOBAL (prioritas .gitconfig lalu .config/git/config, tanpa timpa env yg sudah diset)
+    const fakeHomeFull = path.join(fxDir, "home-full");
+    fs.mkdirSync(path.join(fakeHomeFull, ".config", "gh"), { recursive: true });
+    fs.mkdirSync(path.join(fakeHomeFull, ".config", "git"), { recursive: true });
+    fs.writeFileSync(path.join(fakeHomeFull, ".gitconfig"), "[user]\n\tname = Fake Author\n\temail = fake@example.com\n");
+    fs.writeFileSync(path.join(fakeHomeFull, ".config", "git", "config"), "[user]\n\tname = Xdg Author\n");
+    const customXdg = path.join(fxDir, "custom-xdg");
+    const rBridge1 = await BC.buildFinalConfig({ ...defArgs, env: { HOME: fakeHomeFull, LUMI_XDG_CONFIG: customXdg, LUMI_ENGINE_VERSION: "2.4.2" }, sub: "" });
+    const fakeHomeXdgGit = path.join(fxDir, "home-xdggit");
+    fs.mkdirSync(path.join(fakeHomeXdgGit, ".config", "git"), { recursive: true });
+    fs.writeFileSync(path.join(fakeHomeXdgGit, ".config", "git", "config"), "[user]\n\tname = Xdg Only\n");
+    const rBridge2 = await BC.buildFinalConfig({ ...defArgs, env: { HOME: fakeHomeXdgGit, LUMI_ENGINE_VERSION: "2.4.2" }, sub: "" });
+    const rBridgePre = await BC.buildFinalConfig({ ...defArgs, env: { HOME: fakeHomeFull, GH_CONFIG_DIR: "/keep/gh", GIT_CONFIG_GLOBAL: "/keep/git", LUMI_ENGINE_VERSION: "2.4.2" }, sub: "" });
+    ok("bridge gh/git config: LUMI_XDG_CONFIG override, GH_CONFIG_DIR/.gitconfig/.config/git/config diset hanya bila ada & tidak menimpa yg sudah diset",
+      rBridge1.env.XDG_CONFIG_HOME === customXdg
+      && rBridge1.env.GH_CONFIG_DIR === path.join(fakeHomeFull, ".config", "gh")
+      && rBridge1.env.GIT_CONFIG_GLOBAL === path.join(fakeHomeFull, ".gitconfig")
+      && rBridge2.env.GH_CONFIG_DIR === undefined
+      && rBridge2.env.GIT_CONFIG_GLOBAL === path.join(fakeHomeXdgGit, ".config", "git", "config")
+      && rBridgePre.env.GH_CONFIG_DIR === "/keep/gh"
+      && rBridgePre.env.GIT_CONFIG_GLOBAL === "/keep/git");
+
+    // 5) Item D, H, I: wrapper startup git identity (fail-silent, tanpa log nilai) + default LUMI_DEADLINE_MS=1800000 & LUMI_FIRST_OUTPUT_MS=180000
+    const wmSrc = fs.readFileSync("lumitome/bin/lumitome.mjs", "utf8");
+    const stubGit = path.join(fxDir, "fake-opencode-git");
+    const outJson = path.join(fxDir, "child-git-env.json");
+    fs.writeFileSync(stubGit, `#!/usr/bin/env node\nimport fs from "node:fs";\nif (process.argv.includes("--version")) { console.log("2.4.2"); process.exit(0); }\nfs.writeFileSync(${JSON.stringify(outJson)}, JSON.stringify({\n  an: process.env.GIT_AUTHOR_NAME || null,\n  ae: process.env.GIT_AUTHOR_EMAIL || null,\n  cn: process.env.GIT_COMMITTER_NAME || null,\n  ce: process.env.GIT_COMMITTER_EMAIL || null,\n  xdg: process.env.XDG_CONFIG_HOME || null,\n  gh: process.env.GH_CONFIG_DIR || null,\n  gc: process.env.GIT_CONFIG_GLOBAL || null,\n}));\n`);
+    fs.chmodSync(stubGit, 0o755);
+    const lumiHStub = path.join(fxDir, "lumi-stub");
+    fs.mkdirSync(lumiHStub, { recursive: true });
+    const fakeHomeGitId = path.join(fxDir, "home-gitid");
+    fs.mkdirSync(fakeHomeGitId, { recursive: true });
+    fs.writeFileSync(path.join(fakeHomeGitId, ".gitconfig"), "[user]\n\tname = Fake Author\n\temail = fake@example.com\n");
+    const runStub = (extraEnv) => {
+      try { fs.rmSync(outJson, { force: true }); } catch {}
+      const cleanEnv = { ...process.env };
+      delete cleanEnv.GIT_AUTHOR_NAME; delete cleanEnv.GIT_AUTHOR_EMAIL;
+      delete cleanEnv.GIT_COMMITTER_NAME; delete cleanEnv.GIT_COMMITTER_EMAIL;
+      delete cleanEnv.GH_CONFIG_DIR; delete cleanEnv.GIT_CONFIG_GLOBAL;
+      delete cleanEnv.LUMI_XDG_CONFIG; delete cleanEnv.XDG_CONFIG_HOME;
+      delete cleanEnv.LUMI_ENGINE_BIN;
+      const res = cp.spawnSync(process.execPath, [path.resolve("lumitome/bin/lumitome.mjs")], {
+        encoding: "utf8", timeout: 60000, cwd: fxDir,
+        env: { ...cleanEnv, HOME: fakeHomeGitId, GIT_CEILING_DIRECTORIES: tmpBase, LUMI_HOME: lumiHStub, LUMI_OPENCODE: stubGit, LUMI_WORKSPACE: fxDir, LUMI_AUTO_INDEX: "0", NINEROUTER_API_KEY: "fake", ...extraEnv },
+      });
+      return { res, data: fs.existsSync(outJson) ? JSON.parse(fs.readFileSync(outJson, "utf8")) : null };
+    };
+    const g1 = runStub({});
+    const g2 = runStub({ GIT_AUTHOR_NAME: "Preset Name", GIT_COMMITTER_NAME: "Keep Committer" });
+    ok("wrapper git identity + timeout defaults: GIT_AUTHOR_*/COMMITTER_* terisi dari host gitconfig (tanpa log nilai), respect existing env, timeout 1800000/180000",
+      g1.res.status === 0 && g1.data?.an === "Fake Author" && g1.data?.ae === "fake@example.com"
+      && g1.data?.cn === "Fake Author" && g1.data?.ce === "fake@example.com"
+      && !g1.res.stdout.includes("Fake Author") && !g1.res.stderr.includes("Fake Author")
+      && !g1.res.stdout.includes("fake@example.com") && !g1.res.stderr.includes("fake@example.com")
+      && g2.res.status === 0 && g2.data?.an === "Preset Name" && g2.data?.cn === "Keep Committer"
+      && /LUMI_DEADLINE_MS \|\| 1800000/.test(wmSrc) && /LUMI_FIRST_OUTPUT_MS \|\| 180000/.test(wmSrc)
+      && /LUMI_XDG_CONFIG \|\| path\.join\(ISO_HOME, "xdg-config"\)/.test(wmSrc));
+  } finally {
+    fs.rmSync(fxDir, { recursive: true, force: true });
+  }
 }
 
 finish();

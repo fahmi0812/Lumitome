@@ -701,8 +701,264 @@ for f in ['~/.ssh/id_ed25519', '~/Downloads/projB/.env']:
       ok("T2.5 regresi: 4 perintah verifikasi sukses berbeda beruntun tidak false-positive zero-progress-streak",
         vVer.verdict === "OK" && dogVer.zeroProgressStreak === 0);
     }
+
+    // 8) Item A: 4 shell sukses yang benar-benar mengubah file di dir non-git (tanpa snapshot eksplisit) -> tidak HALT; ulangi gagal identik tetap HALT
+    {
+      const cpA = await import("node:child_process");
+      const nonGitShell = fs.mkdtempSync(path.join(tmpBase, "w-nongit-shell-"));
+      try {
+        const dogShell = new WD.HaltingWatchdog({ workspace: nonGitShell, sessionId: "ses_shell_mut" });
+        const cmds = [
+          "echo 'v1' > a.txt",
+          "sed -i 's/v1/version-one/' a.txt",
+          "node -e \"require('node:fs').writeFileSync('b.txt', 'hello-world')\"",
+          "cat <<'EOF' > c.txt\nline1\nline2\nEOF",
+        ];
+        let lastV = null;
+        for (const cmd of cmds) {
+          cpA.execFileSync("sh", ["-c", cmd], { cwd: nonGitShell });
+          lastV = dogShell.recordStep({ tool: "shell", input: { command: cmd }, ok: true, exitCode: 0 });
+        }
+        ok("Item A watchdog: 4 shell sukses mutasi file di dir non-git (tanpa snapshot) -> OK, tidak HALT",
+          lastV.verdict === "OK" && dogShell.zeroProgressStreak === 0);
+
+        let failV = null;
+        for (let i = 0; i < 3; i++) {
+          failV = dogShell.recordStep({ tool: "shell", input: { command: "node -e 'process.exit(1)'" }, ok: false, exitCode: 1, errorText: "AssertionError: fail" });
+        }
+        ok("Item A watchdog: ulangi perintah gagal identik 3x di dir non-git -> tetap HALT",
+          failV.verdict === "HALT");
+      } finally {
+        fs.rmSync(nonGitShell, { recursive: true, force: true });
+      }
+    }
+
+    // 9) Item A: LUMI_WATCHDOG=0 menonaktifkan watchdog di lumitome-guard.ts
+    {
+      const prevEnvWd = { LUMI_WORKSPACE: process.env.LUMI_WORKSPACE, LUMI_HARNESS: process.env.LUMI_HARNESS, LUMI_SESSION_ID: process.env.LUMI_SESSION_ID, LUMI_SANDBOX: process.env.LUMI_SANDBOX, LUMI_WATCHDOG: process.env.LUMI_WATCHDOG };
+      try {
+        process.env.LUMI_WORKSPACE = ws25;
+        process.env.LUMI_HARNESS = path.resolve("harness/lumi-guard.mjs");
+        process.env.LUMI_SESSION_ID = "ses_wd_off";
+        process.env.LUMI_SANDBOX = "off";
+        process.env.LUMI_WATCHDOG = "0";
+        let beforeOff, afterOff;
+        const gmOff = await import(pathToFileURL(path.resolve("lumitome/config/plugins/lumitome-guard.ts")).href + `?t=${Date.now()}`);
+        await gmOff.default.setup({
+          location: { directory: ws25 },
+          tool: { hook(n, fn) { if (n === "execute.before") beforeOff = fn; if (n === "execute.after") afterOff = fn; } },
+        });
+        for (let i = 0; i < 3; i++) {
+          await afterOff({ tool: "shell", status: "completed", input: { command: `node fail_${i}.mjs` }, result: { output: { exitCode: 1, output: "TypeError: same error" } } });
+        }
+        let threwWd = false;
+        try { await beforeOff({ tool: "shell", input: { command: "echo ok" } }); } catch (e) { if (/WATCHDOG_HALT/.test(String(e))) threwWd = true; }
+        ok("Item A LUMI_WATCHDOG=0: tidak membuat watchdog / tidak memicu WATCHDOG_HALT", threwWd === false);
+      } finally {
+        for (const [k, v] of Object.entries(prevEnvWd)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+      }
+    }
   } finally {
     fs.rmSync(ws25, { recursive: true, force: true });
+  }
+}
+
+// --- Item B, D, N: eval per segmen, identitas git/gh di bwrap, LUMI_AUTONOMY=full ---
+{
+  const G = await import("../harness/lumi-guard.mjs");
+  const { pathToFileURL } = await import("node:url");
+  const W = "/workspace/x";
+  const cs = (cmd, o = {}) => G.classifyShell(cmd, { workspace: W, headless: true, branch: "feat/a", ...o });
+
+  // Item B: eval per segmen
+  ok("Item B eval: npm run eval && git status -> allow; git commit -m 'fix eval' -> allow; echo 'eval rm' -> allow",
+    cs("npm run eval && git status").effect === "allow"
+    && cs('git commit -m "fix eval"').effect === "allow"
+    && cs('eval "echo ok" && rm -rf build').effect === "allow"
+    && cs('echo "eval git push"').effect === "allow");
+  ok("Item B eval: eval \"git push\", x; eval $(cat .env), bash -c 'eval rm -rf x' -> deny",
+    cs('eval "git push"').effect === "deny" && cs('eval "git push"').rule === "eval"
+    && cs("x; eval $(cat .env)").effect === "deny"
+    && cs("eval $(echo .env)").effect === "deny"
+    && cs("eval 'echo .env.example'").rule === "eval"
+    && cs("bash -c 'eval rm -rf x'").effect === "deny" && cs("bash -c 'eval rm -rf x'").rule === "eval"
+    && cs('sh -c "eval \'git status\'"').rule === "eval"
+    && cs('echo `eval "rm -rf x"`').rule === "eval");
+
+  // Item D: identitas git & GH_CONFIG_DIR di bwrap
+  const hasSetenv = (args, k, v) => {
+    for (let i = 0; i < args.length - 2; i++) {
+      if (args[i] === "--setenv" && args[i + 1] === k && args[i + 2] === v) return true;
+    }
+    return false;
+  };
+  const baD = G.bwrapArgs("echo hi", {
+    workspace: process.cwd(),
+    toolDirs: [],
+    env: {
+      PATH: process.env.PATH,
+      GIT_AUTHOR_NAME: "Bot",
+      GIT_AUTHOR_EMAIL: "bot@local",
+      GIT_COMMITTER_NAME: "BotC",
+      GIT_COMMITTER_EMAIL: "botc@local",
+      GIT_CONFIG_GLOBAL: "/tmp/gitcfg",
+      GH_CONFIG_DIR: "/tmp/ghcfg",
+    },
+  });
+  const baDEmpty = G.bwrapArgs("echo hi", {
+    workspace: process.cwd(),
+    toolDirs: [],
+    env: { PATH: process.env.PATH, GIT_CONFIG_GLOBAL: "", GH_CONFIG_DIR: "" },
+  });
+  ok("Item D bwrap: teruskan GIT_AUTHOR_*/GIT_COMMITTER_*/GIT_CONFIG_GLOBAL/GH_CONFIG_DIR bila non-empty; kosong tidak diteruskan",
+    hasSetenv(baD, "GIT_AUTHOR_NAME", "Bot")
+    && hasSetenv(baD, "GIT_AUTHOR_EMAIL", "bot@local")
+    && hasSetenv(baD, "GIT_COMMITTER_NAME", "BotC")
+    && hasSetenv(baD, "GIT_COMMITTER_EMAIL", "botc@local")
+    && hasSetenv(baD, "GIT_CONFIG_GLOBAL", "/tmp/gitcfg")
+    && hasSetenv(baD, "GH_CONFIG_DIR", "/tmp/ghcfg")
+    && !baDEmpty.includes("GIT_CONFIG_GLOBAL")
+    && !baDEmpty.includes("GH_CONFIG_DIR"));
+
+  // Item N: LUMI_AUTONOMY=full
+  ok("Item N push branch: default headless deny, non-headless ask; yes = default; full -> allow (push-branch-autonomy) termasuk headless",
+    cs("git push origin feat/a", { autonomy: "default", headless: true }).effect === "deny"
+    && cs("git push origin feat/a", { autonomy: "default", headless: false }).effect === "ask"
+    && cs("git push origin feat/a", { autonomy: "yes", headless: true }).effect === "deny"
+    && cs("git push origin feat/a", { autonomy: "yes", headless: false }).effect === "ask"
+    && cs("git push origin feat/a", { autonomy: "full", headless: true }).effect === "allow"
+    && cs("git push origin feat/a", { autonomy: "full", headless: true }).rule === "push-branch-autonomy"
+    && cs("git push origin feat/a", { autonomy: "full", headless: false }).rule === "push-branch-autonomy");
+
+  const dangerousPush = [
+    "git push -f origin feat/a",
+    "git push --force origin feat/a",
+    "git push --force-with-lease origin feat/a",
+    "git push origin +feat/a",
+    "git push --all",
+    "git push --mirror",
+    "git push --delete origin feat/a",
+    "git push origin :feat/a",
+    "git push origin main",
+    "git push origin feat/a:master",
+    "git push origin HEAD:main",
+  ];
+  ok("Item N push berbahaya (force/lease/+ref/--all/--mirror/--delete/:ref/main/master) -> deny di SEMUA mode",
+    dangerousPush.every((cmd) => cs(cmd, { autonomy: "default", headless: false }).effect === "deny" && cs(cmd, { autonomy: "full", headless: true }).effect === "deny"));
+
+  const absoluteGhDeny = [
+    "gh auth token",
+    "gh -R owner/repo auth token",
+    "gh auth status --show-token",
+    "gh --repo=owner/repo auth status -t",
+    "gh repo delete owner/repo --yes",
+    "gh -R owner/repo release delete v1.0",
+    "gh secret set MY_SECRET",
+    "gh secret list",
+    "gh variable set MY_VAR -b val",
+    "gh -R owner/repo variable delete MY_VAR",
+    "gh api -X DELETE repos/o/r/issues/1",
+    "gh api --method=delete repos/o/r/issues/1",
+    "gh -R o/r api -XDELETE repos/o/r/git/refs/heads/feat",
+    "gh api -X PATCH repos/o/r/git/refs/heads/main -f sha=abc",
+    "gh api --method POST repos/o/r/git/refs/heads/master -f ref=refs/heads/master",
+    "gh api repos/o/r/git/refs/heads/main -f sha=abc",
+  ];
+  ok("Item N gh keamanan mutlak -> deny di SEMUA mode (default & full, termasuk -R/--repo)",
+    absoluteGhDeny.every((cmd) => cs(cmd, { autonomy: "default", headless: false }).effect === "deny" && cs(cmd, { autonomy: "full", headless: true }).effect === "deny"));
+
+  ok("Item N gh api GET refs/heads/main & PATCH refs/heads/feat & variable list -> tetap allow",
+    cs("gh api repos/o/r/git/refs/heads/main", { autonomy: "full" }).effect === "allow"
+    && cs("gh api -X PATCH repos/o/r/git/refs/heads/feat/x -f sha=1", { autonomy: "full" }).effect === "allow"
+    && cs("gh variable list", { autonomy: "default" }).effect === "allow");
+
+  ok("Item N gh default vs full: default larang --admin saja & izinkan merge biasa; full wajib --auto tanpa --admin (rule pr-merge)",
+    cs("gh pr merge 1", { autonomy: "default" }).effect === "allow"
+    && cs("gh pr merge 1", { autonomy: "yes" }).effect === "allow"
+    && cs("gh pr merge 12 --admin", { autonomy: "default" }).effect === "deny"
+    && cs("gh pr merge 12 --admin", { autonomy: "default" }).rule === "pr-merge"
+    && cs("gh pr merge 12 --admin=true", { autonomy: "default" }).rule === "pr-merge"
+    && cs("gh pr merge 1", { autonomy: "full" }).effect === "deny"
+    && cs("gh pr merge 1", { autonomy: "full" }).rule === "pr-merge"
+    && cs("gh pr merge 1 --admin", { autonomy: "full" }).rule === "pr-merge"
+    && cs("gh pr merge 1 --auto --admin", { autonomy: "full" }).rule === "pr-merge"
+    && cs("gh -R o/r pr merge 1", { autonomy: "full" }).rule === "pr-merge"
+    && cs("echo x && gh pr merge 1", { autonomy: "full" }).rule === "pr-merge"
+    && cs("gh pr merge 1 --auto", { autonomy: "full" }).effect === "allow"
+    && cs("gh -R o/r pr merge 1 --auto --squash", { autonomy: "full" }).effect === "allow");
+
+  ok("Item N wrapper bypass (bash/sh/zsh/dash -c/-lc): eval, gh auth token, git push --force -> deny",
+    cs("bash -c 'eval rm -rf x'").effect === "deny" && cs("bash -c 'eval rm -rf x'").rule === "eval"
+    && cs("bash -l -c 'eval rm -rf x'").effect === "deny" && cs("bash -l -c 'eval rm -rf x'").rule === "eval"
+    && cs("sh -c 'gh auth token'").effect === "deny" && cs("sh -c 'gh auth token'").rule === "gh-security"
+    && cs("env zsh -lc 'gh auth token'").effect === "deny" && cs("env zsh -lc 'gh auth token'").rule === "gh-security"
+    && cs("dash -c 'git push --force origin feat/a'").effect === "deny" && cs("dash -c 'git push --force origin feat/a'").rule === "push-force"
+    && cs("bash -c 'git push --force'").effect === "deny" && cs("bash -c 'git push --force'").rule === "push-force");
+
+  const fullGhAllowed = [
+    "gh pr create --title x --body y",
+    "gh -R o/r pr create --fill",
+    "gh release create v1.0.0 --notes ok",
+    "gh run watch 123",
+    "gh run view 123",
+    "gh run list",
+    "gh pr view 1",
+    "gh pr list",
+    "gh pr checks 1",
+  ];
+  ok("Item N gh full allow: pr create/view/list/checks, release create, run watch/view/list",
+    fullGhAllowed.every((cmd) => cs(cmd, { autonomy: "full" }).effect === "allow"));
+
+  // Wiring evaluateTool & lumitome-guard.ts untuk autonomy
+  ok("Item N wiring evaluateTool: autonomy diteruskan ke classifyShell",
+    G.evaluateTool("shell", { command: "git push origin feat/a" }, { workspace: W, headless: true, branch: "feat/a", autonomy: "full" }).effect === "allow"
+    && G.evaluateTool("shell", { command: "git push origin feat/a" }, { workspace: W, headless: true, branch: "feat/a", autonomy: "full" }).rule === "push-branch-autonomy"
+    && G.evaluateTool("shell", { command: "git push origin feat/a" }, { workspace: W, headless: true, branch: "feat/a", autonomy: "yes" }).effect === "deny"
+    && G.evaluateTool("shell", { command: "echo x && gh pr merge 1" }, { workspace: W, headless: true, autonomy: "full" }).rule === "pr-merge");
+
+  {
+    const tmpBaseN = path.join(process.cwd(), ".tmp");
+    fs.mkdirSync(tmpBaseN, { recursive: true });
+    const plugWsN = fs.mkdtempSync(path.join(tmpBaseN, "w-autonomy-plug-"));
+    const prevEnvN = { LUMI_WORKSPACE: process.env.LUMI_WORKSPACE, LUMI_HARNESS: process.env.LUMI_HARNESS, LUMI_SANDBOX: process.env.LUMI_SANDBOX, LUMI_HEADLESS: process.env.LUMI_HEADLESS, LUMI_AUTONOMY: process.env.LUMI_AUTONOMY };
+    try {
+      process.env.LUMI_WORKSPACE = plugWsN;
+      process.env.LUMI_HARNESS = path.resolve("harness/lumi-guard.mjs");
+      process.env.LUMI_SANDBOX = "off";
+      process.env.LUMI_HEADLESS = "1";
+
+      process.env.LUMI_AUTONOMY = "full";
+      let beforeFull;
+      const gmFull = await import(pathToFileURL(path.resolve("lumitome/config/plugins/lumitome-guard.ts")).href + `?t=${Date.now()}1`);
+      await gmFull.default.setup({ location: { directory: plugWsN }, tool: { hook(n, fn) { if (n === "execute.before") beforeFull = fn; } } });
+      let fullMergeDenied = false;
+      try { await beforeFull({ tool: "shell", input: { command: "gh pr merge 1" } }); } catch (e) { fullMergeDenied = /pr-merge/.test(String(e)); }
+      let fullAutoAllowed = true;
+      try { await beforeFull({ tool: "shell", input: { command: "gh pr merge 1 --auto" } }); } catch { fullAutoAllowed = false; }
+
+      process.env.LUMI_AUTONOMY = "yes";
+      let beforeYes;
+      const gmYes = await import(pathToFileURL(path.resolve("lumitome/config/plugins/lumitome-guard.ts")).href + `?t=${Date.now()}2`);
+      await gmYes.default.setup({ location: { directory: plugWsN }, tool: { hook(n, fn) { if (n === "execute.before") beforeYes = fn; } } });
+      let yesMergeAllowed = true;
+      try { await beforeYes({ tool: "shell", input: { command: "gh pr merge 1" } }); } catch { yesMergeAllowed = false; }
+
+      process.env.LUMI_AUTONOMY = "full";
+      process.env.LUMI_AUTO_MODE = "0";
+      let beforeNoAuto;
+      const gmNoAuto = await import(pathToFileURL(path.resolve("lumitome/config/plugins/lumitome-guard.ts")).href + `?t=${Date.now()}3`);
+      await gmNoAuto.default.setup({ location: { directory: plugWsN }, tool: { hook(n, fn) { if (n === "execute.before") beforeNoAuto = fn; } } });
+      let noAutoMergeAllowed = true;
+      try { await beforeNoAuto({ tool: "shell", input: { command: "gh pr merge 1" } }); } catch { noAutoMergeAllowed = false; }
+      delete process.env.LUMI_AUTO_MODE;
+
+      const guardSrcN = fs.readFileSync("lumitome/config/plugins/lumitome-guard.ts", "utf8");
+      ok("Item N integrasi lumitome-guard.ts: LUMI_AUTONOMY=full aktifkan pr-merge; LUMI_AUTONOMY=yes & LUMI_AUTO_MODE=0 = default",
+        fullMergeDenied && fullAutoAllowed && yesMergeAllowed && noAutoMergeAllowed && /LUMI_AUTO_MODE\s*!==\s*"0"/.test(guardSrcN));
+    } finally {
+      for (const [k, v] of Object.entries(prevEnvN)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+      fs.rmSync(plugWsN, { recursive: true, force: true });
+    }
   }
 }
 

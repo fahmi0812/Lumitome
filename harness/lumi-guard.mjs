@@ -122,10 +122,32 @@ function sshKeyUseOnly(cmd, { workspace, home }) {
   return true;
 }
 
+function parseGhArgs(args) {
+  let i = 0;
+  while (i < args.length) {
+    const a = args[i];
+    if (a === "-R" || a === "--repo" || a === "--hostname") { i += 2; continue; }
+    if (/^(?:-R.+|--repo=.*|--hostname=.*)$/.test(a) || a.startsWith("-")) { i += 1; continue; }
+    break;
+  }
+  const sub = args[i] || "";
+  const rest = args.slice(i + 1);
+  let action = "";
+  for (let j = 0; j < rest.length; j++) {
+    const a = rest[j];
+    if (a === "-R" || a === "--repo" || a === "--hostname") { j++; continue; }
+    if (/^(?:-R.+|--repo=.*|--hostname=.*)$/.test(a) || a.startsWith("-")) continue;
+    action = a;
+    break;
+  }
+  return { sub, action, rest };
+}
+
 /** Keputusan untuk satu perintah shell. effect: allow | ask | deny. */
-export function classifyShell(command, { workspace = process.cwd(), headless = false, branch, tier = "standard", home = os.homedir(), lumiHome = path.join(os.homedir(), ".lumitome") } = {}) {
+export function classifyShell(command, { workspace = process.cwd(), headless = false, branch, tier = "standard", autonomy = "default", home = os.homedir(), lumiHome = path.join(os.homedir(), ".lumitome"), _depth = 0 } = {}) {
   const cmd = String(command ?? "");
   const ws = path.resolve(workspace);
+  const isFull = autonomy === "full";
   if (!cmd.trim()) return { effect: "allow" };
   // 1) rahasia (berlaku untuk semua verb: cat/less/grep/source/cp/…)
   // Pengecualian sempit: di tier trusted, pakai kunci ~/.ssh sebagai -i/IdentityFile
@@ -133,14 +155,26 @@ export function classifyShell(command, { workspace = process.cwd(), headless = f
   // ke biner ssh). Segala akses secret lain tetap ditolak di semua tier.
   if (isSecretPath(cmd) && !nameOnly(cmd) && !(tier === "trusted" && sshKeyUseOnly(cmd, { workspace: ws, home }))) return { effect: "deny", rule: "secret", reason: "LUMI_DENY secret: perintah menyentuh isi .env/secret (hanya .env.example; daftar nama via ls/find/test diizinkan)" };
   if (KEY_VAR.test(cmd)) return { effect: "deny", rule: "secret-var", reason: "LUMI_DENY secret: perintah mereferensikan variabel API key/token" };
-  if (/\beval\b/.test(cmd) && /\bgit\b|\brm\b|\.env/.test(cmd)) return { effect: "deny", rule: "eval", reason: "LUMI_DENY eval: perintah dinamis berisiko tidak bisa diverifikasi" };
   let ask = null;
+  let autonomyRule = null;
   for (const seg of segments(cmd)) {
     const w = words(seg);
     let i = 0; while (i < w.length && /^(sudo|command|exec|nohup|time|env|xargs|builtin)$|^[A-Za-z_]+=/.test(w[i])) { if (w[i] === "sudo") return { effect: "deny", rule: "sudo", reason: "LUMI_DENY sudo" }; i++; }
     if (i >= w.length && w.some((x) => x === "env")) return { effect: "deny", rule: "env-dump", reason: "LUMI_DENY env-dump: menampilkan environment (berisi key) dilarang" };
     const bin = path.basename(w[i] || "");
     const args = w.slice(i + 1);
+    if (/^(?:bash|sh|zsh|dash)$/.test(bin) && _depth < 1) {
+      const ci = args.findIndex((a) => /^-[a-zA-Z]*c[a-zA-Z]*$/.test(a));
+      const inner = ci >= 0 ? args[ci + 1] : "";
+      if (typeof inner === "string" && inner.trim()) {
+        const res = classifyShell(inner, { workspace: ws, headless, branch, tier, autonomy, home, lumiHome, _depth: _depth + 1 });
+        if (res.effect === "deny") return res;
+        if (res.effect === "ask" && !ask) ask = res;
+      }
+    }
+    if (bin === "eval" && /\bgit\b|\brm\b|\.env/.test(seg)) {
+      return { effect: "deny", rule: "eval", reason: "LUMI_DENY eval: perintah dinamis berisiko tidak bisa diverifikasi" };
+    }
     // 2b) SSH: kunci deploy khusus, atau tier trusted. Di tier trusted, kunci utama
     // user (~/.ssh) BOLEH dipakai sebagai -i/IdentityFile (pengecualian sempit di
     // aturan secret di atas — isi kunci tidak pernah dibaca; hanya diteruskan ke
@@ -179,14 +213,74 @@ export function classifyShell(command, { workspace = process.cwd(), headless = f
       if (pos.some((a) => a.startsWith("+"))) return { effect: "deny", rule: "push-force", reason: "LUMI_DENY push: refspec '+' (force) dilarang" };
       if (pa.includes("--all") || pa.includes("--tags") && pos.length === 0) { /* --all bisa menyentuh main */ return { effect: "deny", rule: "push-main", reason: "LUMI_DENY push: --all dapat menyentuh main/master" }; }
       const refs = pos.slice(1);
+      if (refs.some((r) => r.startsWith(":")) || (pos.length === 1 && pos[0].startsWith(":")))
+        return { effect: "deny", rule: "push-force", reason: "LUMI_DENY push: hapus remote branch via ':ref' dilarang" };
       const cur = branch ?? currentBranch(ws);
       const targets = refs.length ? refs.map((r) => (r.includes(":") ? r.split(":").pop() : r)) : [cur || "HEAD"];
       const resolved = targets.map((t) => (t === "HEAD" ? cur : t));
       if (resolved.some((t) => !t || PROTECTED.test(t))) return { effect: "deny", rule: "push-main", reason: `LUMI_DENY push: target main/master (atau tak dikenal) dilarang — kerja di branch lain` };
-      ask = { effect: headless ? "deny" : "ask", rule: "push-branch", reason: headless ? "LUMI_DENY push: push branch butuh persetujuan manusia; mode headless menolak (jalankan interaktif)" : "LUMI_ASK push branch" };
+      if (isFull) {
+        autonomyRule = "push-branch-autonomy";
+      } else {
+        ask = { effect: headless ? "deny" : "ask", rule: "push-branch", reason: headless ? "LUMI_DENY push: push branch butuh persetujuan manusia; mode headless menolak (jalankan interaktif)" : "LUMI_ASK push branch" };
+      }
+    }
+    // 4) gh CLI (per segmen, dukung flag global -R/--repo sebelum subcommand)
+    if (bin === "gh") {
+      const { sub, action, rest } = parseGhArgs(args);
+      if (sub === "auth" && action === "token") {
+        return { effect: "deny", rule: "gh-security", reason: "LUMI_DENY gh: 'gh auth token' dilarang" };
+      }
+      if (sub === "auth" && action === "status" && rest.some((a) => a === "--show-token" || /^-[a-zA-Z]*t[a-zA-Z]*$/.test(a))) {
+        return { effect: "deny", rule: "gh-security", reason: "LUMI_DENY gh: 'gh auth status --show-token/-t' dilarang" };
+      }
+      if ((sub === "repo" || sub === "release") && action === "delete") {
+        return { effect: "deny", rule: "gh-security", reason: `LUMI_DENY gh: 'gh ${sub} delete' dilarang` };
+      }
+      if (sub === "secret") {
+        return { effect: "deny", rule: "gh-security", reason: "LUMI_DENY gh: 'gh secret' dilarang" };
+      }
+      if (sub === "variable" && (action === "set" || action === "delete")) {
+        return { effect: "deny", rule: "gh-security", reason: `LUMI_DENY gh: 'gh variable ${action}' dilarang` };
+      }
+      if (sub === "api") {
+        let method = "";
+        let hasBodyFlag = false;
+        const apiPos = [];
+        for (let j = 0; j < rest.length; j++) {
+          const a = rest[j];
+          if ((a === "-X" || a === "--method") && rest[j + 1]) { method = rest[++j].toUpperCase(); continue; }
+          if (a.startsWith("-X") && a.length > 2) { method = a.slice(2).toUpperCase(); continue; }
+          if (a.startsWith("--method=")) { method = a.slice(9).toUpperCase(); continue; }
+          if (/^(?:-f|-F|--field|--raw-field|--input)$/.test(a)) { hasBodyFlag = true; if (j + 1 < rest.length) j++; continue; }
+          if (/^(?:--field=|--raw-field=|--input=|-f.+|-F.+)/.test(a)) { hasBodyFlag = true; continue; }
+          if ((a === "-H" || a === "--header" || a === "-q" || a === "--jq" || a === "-t" || a === "--template" || a === "--hostname" || a === "--cache") && rest[j + 1]) { j++; continue; }
+          if (a.startsWith("-")) continue;
+          apiPos.push(a);
+        }
+        const effMethod = method || (hasBodyFlag ? "POST" : "GET");
+        if (effMethod === "DELETE") {
+          return { effect: "deny", rule: "gh-security", reason: "LUMI_DENY gh: 'gh api -X DELETE' dilarang" };
+        }
+        if ((effMethod === "PATCH" || effMethod === "POST") && apiPos.some((p) => /(?:^|\/)git\/refs\/heads\/(?:main|master)(?:$|[/?#])/.test(p))) {
+          return { effect: "deny", rule: "gh-security", reason: "LUMI_DENY gh: mutasi refs main/master via 'gh api' dilarang" };
+        }
+      }
+      if (sub === "pr" && action === "merge") {
+        const hasAdmin = rest.some((a) => a === "--admin" || a === "--admin=true");
+        if (hasAdmin) {
+          return { effect: "deny", rule: "pr-merge", reason: "LUMI_DENY pr-merge: 'gh pr merge --admin' dilarang di semua mode" };
+        }
+        if (isFull) {
+          const hasAuto = rest.some((a) => a === "--auto" || a === "--auto=true");
+          if (!hasAuto) {
+            return { effect: "deny", rule: "pr-merge", reason: "LUMI_DENY pr-merge: 'gh pr merge' di mode full wajib --auto" };
+          }
+        }
+      }
     }
   }
-  return ask || { effect: "allow" };
+  return ask || (autonomyRule ? { effect: "allow", rule: autonomyRule } : { effect: "allow" });
 }
 
 
@@ -643,7 +737,7 @@ export function evaluateTool(tool, input, ctx = {}) {
   // TIDAK diblokir — daftar tool OpenCode tidak lengkap & plugin baru akan patah —
   // tapi ditandai unguarded supaya plugin mencatatnya di jurnal.
   if (!isGuardedTool(t)) return { effect: "allow", unguarded: true };
-  const { workspace = process.cwd(), sandbox = null, tier = "standard", tierSource, branch, headless = false, toolDirs = [], argsDir, sandboxMode = "off", spin = null, closed = "", lumiHome = "", home = os.homedir(), env } = ctx;
+  const { workspace = process.cwd(), sandbox = null, tier = "standard", tierSource, branch, headless = false, autonomy = "default", toolDirs = [], argsDir, sandboxMode = "off", spin = null, closed = "", lumiHome = "", home = os.homedir(), env } = ctx;
   // 1) fail-closed: guard/sandbox gagal dibangun → tulis/execute ditolak, baca tetap jalan
   if (closed && (SHELL_TOOLS.has(t) || EXECUTE_TOOLS.has(t) || (t !== "read" && t !== "glob" && t !== "grep" && t !== "list"))) {
     return { effect: "deny", rule: "closed", reason: closed };
@@ -667,7 +761,8 @@ export function evaluateTool(tool, input, ctx = {}) {
   }
   // 4) shell: klasifikasi perintah
   const command = String(input?.command ?? "");
-  const d = classifyShell(command, { workspace, headless, tier });
+  const effAutonomy = autonomy === "full" ? "full" : "default";
+  const d = classifyShell(command, { workspace, headless, branch, tier, autonomy: effAutonomy });
   if (d.effect === "deny") return { effect: "deny", rule: d.rule, reason: d.reason, command };
   // 5) shell: path di luar kebijakan sandbox (hanya bila sandbox aktif —
   // v0.3.71: default off → sandbox null; shellOutsidePaths deref sp, jadi
@@ -678,9 +773,9 @@ export function evaluateTool(tool, input, ctx = {}) {
   }
   // 6) bwrap: bungkus perintah (rewrite), bukan tolak
   if (sandboxMode === "bwrap") {
-    return { effect: d.effect, rewrite: { command: bwrapCommand(command, { workspace, toolDirs, argsDir, sandbox }) } };
+    return { effect: d.effect, ...(d.rule ? { rule: d.rule } : {}), rewrite: { command: bwrapCommand(command, { workspace, toolDirs, argsDir, sandbox }) } };
   }
-  return { effect: d.effect };
+  return { effect: d.effect, ...(d.rule ? { rule: d.rule } : {}) };
 }
 
 // ---------- bwrap ----------
@@ -750,7 +845,9 @@ export function bwrapArgs(command, { workspace, toolDirs = [], env = process.env
   for (const d of toolDirs) { const s = path.join(d, "secrets.env"); if (fs.existsSync(s)) maskFile(s); }
   const keep = { PATH: env.PATH || "/usr/bin:/bin", HOME: fs.existsSync(h) ? h : "/tmp", LANG: env.LANG || "C.UTF-8", TERM: env.TERM || "dumb", TZ: env.TZ || "", LUMI_SANDBOX: "bwrap",
     XDG_CACHE_HOME: "/tmp/.cache", PIP_CACHE_DIR: "/tmp/.cache/pip", npm_config_cache: "/tmp/.cache/npm", PYTHONDONTWRITEBYTECODE: "1",
-    GIT_AUTHOR_NAME: env.GIT_AUTHOR_NAME || "", GIT_AUTHOR_EMAIL: env.GIT_AUTHOR_EMAIL || "", GIT_COMMITTER_NAME: env.GIT_COMMITTER_NAME || "", GIT_COMMITTER_EMAIL: env.GIT_COMMITTER_EMAIL || "", NODE_OPTIONS: "", CI: env.CI || "" };
+    GIT_AUTHOR_NAME: env.GIT_AUTHOR_NAME || "", GIT_AUTHOR_EMAIL: env.GIT_AUTHOR_EMAIL || "", GIT_COMMITTER_NAME: env.GIT_COMMITTER_NAME || "", GIT_COMMITTER_EMAIL: env.GIT_COMMITTER_EMAIL || "",
+    GIT_CONFIG_GLOBAL: env.GIT_CONFIG_GLOBAL || "", GH_CONFIG_DIR: env.GH_CONFIG_DIR || "",
+    NODE_OPTIONS: "", CI: env.CI || "" };
   for (const [k, v] of Object.entries(keep)) if (v !== "") a.push("--setenv", k, v);
   a.push("--chdir", ws);
   const sh = fs.existsSync("/usr/bin/bash") ? "/usr/bin/bash" : "/bin/sh";

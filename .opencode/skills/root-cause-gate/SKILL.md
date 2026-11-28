@@ -20,8 +20,9 @@ Whenever a bug fix or code change passes test execution:
    - Perform a grep / code search across sibling packages and modules for identical defect patterns.
    - Example: If a missing null check or unhandled promise rejection occurred in module A, search modules B, C, and D for the same pattern.
 
-3. **Scope Guard & Consent Checkpoint (Stop-and-Ask):**
+3. **Scope Guard & Consent Checkpoint (Stop-and-Ask / BLOCKED):**
    - Default behavior is **minimal patch**.
    - If addressing the root cause requires refactoring across multiple module boundaries (high blast radius):
      - **DO NOT** expand changes automatically.
-     - **STOP & ASK** the operator for explicit consent before modifying files outside the immediate target module.
+     - In interactive primary mode (user interaction available): **STOP & ASK** the operator for explicit consent before modifying files outside the immediate target module.
+     - In subagent or headless mode (worker without the `question` tool): **DO NOT** ask the user directly; report `BLOCKED` to the orchestrator with concrete options and blast radius. Only the orchestrator asks the user.

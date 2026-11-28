@@ -42,8 +42,8 @@ Skill: harness memakai skill & DB router miliknya sendiri (`config/skills` → `
 | `LUMI_ROUTER_L1` | `auto` | `auto` = LLM L1 hanya bila confidence L0 rendah (margin BM25 < `SW_L1_CONF`=0.15 / tanpa hit), timeout keras 3 s lalu L0; `always`/`1` = selalu; `0` = mati |
 | `SW_L1_TIMEOUT_MS` / `SW_L1_TOPK` | `3000` / `8` | timeout keras L1 & jumlah kandidat L0 yang dikirim |
 | `SW_ROUTE_CACHE` / `SW_ROUTE_CACHE_TTL_S` | `$LUMI_HOME/router-cache.json` / `604800` | cache pilihan per query ternormalisasi; invalid otomatis bila katalog (source_hash) berubah; `0` = mati |
-| `LUMI_DEADLINE_MS` | `300000` | batas keras satu `run` → exit 124 |
-| `LUMI_FIRST_OUTPUT_MS` | `90000` | provider diam (tanpa output/aksi) → exit 124 |
+| `LUMI_DEADLINE_MS` | `1800000` | batas keras satu `run` → exit 124 |
+| `LUMI_FIRST_OUTPUT_MS` | `180000` | provider diam (tanpa output/aksi) → exit 124 |
 | `LUMI_PREFLIGHT` / `_TIMEOUT_MS` / `_RETRIES` | `1` / `8000` / `2` | cek `GET {baseURL}` sebelum run (status HTTP apa pun = hidup) |
 | `LUMI_HEADER_TIMEOUT_MS` | `300000` | batas tunggu header respons provider |
 | `LUMI_IDLE_TIMEOUT_MS` | `900000` | batas jeda antar-chunk stream; lewat batas ini muncul "Timed out waiting for response data" |
@@ -58,6 +58,10 @@ Skill: harness memakai skill & DB router miliknya sendiri (`config/skills` → `
 | `LUMI_ENGINE_VERSION` | `OC_VERSION` (atau versi binary terpasang) | override versi target engine (menang atas deteksi binary terpasang dan `OC_VERSION`, mis. `2.3.0` atau `2.4.2`) |
 | `LUMI_PROVIDER_STRICT` | `1` | `1` = strict `9router`-only via top-level `policies`; `0` = izinkan custom provider di `$LUMI_HOME/providers.json` |
 | `LUMI_COMPACTION_BACKGROUND` | `0` | `1` = aktifkan `compaction.background` khusus di TUI interaktif (headless `run` selalu `false`) |
+| `LUMI_AUTONOMY` | — (off) | `full` = mode otonom penuh (push branch, `gh pr create`/`gh pr merge --auto`, `gh release create`, MCP GitHub/browser tanpa prompt; mati bila `--no-auto`/`LUMI_AUTO_MODE=0`) |
+| `LUMI_WATCHDOG` | `1` | `0` = matikan `HaltingWatchdog` |
+| `LUMI_XDG_CONFIG` | `$LUMI_HOME/xdg-config` | override `XDG_CONFIG_HOME` terisolasi untuk engine |
+| `LUMI_IDLE_MAX_REDRIVES` | `3` | batas maksimum re-drive otomatis `lumitome-idle-gate` per sesi |
 | `LUMI_DEBUG` | — | log jurnal, skill terpilih, cleanup |
 | `SW_L1_TIMEOUT_MS` / `SW_L1_TOPK` / `SW_L1_CACHE` | `12000` / `12` / `runtime/l1-cache.json` | router L1 (`SW_L1_CACHE=0` matikan cache) |
 | `SW_FALLBACK_MAX` / `SW_FALLBACK_RATIO` | `3` / `0` | fallback deterministik router |

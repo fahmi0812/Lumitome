@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.4 — Autonomy mode (LUMI_AUTONOMY=full), watchdog shell tracking, eval segment guard, gh/git bridge & timeout defaults
+
+- **Mode otonom penuh opt-in (`LUMI_AUTONOMY=full`):** mengizinkan push branch non-main, `gh pr create`, `gh pr merge --auto`, `gh release create`, MCP GitHub (`github_*`, dengan `github_delete_*` tetap `deny` dan `github_merge_*` tetap `ask`), serta MCP browser (`playwright_*`, `chromedev_*`, `chrome-devtools*`, `browser-act*`) tanpa konfirmasi; flag `--no-auto` / `LUMI_AUTO_MODE=0` tetap menang dan menonaktifkan `autonomyFull` di wrapper, `buildFinalConfig`, maupun plugin guard (`lumitome/lib/build-config.mjs`, `lumitome/bin/lumitome.mjs`, `lumitome/lib/auto-mode.mjs`, `lumitome/config/plugins/lumitome-guard.ts`).
+- **Peringatan wajib branch protection `main`:** aktifkan branch protection pada `main` di GitHub dengan required status check (mis. `ci / gates`) — tanpa branch protection, `gh pr merge --auto` akan langsung me-merge PR tanpa menunggu CI.
+- **Penguatan guard (`harness/lumi-guard.mjs`):**
+  - `gh pr merge ... --admin` (`--admin=true`) ditolak (`deny`, rule `pr-merge`) di SEMUA mode (baik `default` maupun `full`).
+  - Pemeriksaan wrapper `bash -c` / `sh -c` / `zsh -c` / `dash -c` (termasuk flag gabungan seperti `-lc`) secara rekursif (kedalaman maks 1) untuk menutup bypass seperti `bash -c 'eval rm -rf x'`, `sh -c 'gh auth token'`, dan `bash -c 'git push --force'`.
+  - Pemeriksaan `eval` per segmen perintah agar perintah non-`eval` (seperti `npm run eval && git status` atau pesan commit) tidak terkena false-positive.
+- **Watchdog, idle-gate & bridge `gh`/`git` (`harness/watchdog.mjs`, `lumitome/lib/build-config.mjs`, `lumitome/bin/lumitome.mjs`):** pelacakan mutasi file oleh perintah shell di direktori non-git + opt-out `LUMI_WATCHDOG=0`, default `LUMI_IDLE_MAX_REDRIVES=3`, override `LUMI_XDG_CONFIG`, penerusan `GH_CONFIG_DIR` / `GIT_CONFIG_GLOBAL` / identitas `GIT_AUTHOR_*` & `GIT_COMMITTER_*` host ke engine & `bwrap`, serta default `LUMI_DEADLINE_MS=1800000` (30 menit) dan `LUMI_FIRST_OUTPUT_MS=180000` (3 menit).
+- **Dokumentasi & tes regresi:** pembaruan `README.md`, `lumitome/README.md`, serta penambahan uji regresi di `tests/suite-guard.mjs` dan `tests/suite-services.mjs`.
+
 ## 0.4.3 — Fix dummy 9router placeholder key shadowing credentials.json from lumitome connect
 
 - **Fix placeholder dummy `"9router"` menimpa API key asli dari `lumitome connect` (`lumitome/lib/providers.mjs`):** menambahkan `PLACEHOLDER_9ROUTER_KEY = "9router"` sehingga `keyFor` dan `opencodeFragment` mengabaikan nilai dummy `"9router"` dari env (`LUMI_KEY_9ROUTER`, `LUMI_9ROUTER_KEY`, `SW_9ROUTER_KEY`, `NINEROUTER_API_KEY`) ketika `credentials.json` menyimpan key asli, tetap mendahulukan env key sungguhan, dan tetap menyediakan fallback `"9router"` saat `credentials.json` kosong.

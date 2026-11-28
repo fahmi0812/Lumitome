@@ -8,7 +8,7 @@ metadata:
 
 # Unified Done-Gate Protocol
 
-This skill replaces subjective LLM self-evaluation with concrete, verifiable gate checks. Read `.opencode/rules/01-verification.md` and `.opencode/rules/decision-log-protocol.md`.
+This skill replaces subjective LLM self-evaluation with concrete, verifiable gate checks. Read `.opencode/rules/02-evidence.md` and `.opencode/rules/01-hard-constraints.md`.
 
 ## Base checks
 

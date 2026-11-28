@@ -220,7 +220,10 @@ ok("SLASH skill merujuk nama valid", Object.values((await import("../router/laye
   const cod = fs.readFileSync(".opencode/agents/sectors/coding.md", "utf8");
   const fin = fs.readFileSync(".opencode/agents/sectors/finance.md", "utf8");
   ok("agent coding: deny *_* lalu allow codemem, delete_project=ask", cod.indexOf('"*_*"') < cod.indexOf('"codemem_*"') && /codemem_delete_project", resource: "\*", effect: ask/.test(cod));
-  ok("agent finance: tidak punya codemem/github", !/codemem_|github_/.test(fin));
+  ok("agent finance: tidak punya codemem/github; body selaras dgn 4 skill finance terdaftar",
+    !/codemem_|github_/.test(fin)
+    && !/Belum ada skill finance/.test(fin)
+    && ["akuntansi-umkm", "analisis-laporan-keuangan", "keuangan-pribadi", "pajak-dasar-id"].every((s) => fin.includes(s)));
   let cbm = false; try { guardPushMain({ tool: "shell", input: { command: "codebase-memory-mcp install -y" } }); } catch { cbm = true; }
   ok("plugin blok `codebase-memory-mcp install`", cbm);
   for (const f of ["install.sh", "scripts/doctor.sh", "scripts/e2e-opencode-v2.sh"]) {

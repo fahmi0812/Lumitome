@@ -1461,6 +1461,18 @@ ok("agents + plugins valid", checkAgents().length === 0 && checkPlugins().length
       && r3.action === "circuit-open" && r3.reason === "idle-circuit-open"
       && warnings.some((w) => /idle-circuit-open/.test(w)));
 
+    // Item J: DEFAULT_MAX_REDRIVES === 3 (attempt 1-3 redrive, attempt 4 circuit-open)
+    const ctrlDef = new IGC.IdleGateController({ env: {}, lumiHome: w2Dir, onWarning: () => {} });
+    ctrlDef.onUserInput("ses_def3");
+    const d1 = await ctrlDef.handleIdle({ sessionID: "ses_def3", background: [], snapshot: { wrote: true, ran: 0 }, ctx: mockCtx });
+    const d2 = await ctrlDef.handleIdle({ sessionID: "ses_def3", background: [], snapshot: { wrote: true, ran: 0 }, ctx: mockCtx });
+    const d3 = await ctrlDef.handleIdle({ sessionID: "ses_def3", background: [], snapshot: { wrote: true, ran: 0 }, ctx: mockCtx });
+    const d4 = await ctrlDef.handleIdle({ sessionID: "ses_def3", background: [], snapshot: { wrote: true, ran: 0 }, ctx: mockCtx });
+    ok("Item J idle-gate: DEFAULT_MAX_REDRIVES=3 (attempt 1-3 redrive, attempt 4 trip idle-circuit-open)",
+      IGC.DEFAULT_MAX_REDRIVES === 3 && ctrlDef.maxRedrives === 3
+      && d1.action === "redrive" && d2.action === "redrive" && d3.action === "redrive" && d3.attempt === 3
+      && d4.action === "circuit-open");
+
     // 3) Bypass aman: Q&A non-mutasi, question/BLOCKED, compaction, subagent, interrupt, background own, verified PASS, LUMI_IDLE_REDRIVE=0
     const ctrl2 = new IGC.IdleGateController({ maxRedrives: 2, env: {}, lumiHome: w2Dir, onWarning: () => {} });
     let inj2 = 0;

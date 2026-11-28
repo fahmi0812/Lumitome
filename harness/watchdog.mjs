@@ -15,6 +15,46 @@ import { execFileSync } from "node:child_process";
 const LOOKUP_TOOLS = new Set(["read", "glob", "grep", "list", "ls", "webfetch", "websearch", "skill", "todoread"]);
 const MUTATING_TOOLS = new Set(["edit", "write", "patch", "multiedit", "apply_patch"]);
 const SHELL_TOOLS = new Set(["shell", "bash"]);
+const WALK_SKIP_DIRS = new Set(["node_modules", ".git", ".tmp", "runtime", "dist"]);
+
+function computeWorkspaceFileFingerprint(workspace, { maxFiles = 2000 } = {}) {
+  if (!workspace) return "";
+  const ws = path.resolve(workspace);
+  const entries = [];
+  let seen = 0;
+  const stack = [ws];
+  while (stack.length > 0 && seen < maxFiles) {
+    const dir = stack.pop();
+    let dirents;
+    try {
+      dirents = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    dirents.sort((a, b) => a.name.localeCompare(b.name));
+    for (const ent of dirents) {
+      if (seen >= maxFiles) break;
+      const full = path.join(dir, ent.name);
+      if (ent.isDirectory()) {
+        if (!WALK_SKIP_DIRS.has(ent.name)) stack.push(full);
+        continue;
+      }
+      if (!ent.isFile()) continue;
+      seen += 1;
+      const rel = path.relative(ws, full).replaceAll("\\", "/");
+      try {
+        const st = fs.statSync(full, { bigint: true });
+        entries.push(`${rel}:${st.mtimeNs}:${st.size}`);
+      } catch {
+        try {
+          const st = fs.statSync(full);
+          entries.push(`${rel}:${st.mtimeMs}:${st.size}`);
+        } catch {}
+      }
+    }
+  }
+  return sha256(entries.sort().join("|"));
+}
 
 function sha256(s) {
   return crypto.createHash("sha256").update(String(s ?? "")).digest("hex");
@@ -194,6 +234,7 @@ export class HaltingWatchdog {
     this.hasMutations = false;
     this.zeroProgressStreak = 0;
     this.lastFingerprint = null;
+    this.lastGitKey = null;
     this.visitedFingerprints = new Set();
     this.fileHashes = new Map();
     this.succeededCmdsSinceMutation = new Set();
@@ -359,12 +400,22 @@ export class HaltingWatchdog {
           const subSnap = readGitDiffSnapshot(path.dirname(resolvedTarget));
           if (subSnap.hasGit) gitSnap = subSnap;
         }
-        if (!gitSnap.hasGit || this.fileHashes.size > 0) {
+        const gitKey = `${gitSnap.diffHash}|${gitSnap.statusHash}`;
+        const gitUnchanged = this.lastGitKey === null || gitKey === this.lastGitKey;
+        this.lastGitKey = gitKey;
+        let wsDigest = "";
+        if ((SHELL_TOOLS.has(t) || didMutate) && (!gitSnap.hasGit || gitUnchanged)) {
+          wsDigest = computeWorkspaceFileFingerprint(this.workspace);
+        }
+        if (!gitSnap.hasGit || this.fileHashes.size > 0 || wsDigest) {
           const fileDigest = [...this.fileHashes.entries()]
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([k, v]) => `${k}:${v}`)
             .join("|");
-          snapDiffHash = fileDigest ? sha256(`${gitSnap.diffHash}|${fileDigest}`) : gitSnap.diffHash;
+          const parts = [gitSnap.diffHash];
+          if (fileDigest) parts.push(fileDigest);
+          if (wsDigest) parts.push(`ws:${wsDigest}`);
+          snapDiffHash = parts.length > 1 ? sha256(parts.join("|")) : gitSnap.diffHash;
           snapStatusHash = gitSnap.statusHash;
         }
       }

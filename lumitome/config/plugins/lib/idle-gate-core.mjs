@@ -5,7 +5,7 @@
 import crypto from "node:crypto";
 import { appendIdleTelemetry, defaultLumiHome, sendSyntheticIdempotent } from "./experimental-adapter.mjs";
 
-export const DEFAULT_MAX_REDRIVES = 2;
+export const DEFAULT_MAX_REDRIVES = 3;
 
 export function buildRedriveId(sessionID, turnSeq, attempt, reason) {
   const key = crypto
@@ -234,7 +234,7 @@ export class IdleGateController {
       return { action: "allow", skipReason: "verified-pass", turnSeq };
     }
 
-    // [5] Circuit breaker keras (maxRedrives = 2) + idempotency
+    // [5] Circuit breaker keras (default maxRedrives = 3) + idempotency
     const count = this.redrivesByTurn.get(turnKey) ?? 0;
     if (count >= this.maxRedrives) {
       this._log({
